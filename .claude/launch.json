@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "esg-dev",
+      "runtimeExecutable": "/usr/local/bin/npx",
+      "runtimeArgs": ["vite", "--port", "5174"],
+      "port": 5174,
+      "cwd": "esg-frontend",
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ]
+}

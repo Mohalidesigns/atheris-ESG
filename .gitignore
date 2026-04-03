@@ -1,0 +1,26 @@
+# Dependencies
+esg-frontend/node_modules/
+esg-backend/target/
+
+# Build outputs
+esg-frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Temp
+*.zip
+*.log
+
+# Maven wrapper jar is committed intentionally
+# !esg-backend/.mvn/wrapper/maven-wrapper.jar
