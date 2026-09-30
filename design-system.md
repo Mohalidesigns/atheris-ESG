@@ -11,7 +11,7 @@
 - Info: Teal (#319795)
 **Typography:**
 - Headings: Inter or SF Pro Display (Bold)
-- Body: Inter or SF Pro Text (Regular)
+- Body: Inter or SF Pro Text (Regular)s
 - Data/Numbers: Roboto Mono for audit IDs and figures
 **Global Navigation Bar (consistent across all screens):**
 - Fixed leftside navbar with navy blue background (#1A365D)

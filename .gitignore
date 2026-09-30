@@ -24,3 +24,6 @@ Thumbs.db
 
 # Maven wrapper jar is committed intentionally
 # !esg-backend/.mvn/wrapper/maven-wrapper.jar
+
+# Office lock files
+.~lock.*#
