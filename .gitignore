@@ -27,3 +27,4 @@ Thumbs.db
 
 # Office lock files
 .~lock.*#
+var/

@@ -28,7 +28,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** M1 data points (WP-20): CRUD, workflow, history and the validation rules the form mirrors. */
+/**
+ * M1 data points (WP-20): CRUD, workflow, history and the validation rules the form mirrors. Workflow steps follow the
+ * TRD §6.4.2 catalogue entry {@code PUT /api/v1/data/points/{id}/validate}: every step is a PUT on the point.
+ */
 @RestController
 @RequestMapping("/v1/data")
 public class DataPointController {
@@ -90,31 +93,31 @@ public class DataPointController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/points/{id}/submit")
+    @PutMapping("/points/{id}/submit")
     @PreAuthorize("hasAnyAuthority('data_points:create', 'data_points:update')")
     public ResponseEntity<ApiResponse<DataPointResponse>> submit(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.submit(id, body.version()), "Submitted for validation"));
     }
 
-    @PostMapping("/points/{id}/validate")
+    @PutMapping("/points/{id}/validate")
     @PreAuthorize("hasAuthority('data_points:validate')")
     public ResponseEntity<ApiResponse<DataPointResponse>> validate(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.validate(id, body.version()), "Validated"));
     }
 
-    @PostMapping("/points/{id}/approve")
+    @PutMapping("/points/{id}/approve")
     @PreAuthorize("hasAuthority('data_points:approve')")
     public ResponseEntity<ApiResponse<DataPointResponse>> approve(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.approve(id, body.version()), "Approved"));
     }
 
-    @PostMapping("/points/{id}/reject")
+    @PutMapping("/points/{id}/reject")
     @PreAuthorize("hasAnyAuthority('data_points:validate', 'data_points:approve')")
     public ResponseEntity<ApiResponse<DataPointResponse>> reject(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.reject(id, body.version(), body.reason()), "Rejected"));
     }
 
-    @PostMapping("/points/{id}/reopen")
+    @PutMapping("/points/{id}/reopen")
     @PreAuthorize("hasAuthority('data_points:approve')")
     public ResponseEntity<ApiResponse<DataPointResponse>> reopen(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.reopen(id, body.version(), body.reason()), "Reopened"));

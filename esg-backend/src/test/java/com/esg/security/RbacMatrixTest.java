@@ -2,6 +2,7 @@ package com.esg.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.esg.support.ApiTestSupport;
@@ -39,8 +40,8 @@ class RbacMatrixTest extends ApiTestSupport {
             "{\"orgId\":\"" + ORG_SITE_1 + "\",\"metricKey\":\"electricity_kwh\",\"numericValue\":1,"
                 + "\"reportingPeriodStart\":\"" + day + "\",\"reportingPeriodEnd\":\"" + day + "\"}");
       }),
-      Map.entry("data:validate", () -> post(NO_POINT + "/validate").contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")),
-      Map.entry("data:approve", () -> post(NO_POINT + "/approve").contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")),
+      Map.entry("data:validate", () -> put(NO_POINT + "/validate").contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")),
+      Map.entry("data:approve", () -> put(NO_POINT + "/approve").contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")),
       Map.entry("carbon:read", () -> get("/v1/carbon/emissions")),
       Map.entry("compliance:read", () -> get("/v1/compliance/frameworks")),
       Map.entry("users:read", () -> get("/v1/admin/users")),

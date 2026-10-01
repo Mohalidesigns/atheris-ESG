@@ -98,7 +98,7 @@ describe('DataHubPage data entry', () => {
       orgId: 'hq', metricKey: 'electricity_kwh', subCategory: null, numericValue: 1250.5, textValue: null, currency: null,
       sourceId: 's1', evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30',
     });
-    expect(calls.some((c) => c.key === 'POST /data/points/p2/submit')).toBe(false);
+    expect(calls.some((c) => c.key === 'PUT /data/points/p2/submit')).toBe(false);
     // The saved point opens in the drawer with the actions the server allows.
     expect(await screen.findByRole('button', { name: 'Submit' })).toBeInTheDocument();
   });
@@ -106,7 +106,7 @@ describe('DataHubPage data entry', () => {
   it('"Save and submit" submits with the saved version; money metrics offer a currency', async () => {
     const calls = fakeApi(routes({
       'POST /data/points': (body) => [201, { success: true, data: { ...point, ...body, id: 'p3', version: 0 } }],
-      'POST /data/points/p3/submit': (body) => ok({ ...point, id: 'p3', version: body.version + 1 }),
+      'PUT /data/points/p3/submit': (body) => ok({ ...point, id: 'p3', version: body.version + 1 }),
       'GET /data/points/p3': () => ok({ ...point, id: 'p3' }),
       'GET /data/points/p3/history': () => ok([]),
       'GET /files': () => ok([]),
@@ -117,9 +117,9 @@ describe('DataHubPage data entry', () => {
     await userEvent.click(within(dialog).getByLabelText('Currency'));
     await userEvent.click(screen.getByRole('option', { name: 'USD' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save and submit' }));
-    await waitFor(() => expect(calls.some((c) => c.key === 'POST /data/points/p3/submit')).toBe(true));
+    await waitFor(() => expect(calls.some((c) => c.key === 'PUT /data/points/p3/submit')).toBe(true));
     expect(calls.find((c) => c.key === 'POST /data/points').body).toMatchObject({ numericValue: 5000, currency: 'USD' });
-    expect(calls.find((c) => c.key === 'POST /data/points/p3/submit').body).toEqual({ version: 0 });
+    expect(calls.find((c) => c.key === 'PUT /data/points/p3/submit').body).toEqual({ version: 0 });
   });
 
   it('server field errors land on the right field (no exchange rate → currency)', async () => {
@@ -159,7 +159,7 @@ describe('DataHubPage review', () => {
   });
 
   it('the drawer shows quality, warnings and history; validate sends the version', async () => {
-    const calls = fakeApi(drawerRoutes({ 'POST /data/points/p1/validate': () => ok({ ...point, validationStatus: 'validated', actions: [] }) }));
+    const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/validate': () => ok({ ...point, validationStatus: 'validated', actions: [] }) }));
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
     await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
     const drawer = await screen.findByRole('region', { name: 'Data point details' });
@@ -169,11 +169,11 @@ describe('DataHubPage review', () => {
     expect(within(drawer).getByLabelText('Rule warnings')).toHaveTextContent('Overlaps 1 other');
     expect(within(drawer).getByText('Submitted by Emeka Nwosu')).toBeInTheDocument();
     await userEvent.click(within(drawer).getByRole('button', { name: 'Validate' }));
-    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/p1/validate')?.body).toEqual({ version: 1 }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/validate')?.body).toEqual({ version: 1 }));
   });
 
   it('reject asks for a reason (required, like the server) and sends it', async () => {
-    const calls = fakeApi(drawerRoutes({ 'POST /data/points/p1/reject': (body) => ok({ ...point, validationStatus: 'rejected', statusReason: body.reason }) }));
+    const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/reject': (body) => ok({ ...point, validationStatus: 'rejected', statusReason: body.reason }) }));
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
     await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
     const drawer = await screen.findByRole('region', { name: 'Data point details' });
@@ -183,7 +183,7 @@ describe('DataHubPage review', () => {
     expect(await within(dialog).findByText('A reason is required')).toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText('Reason'), 'Meter photo missing');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
-    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/p1/reject')?.body)
+    await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/reject')?.body)
       .toEqual({ version: 1, reason: 'Meter photo missing' }));
   });
 
@@ -247,10 +247,10 @@ describe('DataHubPage set-up tabs', () => {
     };
     let polls = 0;
     const calls = fakeApi(routes({
-      'GET /data/imports': () => ok([]),
-      'POST /data/imports': () => [201, { success: true, data: job }],
-      'POST /data/imports/j1/start': () => [202, { success: true, data: { ...job, status: 'processing', version: 1 } }],
-      'GET /data/imports/j1': () => {
+      'GET /data/import': () => ok([]),
+      'POST /data/import': () => [201, { success: true, data: job }],
+      'POST /data/import/j1/start': () => [202, { success: true, data: { ...job, status: 'processing', version: 1 } }],
+      'GET /data/import/j1': () => {
         polls += 1;
         return ok(polls < 2 ? { ...job, status: 'processing', processedRows: 1 }
           : { ...job, status: 'completed', processedRows: 2, succeededRows: 1, failedRows: 1,
@@ -269,7 +269,7 @@ describe('DataHubPage set-up tabs', () => {
     await userEvent.type(screen.getByLabelText('Period start for every row'), '2026-07-01');
     await userEvent.type(screen.getByLabelText('Period end for every row'), '2026-09-30');
     await userEvent.click(screen.getByRole('button', { name: 'Import 2 rows' }));
-    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/imports/j1/start')?.body).toEqual({
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/import/j1/start')?.body).toEqual({
       version: 0, mapping: { metric: 'Metric', value: 'Value' }, defaultOrgId: 'hq', defaultPeriodStart: '2026-07-01',
       defaultPeriodEnd: '2026-09-30', sourceId: null,
     }));

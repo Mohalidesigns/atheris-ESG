@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** Bulk import of data points from CSV or Excel (WP-20, journey 4). Imported rows become drafts. */
+/** Bulk import of data points from CSV or Excel (WP-20, journey 4; TRD §6.4.2 POST /api/v1/data/import). Rows become drafts. */
 @RestController
-@RequestMapping("/v1/data/imports")
+@RequestMapping("/v1/data/import")
 public class ImportController {
 
     private final ImportService service;

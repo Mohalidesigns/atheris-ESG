@@ -13,11 +13,11 @@ describe('Journey 29: who changed what on an approved data point', () => {
           cy.api(collector, 'PUT', `/data/points/${draft.id}`, {
             orgId: draft.orgId, metricKey: 'lpg_kg', numericValue: 45, reportingPeriodStart: day, reportingPeriodEnd: day, version: draft.version,
           })
-            .then((edited) => cy.api(collector, 'POST', `/data/points/${draft.id}/submit`, { version: edited.version }))
+            .then((edited) => cy.api(collector, 'PUT', `/data/points/${draft.id}/submit`, { version: edited.version }))
             .then((submitted) => cy.apiToken(roles.ESG_ANALYST.email)
-              .then((analyst) => cy.api(analyst, 'POST', `/data/points/${draft.id}/validate`, { version: submitted.version })))
+              .then((analyst) => cy.api(analyst, 'PUT', `/data/points/${draft.id}/validate`, { version: submitted.version })))
             .then((validated) => cy.apiToken(roles.ESG_DIRECTOR.email)
-              .then((director) => cy.api(director, 'POST', `/data/points/${draft.id}/approve`, { version: validated.version })))
+              .then((director) => cy.api(director, 'PUT', `/data/points/${draft.id}/approve`, { version: validated.version })))
             .then(() => {
               // In the UI, as the director.
               cy.login(roles.ESG_DIRECTOR.email);

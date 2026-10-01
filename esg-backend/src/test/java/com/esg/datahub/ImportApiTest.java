@@ -33,13 +33,13 @@ class ImportApiTest extends ApiTestSupport {
   }
 
   private JsonNode upload(String who, MockMultipartFile file) throws Exception {
-    String body = mvc.perform(multipart("/v1/data/imports").file(file).header("Authorization", who))
+    String body = mvc.perform(multipart("/v1/data/import").file(file).header("Authorization", who))
         .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
     return json.readTree(body).path("data");
   }
 
   private JsonNode start(String who, JsonNode job, String body) throws Exception {
-    String response = mvc.perform(post("/v1/data/imports/" + job.path("id").asText() + "/start").header("Authorization", who)
+    String response = mvc.perform(post("/v1/data/import/" + job.path("id").asText() + "/start").header("Authorization", who)
             .contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
     return json.readTree(response).path("data");
@@ -48,7 +48,7 @@ class ImportApiTest extends ApiTestSupport {
   /** Polls until the background job finishes (≤ 20 s). */
   private JsonNode await(String who, JsonNode job) throws Exception {
     for (int i = 0; i < 200; i++) {
-      JsonNode current = json.readTree(mvc.perform(get("/v1/data/imports/" + job.path("id").asText()).header("Authorization", who))
+      JsonNode current = json.readTree(mvc.perform(get("/v1/data/import/" + job.path("id").asText()).header("Authorization", who))
           .andReturn().getResponse().getContentAsString()).path("data");
       if (!"processing".equals(current.path("status").asText())) {
         return current;
@@ -141,14 +141,14 @@ class ImportApiTest extends ApiTestSupport {
     JsonNode job = upload(collector(), new MockMultipartFile("file", "x.csv", "text/csv",
         "Metric,Value\ndiesel_litres,1\n".getBytes(StandardCharsets.UTF_8)));
     String v = "\"version\":" + job.path("version").asLong();
-    mvc.perform(post("/v1/data/imports/" + job.path("id").asText() + "/start").header("Authorization", collector())
+    mvc.perform(post("/v1/data/import/" + job.path("id").asText() + "/start").header("Authorization", collector())
             .contentType(MediaType.APPLICATION_JSON).content("{" + v + ",\"mapping\":{\"metric\":\"Metric\",\"value\":\"Nope\"}}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors['mapping.value']").exists())
         .andExpect(jsonPath("$.errors['mapping.organisation']").exists())
         .andExpect(jsonPath("$.errors['mapping.periodStart']").exists())
         .andExpect(jsonPath("$.errors['mapping.periodEnd']").exists());
-    mvc.perform(post("/v1/data/imports/" + job.path("id").asText() + "/start").header("Authorization", collector())
+    mvc.perform(post("/v1/data/import/" + job.path("id").asText() + "/start").header("Authorization", collector())
             .contentType(MediaType.APPLICATION_JSON).content("{" + v + ",\"mapping\":{\"metric\":\"Metric\",\"value\":\"Value\"},"
                 + "\"defaultOrgId\":\"" + ORG_SITE_1 + "\",\"defaultPeriodStart\":\"2026-05-02\",\"defaultPeriodEnd\":\"2026-05-01\"}"))
         .andExpect(status().isBadRequest())
@@ -157,14 +157,14 @@ class ImportApiTest extends ApiTestSupport {
 
   @Test
   void uploadRejectsWrongTypesEmptyFilesAndReadOnlyRoles() throws Exception {
-    mvc.perform(multipart("/v1/data/imports").file(new MockMultipartFile("file", "x.pdf", "application/pdf", new byte[] {1}))
+    mvc.perform(multipart("/v1/data/import").file(new MockMultipartFile("file", "x.pdf", "application/pdf", new byte[] {1}))
             .header("Authorization", collector()))
         .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.file").exists());
-    mvc.perform(multipart("/v1/data/imports").file(new MockMultipartFile("file", "x.csv", "text/csv",
+    mvc.perform(multipart("/v1/data/import").file(new MockMultipartFile("file", "x.csv", "text/csv",
                 "Metric,Value\n".getBytes(StandardCharsets.UTF_8)))
             .header("Authorization", collector()))
         .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.file").value("The file has no data rows"));
-    mvc.perform(multipart("/v1/data/imports").file(new MockMultipartFile("file", "x.csv", "text/csv",
+    mvc.perform(multipart("/v1/data/import").file(new MockMultipartFile("file", "x.csv", "text/csv",
                 "Metric,Value\ndiesel_litres,1\n".getBytes(StandardCharsets.UTF_8)))
             .header("Authorization", bearerForRole("AUDITOR")))
         .andExpect(status().isForbidden());
@@ -172,7 +172,7 @@ class ImportApiTest extends ApiTestSupport {
 
   @Test
   void templateListsTheImportColumns() throws Exception {
-    mvc.perform(get("/v1/data/imports/template").header("Authorization", collector()))
+    mvc.perform(get("/v1/data/import/template").header("Authorization", collector()))
         .andExpect(status().isOk())
         .andExpect(content().string(org.hamcrest.Matchers.startsWith("organisation,metric,value,currency,period_start,period_end")));
   }

@@ -69,7 +69,7 @@ class DataPointWorkflowTest extends ApiTestSupport {
 
   private ResultActions step(String who, String action, JsonNode point, String reason) throws Exception {
     String body = "{\"version\":" + point.path("version").asLong() + (reason == null ? "" : ",\"reason\":\"" + reason + "\"") + "}";
-    return mvc.perform(post("/v1/data/points/" + point.path("id").asText() + "/" + action).header("Authorization", who)
+    return mvc.perform(put("/v1/data/points/" + point.path("id").asText() + "/" + action).header("Authorization", who)
         .contentType(MediaType.APPLICATION_JSON).content(body));
   }
 
@@ -166,10 +166,10 @@ class DataPointWorkflowTest extends ApiTestSupport {
   void stateVersionAndDeletionRules() throws Exception {
     JsonNode p = diesel(collector());
     step(analyst(), "validate", p, null).andExpect(status().isConflict()); // a draft can't be validated
-    mvc.perform(post("/v1/data/points/" + p.path("id").asText() + "/submit").header("Authorization", collector())
+    mvc.perform(put("/v1/data/points/" + p.path("id").asText() + "/submit").header("Authorization", collector())
             .contentType(MediaType.APPLICATION_JSON).content("{\"version\":99}"))
         .andExpect(status().isConflict());
-    mvc.perform(post("/v1/data/points/" + p.path("id").asText() + "/submit").header("Authorization", collector())
+    mvc.perform(put("/v1/data/points/" + p.path("id").asText() + "/submit").header("Authorization", collector())
             .contentType(MediaType.APPLICATION_JSON).content("{}"))
         .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.version").exists());
 

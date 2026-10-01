@@ -35,7 +35,7 @@ export const dataHubApi = apiSlice.injectEndpoints({
     /** action: submit | validate | approve | reject | reopen. */
     transitionDataPoint: build.mutation({
       query: ({ id, action, version, reason }) => ({
-        url: `/data/points/${id}/${action}`, method: 'POST', body: { version, ...(reason ? { reason } : {}) },
+        url: `/data/points/${id}/${action}`, method: 'PUT', body: { version, ...(reason ? { reason } : {}) },
       }),
       transformResponse: unwrap,
       invalidatesTags: (_r, _e, { id }) => ['DataPoint', { type: 'DataPointHistory', id }],
@@ -74,9 +74,9 @@ export const dataHubApi = apiSlice.injectEndpoints({
       invalidatesTags: ['FxRate'],
     }),
 
-    imports: build.query({ query: () => '/data/imports', transformResponse: unwrap, providesTags: ['Import'] }),
+    imports: build.query({ query: () => '/data/import', transformResponse: unwrap, providesTags: ['Import'] }),
     importJob: build.query({
-      query: (id) => `/data/imports/${id}`,
+      query: (id) => `/data/import/${id}`,
       transformResponse: unwrap,
       providesTags: (_r, _e, id) => [{ type: 'Import', id }],
     }),
@@ -84,17 +84,17 @@ export const dataHubApi = apiSlice.injectEndpoints({
       query: (file) => {
         const form = new FormData();
         form.append('file', file);
-        return { url: '/data/imports', method: 'POST', body: form };
+        return { url: '/data/import', method: 'POST', body: form };
       },
       transformResponse: unwrap,
       invalidatesTags: ['Import'],
     }),
     // Authenticated download: fetched as text, saved by the browser (no bearer token in a plain link).
     importTemplate: build.mutation({
-      query: () => ({ url: '/data/imports/template', responseHandler: (r) => r.text(), cache: 'no-store' }),
+      query: () => ({ url: '/data/import/template', responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
     startImport: build.mutation({
-      query: ({ id, ...body }) => ({ url: `/data/imports/${id}/start`, method: 'POST', body }),
+      query: ({ id, ...body }) => ({ url: `/data/import/${id}/start`, method: 'POST', body }),
       transformResponse: unwrap,
       invalidatesTags: (_r, _e, { id }) => ['Import', { type: 'Import', id }, 'DataPoint'],
     }),
