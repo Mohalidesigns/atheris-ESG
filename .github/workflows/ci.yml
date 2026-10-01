@@ -46,7 +46,7 @@ jobs:
             esg-backend/target/checkstyle-result.xml
 
   frontend:
-    name: Frontend lint, test, build, no-mock report
+    name: Frontend lint, test, build, no-mock gate
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -62,11 +62,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - name: No-mock gate (REPORT mode until end of WP-16)
+      - name: No-mock gate (ENFORCE since WP-16)
         run: |
           npm run -s check:no-mocks -- --report no-mock-report.md
           cat no-mock-report.md >> "$GITHUB_STEP_SUMMARY"
+          npm run -s check:no-mocks -- --enforce
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: no-mock-report
           path: esg-frontend/no-mock-report.md

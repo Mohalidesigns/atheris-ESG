@@ -12,6 +12,7 @@ import PeriodsTab from './PeriodsTab';
 import SettingsTab from './SettingsTab';
 import TenantsTab from './TenantsTab';
 import AuditLogTab from '../../audit/components/AuditLogTab';
+import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
@@ -194,6 +195,7 @@ const TABS = [
   { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
   { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
+  { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
   { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
 ];
 
