@@ -9,7 +9,8 @@ select set_config('app.current_tenant', '11111111-1111-4111-8111-111111111111', 
 -- created_by defaults to the current user (V001 auth.current_user_id()); some tables require it.
 select set_config('app.current_user', 'a0000000-0000-4000-8000-0000000000a1', false);
 
-insert into auth.tenants (id, name, slug, country_code, max_users) values ('11111111-1111-4111-8111-111111111111', 'Tenant A', 'tenant-a', 'NG', 100);
+-- Tenant A is on Enterprise (every module); Tenant B stays on the default Starter plan (WP-19 tests rely on both).
+insert into auth.tenants (id, name, slug, country_code, max_users, subscription_tier) values ('11111111-1111-4111-8111-111111111111', 'Tenant A', 'tenant-a', 'NG', 100, 'enterprise');
 insert into auth.organisations (id, name, org_type) values ('a0000000-0000-4000-8000-00000000000a', 'A HQ', 'headquarters');
 -- Two sites under HQ, used by the org-scope tests (org-scoped roles below are limited to Site 1).
 insert into auth.organisations (id, parent_org_id, name, org_type) values
@@ -113,6 +114,10 @@ insert into auth.user_roles (user_id, role_id, org_scope_id)
 select u.id, r.id, case when r.name in ('ESG_MANAGER','ESG_ANALYST','DATA_COLLECTOR') then 'a0000000-0000-4000-8000-0000000001a1'::uuid end
 from auth.users u join auth.roles r on lower(r.name) || '@fixture.test' = u.email
 where u.email like '%@fixture.test' and u.id::text like 'a1000000-%';
+
+-- WP-19: one module override for tenant A (RLS suite needs a row per tenant table). carbon_market is already in the
+-- Enterprise plan, so this add-on changes nothing; SubscriptionEntitlementTest uses other modules.
+insert into auth.tenant_module_overrides (module_code, enabled, reason) values ('carbon_market', true, 'RLS fixture');
 
 -- ---------------- Tenant B ----------------
 select set_config('app.current_tenant', '22222222-2222-4222-8222-222222222222', false);

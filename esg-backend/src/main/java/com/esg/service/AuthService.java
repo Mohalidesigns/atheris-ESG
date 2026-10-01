@@ -200,7 +200,8 @@ public class AuthService {
                 user.getLastName(), user.getTenantId().toString(), tenantName,
                 access.roles().stream().sorted().toList(), access.permissions().stream().sorted().toList(),
                 access.tenantWide(), access.orgScopeRoots().stream().map(UUID::toString).sorted().toList(),
-                Boolean.TRUE.equals(user.getMfaEnabled()), user.getTimezone(), user.getPreferredLanguage());
+                Boolean.TRUE.equals(user.getMfaEnabled()), user.getTimezone(), user.getPreferredLanguage(),
+                access.modules().stream().sorted().toList());
     }
 
     private void registerFailure(User user) {
