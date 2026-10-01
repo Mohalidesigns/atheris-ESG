@@ -43,16 +43,28 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/v1/auth/login", "/v1/auth/refresh").permitAll()
-                .requestMatchers("/v1/governance/whistleblower").permitAll()
+                // Public auth endpoints; each is marked @PublicEndpoint (see ControllerSecurityArchTest).
+                .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/logout",
+                        "/v1/auth/mfa/setup", "/v1/auth/mfa/verify").permitAll()
                 .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui.html", "/v1/swagger-ui/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, e) -> writeError(response, 401, "Authentication required"))
+                .accessDeniedHandler((request, response, e) ->
+                    writeError(response, 403, "You do not have permission to perform this action")))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private static void writeError(jakarta.servlet.http.HttpServletResponse response, int status, String message)
+            throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"success\":false,\"message\":\"" + message + "\"}");
     }
 
     @Bean

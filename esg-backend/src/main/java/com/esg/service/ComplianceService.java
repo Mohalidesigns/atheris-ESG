@@ -1,5 +1,6 @@
 package com.esg.service;
 
+import com.esg.exception.ApiException;
 import com.esg.model.entity.RegulatoryFramework;
 import com.esg.repository.RegulatoryFrameworkRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class ComplianceService {
 
     public RegulatoryFramework getFrameworkByCode(String code) {
         return frameworkRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Framework not found: " + code));
+                .orElseThrow(() -> ApiException.notFound("Framework"));
     }
 
     public List<RegulatoryFramework> getFrameworksByJurisdiction(String jurisdiction) {

@@ -7,83 +7,87 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+/**
+ * Signs and verifies JWTs (TRD §5.4). Two token types, distinguished by the {@code typ} claim:
+ * <ul>
+ *   <li>{@code access}: 15-minute bearer token for API calls.</li>
+ *   <li>{@code mfa}: 5-minute token that only allows completing MFA setup/verification after a correct password.</li>
+ * </ul>
+ * Refresh tokens are opaque and stored hashed ({@link RefreshTokenService}), so they can never be used as bearer
+ * tokens (AS-IS S2).
+ */
 @Component
 public class JwtTokenProvider {
 
     static final int MIN_SECRET_BYTES = 64;
+    static final String TYPE_ACCESS = "access";
+    static final String TYPE_MFA = "mfa";
+    private static final long MFA_TOKEN_MS = 5 * 60 * 1000;
 
     private final SecretKey key;
     private final long jwtExpirationMs;
-    private final long refreshExpirationMs;
 
     public JwtTokenProvider(
             @Value("${esg.security.jwt-secret}") String jwtSecret,
-            @Value("${esg.security.jwt-expiration-ms}") long jwtExpirationMs,
-            @Value("${esg.security.refresh-expiration-ms}") long refreshExpirationMs) {
+            @Value("${esg.security.jwt-expiration-ms}") long jwtExpirationMs) {
         if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
             throw new IllegalStateException(
                     "JWT_SECRET must be set and at least " + MIN_SECRET_BYTES + " bytes (HS512)");
         }
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationMs = jwtExpirationMs;
-        this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    public String generateAccessToken(String userId, String tenantId, String role, List<String> permissions) {
+    /** JWT payload per TRD §5.4.1: sub, tenant_id, roles[], permissions[] (informational; the server re-checks). */
+    public String generateAccessToken(String userId, String tenantId, Collection<String> roles,
+                                      Collection<String> permissions) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(userId)
                 .claims(Map.of(
+                        "typ", TYPE_ACCESS,
                         "tenant_id", tenantId,
-                        "role", role,
-                        "permissions", permissions
-                ))
+                        "roles", List.copyOf(roles),
+                        "permissions", List.copyOf(permissions)))
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + jwtExpirationMs))
                 .signWith(key)
                 .compact();
     }
 
-    public String generateRefreshToken(String userId, String tenantId) {
+    public String generateMfaToken(String userId, String tenantId) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(userId)
-                // The tenant is needed to load the user under RLS during refresh (WP-11).
-                // Distinguishing refresh from access tokens is WP-12 (AS-IS S2).
-                .claim("tenant_id", tenantId)
+                .claims(Map.of("typ", TYPE_MFA, "tenant_id", tenantId))
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + refreshExpirationMs))
+                .expiration(new Date(now.getTime() + MFA_TOKEN_MS))
                 .signWith(key)
                 .compact();
     }
 
-    public Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    /** Claims of a valid access token, or empty for anything else (bad signature, expired, wrong type). */
+    public Optional<Claims> parseAccessToken(String token) {
+        return parse(token, TYPE_ACCESS);
     }
 
-    public boolean validateToken(String token) {
+    public Optional<Claims> parseMfaToken(String token) {
+        return parse(token, TYPE_MFA);
+    }
+
+    private Optional<Claims> parse(String token, String expectedType) {
         try {
-            parseToken(token);
-            return true;
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            return expectedType.equals(claims.get("typ", String.class)) ? Optional.of(claims) : Optional.empty();
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return Optional.empty();
         }
-    }
-
-    public String getUserIdFromToken(String token) {
-        return parseToken(token).getSubject();
-    }
-
-    public String getTenantIdFromToken(String token) {
-        return parseToken(token).get("tenant_id", String.class);
     }
 
     public long getJwtExpirationMs() {

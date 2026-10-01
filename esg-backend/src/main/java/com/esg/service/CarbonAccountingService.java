@@ -5,6 +5,8 @@ import com.esg.model.entity.EmissionFactor;
 import com.esg.model.entity.EmissionRecord;
 import com.esg.repository.EmissionFactorRepository;
 import com.esg.repository.EmissionRecordRepository;
+import com.esg.exception.FieldValidationException;
+import com.esg.security.OrgScopeService;
 import com.esg.security.TenantContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,20 +23,22 @@ import java.util.UUID;
 @Service
 public class CarbonAccountingService {
 
-    public CarbonAccountingService(EmissionRecordRepository emissionRecordRepository, EmissionFactorRepository emissionFactorRepository) {
+    public CarbonAccountingService(EmissionRecordRepository emissionRecordRepository, EmissionFactorRepository emissionFactorRepository,
+                                   OrgScopeService orgScope) {
+        this.orgScope = orgScope;
         this.emissionRecordRepository = emissionRecordRepository;
         this.emissionFactorRepository = emissionFactorRepository;
     }
 
     private final EmissionRecordRepository emissionRecordRepository;
     private final EmissionFactorRepository emissionFactorRepository;
+    private final OrgScopeService orgScope;
 
     public Page<EmissionRecord> getEmissions(String scope, Pageable pageable) {
-        UUID tenantId = TenantContext.requireTenantId();
-        if (scope != null && !scope.equalsIgnoreCase("all")) {
-            return emissionRecordRepository.findByTenantIdAndScope(tenantId, scope, pageable);
-        }
-        return emissionRecordRepository.findByTenantId(tenantId, pageable);
+        OrgScopeService.QueryScope orgs = orgScope.queryScope();
+        String scopeFilter = scope == null || scope.isBlank() || scope.equalsIgnoreCase("all") ? null : scope;
+        return emissionRecordRepository.findScoped(TenantContext.requireTenantId(), scopeFilter, orgs.all(),
+                orgs.orgIds(), pageable);
     }
 
     /**
@@ -44,6 +48,7 @@ public class CarbonAccountingService {
     @Transactional
     public EmissionRecord calculateAndSave(EmissionRecordDto dto) {
         UUID tenantId = TenantContext.requireTenantId();
+        orgScope.requireAccess(dto.getOrgId());
 
         BigDecimal co2eTonnes = dto.getCo2eTonnes();
 
@@ -51,7 +56,7 @@ public class CarbonAccountingService {
         if (dto.getEmissionFactorId() != null && co2eTonnes == null) {
             // RLS limits this to global factors and the tenant's own custom factors (AS-IS S8)
             EmissionFactor factor = emissionFactorRepository.findById(dto.getEmissionFactorId())
-                    .orElseThrow(() -> new RuntimeException("Emission factor not found"));
+                    .orElseThrow(() -> FieldValidationException.of("emissionFactorId", "Unknown emission factor"));
 
             // CO2e (kg) = activity_data * factor_value
             BigDecimal co2eKg = dto.getActivityData().multiply(factor.getFactorValue());
@@ -60,7 +65,7 @@ public class CarbonAccountingService {
         }
 
         if (co2eTonnes == null) {
-            throw new RuntimeException("Either co2eTonnes or emissionFactorId must be provided");
+            throw FieldValidationException.of("emissionFactorId", "Either co2eTonnes or emissionFactorId must be provided");
         }
 
         EmissionRecord record = new EmissionRecord();
@@ -82,11 +87,12 @@ public class CarbonAccountingService {
 
     public Map<String, Object> getEmissionsSummary() {
         UUID tenantId = TenantContext.requireTenantId();
+        OrgScopeService.QueryScope orgs = orgScope.queryScope();
         Map<String, Object> summary = new HashMap<>();
 
-        BigDecimal scope1 = emissionRecordRepository.sumCo2eByTenantAndScope(tenantId, "scope_1");
-        BigDecimal scope2 = emissionRecordRepository.sumCo2eByTenantAndScope(tenantId, "scope_2");
-        BigDecimal scope3 = emissionRecordRepository.sumCo2eByTenantAndScope(tenantId, "scope_3");
+        BigDecimal scope1 = emissionRecordRepository.sumCo2eScoped(tenantId, "scope_1", orgs.all(), orgs.orgIds());
+        BigDecimal scope2 = emissionRecordRepository.sumCo2eScoped(tenantId, "scope_2", orgs.all(), orgs.orgIds());
+        BigDecimal scope3 = emissionRecordRepository.sumCo2eScoped(tenantId, "scope_3", orgs.all(), orgs.orgIds());
         BigDecimal total = scope1.add(scope2).add(scope3);
 
         summary.put("scope1Total", scope1);

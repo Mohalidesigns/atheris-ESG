@@ -8,6 +8,10 @@ esg:
   security:
     # Development-only signing key. Real environments must set JWT_SECRET.
     jwt-secret: ${JWT_SECRET:local-dev-only-signing-key-not-for-any-shared-environment-0123456789abcdef}
+    data-encryption-key: ${DATA_ENCRYPTION_KEY:YS0bCdEHVNXWPBZwaz5BaQrw7vGZoHjF+yTlWjZMnFw=}
+    cookie-secure: false   # plain http://localhost
+    mfa:
+      enforce: false       # local convenience; users can still opt in. Enforced in every other profile.
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
 

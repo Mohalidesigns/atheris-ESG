@@ -3,6 +3,8 @@
 esg:
   security:
     jwt-secret: ${JWT_SECRET:test-only-signing-key-used-by-automated-tests-0123456789abcdef0123}
+    data-encryption-key: ${DATA_ENCRYPTION_KEY:S5gZx/LBue1vcvNZoRCnZrSAJI+G1tekOSj6v5Is6Y0=}
+    cookie-secure: false
 
 logging:
   level:

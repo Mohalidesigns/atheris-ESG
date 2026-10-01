@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class CarbonController {
     private final CarbonAccountingService carbonService;
 
     @GetMapping("/emissions")
+    @PreAuthorize("hasAuthority('carbon_data:read')")
     public ResponseEntity<ApiResponse<Page<EmissionRecord>>> getEmissions(
             @RequestParam(required = false) String scope,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -34,6 +36,7 @@ public class CarbonController {
     }
 
     @PostMapping("/emissions")
+    @PreAuthorize("hasAuthority('carbon_data:create')")
     public ResponseEntity<ApiResponse<EmissionRecord>> createEmission(
             @Valid @RequestBody EmissionRecordDto dto) {
         EmissionRecord record = carbonService.calculateAndSave(dto);
@@ -41,11 +44,13 @@ public class CarbonController {
     }
 
     @GetMapping("/emissions/summary")
+    @PreAuthorize("hasAuthority('carbon_data:read')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getEmissionsSummary() {
         return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissionsSummary()));
     }
 
     @GetMapping("/factors")
+    @PreAuthorize("hasAuthority('carbon_data:read')")
     public ResponseEntity<ApiResponse<List<EmissionFactor>>> getEmissionFactors(
             @RequestParam(required = false) String region) {
         return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissionFactors(region)));

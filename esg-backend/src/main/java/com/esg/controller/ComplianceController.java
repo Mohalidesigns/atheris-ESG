@@ -4,6 +4,7 @@ import com.esg.model.dto.ApiResponse;
 import com.esg.model.entity.RegulatoryFramework;
 import com.esg.service.ComplianceService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class ComplianceController {
     private final ComplianceService complianceService;
 
     @GetMapping("/frameworks")
+    @PreAuthorize("hasAuthority('compliance:read')")
     public ResponseEntity<ApiResponse<List<RegulatoryFramework>>> getFrameworks(
             @RequestParam(required = false) String jurisdiction) {
         List<RegulatoryFramework> frameworks = jurisdiction != null
@@ -29,11 +31,13 @@ public class ComplianceController {
     }
 
     @GetMapping("/frameworks/{code}")
+    @PreAuthorize("hasAuthority('compliance:read')")
     public ResponseEntity<ApiResponse<RegulatoryFramework>> getFramework(@PathVariable String code) {
         return ResponseEntity.ok(ApiResponse.ok(complianceService.getFrameworkByCode(code)));
     }
 
     @GetMapping("/gaps")
+    @PreAuthorize("hasAuthority('compliance:read')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getGapAnalysis(
             @RequestParam String framework,
             @RequestParam(defaultValue = "2026") int year) {

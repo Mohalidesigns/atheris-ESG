@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -28,6 +29,7 @@ public class DataHubController {
     private final DataHubService dataHubService;
 
     @GetMapping("/points")
+    @PreAuthorize("hasAuthority('data_points:read')")
     public ResponseEntity<ApiResponse<Page<DataPoint>>> getDataPoints(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
@@ -37,11 +39,13 @@ public class DataHubController {
     }
 
     @GetMapping("/points/{id}")
+    @PreAuthorize("hasAuthority('data_points:read')")
     public ResponseEntity<ApiResponse<DataPoint>> getDataPoint(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(dataHubService.getDataPoint(id)));
     }
 
     @PostMapping("/points")
+    @PreAuthorize("hasAuthority('data_points:create')")
     public ResponseEntity<ApiResponse<DataPoint>> createDataPoint(
             @Valid @RequestBody DataPointDto dto,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -50,11 +54,12 @@ public class DataHubController {
     }
 
     @PutMapping("/points/{id}/validate")
+    @PreAuthorize("hasAuthority('data_points:approve')")
     public ResponseEntity<ApiResponse<DataPoint>> validateDataPoint(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String status = body.getOrDefault("status", "validated");
+        String status = body == null ? null : body.get("status");
         DataPoint dp = dataHubService.validateDataPoint(id, status, UUID.fromString(principal.getId()));
         return ResponseEntity.ok(ApiResponse.ok(dp, "Data point " + status));
     }

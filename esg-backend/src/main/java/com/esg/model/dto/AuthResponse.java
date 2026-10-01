@@ -1,42 +1,50 @@
 package com.esg.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
+/**
+ * Login/refresh/MFA result. Either tokens ({@code accessToken} + user) or an MFA challenge
+ * ({@code mfaRequired}/{@code mfaSetupRequired} + {@code mfaToken}). The refresh token is never in the body:
+ * it is set as an HttpOnly cookie by AuthController.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthResponse {
     private String accessToken;
-    private String refreshToken;
     private String tokenType;
-    private long expiresIn;
+    private Long expiresIn;
     private UserDto user;
+    private Boolean mfaRequired;
+    private Boolean mfaSetupRequired;
+    private String mfaToken;
 
-    public AuthResponse() {}
-    public AuthResponse(String accessToken, String refreshToken, String tokenType, long expiresIn, UserDto user) {
-        this.accessToken = accessToken; this.refreshToken = refreshToken;
-        this.tokenType = tokenType; this.expiresIn = expiresIn; this.user = user;
+    public static AuthResponse tokens(String accessToken, long expiresIn, UserDto user) {
+        AuthResponse r = new AuthResponse();
+        r.accessToken = accessToken;
+        r.tokenType = "Bearer";
+        r.expiresIn = expiresIn;
+        r.user = user;
+        return r;
     }
 
-    public String getAccessToken() { return accessToken; } public void setAccessToken(String v) { this.accessToken = v; }
-    public String getRefreshToken() { return refreshToken; } public void setRefreshToken(String v) { this.refreshToken = v; }
-    public String getTokenType() { return tokenType; } public void setTokenType(String v) { this.tokenType = v; }
-    public long getExpiresIn() { return expiresIn; } public void setExpiresIn(long v) { this.expiresIn = v; }
-    public UserDto getUser() { return user; } public void setUser(UserDto v) { this.user = v; }
-
-    public static class UserDto {
-        private String id, email, firstName, lastName, tenantId, role, timezone, preferredLanguage;
-        private List<String> permissions;
-
-        public UserDto() {}
-        public UserDto(String id, String email, String firstName, String lastName, String tenantId,
-                       String role, List<String> permissions, String timezone, String preferredLanguage) {
-            this.id = id; this.email = email; this.firstName = firstName; this.lastName = lastName;
-            this.tenantId = tenantId; this.role = role; this.permissions = permissions;
-            this.timezone = timezone; this.preferredLanguage = preferredLanguage;
-        }
-
-        public String getId() { return id; } public String getEmail() { return email; }
-        public String getFirstName() { return firstName; } public String getLastName() { return lastName; }
-        public String getTenantId() { return tenantId; } public String getRole() { return role; }
-        public List<String> getPermissions() { return permissions; }
-        public String getTimezone() { return timezone; } public String getPreferredLanguage() { return preferredLanguage; }
+    public static AuthResponse mfaChallenge(String mfaToken, boolean setupRequired) {
+        AuthResponse r = new AuthResponse();
+        r.mfaToken = mfaToken;
+        r.mfaRequired = !setupRequired;
+        r.mfaSetupRequired = setupRequired;
+        return r;
     }
+
+    public String getAccessToken() { return accessToken; }
+    public String getTokenType() { return tokenType; }
+    public Long getExpiresIn() { return expiresIn; }
+    public UserDto getUser() { return user; }
+    public Boolean getMfaRequired() { return mfaRequired; }
+    public Boolean getMfaSetupRequired() { return mfaSetupRequired; }
+    public String getMfaToken() { return mfaToken; }
+
+    /** The signed-in user as returned by login, refresh and GET /auth/me. */
+    public record UserDto(String id, String email, String firstName, String lastName, String tenantId,
+                          String tenantName, List<String> roles, List<String> permissions, boolean tenantWide,
+                          List<String> orgScopeIds, boolean mfaEnabled, String timezone, String preferredLanguage) {}
 }

@@ -1,8 +1,11 @@
 package com.esg.service;
 
+import com.esg.exception.ApiException;
+import com.esg.exception.FieldValidationException;
 import com.esg.model.dto.DataPointDto;
 import com.esg.model.entity.DataPoint;
 import com.esg.repository.DataPointRepository;
+import com.esg.security.OrgScopeService;
 import com.esg.security.TenantContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,31 +13,34 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class DataHubService {
 
-    public DataHubService(DataPointRepository dataPointRepository) {
+    /** Outcomes a reviewer may record (WP-13 interim; the full workflow states arrive with WP-20). */
+    static final Set<String> REVIEW_STATUSES = Set.of("validated", "rejected", "flagged");
+
+    public DataHubService(DataPointRepository dataPointRepository, OrgScopeService orgScope) {
         this.dataPointRepository = dataPointRepository;
+        this.orgScope = orgScope;
     }
 
     private final DataPointRepository dataPointRepository;
+    private final OrgScopeService orgScope;
 
+    /** Lists data points the caller may see: RLS limits to the tenant, org scope limits org-scoped roles. */
     public Page<DataPoint> getDataPoints(String category, String status, Pageable pageable) {
-        UUID tenantId = TenantContext.requireTenantId();
-        if (category != null && !category.equalsIgnoreCase("all")) {
-            return dataPointRepository.findByTenantIdAndCategory(tenantId, category, pageable);
-        }
-        if (status != null && !status.equalsIgnoreCase("all")) {
-            return dataPointRepository.findByTenantIdAndValidationStatus(tenantId, status, pageable);
-        }
-        return dataPointRepository.findByTenantId(tenantId, pageable);
+        OrgScopeService.QueryScope scope = orgScope.queryScope();
+        return dataPointRepository.findScoped(TenantContext.requireTenantId(), blankToNull(category),
+                blankToNull(status), scope.all(), scope.orgIds(), pageable);
     }
 
     @Transactional
     public DataPoint createDataPoint(DataPointDto dto, UUID userId) {
         UUID tenantId = TenantContext.requireTenantId();
+        orgScope.requireAccess(dto.getOrgId());
 
         // Calculate quality score
         BigDecimal qualityScore = calculateQualityScore(dto);
@@ -59,19 +65,30 @@ public class DataHubService {
         return dataPointRepository.save(dp);
     }
 
+    /** Records a review outcome. Segregation of duties: nobody reviews their own data point. */
     @Transactional
     public DataPoint validateDataPoint(UUID id, String status, UUID userId) {
+        if (status == null || !REVIEW_STATUSES.contains(status)) {
+            throw FieldValidationException.of("status", "must be one of validated, rejected, flagged");
+        }
         DataPoint dp = getDataPoint(id);
+        if (userId.equals(dp.getCreatedBy())) {
+            throw ApiException.forbidden("You can't review a data point you created");
+        }
         dp.setValidationStatus(status);
         dp.setValidatedBy(userId);
         dp.setValidatedAt(java.time.Instant.now());
         return dataPointRepository.save(dp);
     }
 
-    /** Tenant-scoped lookup (AS-IS S7); RLS also hides other tenants' rows. */
+    /** Tenant-scoped (RLS + filter) and org-scoped lookup; out-of-scope rows look like they don't exist. */
     public DataPoint getDataPoint(UUID id) {
-        return dataPointRepository.findByIdAndTenantId(id, TenantContext.requireTenantId())
-                .orElseThrow(() -> new RuntimeException("Data point not found: " + id));
+        DataPoint dp = dataPointRepository.findByIdAndTenantId(id, TenantContext.requireTenantId())
+                .orElseThrow(() -> ApiException.notFound("Data point"));
+        if (!orgScope.canAccess(dp.getOrgId())) {
+            throw ApiException.notFound("Data point");
+        }
+        return dp;
     }
 
     /**
@@ -89,5 +106,9 @@ public class DataHubService {
 
         double score = (0.3 * completeness) + (0.25 * consistency) + (0.25 * timeliness) + (0.2 * accuracy);
         return BigDecimal.valueOf(Math.min(score, 1.0)).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() || value.equalsIgnoreCase("all") ? null : value;
     }
 }
