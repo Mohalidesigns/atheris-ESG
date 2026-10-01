@@ -2,11 +2,12 @@
 
 | Item | Value |
 |---|---|
-| Phase | **P0 Truth & Baseline** |
+| Phase | **P0 complete — Gate G0 passed (1 Oct 2026)**; P1 Platform Foundation next |
 | Updated | 1 October 2026 |
 | WPs done | WP-00 (`AS_IS_ARCHITECTURE.md`), WP-01 (`FEATURE_REALITY_MATRIX.csv`), WP-02 (`FIELD_INVENTORY.csv`), WP-03 (`RTM.csv`, `BENCHMARK_REALITY.csv`), WP-04 (`GAP_BACKLOG.md`, `wp/`) |
-| Next | **Gate G0**: team review of the P0 artefacts and decisions D1–D15, then WP-10 / WP-11 |
-| Blockers | B1 Docker not installed (local PostgreSQL 17.9 *is* available); B2 no test frameworks; decisions D1–D11 and D13–D15 open (see `DECISIONS.md`) |
+| Next | **WP-10** (build/CI) and **WP-11** (DB baseline + RLS) in parallel, then WP-12/13 |
+| Blockers | B1 Docker not installed (local PostgreSQL 17.9 available, so WP-11 can start); B2 no test frameworks (fixed by WP-10/18) |
+| Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
 ## Headline KPIs (master plan §8)
 

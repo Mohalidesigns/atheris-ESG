@@ -1,27 +1,29 @@
 # Atheris ESG — Decision Log
 
 Status values: **OPEN** (needs a decision), **DECIDED** (recorded with owner and date), **SUPERSEDED**.
-Evidence for D1–D11 is in `AS_IS_ARCHITECTURE.md` §10.
+Evidence for D1–D11 is in `AS_IS_ARCHITECTURE.md` §10; D13–D15 in `RTM.csv` / `STATUS.md` WP-03.
+
+**Gate G0 (1 Oct 2026):** the user accepted the recommendations for D1–D15 and confirmed a team of **3 engineers**. Still open: hosting location (part of D5) and the field-level questions F1/F2 below (default: follow the TRD).
 
 ## Architecture & tooling decisions
 
 | # | Decision | Status | Recommendation / outcome | Raised |
 |---|---|---|---|---|
-| D1 | Runtime architecture | OPEN | Modular monolith (Spring Modulith), schema-per-module, in-process events + outbox with TRD topic names; revisit at P4 | WP-00 |
-| D2 | UI library | OPEN (recommend confirm) | MUI (only library in use, v7.3) | WP-00 |
-| D3 | E2E tool | OPEN | Cypress (TRD); nothing in the repo yet | WP-00 |
-| D4 | External integrations | OPEN | Adapter + labelled sandbox | WP-00 |
-| D5 | Pilot scope & hosting | OPEN | Business decision; master plan suggests one bank + one O&G pilot | WP-00 |
-| D6 | Java 25 vs TRD Java 21 | OPEN | Keep Java 25 LTS, move to Spring Boot 3.5.x; pin JDK in CI | WP-00 |
-| D7 | Frontend unit-test runner | OPEN | Vitest + React Testing Library (Vite project) instead of Jest | WP-00 |
-| D8 | Form validation library | OPEN | Zod (per plan); remove unused `yup` | WP-00 |
-| D9 | Re-baseline migrations | OPEN | New baseline (UUID, TIMESTAMPTZ, per-module schemas, RLS); no real data exists, so the "ALTER, don't DROP" rule needs an explicit exception | WP-00 |
-| D10 | Demo users and demo login | OPEN | Remove frontend demo login and `DataSeeder`; Flyway seed users for 12 roles in local/test profiles only | WP-00 |
-| D11 | PostgreSQL version | OPEN | Standardise on 17 (installed locally, migrations verified on 17.9) vs TRD 16 | WP-01 |
+| D1 | Runtime architecture | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Modular monolith (Spring Modulith)**: one deployable, packages per TRD service, schema-per-module, in-process events + transactional outbox using TRD topic names; boundaries enforced by Modulith `verify()`/ArchUnit. Revisit at P4. | WP-00 |
+| D2 | UI library | **DECIDED** — user, Gate G0, 1 Oct 2026 | **MUI** (v7, already in use). Ant Design is not to be added. | WP-00 |
+| D3 | E2E tool | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Cypress** for E2E. | WP-00 |
+| D4 | External integrations | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Adapter + sandbox** for every external system, labelled "Sandbox" in the UI until a pilot needs the live integration. | WP-00 |
+| D5 | Pilot scope & hosting | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Pilots: one bank + one oil & gas company** (exercises CBN NSBP and SEC/NGX, and makes gas flaring real). Consequences: PCAF financed emissions move into **P2 / WP-21** (M2 module card rule) and CBN NSBP requirements are in the MVP. *Hosting location is still to be chosen* (Nigeria-resident hosting required by BRD §7.3). | WP-00 |
+| D6 | Java 25 vs TRD Java 21 | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Java 25 (LTS)**; upgrade to **Spring Boot 3.5.x**; CI pins the same JDK. Recorded TRD deviation (TRD says Java 21). | WP-00 |
+| D7 | Frontend unit-test runner | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Vitest + React Testing Library**. Recorded TRD deviation (TRD says Jest). | WP-00 |
+| D8 | Form validation library | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Zod**; remove `yup`. | WP-00 |
+| D9 | Re-baseline migrations | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Re-baseline migrations** (UUID, TIMESTAMPTZ, per-module schemas, RLS). Explicit exception to the "ALTER, don't DROP" rule, valid only because no real data exists (H2 in-memory). The rule applies again from the first deployment with real data. | WP-00 |
+| D10 | Demo users and demo login | **DECIDED** — user, Gate G0, 1 Oct 2026 | **Remove** the frontend demo login and `DataSeeder`; seed one user per role via Flyway in local/test profiles only; credentials documented in README for local use. | WP-00 |
+| D11 | PostgreSQL version | **DECIDED** — user, Gate G0, 1 Oct 2026 | **PostgreSQL 17** for dev, CI and production. Recorded TRD deviation (TRD §3 says 16+, §4 targets 16). | WP-01 |
 | D12 | AI / LLM runtime for Phase 5 (WP-50) | **DECIDED** — user, 1 Oct 2026 | **Ollama, serving IBM Granite models**, self-hosted. Exact Granite model and tag per task (extraction, embeddings, forecasting narrative) chosen in WP-50. Accessed only through an adapter interface (CLAUDE.md rule 9), so the model can be swapped. All CLAUDE.md rule 10 constraints still apply: no AI before P5, every output labelled "AI-generated" with confidence and source citations, and human confirmation before any extracted value enters the Data Hub. Self-hosting supports NDPA data residency (TRD §9.2.1). | User, during WP-01 |
-| D13 | Native mobile apps vs PWA | OPEN | BRD §5.2.1-3 asks for Android and iOS apps and §6.1 asks for multi-SIM switching; the master plan only delivers a PWA (WP-43), and the TRD lists React Native. **Recommend PWA for P4** and treat native apps (and multi-SIM) as post-release, recorded as a BRD deviation. | WP-03 |
-| D14 | BRD requirements with no work package | OPEN | 10 functional items map to no WP: ERM integration (BRD-5.2.5-07), webinar hosting (5.2.12-06), edge computing (6.1-05), regulatory sandbox (6.2-04), artisanal mining and agriculture factors (6.3-04/05), RAP monitoring (6.4-05), Article 6 tracking (6.5-04), blended finance (6.6-03), and **SSO via SAML/OIDC** (7.5-03, also TRD §5.4.3). **Recommend:** add SSO to WP-12 (enterprise pilots will ask); defer the rest to a post-P5 backlog and remove them from sales material until scheduled. | WP-03 |
-| D15 | Subscriptions, billing and module entitlements | OPEN | BRD §6.7 (tiers, local-currency billing, pay-as-you-grow, special pricing) has no WP; only `tenants.subscription_tier` and `billing_currency` columns exist. TRD §7.4 also lists "subscription" in the Admin Console. **Recommend** a new WP-19 in P1: tier + module entitlement model enforced in RBAC (cheap if done with WP-13), with payment-provider integration (e.g. Paystack/Flutterwave) behind an adapter deferred to P4. | WP-03 |
+| D13 | Native mobile apps vs PWA | **DECIDED** — user, Gate G0, 1 Oct 2026 | **PWA in P4 (WP-43)**; native Android/iOS apps and multi-SIM switching are post-release. Recorded BRD deviation (BRD-5.2.1-03, BRD-6.1-04). | WP-03 |
+| D14 | BRD requirements with no work package | **DECIDED** — user, Gate G0, 1 Oct 2026 | **SSO (OIDC; SAML optional) added to WP-12 scope**, scheduled after Gate G2 per the MVP cut. The other 9 items (ERM integration, webinars, edge computing, regulatory sandbox, artisanal-mining and agriculture factors, RAP, Article 6, blended finance) go to a post-P5 backlog and must not appear in sales material until scheduled. | WP-03 |
+| D15 | Subscriptions, billing and module entitlements | **DECIDED** — user, Gate G0, 1 Oct 2026 | **WP-19 accepted** (no longer proposed): plan tiers + module entitlements enforced with RBAC in P1; payment-provider adapter (e.g. Paystack/Flutterwave) and local-currency invoicing in P4. | WP-03 |
 
 ---
 

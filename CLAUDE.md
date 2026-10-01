@@ -9,10 +9,12 @@ Completion plan: docs/esg-completion/00_ESG_COMPLETION_MASTER_PLAN.md — read i
 Much of the product is UI-only (L0/L1). Our job is to take every feature to L5 ("Done") as defined in the master plan §3 and §6.
 Truth artefacts live in docs/esg-completion/: FEATURE_REALITY_MATRIX.csv, FIELD_INVENTORY.csv, RTM.csv, GAP_BACKLOG.md, STATUS.md, DECISIONS.md.
 
-## Stack (per TRD, adjusted by DECISIONS.md)
-Backend: Spring Boot 3.3+, Java 21, Maven, Flyway, PostgreSQL 16 with tenant_id + Row-Level Security, Redis, Kafka (or in-process events + outbox if D1=modular monolith), MinIO/S3.
-Frontend: React 18 (JSX), Redux Toolkit + RTK Query, MUI or Ant Design (never both), Recharts, react-i18next, Workbox PWA.
-Tests: JUnit 5, Mockito, Testcontainers, Jest + React Testing Library, Cypress (or Playwright per DECISIONS.md).
+## Stack (per TRD, as adjusted by DECISIONS.md at Gate G0, 1 Oct 2026)
+Backend: modular monolith (Spring Modulith, D1), Spring Boot 3.5.x, Java 25 (D6), Maven, Flyway, PostgreSQL 17 (D11) with tenant_id + Row-Level Security, Redis, in-process events + transactional outbox (no Kafka), MinIO/S3.
+Frontend: React 19 (JSX), Redux Toolkit + RTK Query, MUI only (D2), React Hook Form + Zod (D8), Recharts, react-i18next, Workbox PWA (D13).
+Tests: JUnit 5, Mockito, Testcontainers, Vitest + React Testing Library (D7), Cypress (D3).
+AI (Phase 5 only): Ollama serving IBM Granite models, behind an adapter (D12).
+Local dev: Homebrew PostgreSQL 17 on localhost:5432 (`psql` client at /Library/PostgreSQL/18/bin). Docker is not installed yet.
 
 ## Hard rules
 1. Never mark anything done without test evidence. Use the L0–L5 scale.

@@ -4,7 +4,8 @@
 |---|---|
 | Date | 1 October 2026 |
 | Inputs | `AS_IS_ARCHITECTURE.md`, `FEATURE_REALITY_MATRIX.csv`, `FIELD_INVENTORY.csv`, `RTM.csv`, `BENCHMARK_REALITY.csv`, `DECISIONS.md` |
-| Team assumption | **3 engineers + Claude Code agents** (prompt default; not confirmed by the user — please confirm N) |
+| Team | **3 engineers + Claude Code agents** (confirmed at Gate G0, 1 Oct 2026) |
+| Decisions | D1–D15 decided at Gate G0 (see `DECISIONS.md`); only the hosting location remains open |
 | Issue files | `docs/esg-completion/wp/WP-XX.md` (33 files, GitHub-issue ready) |
 
 ---
@@ -18,11 +19,11 @@
 5. **Database:** 35 of 88 TRD tables exist (in the wrong schema, no RLS); migrations verified on local PostgreSQL 17.9.
 6. **Security:** 5 critical + 6 high findings, including an auth bypass, a refresh token accepted as an access token, a boot-time password reset and cross-tenant reads.
 7. **What's reusable:** page layouts and charts, MUI theme, Spring Boot skeleton, JWT basics, 21 TRD table definitions, 10 frameworks and 10 emission factors as seed data.
-8. **Effort:** **342 ideal engineer-days** across P1–P5 (P1 86, P2 78, P3 78, P4 62, P5 38).
+8. **Effort:** **342 ideal engineer-days** across P1–P5 (P1 86, P2 78 incl. PCAF for the bank pilot, P3 78, P4 62, P5 38).
 9. **Timeline with 3 engineers:** about **33 weeks** to release including a 15% buffer (late May 2027). P1 is **~7 weeks, not the 3–4 in the master plan**, because auth, RLS, tests and CI all start from zero.
-10. **13-week MVP (P1 + P2, end of December 2026):** doesn't fit as specified (151 days of core work against ~135 of capacity). Even with the cuts in §4 it's ~139 days, so it needs a 4th engineer or a mid-January 2027 Gate G2.
+10. **MVP (P1 + P2):** with the Gate G0 decisions (bank pilot → PCAF in P2; WP-19 in P1), the MVP is ~148 days after the §4 cuts against ~135 of 13-week capacity. With 3 engineers, **Gate G2 is projected for mid-January 2027, not 31 December 2026.**
 11. **15 BRD requirements have no work package**, including SSO and all pricing/billing (D14, D15).
-12. **Hard prerequisites for P1:** Docker installed (B1) and decisions D1, D6, D7, D9, D11 taken at Gate G0.
+12. **Remaining prerequisite for P1:** Docker installed (B1). Gate G0 decisions are recorded.
 
 ---
 
@@ -39,7 +40,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - CI workflows + quality plugins: 2 d (S)
 - No-mock gate + PR template + Vitest: 1 d (S)
 
-**Dependencies:** Gate G0 decisions D1, D6, D7, D11, Docker installed (B1) for compose; CI runners have Docker
+**Dependencies:** Gate G0 (passed 1 Oct 2026), Docker installed (B1) for compose; CI runners have Docker
 
 #### Tasks
 - [ ] docker-compose: postgres:17 (D11), redis:7, minio, mailpit; skip Kafka if D1 = modular monolith — _AS-IS §9 B1_
@@ -79,7 +80,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - RLS policies + app role + interceptor: 3 d (M)
 - RLS test generator + IDOR fixes: 3 d (M)
 
-**Dependencies:** WP-10, D9, D11
+**Dependencies:** WP-10
 
 #### Tasks
 - [ ] New Flyway baseline (D9): schemas auth, data_hub, carbon, compliance, reporting, risk, supply_chain, social, governance, audit, files, notifications; move the 35 existing tables into their TRD schema — _FEATURE_REALITY_MATRIX type=trd_table (28 Exists, 7 Partially)_
@@ -114,7 +115,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - Token hardening + sessions + logout: 3 d (M)
 - MFA + password policy: 2 d (S)
 - Frontend auth flows: 2 d (S)
-- SSO OIDC (if D14): 4 d (M)
+- SSO OIDC (after G2): 4 d (M)
 
 **Dependencies:** WP-11
 
@@ -126,7 +127,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - [ ] /auth/me returns user, tenant, orgs, roles, flattened permissions — _TRD §6.4.2_
 - [ ] Frontend: remove `loginDemo`, demo button and pre-filled password; login/MFA/forgot/reset pages; token refresh in RTK baseQuery; persist session safely — _FIELD_INVENTORY Login rows; AS-IS S3, S17_
 - [ ] Fix TopBar 'Sign Out' (only closes menu) — _FEATURE_REALITY_MATRIX App shell row_
-- [ ] SSO via OIDC (SAML optional) — only if D14 accepts adding it here — _BRD-7.5-03_
+- [ ] SSO via OIDC (SAML optional) — in scope per D14, scheduled after Gate G2 (MVP cut) — _BRD-7.5-03_
 
 #### Reuse
 - JwtTokenProvider, JwtAuthenticationFilter, AuthService lockout logic
@@ -327,7 +328,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - [ ] Journeys 1–2 green in CI
 - [ ] **Gate G1** criteria (master plan §5) met with evidence
 
-### WP-19 — Subscriptions & module entitlements (PROPOSED — pending D15)
+### WP-19 — Subscriptions & module entitlements (D15)
 
 **Objective:** Tenant tier and module entitlements enforced alongside RBAC, so pay-as-you-grow is possible.
 
@@ -335,7 +336,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - Entitlement model + enforcement: 3 d (M)
 - Admin view: 1 d (S)
 
-**Dependencies:** WP-13, D15
+**Dependencies:** WP-13
 
 #### Tasks
 - [ ] Plans/tiers, tenant subscription, module entitlements; enforcement in permission evaluation — _BRD-6.7-01, -03; benchmark 'Freemium / Pay-as-you-grow'_
@@ -393,7 +394,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - Scope 3 spend-based: 5 d (M)
 - Flaring: 4 d (M)
 - Targets + intensity + dashboard/wizard: 5 d (M)
-- PCAF (conditional): 5 d (M)
+- PCAF financed emissions (bank pilot, D5): 5 d (M)
 
 **Dependencies:** WP-20, WP-17
 
@@ -406,7 +407,7 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 - [ ] Gas flaring calculator + satellite sandbox adapter — _TRD-8.2-GasFlaringCalculator; journey 7_
 - [ ] Targets (SBTi flag, linear/contraction), intensity metrics, recalculation on data/factor change — _BRD-5.2.2-06, -07_
 - [ ] Carbon Dashboard + Emission Calculator wizard with factor step, org + period fields — _FIELD_INVENTORY M2; F1.5, F1.6, F2.2_
-- [ ] PCAF financed emissions — only if D5 picks a bank pilot — _BRD-5.2.2-08_
+- [ ] PCAF financed emissions, 6 asset classes — in P2 because D5 includes a bank pilot — _BRD-5.2.2-08_
 
 #### Reuse
 - CarbonPage charts/tabs, calculator stepper
@@ -938,8 +939,8 @@ Assumptions: 4 ideal days per engineer per week (12 per week for the team) with 
 | Phase | Effort (days) | Weeks (incl. buffer) | Calendar (from 1 Oct 2026) | Master plan said | Notes |
 |---|---|---|---|---|---|
 | P0 Truth & Baseline | — | 1 | 1–7 Oct 2026 | 2 wks | Done; Gate G0 review pending |
-| P1 Platform Foundation | 86 (78 without SSO and WP-19) | 7–8 | 8 Oct – end Nov 2026 | 3–4 wks | Critical path WP-10 → 11 → 12 → 13 → 18; WP-15/16/17 run in parallel |
-| P2 MVP modules | 78 (73 without PCAF) | 7 | Dec 2026 – mid Jan 2027 | 6–8 wks | WP-20 → 21 / 22 → 23 → 24 |
+| P1 Platform Foundation | 86 (82 with SSO moved after G2) | 7–8 | 8 Oct – end Nov 2026 | 3–4 wks | Critical path WP-10 → 11 → 12 → 13 → 18; WP-15/16/17 run in parallel |
+| P2 MVP modules | 78 (incl. PCAF, D5) | 7 | Dec 2026 – mid Jan 2027 | 6–8 wks | WP-20 → 21 / 22 → 23 → 24 |
 | P3 Growth modules | 78 | 7–8 | mid Jan – early Mar 2027 | 8–10 wks | WPs largely parallel after G2 |
 | P4 Scale modules | 62 | 6 | Mar – mid Apr 2027 | 6–8 wks | |
 | P5 AI, hardening, release | 38 | 4 | mid Apr – late May 2027 | 4–6 wks | Ollama/Granite (D12) infra needed early in P5 |
@@ -949,44 +950,43 @@ Parallel streams in P1 (3 engineers): **A** backend security (WP-11 → 12 → 1
 
 ---
 
-## 4. 13-week MVP cut (P1 + P2, target 31 Dec 2026)
+## 4. MVP cut (P1 + P2)
 
-Capacity: 13 weeks × 12 days ≈ 156 days, minus 15% buffer ≈ **135 days**. Core P1 + P2 as specified is **151 days**, so this cut is required:
+Capacity for a 13-week MVP: 13 weeks × 12 days ≈ 156 days, minus 15% buffer ≈ **135 days**. After Gate G0, core P1 + P2 is **160 days**: 151, plus PCAF 5 (bank pilot, D5), plus WP-19 4 (D15). These cuts still apply:
 
 | IN (MVP) | OUT (moved after MVP) | Days saved |
 |---|---|---|
-| WP-10, 11, 12 (no SSO), 13, 14, 15, 16, 17, 18 | SSO OIDC/SAML (WP-12 part) | 0 (already excluded from 151) |
+| WP-10, 11, 12 (no SSO), 13, 14, 15, 16, 17, 18, **19** | SSO OIDC/SAML (WP-12 part, D14) | 0 (already excluded) |
 | Audit, files, in-app + email notifications | SMS notification channel (WP-15) → with WP-44 | 1 |
-| Frameworks: SEC NG, NGX, ISSB S1/S2, GRI core (+ CBN NSBP if D5 = bank) | NAICOM, PenCom, TCFD, SASB content (WP-17) | 3 |
+| Frameworks: SEC NG, NGX, **CBN NSBP**, ISSB S1/S2, GRI core | NAICOM, PenCom, TCFD, SASB content (WP-17) | 3 |
 | WP-20 data hub: workflow, rules, quality, import, currency | Data sources admin beyond a simple list | 2 |
-| WP-21 carbon: Scope 1/2, Scope 3 **Cat 1** spend-based, flaring, targets | Scope 3 Cat 3/6/7; REC/PPA market-based; PCAF (unless bank pilot) | 2 (+5 PCAF already excluded) |
+| WP-21 carbon: Scope 1/2, Scope 3 **Cat 1** spend-based, flaring, targets, **PCAF** | Scope 3 Cat 3/6/7; REC/PPA market-based | 2 |
 | WP-22 compliance: gaps, mapping, deadlines + alerts | Regulatory change workflow | 2 |
 | WP-23 reporting: templates, versions, approval, **PDF** | Excel export | 2 |
 | WP-24 executive dashboard | — | — |
-| — | WP-19 subscriptions (pending D15) | 4 (already excluded) |
 
-Result: 151 − 12 ≈ **139 days** against ~135 of capacity. That is **about 4 days over, with the 15% buffer fully consumed**. Realistically, the 13-week date holds only if nothing slips. **Risks to the date:** Docker not installed yet, SME availability for reference data (WP-17), and any slip in WP-11/12/13. **Recommendation:** add a 4th engineer for P1, or accept mid-January 2027 for Gate G2.
+Result: 160 − 12 ≈ **148 days** against ~135, so about **13 days (≈1 week + buffer) over**. **Projected Gate G2 with 3 engineers: ~15 January 2027.** Ways to pull it back toward December: (a) move WP-19 after G2 (−4 days; payments were already planned for P4); (b) borrow a 4th engineer for P1. **Risks to the date:** Docker not installed yet, ESG SME availability for reference data (WP-17), and any slip in WP-11/12/13.
 
 ---
 
 ## 5. Decisions
 
-Full text in `DECISIONS.md`.
+All decided at Gate G0 on 1 Oct 2026 (D12 earlier). Full text in `DECISIONS.md`.
 
-| # | Decision | Recommendation | Blocks |
+| # | Decision | Outcome (Gate G0) | Blocks |
 |---|---|---|---|
 | D1 | Runtime architecture | Modular monolith (Spring Modulith) + outbox | WP-10, WP-11 |
 | D2 | UI library | MUI (in use) | WP-16 |
 | D3 | E2E tool | Cypress | WP-18 |
 | D4 | Integrations | Adapter + labelled sandbox | WP-15, P4 |
-| D5 | Pilot scope & hosting | One bank + one O&G pilot (business call) | PCAF scope, WP-17 frameworks |
+| D5 | Pilot scope & hosting | One bank + one O&G pilot; PCAF in P2; hosting location still open | WP-21, WP-17 |
 | D6 | Java 25 vs 21 | Keep 25, upgrade to Boot 3.5.x | WP-10 |
 | D7 | FE unit runner | Vitest + RTL | WP-10 |
 | D8 | Validation library | Zod | WP-16 |
 | D9 | Re-baseline migrations | Yes (no real data exists) | WP-11 |
 | D10 | Demo users/login | Remove; per-role seed users in local/test only | WP-12, WP-13 |
 | D11 | PostgreSQL version | 17 | WP-10, WP-11 |
-| D12 | AI runtime | **Decided:** Ollama + IBM Granite | WP-50 |
+| D12 | AI runtime | Ollama + IBM Granite | WP-50 |
 | D13 | Native apps vs PWA | PWA in P4; native post-release | WP-43 |
 | D14 | Unplanned BRD items | Add SSO to WP-12; defer the other 9 | WP-12 |
 | D15 | Billing & entitlements | New WP-19 in P1 (entitlements); payments in P4 | WP-19 |
