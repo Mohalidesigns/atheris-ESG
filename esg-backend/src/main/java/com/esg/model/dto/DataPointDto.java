@@ -7,8 +7,14 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
+/**
+ * Create/update body for a data point (WP-20). Category, unit and sub-category default from the metric catalogue.
+ * For currency metrics, {@code numericValue} is the amount in {@code currency} (default: the tenant base currency);
+ * other currencies are converted with the tenant's dated exchange rate.
+ */
 public class DataPointDto {
     private UUID id;
     @NotNull private UUID orgId;
@@ -26,6 +32,10 @@ public class DataPointDto {
     private String validationStatus;
     private String metadata;
     private UUID sourceId;
+    @Pattern(regexp = TenancyDtos.CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") private String currency;
+    @Size(max = 10, message = "at most 10 evidence files") private List<UUID> evidenceFileIds;
+    /** Required on update (optimistic locking). */
+    private Long version;
 
     public DataPointDto() {}
 
@@ -57,4 +67,10 @@ public class DataPointDto {
     public void setMetadata(String metadata) { this.metadata = metadata; }
     public UUID getSourceId() { return this.sourceId; }
     public void setSourceId(UUID sourceId) { this.sourceId = sourceId; }
+    public String getCurrency() { return this.currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+    public List<UUID> getEvidenceFileIds() { return this.evidenceFileIds; }
+    public void setEvidenceFileIds(List<UUID> evidenceFileIds) { this.evidenceFileIds = evidenceFileIds; }
+    public Long getVersion() { return this.version; }
+    public void setVersion(Long version) { this.version = version; }
 }

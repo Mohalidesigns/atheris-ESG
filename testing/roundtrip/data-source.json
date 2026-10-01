@@ -1,0 +1,96 @@
+{
+  "id": "data-source",
+  "forms": [
+    "Data source"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_ANALYST",
+  "create": {
+    "method": "POST",
+    "path": "/v1/data/sources"
+  },
+  "read": {
+    "path": "/v1/data/sources/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/data/sources/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "name": "RT source {u}",
+    "sourceType": "excel",
+    "description": "Monthly utility workbook",
+    "active": true
+  },
+  "changes": {
+    "name": "RT source {u} renamed",
+    "sourceType": "erp",
+    "description": "SAP extract",
+    "active": false
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "name",
+      "value": "Manual",
+      "rule": "unique per tenant"
+    },
+    {
+      "field": "sourceType",
+      "value": "fax",
+      "rule": "enum"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    },
+    {
+      "field": "active",
+      "value": null,
+      "rule": "required"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Name"
+      },
+      "sourceType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Excel workbook"
+      },
+      "description": {
+        "label": "Description"
+      },
+      "active": {
+        "label": "Active",
+        "kind": "switch"
+      }
+    }
+  }
+}

@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -91,16 +90,25 @@ class AccessControlIntegrationTest extends ApiTestSupport {
   }
 
   @Test
-  void creatorCannotApproveTheirOwnDataPointAndStatusIsValidated() throws Exception {
-    // USER_A created the HQ data point and holds ESG_DIRECTOR (data_points:approve).
+  void creatorCannotValidateTheirOwnDataPoint() throws Exception {
+    // USER_A holds ESG_DIRECTOR (data_points:validate + approve) and creates and submits a point.
     String creator = bearer(USER_A, PostgresTestDatabase.TENANT_A);
-    mvc.perform(put("/v1/data/points/" + HQ_DATA_POINT + "/validate").header("Authorization", creator)
-            .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"validated\"}"))
+    String body = "{\"orgId\":\"" + ORG_HQ + "\",\"metricKey\":\"lpg_kg\",\"numericValue\":7,"
+        + "\"reportingPeriodStart\":\"2026-02-01\",\"reportingPeriodEnd\":\"2026-02-28\"}";
+    String created = mvc.perform(post("/v1/data/points").header("Authorization", creator)
+            .contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+    String id = com.jayway.jsonpath.JsonPath.read(created, "$.data.id");
+    mvc.perform(post("/v1/data/points/" + id + "/submit").header("Authorization", creator)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
+        .andExpect(status().isOk());
+    mvc.perform(post("/v1/data/points/" + id + "/validate").header("Authorization", creator)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"version\":1}"))
         .andExpect(status().isForbidden());
-    mvc.perform(put("/v1/data/points/" + HQ_DATA_POINT + "/validate").header("Authorization", bearerForRole("ESG_DIRECTOR"))
-            .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"approved-by-magic\"}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.errors.status").exists());
+    mvc.perform(post("/v1/data/points/" + id + "/validate").header("Authorization", bearerForRole("ESG_DIRECTOR"))
+            .contentType(MediaType.APPLICATION_JSON).content("{\"version\":1}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.validationStatus").value("validated"));
   }
 
   @Test

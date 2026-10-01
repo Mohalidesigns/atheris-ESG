@@ -56,6 +56,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 class FieldRoundTripTest extends ApiTestSupport {
 
   static final Path ROOT = Path.of("..").toAbsolutePath().normalize();
+  /** Fixture data source and evidence file in tenant A (rls/fixture.sql). */
+  static final String SOURCE_A = "a0000000-0000-4000-8000-0000000000c1";
+  static final String FILE_A = "a0000000-0000-4000-8000-0000000004f1";
   static final Path SPECS = ROOT.resolve("testing/roundtrip");
   static final Path INVENTORY = ROOT.resolve("docs/esg-completion/FIELD_INVENTORY.csv");
   private static final String COVERED_ELSEWHERE = "covered-elsewhere.json";
@@ -66,9 +69,9 @@ class FieldRoundTripTest extends ApiTestSupport {
 
   @Test
   void inventoryIsFullyCovered() throws Exception {
-    Map<String, JsonNode> specsByForm = new LinkedHashMap<>();
+    Map<String, List<JsonNode>> specsByForm = new LinkedHashMap<>();
     for (JsonNode spec : specs()) {
-      spec.path("forms").forEach(f -> specsByForm.put(f.asText(), spec));
+      spec.path("forms").forEach(f -> specsByForm.computeIfAbsent(f.asText(), k -> new ArrayList<>()).add(spec));
     }
     JsonNode elsewhere = json.readTree(SPECS.resolve(COVERED_ELSEWHERE).toFile());
 
@@ -80,19 +83,20 @@ class FieldRoundTripTest extends ApiTestSupport {
       }
       String form = row.get("form_name");
       inventoryForms.add(form);
-      JsonNode spec = specsByForm.get(form);
-      if (spec == null) {
+      List<JsonNode> formSpecs = specsByForm.get(form);
+      if (formSpecs == null) {
         if (!elsewhere.has(form)) {
           problems.add("form '" + form + "' has no round-trip spec and is not in covered-elsewhere.json");
         }
         continue;
       }
       String property = row.get("dto_property");
-      String field = spec.path("inventoryAliases").path(property).asText(property);
-      boolean covered = spec.path("values").has(field) || spec.path("writeOnly").has(field)
-          || spec.path("derived").has(field);
+      boolean covered = formSpecs.stream().anyMatch(spec -> {
+        String field = spec.path("inventoryAliases").path(property).asText(property);
+        return spec.path("values").has(field) || spec.path("writeOnly").has(field) || spec.path("derived").has(field);
+      });
       if (!covered) {
-        problems.add("'" + form + "' field " + property + " has no value in " + spec.path("id").asText() + ".json");
+        problems.add("'" + form + "' field " + property + " has no value in any spec for that form");
       }
     }
     specsByForm.keySet().stream().filter(f -> !inventoryForms.contains(f))
@@ -203,7 +207,8 @@ class FieldRoundTripTest extends ApiTestSupport {
       JsonNode saved = read(created.id());
       assertFields(saved, created.values(), "after create");
       spec.path("derived").properties().forEach(e ->
-          assertThat(text(at(saved, e.getKey()))).as("derived %s", e.getKey()).isEqualTo(e.getValue().asText()));
+          assertThat(same(e.getValue(), at(saved, e.getKey())))
+              .as("derived %s: expected %s but was %s", e.getKey(), e.getValue(), at(saved, e.getKey())).isTrue());
     }
 
     void updateEachField() throws Exception {
@@ -341,7 +346,7 @@ class FieldRoundTripTest extends ApiTestSupport {
       Created used = new Created(null, new LinkedHashMap<>(values), new LinkedHashMap<>(changes));
       MvcResult result = mvc.perform(call(spec.path("create"), null, body(values)).header("Authorization", actor()))
           .andReturn();
-      assertThat(result.getResponse().getStatus()).as("create %s: %s", spec.path("id").asText(),
+      assertThat(result.getResponse().getStatus()).as("create %s with %s: %s", spec.path("id").asText(), body(values),
           result.getResponse().getContentAsString()).isEqualTo(201);
       String id = data(result).path("id").asText();
       rotate();
@@ -421,7 +426,8 @@ class FieldRoundTripTest extends ApiTestSupport {
       if (node.isTextual()) {
         return JsonNodeFactory.instance.textNode(node.asText()
             .replace("{u}", unique).replace("{yyyy}", year)
-            .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2));
+            .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2)
+            .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A));
       }
       if (node.isObject() && node.has("$repeat")) {
         return JsonNodeFactory.instance.textNode(node.path("$repeat").get(0).asText().repeat(node.path("$repeat").get(1).asInt()));
@@ -441,8 +447,10 @@ class FieldRoundTripTest extends ApiTestSupport {
               .as("write-only %s must never be returned (%s)", field, when).isTrue();
           return;
         }
-        assertThat(same(value, at(saved, field)))
-            .as("%s.%s %s: expected %s but was %s", spec.path("id").asText(), field, when, value, at(saved, field))
+        // readAliases: a field the API returns under another name (e.g. a converted amount's original value).
+        String readAs = spec.path("readAliases").path(field).asText(field);
+        assertThat(same(value, at(saved, readAs)))
+            .as("%s.%s %s: expected %s but was %s", spec.path("id").asText(), field, when, value, at(saved, readAs))
             .isTrue();
       });
     }
@@ -491,10 +499,6 @@ class FieldRoundTripTest extends ApiTestSupport {
       current = current.path(part);
     }
     return current;
-  }
-
-  private static String text(JsonNode node) {
-    return node.isMissingNode() || node.isNull() ? null : node.asText();
   }
 
   /** Flat map with dotted keys → nested JSON body. */

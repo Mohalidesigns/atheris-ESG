@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
         String path = req.getRequestURI();
         return switch (state) {
             case "42501" -> Problems.response(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", path, null);
-            case "P0L01" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-LOCKED", firstLine(sql.getMessage()), path, null);
+            case "P0L01", "P0L02" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-LOCKED", firstLine(sql.getMessage()), path, null);
             case "P0V01" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-VERSION",
                     "This record was changed by someone else. Reload and try again.", path, null);
             case "23505" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-DUPLICATE", "A record with these values already exists", path, null);

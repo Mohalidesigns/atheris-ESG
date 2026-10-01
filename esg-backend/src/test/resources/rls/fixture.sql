@@ -86,6 +86,11 @@ insert into files.file_metadata (id, original_name, content_type, size_bytes, sh
 insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256)
   values ('a0000000-0000-4000-8000-0000000004f1', 1, 'fixture/evidence-v1.pdf', 'application/pdf', 4, repeat('0', 64));
 insert into files.file_access_log (file_id, version_no, action) values ('a0000000-0000-4000-8000-0000000004f1', 1, 'upload');
+-- WP-20: an exchange rate (test value only) and a finished import job for tenant A.
+insert into data_hub.fx_rates (id, from_currency, to_currency, rate, rate_date, source)
+  values ('a0000000-0000-4000-8000-0000000000f7', 'USD', 'NGN', 1500, '2026-01-01', 'Test fixture rate (not a real quote)');
+insert into data_hub.import_jobs (id, file_id, file_name, file_format, status, total_rows, processed_rows, succeeded_rows)
+  values ('a0000000-0000-4000-8000-0000000000e1', 'a0000000-0000-4000-8000-0000000004f1', 'fixture.csv', 'csv', 'completed', 1, 1, 1);
 insert into notifications.user_preferences (user_id, notification_type, channel, enabled)
   values ('a0000000-0000-4000-8000-0000000000a1', 'ROLES_CHANGED', 'sms', true);
 insert into notifications.delivery_log (user_id, notification_type, channel, recipient, body, status)

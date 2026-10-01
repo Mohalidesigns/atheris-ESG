@@ -166,6 +166,18 @@ class TenancyApiTest extends ApiTestSupport {
   @Test
   void settingsRoundTripAndValidation() throws Exception {
     JsonNode current = data(mvc.perform(get("/v1/settings").header("Authorization", admin())).andExpect(status().isOk()));
+    try {
+      settingsChecks(current);
+    } finally {
+      // Other tests depend on tenant A's base currency (NGN): put the settings back.
+      long latest = data(mvc.perform(get("/v1/settings").header("Authorization", admin()))).path("version").asLong();
+      ((com.fasterxml.jackson.databind.node.ObjectNode) current).put("version", latest);
+      ((com.fasterxml.jackson.databind.node.ObjectNode) current).remove("tenantName");
+      send(put("/v1/settings"), admin(), current.toString()).andExpect(status().isOk());
+    }
+  }
+
+  private void settingsChecks(JsonNode current) throws Exception {
     long version = current.path("version").asLong();
     String body = "{\"baseCurrency\":\"USD\",\"fiscalYearStartMonth\":4,\"reportingTimezone\":\"Africa/Nairobi\","
         + "\"defaultFrameworkCodes\":[\"GRI\",\"ISSB_S2\"],\"version\":" + version + "}";

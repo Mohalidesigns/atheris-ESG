@@ -9,7 +9,10 @@ FROM (VALUES
   ('dashboard:read', 'View the executive dashboard'),
   ('data_points:create', 'Create ESG data points'), ('data_points:read', 'View ESG data points'),
   ('data_points:update', 'Update ESG data points'), ('data_points:delete', 'Delete ESG data points'),
-  ('data_points:approve', 'Validate/approve ESG data points'), ('data_points:export', 'Export ESG data'),
+  ('data_points:approve', 'Approve (and reopen) validated ESG data points'), ('data_points:export', 'Export ESG data'),
+  ('data_points:validate', 'Validate or reject submitted ESG data points'),
+  ('data_sources:read', 'View data sources'), ('data_sources:manage', 'Add and edit data sources'),
+  ('fx_rates:read', 'View exchange rates'), ('fx_rates:manage', 'Add and edit exchange rates'),
   ('carbon_data:create', 'Create emission records'), ('carbon_data:read', 'View emission records'),
   ('carbon_data:update', 'Update emission records'), ('carbon_data:delete', 'Delete emission records'),
   ('carbon_data:approve', 'Approve emission data'), ('carbon_data:export', 'Export emission data'),
@@ -85,6 +88,7 @@ INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT r, split_part(p, ':', 1), split_part(p, ':', 2)
 FROM (VALUES
   ('ESG_DIRECTOR', ARRAY[
+    'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
     'reference_data:read', 'emission_factors:manage',
     'reporting_periods:create', 'reporting_periods:read', 'reporting_periods:update', 'reporting_periods:approve', 'tenant_settings:read', 'files:create', 'files:read', 'files:delete',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'users:read', 'roles:read', 'audit_logs:read',
@@ -97,6 +101,7 @@ FROM (VALUES
     'social:create', 'social:read', 'social:update', 'social:approve',
     'governance:read', 'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
   ('ESG_MANAGER', ARRAY[
+    'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
@@ -106,6 +111,7 @@ FROM (VALUES
     'risk:create', 'risk:read', 'risk:update', 'supply_chain:create', 'supply_chain:read', 'supply_chain:update',
     'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read']),
   ('ESG_ANALYST', ARRAY[
+    'data_points:validate', 'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
@@ -114,11 +120,13 @@ FROM (VALUES
     'compliance:read', 'reports:create', 'reports:read', 'reports:update',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:read']),
   ('DATA_COLLECTOR', ARRAY[
+    'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'carbon_data:create', 'carbon_data:read']),
   ('AUDITOR', ARRAY[
+    'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'audit_logs:read',
@@ -127,6 +135,7 @@ FROM (VALUES
   ('INVESTOR_VIEWER', ARRAY[
     'reference_data:read','notifications:read', 'investor:read']),
   ('CONSULTANT', ARRAY[
+    'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
@@ -139,6 +148,7 @@ FROM (VALUES
     'files:read',
     'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
+    'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',

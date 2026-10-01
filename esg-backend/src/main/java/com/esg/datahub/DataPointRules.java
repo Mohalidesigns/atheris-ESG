@@ -1,4 +1,4 @@
-package com.esg.service;
+package com.esg.datahub;
 
 import com.esg.model.dto.DataPointDto;
 import com.esg.reference.ReferenceDtos.Metric;
@@ -31,8 +31,13 @@ public final class DataPointRules {
         if (dto.getCategory() != null && !dto.getCategory().equals(metric.pillar())) {
             errors.put("category", "must be " + metric.pillar() + " for " + metric.metricKey());
         }
-        if (dto.getUnit() != null && !dto.getUnit().isBlank() && !dto.getUnit().equals(metric.unit())) {
+        boolean money = "currency".equals(metric.dataType());
+        // Currency metrics are stored in the tenant base currency, so their unit is set by the server.
+        if (!money && dto.getUnit() != null && !dto.getUnit().isBlank() && !dto.getUnit().equals(metric.unit())) {
             errors.put("unit", "must be " + metric.unit() + " for " + metric.metricKey());
+        }
+        if (!money && dto.getCurrency() != null && !dto.getCurrency().isBlank()) {
+            errors.put("currency", "only applies to currency metrics");
         }
         if (NUMERIC_TYPES.contains(metric.dataType())) {
             BigDecimal v = dto.getNumericValue();

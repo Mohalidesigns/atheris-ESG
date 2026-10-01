@@ -30,5 +30,10 @@
     "com.esg.subscription.SubscriptionEntitlementTest#overrideValidation",
     "com.esg.subscription.SubscriptionEntitlementTest#starterPlanExcludesGrowthModulesUntilAnAddOnIsGranted",
     "com.esg.subscription.SubscriptionEntitlementTest#onlyThePlatformChangesEntitlements"
+  ],
+  "Bulk import mapping": [
+    "com.esg.datahub.ImportApiTest#csvImportCreatesDraftsAndReportsRowErrors",
+    "com.esg.datahub.ImportApiTest#mappingIsValidated",
+    "com.esg.datahub.ImportApiTest#excelImportUsesDefaultsForEveryRow"
   ]
 }

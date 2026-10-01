@@ -1,29 +1,122 @@
 {
   "id": "data-point",
-  "forms": ["Add ESG Data Point (dialog)"],
+  "forms": [
+    "Data Collection Form"
+  ],
   "actor": "ESG_DIRECTOR",
   "readOnlyRole": "AUDITOR",
-  "create": { "method": "POST", "path": "/v1/data/points" },
-  "read": { "path": "/v1/data/points/{id}" },
-  "isolation": { "status": 404 },
+  "create": {
+    "method": "POST",
+    "path": "/v1/data/points"
+  },
+  "read": {
+    "path": "/v1/data/points/{id}"
+  },
+  "isolation": {
+    "status": 404
+  },
   "values": {
     "orgId": "{ORG_SITE_1}",
     "metricKey": "diesel_litres",
     "subCategory": "Generator fuel",
     "numericValue": 1234.5,
-    "reportingPeriodStart": "2026-04-01",
-    "reportingPeriodEnd": "2026-06-30"
+    "reportingPeriodStart": "{yyyy}-04-01",
+    "reportingPeriodEnd": "{yyyy}-06-30",
+    "sourceId": "{SOURCE_A}",
+    "evidenceFileIds": [
+      "{FILE_A}"
+    ]
   },
-  "derived": { "category": "E", "unit": "L" },
+  "derived": {
+    "category": "E",
+    "unit": "L",
+    "validationStatus": "draft"
+  },
   "invalid": [
-    { "field": "metricKey", "value": "made_up_metric", "rule": "catalogue metric" },
-    { "field": "metricKey", "value": "", "rule": "required" },
-    { "field": "numericValue", "value": -5, "rule": ">= 0 for this metric" },
-    { "field": "numericValue", "value": 1.1234567, "rule": "6 decimals" },
-    { "field": "subCategory", "value": { "$repeat": ["x", 101] }, "rule": "max 100" },
-    { "field": "reportingPeriodStart", "value": null, "rule": "required" },
-    { "field": "reportingPeriodEnd", "value": "2026-03-31", "rule": "end >= start (cross-field)" },
-    { "field": "orgId", "value": null, "rule": "required" }
+    {
+      "field": "metricKey",
+      "value": "made_up_metric",
+      "rule": "catalogue metric"
+    },
+    {
+      "field": "metricKey",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "numericValue",
+      "value": -5,
+      "rule": ">= 0 for this metric"
+    },
+    {
+      "field": "numericValue",
+      "value": 1.1234567,
+      "rule": "6 decimals"
+    },
+    {
+      "field": "subCategory",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "reportingPeriodStart",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "2026-03-31",
+      "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "sourceId",
+      "value": "99999999-9999-4999-8999-999999999999",
+      "rule": "active data source"
+    },
+    {
+      "field": "evidenceFileIds",
+      "value": [
+        "99999999-9999-4999-8999-999999999999"
+      ],
+      "rule": "existing file"
+    },
+    {
+      "field": "currency",
+      "value": "USD",
+      "rule": "currency metrics only"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "{yyyy}-03-31",
+      "rule": "end >= start (cross-field)"
+    }
   ],
-  "ui": { "createOnly": "data points have no edit form yet (corrections arrive with the workflow in WP-20)" }
+  "update": {
+    "method": "PUT",
+    "path": "/v1/data/points/{id}",
+    "versioned": true
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "metricKey": "petrol_litres",
+    "subCategory": "Vehicles",
+    "numericValue": 99.25,
+    "reportingPeriodStart": "{yyyy}-04-02",
+    "reportingPeriodEnd": "{yyyy}-06-29",
+    "sourceId": null,
+    "evidenceFileIds": []
+  },
+  "ui": {
+    "pending": "filled in with the WP-20 form"
+  }
 }

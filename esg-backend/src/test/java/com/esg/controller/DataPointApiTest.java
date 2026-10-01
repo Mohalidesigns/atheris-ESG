@@ -44,7 +44,7 @@ class DataPointApiTest extends ApiTestSupport {
         .andExpect(jsonPath("$.data.numericValue").value(12450.5))
         .andExpect(jsonPath("$.data.reportingPeriodStart").value("2026-07-01"))
         .andExpect(jsonPath("$.data.reportingPeriodEnd").value("2026-09-30"))
-        .andExpect(jsonPath("$.data.validationStatus").value("pending"));
+        .andExpect(jsonPath("$.data.validationStatus").value("draft"));
   }
 
   @Test
