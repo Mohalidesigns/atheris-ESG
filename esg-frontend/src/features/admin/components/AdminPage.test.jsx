@@ -22,6 +22,17 @@ describe('AdminPage', () => {
     expect(calls[0].query).toMatchObject({ page: '0', size: '20' });
   });
 
+  it('search waits for a pause in typing: one request, not one per keystroke', async () => {
+    const calls = fakeApi({ 'GET /admin/users': (_b, req) => page(new URL(req.url).searchParams.get('search') === 'ngozi' ? [user] : []) });
+    renderWithStore(<AdminPage />, { preloadedState: authenticated(ADMIN) });
+    await waitFor(() => expect(calls).toHaveLength(1));
+    await userEvent.type(screen.getByPlaceholderText('Search name or email'), 'ngozi');
+    expect(await screen.findByText('Ngozi Eze')).toBeInTheDocument();
+    const searches = calls.slice(1).map((c) => c.query.search);
+    expect(searches).toEqual(['ngozi']);
+    expect(calls.at(-1).query.page).toBe('0');
+  });
+
   it('hides write actions without the permissions', async () => {
     fakeApi({ 'GET /admin/users': () => page([user]) });
     renderWithStore(<AdminPage />, { preloadedState: authenticated(['users:read']) });

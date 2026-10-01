@@ -5,6 +5,7 @@
 #   ./scripts/dev.sh db         # only prepare the database
 #   ./scripts/dev.sh reset-db   # drop and recreate esg_dev (needed once after the WP-11 re-baseline)
 #   ./scripts/dev.sh testdb     # create esg_test for integration tests without Docker (see README)
+#   ./scripts/dev.sh e2edb      # create a fresh esg_e2e for the Cypress journeys (used by scripts/e2e.sh)
 #
 # Roles: esg_owner owns the schema and runs Flyway; esg_app is the application login. esg_app is not
 # the owner, not a superuser and has no BYPASSRLS, so Row-Level Security applies to it (WP-11).
@@ -95,6 +96,11 @@ prepare_db() {
 prepare_db
 case "$CMD" in
   db|reset-db) exit 0 ;;
+  e2edb)
+    su_sql postgres "DROP DATABASE IF EXISTS esg_e2e WITH (FORCE)"
+    ensure_db esg_e2e
+    log "E2E database ready: jdbc:postgresql://localhost:$PG_PORT/esg_e2e"
+    exit 0 ;;
   testdb)
     su_sql postgres "DROP DATABASE IF EXISTS esg_test WITH (FORCE)"
     ensure_db esg_test

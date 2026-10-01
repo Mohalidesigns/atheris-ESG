@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
@@ -11,6 +11,7 @@ import OrganisationsTab from './OrganisationsTab';
 import PeriodsTab from './PeriodsTab';
 import SettingsTab from './SettingsTab';
 import TenantsTab from './TenantsTab';
+import SubscriptionTab from './SubscriptionTab';
 import AuditLogTab from '../../audit/components/AuditLogTab';
 import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
@@ -20,7 +21,11 @@ import RoleAssignmentDialog from './RoleAssignmentDialog';
 
 const roleLabel = (name) => name.replace(/_/g, ' ');
 
+/** Search waits until typing pauses: one request per pause instead of one per keystroke (found by E2E journey 1). */
+const SEARCH_DEBOUNCE_MS = 300;
+
 function UsersTab() {
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
@@ -31,6 +36,14 @@ function UsersTab() {
   const [resetMfa] = useResetUserMfaMutation();
   const [actionError, setActionError] = useState('');
   const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, page, size });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const onDeactivate = async (user) => {
     if (!window.confirm(`Deactivate ${user.firstName} ${user.lastName}? They will be signed out everywhere.`)) return;
@@ -55,8 +68,8 @@ function UsersTab() {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
-        <TextField size="small" placeholder="Search name or email" value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+        <TextField size="small" placeholder="Search name or email" value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
           sx={{ width: 320 }} />
         <Can permission="users:create">
@@ -194,6 +207,7 @@ const TABS = [
   { value: 'organisations', label: 'Organisations', permission: 'org_structure:read', render: () => <OrganisationsTab /> },
   { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
   { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
+  { value: 'subscription', label: 'Subscription', permission: 'subscription:read', render: () => <SubscriptionTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
   { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
   { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },

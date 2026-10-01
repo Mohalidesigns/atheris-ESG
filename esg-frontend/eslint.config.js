@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'cypress/screenshots', 'cypress/videos', 'cypress/logs']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -30,5 +30,10 @@ export default defineConfig([
     // Build tooling runs in Node, not the browser
     files: ['*.config.js'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    // Cypress E2E (WP-18): mocha + Cypress globals
+    files: ['cypress/**/*.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.mocha, cy: 'readonly', Cypress: 'readonly', expect: 'readonly' } },
   },
 ])
