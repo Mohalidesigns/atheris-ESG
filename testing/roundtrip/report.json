@@ -97,7 +97,23 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-23 report form"
+    "fields": {
+      "title": {
+        "label": "Report title"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "reportingPeriodStart": {
+        "label": "Reporting period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Reporting period end"
+      }
+    },
+    "notInEditForm": {
+      "templateId": "Chosen when the report is created; the template name is shown in the report header"
+    }
   },
   "inventoryAliases": {
     "frameworkCode": "templateId"

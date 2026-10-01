@@ -14,6 +14,7 @@ import { InstrumentDialog } from '../features/carbon/components/InstrumentsTab';
 import { TargetDialog } from '../features/carbon/components/TargetsTab';
 import { ChangeDialog } from '../features/compliance/components/ChangesTab';
 import { DeadlineDialog } from '../features/compliance/components/DeadlinesTab';
+import ReportDialog from '../features/reporting/components/ReportDialog';
 import DataPointDialog from '../features/dataHub/components/DataPointDialog';
 import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab';
 import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
@@ -38,13 +39,15 @@ const SOURCE_A = 'a0000000-0000-4000-8000-0000000000c1';
 const FILE_A = 'a0000000-0000-4000-8000-0000000004f1';
 const USER_COMPLIANCE = 'a1000000-0000-4000-8000-000000000011';
 const USER_DIRECTOR = 'a1000000-0000-4000-8000-000000000003';
+const TEMPLATE_A = 'a0000000-0000-4000-8000-0000000000f4';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
     return v.replaceAll('{u}', 'rt0001').replaceAll('{yyyy}', '2301')
       .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
       .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
-      .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR);
+      .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
+      .replaceAll('{TEMPLATE_A}', TEMPLATE_A);
   }
   if (Array.isArray(v)) return v.map(resolve);
   return v;
@@ -199,6 +202,11 @@ const openers = {
   'financed-position': dialogOf((r) => <FinancedDialog position={r} year={2026} onClose={() => {}} />),
   'filing-deadline': openCompliance((r) => <DeadlineDialog deadline={r} onClose={() => {}} />),
   'regulatory-change': openCompliance((r) => <ChangeDialog change={r} onClose={() => {}} />),
+  report: async (record) => {
+    fakeApi({ 'GET /reports/templates': () => ok([{ id: TEMPLATE_A, name: 'A custom template', platform: false, sections: [] }]) });
+    renderWithStore(<ReportDialog report={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
 };
 
 const editable = specs.filter((s) => s.kind !== 'command' && !s.ui?.createOnly);
