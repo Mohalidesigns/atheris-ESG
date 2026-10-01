@@ -4,20 +4,21 @@
 |---|---|
 | Phase | **P0 Truth & Baseline** |
 | Updated | 1 October 2026 |
-| WPs done | WP-00 (`AS_IS_ARCHITECTURE.md`), WP-01 (`FEATURE_REALITY_MATRIX.csv`), WP-02 (`FIELD_INVENTORY.csv`) |
-| Next | WP-03 (RTM + benchmark reality), WP-04 (gap backlog), then Gate G0 |
-| Blockers | B1 Docker not installed (local PostgreSQL 17.9 *is* available); B2 no test frameworks; decisions D1–D11 open (see `DECISIONS.md`) |
+| WPs done | WP-00 (`AS_IS_ARCHITECTURE.md`), WP-01 (`FEATURE_REALITY_MATRIX.csv`), WP-02 (`FIELD_INVENTORY.csv`), WP-03 (`RTM.csv`, `BENCHMARK_REALITY.csv`), WP-04 (`GAP_BACKLOG.md`, `wp/`) |
+| Next | **Gate G0**: team review of the P0 artefacts and decisions D1–D15, then WP-10 / WP-11 |
+| Blockers | B1 Docker not installed (local PostgreSQL 17.9 *is* available); B2 no test frameworks; decisions D1–D11 and D13–D15 open (see `DECISIONS.md`) |
 
 ## Headline KPIs (master plan §8)
 
 | KPI | Value | Source |
 |---|---|---|
 | Fields at L4+ / total fields | **0 / 25** (0 fields WORK end-to-end) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | not yet measured (WP-03) | — |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows (91 functional + 32 differentiators + 36 NFRs); 0 / 251 incl. TRD rows | `RTM.csv` |
 | Pages with zero mock data / total pages | **1 / 16** (only `/login` has no hard-coded dataset, and it has a demo-login bypass) | `FEATURE_REALITY_MATRIX.csv` type=page |
 | Endpoints implemented + tested / catalogue | **0 / 58** tested; 11 implemented, 2 stubs, 45 missing | type=trd_endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
 | Test coverage | **0 %** (0 backend tests, no frontend test runner) | `AS_IS_ARCHITECTURE.md` §4 |
+| Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **11**: 5 critical (S1, S2, S3, S4, S9) + 6 high (S5, S6, S7, S10, S11, S12) | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
@@ -108,3 +109,63 @@ Scoring conventions used:
 | 6 | Global search (TopBar) | all | 1 | Not wired |
 
 **Important caveat for the headline metric:** 25 is the number of fields that exist *today*. The real denominator is much larger because 9 of 12 modules have no forms yet. The TRD tables imply hundreds of fields (users, roles, orgs, data sources, workflows, flaring, targets, deadlines, suppliers, incidents…). WP-03/04 will turn the "spec'd field with no UI" list in `DECISIONS.md` into a target field count.
+
+---
+
+## WP-03 — Requirements traceability & benchmark reality
+
+`RTM.csv`: **251 requirements**: BRD §5.2 functional (91), BRD §6 differentiators (32), BRD §7 NFRs (36), TRD §8 key components, formulas and factors (74), TRD §11.2 test scenarios (18). `tests` is `none` for every row.
+
+### Coverage by module and L-level
+
+| Module | MISSING | L0 | L1 | L2 | L3 | L4 | L5 | Total |
+|---|---|---|---|---|---|---|---|---|
+| M1 Data Hub | 11 | 4 | 3 | 2 | 0 | 0 | 0 | 20 |
+| M2 Carbon | 8 | 9 | 1 | 5 | 0 | 0 | 0 | 23 |
+| M3 Compliance | 11 | 4 | 4 | 1 | 0 | 0 | 0 | 20 |
+| M4 Reporting | 8 | 6 | 0 | 0 | 0 | 0 | 0 | 14 |
+| M5 Risk | 3 | 9 | 0 | 0 | 0 | 0 | 0 | 12 |
+| M6 Supply Chain | 7 | 5 | 0 | 0 | 0 | 0 | 0 | 12 |
+| M7 Social | 11 | 8 | 0 | 0 | 0 | 0 | 0 | 19 |
+| M8 Governance | 7 | 7 | 0 | 0 | 0 | 0 | 0 | 14 |
+| M9 Analytics | 4 | 10 | 0 | 0 | 0 | 0 | 0 | 14 |
+| M10 Investor | 10 | 6 | 0 | 0 | 0 | 0 | 0 | 16 |
+| M11 Carbon Market | 11 | 6 | 0 | 0 | 0 | 0 | 0 | 17 |
+| M12 Training | 9 | 4 | 0 | 0 | 0 | 0 | 0 | 13 |
+| X Cross-cutting / NFR | 53 | 1 | 3 | 0 | 0 | 0 | 0 | 57 |
+| **All** | **153** | **79** | **11** | **8** | **0** | **0** | **0** | **251** |
+
+- **0 / 251 requirements at L5** (0 at L3 or above). 61% are MISSING (no code at all); 31% are L0 (a screen shows hard-coded data).
+- The 8 L2 items are all backend-only: manual data entry, Scope 1/2 calculation, factor library, NG grid and diesel factors, the calculation engine, the framework registry, and the data ingestion controller.
+- **15 requirements map to no work package** (D14, D15): ERM integration, webinars, multi-SIM, edge computing, regulatory sandbox, artisanal-mining and agriculture factors, RAP monitoring, Article 6, blended finance, SSO, and all four pricing/billing items. A further 4 are process items (SOC 2, ISO 27001, 99.9% SLA, implementation services).
+
+### Benchmark: claimed vs evidence
+
+`BENCHMARK_REALITY.csv` (53 capabilities):
+
+| | Score | % |
+|---|---|---|
+| Claimed ("ESG Pro" column) | **211 / 265** | 79.6% |
+| Evidence-based (working, *tested* code only) | **0 / 265** | 0% |
+| For context: if untested partial code were counted (≤1 per capability) | 5 / 265 | 1.9% |
+
+The 5 capabilities with untested partial code are Scope 1&2 calculation, Africa emission factors, multi-framework listing, data quality scoring and multi-tenancy. Every one of them needs fixes before its tests could pass. **Until Gate G3, use `BENCHMARK_REALITY.csv`, not the benchmark workbook, in external material** (master plan §10).
+
+### 10 biggest gaps between claim and reality
+
+25 capabilities are claimed at 5/5 with 0 delivered. These 10 matter most, because the benchmark's own SWOT calls them the moat:
+
+| # | Capability | Claimed | Actual | Why it matters | Target |
+|---|---|---|---|---|---|
+| 1 | Multi-Tenant SaaS with RLS | 5 | 0 | Security foundation; today there's no RLS and a cross-tenant IDOR | P1 (WP-11) |
+| 2 | African Regulatory Templates (SEC NG, NGX, CBN…) | 5 | 0 | SWOT S2 "regulatory moat"; frameworks exist with 0 requirements | P1–P2 |
+| 3 | Africa-Specific Emission Factors | 5 | 0 | SWOT S3; 10 seeded, unversioned, untested | P1 (WP-17) |
+| 4 | Gas Flaring Module (O&G) | 5 | 0 | SWOT S3; O&G pilot (D5) depends on it | P2 (WP-21) |
+| 5 | Offline-First Mobile Data Capture | 5 | 0 | SWOT S1 "Africa-first" | P4 (WP-43) |
+| 6 | SMS/USSD Data Input | 5 | 0 | SWOT S1 | P4 (WP-44) |
+| 7 | Community Impact / Host Community Tracking | 5 | 0 | SWOT S4; PIA 2021 legal mandate | P3 (WP-33) |
+| 8 | CAMA 2020 / Nigerian Governance Codes | 5 | 0 | Local differentiator | P3 (WP-34) |
+| 9 | DFI Templates (AfDB, IFC, Afreximbank) | 5 | 0 | Investor-facing differentiator | P4 (WP-40) |
+| 10 | ACMI Integration | 5 | 0 | SWOT; depends on an external partner | P4 (WP-41) |
+
+The pricing items (affordable tier, local-currency billing, freemium; 15 claimed points) aren't on this list only because they're commercial. Note that **no WP builds them** (D15).
