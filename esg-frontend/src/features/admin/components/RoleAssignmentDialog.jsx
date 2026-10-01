@@ -1,0 +1,101 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useFieldArray, useForm, useWatch, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography,
+} from '@mui/material';
+import { Add, DeleteOutline } from '@mui/icons-material';
+import { useListOrganisationsQuery, useListRolesQuery, useReplaceUserRolesMutation } from '../adminApi';
+import { roleAssignmentsSchema, toAssignmentsBody, toLocalInput } from '../schemas';
+import { toFormError } from '../../../services/apiSlice';
+import { applyServerFieldErrors } from '../../../services/formErrors';
+
+
+
+/**
+ * Replaces a user's role assignments (org scope + optional expiry per role; TRD §5.5).
+ * Rendered with a per-user `key`, so each open starts with fresh error state.
+ */
+export default function RoleAssignmentDialog({ open, user, onClose }) {
+  const { data: roles = [] } = useListRolesQuery(undefined, { skip: !open });
+  const { data: orgs = [] } = useListOrganisationsQuery(undefined, { skip: !open });
+  const [replaceRoles, { isLoading }] = useReplaceUserRolesMutation();
+  const [serverError, setServerError] = useState('');
+  const scopeById = useMemo(() => Object.fromEntries(roles.map((r) => [r.id, r.scopeType])), [roles]);
+
+  const { control, handleSubmit, reset, setError, formState: { errors } } = useForm({
+    resolver: zodResolver(roleAssignmentsSchema(scopeById)),
+    defaultValues: { assignments: [] },
+  });
+  const { fields, append, remove } = useFieldArray({ control, name: 'assignments' });
+
+  useEffect(() => {
+    if (!open || !user) return;
+    reset({
+      assignments: (user.roles ?? []).map((a) => ({
+        roleId: a.roleId, orgScopeId: a.orgScopeId ?? '', expiresAt: toLocalInput(a.expiresAt),
+      })),
+    });
+  }, [open, user, reset]);
+
+  const onSubmit = async ({ assignments }) => {
+    setServerError('');
+    try {
+      await replaceRoles({ id: user.id, assignments: toAssignmentsBody(assignments) }).unwrap();
+      onClose(true);
+    } catch (err) {
+      const { message, fieldErrors } = toFormError(err);
+      if (!applyServerFieldErrors(setError, fieldErrors)) setServerError(message);
+    }
+  };
+
+  const values = useWatch({ control, name: 'assignments' });
+
+  return (
+    <Dialog open={open} onClose={() => onClose(false)} maxWidth="md" fullWidth>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <DialogTitle>Roles for {user?.firstName} {user?.lastName}</DialogTitle>
+        <DialogContent>
+          {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
+          {fields.length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ my: 2 }}>No roles: this user can sign in but can&apos;t do anything.</Typography>
+          )}
+          {fields.map((f, index) => {
+            const rowErrors = errors.assignments?.[index] ?? {};
+            const isOrgRole = scopeById[values?.[index]?.roleId] === 'org';
+            return (
+              <Box key={f.id} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', mt: 2 }}>
+                <Controller name={`assignments.${index}.roleId`} control={control} render={({ field }) => (
+                  <TextField select size="small" label="Role" sx={{ flex: 2 }} {...field}
+                    error={!!rowErrors.roleId} helperText={rowErrors.roleId?.message}>
+                    {roles.map((r) => <MenuItem key={r.id} value={r.id}>{r.name.replace(/_/g, ' ')}</MenuItem>)}
+                  </TextField>
+                )} />
+                <Controller name={`assignments.${index}.orgScopeId`} control={control} render={({ field }) => (
+                  <TextField select size="small" label={isOrgRole ? 'Organisation (required)' : 'Organisation'} sx={{ flex: 2 }}
+                    {...field} error={!!rowErrors.orgScopeId} helperText={rowErrors.orgScopeId?.message}>
+                    <MenuItem value="">All organisations</MenuItem>
+                    {orgs.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+                  </TextField>
+                )} />
+                <Controller name={`assignments.${index}.expiresAt`} control={control} render={({ field }) => (
+                  <TextField type="datetime-local" size="small" label="Expires (optional)" sx={{ flex: 2 }}
+                    InputLabelProps={{ shrink: true }} {...field}
+                    error={!!rowErrors.expiresAt} helperText={rowErrors.expiresAt?.message} />
+                )} />
+                <IconButton aria-label="Remove role" onClick={() => remove(index)} sx={{ mt: 0.5 }}><DeleteOutline /></IconButton>
+              </Box>
+            );
+          })}
+          <Button startIcon={<Add />} sx={{ mt: 2 }} onClick={() => append({ roleId: '', orgScopeId: '', expiresAt: '' })}>
+            Add role
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose(false)}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>Save roles</Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}

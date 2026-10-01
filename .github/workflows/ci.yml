@@ -29,7 +29,7 @@ jobs:
           cache: maven
       - name: Verify (unit + Testcontainers integration tests incl. RLS suite, JaCoCo, Checkstyle)
         # Coverage ratchet (master plan §7.1): raise the floor as coverage grows; local runs default to 0.
-        run: ./mvnw -B verify -Djacoco.line.minimum=0.25
+        run: ./mvnw -B verify -Djacoco.line.minimum=0.70
       - name: Coverage summary
         if: always()
         run: |

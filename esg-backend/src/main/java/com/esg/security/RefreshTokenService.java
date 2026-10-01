@@ -21,11 +21,14 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * <p>Format: {@code <tenant-uuid>.<256 random bits, base64url>}. The tenant prefix isn't secret; it lets the
  * session be looked up under RLS. Only the SHA-256 hash is stored. Each refresh revokes the old session and
- * creates a new one; presenting an already-revoked token is treated as theft and revokes every session of
- * that user.
+ * creates a new one. Presenting an already-revoked token is treated as theft and revokes every session of that
+ * user — except within {@link #REUSE_GRACE} of the rotation, which is what concurrent refreshes from two
+ * browser tabs (or React StrictMode's double effects) look like; those are simply rejected.
  */
 @Service
 public class RefreshTokenService {
+
+    static final java.time.Duration REUSE_GRACE = java.time.Duration.ofSeconds(30);
 
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
@@ -65,9 +68,12 @@ public class RefreshTokenService {
             }
             UUID sessionId = (UUID) rows.get(0)[0];
             UUID userId = (UUID) rows.get(0)[1];
-            if (rows.get(0)[3] != null) {
-                // Reuse of a rotated/revoked token: assume theft, end every session of this user.
-                revokeAllSessions(userId);
+            Timestamp revokedAt = (Timestamp) rows.get(0)[3];
+            if (revokedAt != null) {
+                if (revokedAt.toInstant().isBefore(Instant.now().minus(REUSE_GRACE))) {
+                    // Replay of an old rotated/revoked token: assume theft, end every session of this user.
+                    revokeAllSessions(userId);
+                }
                 return new Rotation(userId, null);
             }
             if (((Timestamp) rows.get(0)[2]).toInstant().isBefore(Instant.now())) {

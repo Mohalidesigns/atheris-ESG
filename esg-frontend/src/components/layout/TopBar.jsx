@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import {
-  AppBar, Toolbar, Box, IconButton, InputBase, Badge, Avatar, Menu, MenuItem,
-  Typography, Chip, Divider,
+  AppBar, Toolbar, Box, IconButton, InputBase, Avatar, Menu, MenuItem,
+  Typography, Divider,
 } from '@mui/material';
 import {
-  Search, NotificationsOutlined, HelpOutline, DarkMode, Language,
+  Search, NotificationsOutlined, HelpOutline, Language,
 } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 
 export default function TopBar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
 
   return (
@@ -38,13 +38,6 @@ export default function TopBar() {
 
         <Box sx={{ flex: 1 }} />
 
-        {/* Status Chip */}
-        <Chip
-          size="small"
-          label="Q1 2026 Reporting Period"
-          sx={{ bgcolor: '#EBF5FB', color: '#1A365D', fontWeight: 500, fontSize: '0.7rem', mr: 2 }}
-        />
-
         {/* Actions */}
         <IconButton size="small" sx={{ mr: 1 }}>
           <Language sx={{ color: '#718096', fontSize: 20 }} />
@@ -53,9 +46,8 @@ export default function TopBar() {
           <HelpOutline sx={{ color: '#718096', fontSize: 20 }} />
         </IconButton>
         <IconButton size="small" sx={{ mr: 1 }}>
-          <Badge badgeContent={5} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}>
-            <NotificationsOutlined sx={{ color: '#718096', fontSize: 20 }} />
-          </Badge>
+          {/* Notification count arrives with the notification service (WP-15); no fake badge. */}
+          <NotificationsOutlined sx={{ color: '#718096', fontSize: 20 }} />
         </IconButton>
 
         <Divider orientation="vertical" flexItem sx={{ mx: 1.5 }} />
@@ -73,16 +65,15 @@ export default function TopBar() {
               {user?.firstName} {user?.lastName}
             </Typography>
             <Typography variant="caption" sx={{ color: '#718096', fontSize: '0.65rem' }}>
-              {user?.role?.replace('_', ' ')}
+              {(user?.roles ?? []).map((r) => r.replace(/_/g, ' ')).join(', ')}
             </Typography>
           </Box>
         </Box>
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          <MenuItem onClick={() => setAnchorEl(null)}>Profile Settings</MenuItem>
-          <MenuItem onClick={() => setAnchorEl(null)}>Account</MenuItem>
+          <MenuItem disabled sx={{ fontSize: '0.75rem' }}>{user?.tenantName}</MenuItem>
           <Divider />
-          <MenuItem onClick={() => setAnchorEl(null)}>Sign Out</MenuItem>
+          <MenuItem onClick={() => { setAnchorEl(null); logout(); }}>Sign Out</MenuItem>
         </Menu>
       </Toolbar>
     </AppBar>

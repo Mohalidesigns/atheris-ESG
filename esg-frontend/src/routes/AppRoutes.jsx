@@ -1,24 +1,28 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { CircularProgress, Box } from '@mui/material';
+import { lazy, Suspense, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { CircularProgress, Box, Typography } from '@mui/material';
+import { useSelector } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
-import { useAuth } from '../features/auth/hooks/useAuth';
+import { useRestoreSessionMutation } from '../features/auth/authApi';
+import { allNavItems, firstAllowedPath } from './navigation';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
-const DashboardPage = lazy(() => import('../features/dashboard/components/DashboardPage'));
-const DataHubPage = lazy(() => import('../features/dataHub/components/DataHubPage'));
-const CarbonPage = lazy(() => import('../features/carbon/components/CarbonPage'));
-const CompliancePage = lazy(() => import('../features/compliance/components/CompliancePage'));
-const ReportingPage = lazy(() => import('../features/reporting/components/ReportingPage'));
-const RiskPage = lazy(() => import('../features/risk/components/RiskPage'));
-const SupplyChainPage = lazy(() => import('../features/supplyChain/components/SupplyChainPage'));
-const SocialPage = lazy(() => import('../features/social/components/SocialPage'));
-const GovernancePage = lazy(() => import('../features/governance/components/GovernancePage'));
-const AnalyticsPage = lazy(() => import('../features/analytics/components/AnalyticsPage'));
-const InvestorPage = lazy(() => import('../features/investor/components/InvestorPage'));
-const CarbonMarketPage = lazy(() => import('../features/carbonMarket/components/CarbonMarketPage'));
-const TrainingPage = lazy(() => import('../features/training/components/TrainingPage'));
-const AdminPage = lazy(() => import('../features/admin/components/AdminPage'));
+const pages = {
+  '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
+  '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
+  '/carbon': lazy(() => import('../features/carbon/components/CarbonPage')),
+  '/compliance': lazy(() => import('../features/compliance/components/CompliancePage')),
+  '/reporting': lazy(() => import('../features/reporting/components/ReportingPage')),
+  '/risk': lazy(() => import('../features/risk/components/RiskPage')),
+  '/supply-chain': lazy(() => import('../features/supplyChain/components/SupplyChainPage')),
+  '/social': lazy(() => import('../features/social/components/SocialPage')),
+  '/governance': lazy(() => import('../features/governance/components/GovernancePage')),
+  '/analytics': lazy(() => import('../features/analytics/components/AnalyticsPage')),
+  '/investor': lazy(() => import('../features/investor/components/InvestorPage')),
+  '/carbon-market': lazy(() => import('../features/carbonMarket/components/CarbonMarketPage')),
+  '/training': lazy(() => import('../features/training/components/TrainingPage')),
+  '/admin': lazy(() => import('../features/admin/components/AdminPage')),
+};
 
 const Loading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
@@ -26,37 +30,55 @@ const Loading = () => (
   </Box>
 );
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" />;
+export function Forbidden() {
+  return (
+    <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>You don't have access to this page</Typography>
+      <Typography color="text.secondary">Ask your administrator if you need it.</Typography>
+    </Box>
+  );
+}
+
+/** Requires a session; with `anyOf`, also one of those permissions (TRD §7.2.2). */
+export function ProtectedRoute({ anyOf, children }) {
+  const { status, user } = useSelector((s) => s.auth);
+  const location = useLocation();
+  if (status !== 'authenticated') return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  const permissions = user?.permissions ?? [];
+  if (anyOf && !anyOf.some((p) => permissions.includes(p))) return <Forbidden />;
   return children;
 }
 
+function Landing() {
+  const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
+  const path = firstAllowedPath(permissions);
+  return path ? <Navigate to={path} replace /> : <Forbidden />;
+}
+
 export default function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const status = useSelector((s) => s.auth.status);
+  const [restoreSession] = useRestoreSessionMutation();
+
+  useEffect(() => {
+    if (status === 'unknown') restoreSession();
+  }, [status, restoreSession]);
+
+  if (status === 'unknown') return <Loading />;
 
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginForm />} />
+        <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/dashboard" />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="data-hub" element={<DataHubPage />} />
-          <Route path="carbon" element={<CarbonPage />} />
-          <Route path="compliance" element={<CompliancePage />} />
-          <Route path="reporting" element={<ReportingPage />} />
-          <Route path="risk" element={<RiskPage />} />
-          <Route path="supply-chain" element={<SupplyChainPage />} />
-          <Route path="social" element={<SocialPage />} />
-          <Route path="governance" element={<GovernancePage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="investor" element={<InvestorPage />} />
-          <Route path="carbon-market" element={<CarbonMarketPage />} />
-          <Route path="training" element={<TrainingPage />} />
-          <Route path="admin" element={<AdminPage />} />
+          <Route index element={<Landing />} />
+          {allNavItems.map(({ path, anyOf }) => {
+            const Page = pages[path];
+            return (
+              <Route key={path} path={path.slice(1)} element={<ProtectedRoute anyOf={anyOf}><Page /></ProtectedRoute>} />
+            );
+          })}
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );

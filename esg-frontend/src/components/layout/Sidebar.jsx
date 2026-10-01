@@ -3,46 +3,18 @@ import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   Typography, Divider, Collapse, Avatar,
 } from '@mui/material';
-import {
-  Dashboard, CloudQueue, Factory, Gavel, Assessment, Description,
-  Warning, LocalShipping, People, AccountBalance, Analytics, TrendingUp,
-  Storefront, School, AdminPanelSettings, ExpandLess, ExpandMore,
-  Shield, Logout,
-} from '@mui/icons-material';
+import { Shield, Logout } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { visibleSections } from '../../routes/navigation';
 
 const DRAWER_WIDTH = 260;
 
-// no-mock-gate: config — navigation menu definition, not data
-const navSections = [
-  { label: 'MAIN', items: [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-  ]},
-  { label: 'ESG MODULES', items: [
-    { text: 'Data Hub', icon: <CloudQueue />, path: '/data-hub' },
-    { text: 'Carbon Accounting', icon: <Factory />, path: '/carbon' },
-    { text: 'Compliance', icon: <Gavel />, path: '/compliance' },
-    { text: 'Reporting', icon: <Description />, path: '/reporting' },
-    { text: 'Risk & Materiality', icon: <Warning />, path: '/risk' },
-    { text: 'Supply Chain', icon: <LocalShipping />, path: '/supply-chain' },
-    { text: 'Social Impact', icon: <People />, path: '/social' },
-    { text: 'Governance', icon: <AccountBalance />, path: '/governance' },
-  ]},
-  { label: 'INSIGHTS', items: [
-    { text: 'Analytics & AI', icon: <Analytics />, path: '/analytics' },
-    { text: 'Investor Portal', icon: <TrendingUp />, path: '/investor' },
-    { text: 'Carbon Market', icon: <Storefront />, path: '/carbon-market' },
-  ]},
-  { label: 'PLATFORM', items: [
-    { text: 'Training', icon: <School />, path: '/training' },
-    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin' },
-  ]},
-];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const sections = visibleSections(user?.permissions ?? []);
 
   return (
     <Drawer
@@ -76,7 +48,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-        {navSections.map((section) => (
+        {sections.map((section) => (
           <Box key={section.label}>
             <Typography
               variant="caption"
@@ -134,10 +106,12 @@ export default function Sidebar() {
             {user?.firstName} {user?.lastName}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }} noWrap>
-            {user?.role?.replace('_', ' ')}
+            {(user?.roles ?? []).map((r) => r.replace(/_/g, ' ')).join(', ')}
           </Typography>
         </Box>
         <Logout
+          role="button"
+          aria-label="Sign out"
           onClick={logout}
           sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
         />

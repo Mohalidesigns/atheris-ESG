@@ -61,9 +61,17 @@ class AuthFlowIntegrationTest extends ApiTestSupport {
     Cookie second = refreshed.getResponse().getCookie("esg_refresh");
     assertThat(second.getValue()).isNotEqualTo(first.getValue());
 
-    // Replaying the rotated token = theft signal: rejected, and the newer session is revoked too.
+    // Replaying the rotated token right away (another tab refreshing at the same moment) is rejected,
+    // but doesn't end the session: the newer token still works.
     mvc.perform(post("/v1/auth/refresh").cookie(first)).andExpect(status().isUnauthorized());
-    mvc.perform(post("/v1/auth/refresh").cookie(second)).andExpect(status().isUnauthorized());
+    Cookie third = mvc.perform(post("/v1/auth/refresh").cookie(second))
+        .andExpect(status().isOk()).andReturn().getResponse().getCookie("esg_refresh");
+
+    // Replaying a token rotated longer ago than the grace period = theft signal: every session is revoked.
+    asOwnerInTenantA("update auth.user_sessions set revoked_at = now() - interval '5 minutes' "
+        + "where revoked_at is not null and user_id = '" + roleUserId("ESG_ANALYST") + "'");
+    mvc.perform(post("/v1/auth/refresh").cookie(first)).andExpect(status().isUnauthorized());
+    mvc.perform(post("/v1/auth/refresh").cookie(third)).andExpect(status().isUnauthorized());
   }
 
   @Test

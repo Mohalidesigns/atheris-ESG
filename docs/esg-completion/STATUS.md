@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2, CI green), **WP-11** (branch `feature/wp-11-db-baseline`) |
-| Next | **WP-12** (auth & sessions) → WP-13 (RBAC); WP-15/16/17 can start in parallel |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (branch `feature/wp-12-13-auth-rbac`) |
+| Next | **WP-14** (tenancy, org tree, periods) and **WP-15** (audit, files, notifications, RFC 7807); WP-16/17 in parallel |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,14 +13,14 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **0 / 25** (0 fields WORK end-to-end) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows; RTM overall: 1 at L4 (TRD-11.2.1-03 cross-tenant RLS test), 1 at L3 (BRD-7.2-02 multi-tenant isolation) | `RTM.csv` |
-| Pages with zero mock data / total pages | **1 / 16**. No-mock gate (REPORT mode): 36 findings in 15 files, 174 hard-coded dataset rows | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | **0 / 58** tested; 11 implemented, 2 stubs, 45 missing | type=trd_endpoint |
+| Fields at L4+ / total fields | **19 / 41** WORK end to end with tests (login 2, MFA 1, Admin create/edit/roles/search 16); 22 still UI-only or hard-coded options; 1 removed (Remember me) | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs audit + E2E). RTM overall: **7 at L4**, 1 at L3 | `RTM.csv` |
+| Pages with zero mock data / total pages | **3 / 16** (Login, Admin Console, app shell). No-mock gate: 33 findings in 13 files, 163 rows | `NO_MOCK_REPORT.md` |
+| Endpoints implemented + tested / catalogue | **13 / 58** tested (8 at L4: auth + admin users/roles; 5 data/carbon/compliance endpoints RBAC-tested but UI not wired); 41 missing | type=trd_endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **Backend 28.6% lines** (48 tests: 40 RLS, 4 tenant-context/login, 4 JWT); CI floor 25%. **Frontend** 3 component tests | JaCoCo, CI |
+| Test coverage | **Backend 75.6% lines** (198 tests); CI floor raised to **70%**. **Frontend 46 tests** (Vitest + RTL) | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
-| Open critical/high security findings | **5**: 3 critical (S1 no `@PreAuthorize`, S2 refresh-as-access, S3 frontend demo bypass) + 2 high (S11 sessions/MFA, S12 role scoping). Closed: S4, S5, S6 (WP-10); **S7, S9, S10** (WP-11); medium S8, S14, S17 | `AS_IS_ARCHITECTURE.md` §7 |
+| Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. Still open: S15 RFC 7807 errors (medium, WP-15) | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
 
@@ -231,3 +231,37 @@ Deviations: D16 in `DECISIONS.md` (TRD DDL fixes, composite FKs, login lookup, p
 Not done here (by design):
 - Tables for modules not yet built (51 TRD tables still MISSING) are created in their module WPs with the same helpers (`auth.apply_tenant_rls`, `auth.apply_audit_trigger`). `RlsIsolationTest` automatically covers any new tenant table.
 - Item 6 of the WP-11 prompt (NO_COLUMN fields approved in DECISIONS.md): none were approved yet.
+
+
+---
+
+## WP-12 + WP-13 — Authentication, sessions & RBAC
+
+Branch `feature/wp-12-13-auth-rbac` (stacked on WP-11).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Real login/refresh/logout/MFA/me; no bypass | ✅ | `AuthFlowIntegrationTest` (8): HttpOnly SameSite=Strict cookie, rotation, reuse detection, logout revokes, refresh/MFA tokens rejected as bearer, enforced TOTP, generic errors. Browser: reload restores the session; sign-out survives reload |
+| Every endpoint has `@PreAuthorize` | ✅ | `ControllerSecurityArchTest` (ArchUnit); mutation check: removing one annotation fails the build |
+| 12 roles testable with seeded users | ✅ | `RbacMatrixTest`: 12 roles × 9 endpoints = 108 cases; mutation check: one extra permission fails 1+ cases. Local seed has one user per role (README) |
+| Org-scoped roles can't see other orgs | ✅ | `AccessControlIntegrationTest`: collector scoped to Site 1 can't read/write Site 2 or HQ |
+| Expired role loses access immediately | ✅ | Same token → 403 after `expires_at` passes; deactivated user → 401 |
+| Masked fields return null | ✅ | TRAINING_ADMIN (no `users:read_pii`) gets `phone: null` |
+| Field round-trip for user and role-assignment forms | ✅ | `AdminUserApiTest` (18): create-all, update-each, validation matrix (8 cases), stale version 409, role scope/expiry round trip, no escalation, no self-lockout; `AdminPage.test.jsx`: edit reloads every field, server errors land on the field |
+| Admin Console at L5 | ⚠️ **L4** | L5 needs audit logging of user/role changes (WP-15) and E2E journeys 1–2 in CI (WP-18) |
+| E2E journeys 1 and 2 | ⏳ WP-18 | No E2E runner yet (Cypress, D3). Journey 2 is covered at API level by the RBAC matrix and in the browser by a manual walk-through (data collector sees only Data Hub + Carbon) |
+
+What was built:
+- **Backend:** opaque refresh tokens hashed in `auth.user_sessions` (rotation, 30 s concurrent-refresh grace, theft detection); typed JWTs; TOTP MFA (RFC 6238, secrets AES-256-GCM encrypted); password policy; generic login errors; lockout that persists.
+- **Permission catalogue:** 79 `resource:action` permissions and 12 role templates synced into every tenant (`R__permission_catalogue.sql`, `auth.sync_system_roles`).
+- **Authorisation:** permissions and org scope reloaded from the DB on every request; `@PreAuthorize` on all 21 protected endpoints, and `@PublicEndpoint` with a reason on the 5 public auth endpoints; org scoping in Data Hub and Carbon; segregation of duties on data-point review; `@FieldPermission` masking.
+- **Admin API:** users CRUD, deactivate, role assignment, roles, organisations.
+- **Frontend:** RTK Query with single-flight token refresh; session restore on startup; `<Can>` and permission route guards; sidebar filtered by permission; working Sign Out; Login + MFA set-up/verify with Zod; Admin Console (users, roles; audit tab honestly deferred).
+- **Removed fakes:** demo login, `demoUser`, pre-filled password, `services/api.js`, Admin page's hard-coded users and audit log, the "5" notification badge, the "Q1 2026" chip.
+
+Bugs found and fixed while verifying in the browser:
+1. **Concurrent refreshes logged users out.** Two refreshes at the same moment (React StrictMode's double effect, or two open tabs) made the second look like token theft and revoked every session. Fixed with single-flight refresh on the client plus a 30 s grace window on the server; both are tested.
+2. **Data loaded in a background tab didn't render.** Redux Toolkit's default batching waits for `requestAnimationFrame`, which browsers pause in hidden tabs, so data loaded there didn't render until the tab was shown. The store now batches on a microtask.
+3. **Duplicate React keys** on the two admin dialogs; fixed.
+
+Design choices for review: D17 in `DECISIONS.md` (cookie-only refresh token, per-request permission reload, no MFA in the local profile, generic lockout message, escalation rule, known gaps).

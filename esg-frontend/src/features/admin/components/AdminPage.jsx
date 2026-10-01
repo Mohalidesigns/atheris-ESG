@@ -1,116 +1,194 @@
 import { useState } from 'react';
-import { Box, Typography, Card, CardContent, Grid, Chip, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Avatar } from '@mui/material';
-import { AdminPanelSettings, PersonAdd, Security } from '@mui/icons-material';
+import {
+  Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, Tab, Table, TableBody,
+  TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
+} from '@mui/material';
+import { Block, Edit, ManageAccounts, PersonAdd, Search } from '@mui/icons-material';
+import Can from '../../../components/rbac/Can';
+import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery } from '../adminApi';
+import { toFormError } from '../../../services/apiSlice';
+import UserFormDialog from './UserFormDialog';
+import RoleAssignmentDialog from './RoleAssignmentDialog';
 
-const users = [
-  { name: 'Adaeze Usman', email: 'adaeze.usman@esgpro.ng', role: 'ESG_DIRECTOR', status: 'Active', lastLogin: '2026-04-03 09:15' },
-  { name: 'Chidi Okafor', email: 'chidi.okafor@esgpro.ng', role: 'ESG_ANALYST', status: 'Active', lastLogin: '2026-04-03 08:42' },
-  { name: 'Amina Bello', email: 'amina.bello@esgpro.ng', role: 'ESG_MANAGER', status: 'Active', lastLogin: '2026-04-02 16:30' },
-  { name: 'Emeka Nwosu', email: 'emeka.nwosu@esgpro.ng', role: 'DATA_COLLECTOR', status: 'Active', lastLogin: '2026-04-03 07:10' },
-  { name: 'Ibrahim Musa', email: 'ibrahim.musa@esgpro.ng', role: 'DATA_COLLECTOR', status: 'Active', lastLogin: '2026-04-01 14:22' },
-  { name: 'Funke Adeleke', email: 'funke.adeleke@esgpro.ng', role: 'AUDITOR', status: 'Inactive', lastLogin: '2026-03-15 11:00' },
-];
+const roleLabel = (name) => name.replace(/_/g, ' ');
 
-const auditLogs = [
-  { timestamp: '2026-04-03 09:15:22', user: 'Adaeze Usman', action: 'LOGIN', resource: 'auth', detail: 'Successful login from 102.89.x.x' },
-  { timestamp: '2026-04-03 09:12:05', user: 'Chidi Okafor', action: 'UPDATE', resource: 'data_points/DP-003', detail: 'Validated water usage data' },
-  { timestamp: '2026-04-03 08:45:30', user: 'System', action: 'ALERT', resource: 'carbon/anomaly', detail: 'Gas flaring anomaly detected OML 42' },
-  { timestamp: '2026-04-02 16:30:15', user: 'Amina Bello', action: 'CREATE', resource: 'reports/RPT-002', detail: 'Created ISSB S1 disclosure report' },
-  { timestamp: '2026-04-02 14:20:10', user: 'Emeka Nwosu', action: 'SYNC', resource: 'data/offline', detail: 'Synced 23 offline data points from mobile' },
-];
+function UsersTab() {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [editing, setEditing] = useState(undefined); // undefined = closed, null = create, object = edit
+  const [rolesFor, setRolesFor] = useState(null);
+  const [deactivate] = useDeactivateUserMutation();
+  const [actionError, setActionError] = useState('');
+  const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, page, size });
 
-const roleColors = {
-  ESG_DIRECTOR: '#1A365D', ESG_MANAGER: '#2D7D46', ESG_ANALYST: '#319795',
-  DATA_COLLECTOR: '#D4AF37', AUDITOR: '#718096', TENANT_ADMIN: '#C53030',
-};
-
-export default function AdminPage() {
-  const [tab, setTab] = useState(0);
+  const onDeactivate = async (user) => {
+    if (!window.confirm(`Deactivate ${user.firstName} ${user.lastName}? They will be signed out everywhere.`)) return;
+    setActionError('');
+    try {
+      await deactivate(user.id).unwrap();
+    } catch (err) {
+      setActionError(toFormError(err).message);
+    }
+  };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Administration</Typography>
-          <Typography variant="body2" color="text.secondary">User management, roles, audit logs & system health</Typography>
-        </Box>
-        <Button variant="contained" size="small" startIcon={<PersonAdd />}>Invite User</Button>
+    <>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
+        <TextField size="small" placeholder="Search name or email" value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+          sx={{ width: 320 }} />
+        <Can permission="users:create">
+          <Button variant="contained" size="small" startIcon={<PersonAdd />} onClick={() => setEditing(null)}>New user</Button>
+        </Can>
       </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          { label: 'Active Users', value: users.filter(u => u.status === 'Active').length, color: '#2D7D46' },
-          { label: 'Total Users', value: users.length, color: '#1A365D' },
-          { label: 'System Roles', value: 12, color: '#D4AF37' },
-          { label: 'Audit Events (24h)', value: auditLogs.length, color: '#319795' },
-        ].map(s => (
-          <Grid size={{ xs: 6, md: 3 }} key={s.label}>
-            <Card><CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: s.color }}>{s.value}</Typography>
-            </CardContent></Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
-        <Tab label="Users" />
-        <Tab label="Audit Logs" />
-      </Tabs>
-
-      {tab === 0 && (
-        <Card>
+      {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+      <Card>
+        {isLoading && <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>}
+        {isError && (
+          <Alert severity="error" action={<Button onClick={refetch}>Retry</Button>}>{toFormError(error).message}</Alert>
+        )}
+        {data && data.content.length === 0 && (
+          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">
+            {search ? 'No users match your search.' : 'No users yet.'}
+          </Typography>
+        )}
+        {data && data.content.length > 0 && (
           <TableContainer>
             <Table size="small">
               <TableHead><TableRow>
-                <TableCell>User</TableCell><TableCell>Email</TableCell><TableCell>Role</TableCell>
-                <TableCell>Status</TableCell><TableCell>Last Login</TableCell>
+                <TableCell>User</TableCell><TableCell>Email</TableCell><TableCell>Phone</TableCell>
+                <TableCell>Roles</TableCell><TableCell>Status</TableCell><TableCell>MFA</TableCell>
+                <TableCell>Last login</TableCell><TableCell align="right">Actions</TableCell>
               </TableRow></TableHead>
               <TableBody>
-                {users.map(u => (
-                  <TableRow key={u.email} hover>
+                {data.content.map((u) => (
+                  <TableRow key={u.id} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: roleColors[u.role] || '#718096' }}>
-                          {u.name.split(' ').map(n => n[0]).join('')}
+                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: '#1A365D' }}>
+                          {u.firstName?.[0]}{u.lastName?.[0]}
                         </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{u.name}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{u.firstName} {u.lastName}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.8rem' }}>{u.email}</TableCell>
-                    <TableCell><Chip size="small" label={u.role.replace(/_/g, ' ')} sx={{ bgcolor: `${roleColors[u.role]}15`, color: roleColors[u.role], fontSize: '0.6rem', fontWeight: 600 }} /></TableCell>
-                    <TableCell><Chip size="small" label={u.status} sx={{ bgcolor: u.status === 'Active' ? '#E6F4EA' : '#FEE2E2', color: u.status === 'Active' ? '#2D7D46' : '#C53030', fontSize: '0.65rem' }} /></TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{u.lastLogin}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem' }}>{u.phone ?? '—'}</TableCell>
+                    <TableCell>
+                      {u.roles.length === 0 && <Typography variant="caption" color="text.secondary">None</Typography>}
+                      {u.roles.map((r) => (
+                        <Tooltip key={r.id} title={[r.orgScopeName && `Scope: ${r.orgScopeName}`,
+                          r.expiresAt && `Expires ${new Date(r.expiresAt).toLocaleString()}`].filter(Boolean).join(' · ')}>
+                          <Chip size="small" label={roleLabel(r.roleName)} sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem', fontWeight: 600 }} />
+                        </Tooltip>
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="small" label={u.active ? 'Active' : 'Deactivated'} sx={{
+                        bgcolor: u.active ? '#E6F4EA' : '#FEE2E2', color: u.active ? '#2D7D46' : '#C53030', fontSize: '0.65rem',
+                      }} />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.75rem' }}>{u.mfaEnabled ? 'On' : 'Off'}</TableCell>
+                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>
+                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}
+                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                      <Can permission="users:update">
+                        <IconButton size="small" aria-label={`Edit ${u.email}`} onClick={() => setEditing(u)}><Edit fontSize="small" /></IconButton>
+                      </Can>
+                      <Can permission="roles:assign">
+                        <IconButton size="small" aria-label={`Roles for ${u.email}`} onClick={() => setRolesFor(u)}><ManageAccounts fontSize="small" /></IconButton>
+                      </Can>
+                      <Can permission="users:delete">
+                        {u.active && (
+                          <IconButton size="small" aria-label={`Deactivate ${u.email}`} onClick={() => onDeactivate(u)}><Block fontSize="small" /></IconButton>
+                        )}
+                      </Can>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-        </Card>
-      )}
+        )}
+        {data && (
+          <TablePagination component="div" count={data.totalElements} page={data.page} rowsPerPage={data.size}
+            onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[10, 20, 50]}
+            onRowsPerPageChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} />
+        )}
+      </Card>
 
-      {tab === 1 && (
-        <Card>
-          <TableContainer>
-            <Table size="small">
-              <TableHead><TableRow>
-                <TableCell>Timestamp</TableCell><TableCell>User</TableCell><TableCell>Action</TableCell>
-                <TableCell>Resource</TableCell><TableCell>Detail</TableCell>
-              </TableRow></TableHead>
-              <TableBody>
-                {auditLogs.map((log, idx) => (
-                  <TableRow key={idx} hover>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{log.timestamp}</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>{log.user}</TableCell>
-                    <TableCell><Chip size="small" label={log.action} sx={{ fontSize: '0.6rem', fontWeight: 600 }} /></TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{log.resource}</TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem' }}>{log.detail}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
+      <UserFormDialog key={`user-form-${editing === undefined ? 'closed' : editing?.id ?? 'new'}`}
+        open={editing !== undefined} user={editing ?? null} onClose={() => setEditing(undefined)} />
+      <RoleAssignmentDialog key={`roles-${rolesFor?.id ?? 'closed'}`}
+        open={Boolean(rolesFor)} user={rolesFor} onClose={() => setRolesFor(null)} />
+    </>
+  );
+}
+
+function RolesTab() {
+  const { data: roles, isLoading, isError, error } = useListRolesQuery();
+  if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
+  if (isError) return <Alert severity="error">{toFormError(error).message}</Alert>;
+  return (
+    <Card>
+      <TableContainer>
+        <Table size="small">
+          <TableHead><TableRow>
+            <TableCell>Role</TableCell><TableCell>Scope</TableCell><TableCell>MFA</TableCell><TableCell>Permissions</TableCell>
+          </TableRow></TableHead>
+          <TableBody>
+            {roles.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell sx={{ verticalAlign: 'top', minWidth: 200 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{roleLabel(r.name)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{r.description}</Typography>
+                </TableCell>
+                <TableCell sx={{ verticalAlign: 'top' }}>{r.scopeType}</TableCell>
+                <TableCell sx={{ verticalAlign: 'top' }}>{r.mfaRequired ? 'Required' : '—'}</TableCell>
+                <TableCell>
+                  {r.permissions.map((p) => <Chip key={p} size="small" label={p} sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem' }} />)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
+  );
+}
+
+export default function AdminPage() {
+  const [tab, setTab] = useState('users');
+
+  return (
+    <Box>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>Administration</Typography>
+        <Typography variant="body2" color="text.secondary">Users, roles and access</Typography>
+      </Box>
+
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
+        <Tab label="Users" value="users" />
+        <Tab label="Roles" value="roles" />
+        <Tab label="Audit log" value="audit" />
+      </Tabs>
+
+      {tab === 'users' && (
+        <Can permission="users:read" fallback={<Alert severity="info">You don&apos;t have access to the user list.</Alert>}>
+          <UsersTab />
+        </Can>
+      )}
+      {tab === 'roles' && (
+        <Can permission="roles:read" fallback={<Alert severity="info">You don&apos;t have access to roles.</Alert>}>
+          <RolesTab />
+        </Can>
+      )}
+      {tab === 'audit' && (
+        <Alert severity="info">
+          The audit log viewer arrives with the audit service (WP-15). Nothing is shown here until it reads real audit records.
+        </Alert>
       )}
     </Box>
   );

@@ -21,6 +21,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
+    // Absolute base so fetch Request objects work in jsdom; tests stub fetch (src/test/fakeApi.js).
+    env: { VITE_API_BASE_URL: 'http://localhost/api/v1' },
     css: false,
   },
 })

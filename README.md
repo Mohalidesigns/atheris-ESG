@@ -31,14 +31,24 @@ Use `./scripts/dev.sh db` to prepare only the database.
 
 ### Local login (local profile only)
 
-| Email | Role | Password |
-|---|---|---|
-| `adaeze.usman@esgpro.ng` | ESG_DIRECTOR | `LocalDev!2026` |
-| `chidi.okafor@esgpro.ng` | seeded demo user | `LocalDev!2026` |
-| `amina.bello@esgpro.ng` | seeded demo user | `LocalDev!2026` |
-| `emeka.nwosu@esgpro.ng` | seeded demo user | `LocalDev!2026` |
+One user per built-in role, all with the password `LocalDev!2026`:
 
-These passwords are set by `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. WP-13 replaces them with one seeded user per role (12 roles). The frontend still has a "Demo Login" bypass until WP-12 removes it; don't rely on it.
+| Email | Role | Scope |
+|---|---|---|
+| `super.admin@esgpro.ng` | SUPER_ADMIN | platform |
+| `tenant.admin@esgpro.ng` | TENANT_ADMIN | tenant |
+| `adaeze.usman@esgpro.ng` | ESG_DIRECTOR | tenant |
+| `amina.bello@esgpro.ng` | ESG_MANAGER | Lagos HQ and its sites |
+| `chidi.okafor@esgpro.ng` | ESG_ANALYST | Abuja Office |
+| `emeka.nwosu@esgpro.ng` | DATA_COLLECTOR | OML 42 Field |
+| `auditor@esgpro.ng` | AUDITOR | tenant (read-only) |
+| `compliance@esgpro.ng` | COMPLIANCE_OFFICER | tenant |
+| `investor@esgpro.ng` | INVESTOR_VIEWER | investor portal |
+| `consultant@esgpro.ng` | CONSULTANT | tenant |
+| `board@esgpro.ng` | BOARD_MEMBER | governance |
+| `training@esgpro.ng` | TRAINING_ADMIN | training |
+
+These come from `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. **MFA is not enforced in the local profile**, so you can sign in without an authenticator; every other profile requires TOTP for SUPER_ADMIN, TENANT_ADMIN and ESG_DIRECTOR. After pulling WP-12/13, run `./scripts/dev.sh reset-db` once to get the new users.
 
 ## Profiles and configuration
 
@@ -48,7 +58,7 @@ These passwords are set by `esg-backend/src/main/resources/db/seed/local/`, whic
 | `test` | Automated tests | Test-only JWT key; DB from Testcontainers |
 | `staging`, `prod` | Shared environments | **All from env vars**; the app refuses to start without `JWT_SECRET` |
 
-Environment variables: `DB_URL`, `DB_USERNAME`/`DB_PASSWORD` (application role, default `esg_app`), `DB_OWNER_USERNAME`/`DB_OWNER_PASSWORD` (migration role, default `esg_owner`), `DB_APP_ROLE`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
+Environment variables: `DATA_ENCRYPTION_KEY` (base64, 32 bytes; encrypts MFA secrets), `DB_URL`, `DB_USERNAME`/`DB_PASSWORD` (application role, default `esg_app`), `DB_OWNER_USERNAME`/`DB_OWNER_PASSWORD` (migration role, default `esg_owner`), `DB_APP_ROLE`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
 
 ## Checks (same as CI)
 

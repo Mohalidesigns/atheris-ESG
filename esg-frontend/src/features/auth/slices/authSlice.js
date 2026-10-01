@@ -1,67 +1,33 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api, setToken } from '../../../services/api';
+import { createSlice } from '@reduxjs/toolkit';
 
-export const loginAsync = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
-  try {
-    const res = await api.auth.login(email, password);
-    setToken(res.data.accessToken);
-    return res.data;
-  } catch (err) {
-    return rejectWithValue(err.message);
-  }
-});
-
-const demoUser = {
-  id: 'u-001', email: 'adaeze.usman@esgpro.ng', firstName: 'Adaeze', lastName: 'Usman',
-  role: 'ESG_DIRECTOR', tenantId: 't-001', orgIds: ['o-001'],
-  permissions: [
-    'carbon_data:create','carbon_data:read','carbon_data:update','carbon_data:approve',
-    'data_points:create','data_points:read','data_points:update','data_points:approve',
-    'compliance:read','compliance:configure',
-    'reports:create','reports:read','reports:update','reports:approve','reports:export',
-    'risk:read','risk:create','supply_chain:read','supply_chain:create',
-    'social:read','social:create','governance:read','analytics:read',
-    'investor:read','carbon_market:read','training:read','users:read','audit_logs:read',
-  ],
-  timezone: 'Africa/Lagos', preferredLanguage: 'en',
-};
+/**
+ * Session state. status: 'unknown' until the startup refresh attempt finishes, then 'authenticated' or 'anonymous'.
+ * The access token lives only in memory; the refresh token is an HttpOnly cookie the browser manages.
+ * mfa holds a pending MFA challenge after a correct password ({ token, setupRequired }).
+ */
+const initialState = { status: 'unknown', user: null, accessToken: null, mfa: null };
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { user: null, token: null, isAuthenticated: false, loading: false, error: null },
+  initialState,
   reducers: {
-    loginSuccess(state, action) {
+    sessionStarted(state, action) {
+      state.status = 'authenticated';
+      state.accessToken = action.payload.accessToken;
       state.user = action.payload.user;
-      state.token = action.payload.accessToken;
-      state.isAuthenticated = true;
-      state.loading = false;
-      state.error = null;
+      state.mfa = null;
     },
-    loginDemo(state) {
-      state.user = demoUser;
-      state.token = 'demo-jwt-token';
-      state.isAuthenticated = true;
-      state.loading = false;
+    mfaChallenged(state, action) {
+      state.mfa = { token: action.payload.mfaToken, setupRequired: Boolean(action.payload.mfaSetupRequired) };
     },
-    logout(state) { state.user = null; state.token = null; state.isAuthenticated = false; setToken(null); },
-    setLoading(state, action) { state.loading = action.payload; },
-    setError(state, action) { state.error = action.payload; state.loading = false; },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginAsync.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(loginAsync.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.token = action.payload.accessToken;
-        state.isAuthenticated = true;
-        state.loading = false;
-      })
-      .addCase(loginAsync.rejected, (state, action) => {
-        state.error = action.payload;
-        state.loading = false;
-      });
+    mfaCancelled(state) {
+      state.mfa = null;
+    },
+    loggedOut() {
+      return { ...initialState, status: 'anonymous' };
+    },
   },
 });
 
-export const { loginSuccess, loginDemo, logout, setLoading, setError } = authSlice.actions;
+export const { sessionStarted, mfaChallenged, mfaCancelled, loggedOut } = authSlice.actions;
 export default authSlice.reducer;
