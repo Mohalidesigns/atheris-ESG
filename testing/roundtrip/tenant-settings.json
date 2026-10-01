@@ -1,0 +1,36 @@
+{
+  "id": "tenant-settings",
+  "forms": ["Admin: tenant settings"],
+  "actor": "TENANT_ADMIN",
+  "readOnlyRole": "AUDITOR",
+  "singleton": true,
+  "read": { "path": "/v1/settings" },
+  "update": { "method": "PUT", "path": "/v1/settings", "versioned": true },
+  "values": {
+    "baseCurrency": "GHS",
+    "fiscalYearStartMonth": 7,
+    "reportingTimezone": "Africa/Accra",
+    "defaultFrameworkCodes": ["GRI", "TCFD"]
+  },
+  "changes": {
+    "baseCurrency": "ZAR",
+    "fiscalYearStartMonth": 4,
+    "reportingTimezone": "Africa/Johannesburg",
+    "defaultFrameworkCodes": ["ISSB_S2"]
+  },
+  "invalid": [
+    { "field": "baseCurrency", "value": "BTC", "rule": "enum" },
+    { "field": "fiscalYearStartMonth", "value": 13, "rule": "1..12" },
+    { "field": "fiscalYearStartMonth", "value": 0, "rule": "1..12" },
+    { "field": "reportingTimezone", "value": "", "rule": "required" },
+    { "field": "defaultFrameworkCodes", "value": ["NOT_A_FRAMEWORK"], "rule": "codes must exist" }
+  ],
+  "ui": {
+    "fields": {
+      "baseCurrency": { "label": "Base currency", "kind": "select", "display": "GHS" },
+      "fiscalYearStartMonth": { "label": "Fiscal year starts", "kind": "select", "display": "July" },
+      "reportingTimezone": { "label": "Reporting time zone" },
+      "defaultFrameworkCodes": { "kind": "checkboxes", "options": ["GRI", "TCFD", "ISSB_S2"] }
+    }
+  }
+}

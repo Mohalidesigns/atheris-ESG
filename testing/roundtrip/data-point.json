@@ -1,0 +1,29 @@
+{
+  "id": "data-point",
+  "forms": ["Add ESG Data Point (dialog)"],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": { "method": "POST", "path": "/v1/data/points" },
+  "read": { "path": "/v1/data/points/{id}" },
+  "isolation": { "status": 404 },
+  "values": {
+    "orgId": "{ORG_SITE_1}",
+    "metricKey": "diesel_litres",
+    "subCategory": "Generator fuel",
+    "numericValue": 1234.5,
+    "reportingPeriodStart": "2026-04-01",
+    "reportingPeriodEnd": "2026-06-30"
+  },
+  "derived": { "category": "E", "unit": "L" },
+  "invalid": [
+    { "field": "metricKey", "value": "made_up_metric", "rule": "catalogue metric" },
+    { "field": "metricKey", "value": "", "rule": "required" },
+    { "field": "numericValue", "value": -5, "rule": ">= 0 for this metric" },
+    { "field": "numericValue", "value": 1.1234567, "rule": "6 decimals" },
+    { "field": "subCategory", "value": { "$repeat": ["x", 101] }, "rule": "max 100" },
+    { "field": "reportingPeriodStart", "value": null, "rule": "required" },
+    { "field": "reportingPeriodEnd", "value": "2026-03-31", "rule": "end >= start (cross-field)" },
+    { "field": "orgId", "value": null, "rule": "required" }
+  ],
+  "ui": { "createOnly": "data points have no edit form yet (corrections arrive with the workflow in WP-20)" }
+}

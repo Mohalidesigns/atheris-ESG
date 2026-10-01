@@ -196,6 +196,29 @@ class AdminUserApiTest extends ApiTestSupport {
   }
 
   @Test
+  void searchFindsByNameAndEmail() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String body = "{\"email\":\"finder." + tag + "@fixture.test\",\"firstName\":\"Adeola\",\"lastName\":\"Zz" + tag
+        + "\",\"password\":\"Str0ng!Passw0rd\"}";
+    mvc.perform(post("/v1/admin/users").header("Authorization", admin()).contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isCreated());
+
+    mvc.perform(get("/v1/admin/users?search=finder." + tag).header("Authorization", admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content", hasSize(1)))
+        .andExpect(jsonPath("$.data.content[0].email").value("finder." + tag + "@fixture.test"));
+    mvc.perform(get("/v1/admin/users?search=ZZ" + tag.toUpperCase()).header("Authorization", admin()))
+        .andExpect(jsonPath("$.data.content", hasSize(1)))
+        .andExpect(jsonPath("$.data.content[0].lastName").value("Zz" + tag));
+    mvc.perform(get("/v1/admin/users?search=no-such-person-" + tag).header("Authorization", admin()))
+        .andExpect(jsonPath("$.data.content", hasSize(0)));
+    // Another tenant's admin searching for the same text finds nothing.
+    mvc.perform(get("/v1/admin/users?search=finder." + tag)
+            .header("Authorization", bearer(USER_B_ADMIN, com.esg.support.PostgresTestDatabase.TENANT_B)))
+        .andExpect(jsonPath("$.data.content", hasSize(0)));
+  }
+
+  @Test
   void rolesEndpointListsAllTwelveBuiltInRolesWithPermissions() throws Exception {
     mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
         .andExpect(status().isOk())

@@ -1,0 +1,143 @@
+{
+  "id": "user",
+  "forms": [
+    "Admin: create user",
+    "Admin: edit user"
+  ],
+  "actor": "TENANT_ADMIN",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/admin/users"
+  },
+  "read": {
+    "path": "/v1/admin/users/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/admin/users/{id}",
+    "versioned": true,
+    "fields": [
+      "firstName",
+      "lastName",
+      "phone",
+      "preferredLanguage",
+      "timezone"
+    ]
+  },
+  "isolation": {
+    "status": 404
+  },
+  "masked": {
+    "role": "TRAINING_ADMIN",
+    "fields": [
+      "phone"
+    ]
+  },
+  "writeOnly": {
+    "password": "never returned; login with it is covered by AuthFlowIntegrationTest"
+  },
+  "values": {
+    "email": "rt.{u}@fixture.test",
+    "firstName": "Ngozi",
+    "lastName": "Eze",
+    "phone": "+2348031234567",
+    "preferredLanguage": "fr",
+    "timezone": "Africa/Nairobi",
+    "password": "Str0ng!Passw0rd"
+  },
+  "changes": {
+    "firstName": "Chiamaka",
+    "lastName": "Obi",
+    "phone": "+254712345678",
+    "preferredLanguage": "sw",
+    "timezone": "Africa/Accra"
+  },
+  "invalid": [
+    {
+      "field": "email",
+      "value": "not-an-email",
+      "rule": "email"
+    },
+    {
+      "field": "email",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "email",
+      "value": "user.a@fixture.test",
+      "rule": "unique"
+    },
+    {
+      "field": "firstName",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "lastName",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "phone",
+      "value": "12ab",
+      "rule": "pattern"
+    },
+    {
+      "field": "preferredLanguage",
+      "value": "de",
+      "rule": "enum"
+    },
+    {
+      "field": "timezone",
+      "value": {
+        "$repeat": [
+          "x",
+          51
+        ]
+      },
+      "rule": "max 50"
+    },
+    {
+      "field": "password",
+      "value": "weakpassword",
+      "rule": "password policy"
+    },
+    {
+      "field": "password",
+      "value": "",
+      "rule": "required"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "firstName": {
+        "label": "First name"
+      },
+      "lastName": {
+        "label": "Last name"
+      },
+      "phone": {
+        "label": "Phone (optional)"
+      },
+      "preferredLanguage": {
+        "label": "Language",
+        "kind": "select",
+        "display": "French"
+      },
+      "timezone": {
+        "label": "Time zone"
+      }
+    },
+    "notInEditForm": {
+      "email": "the login identity; not editable after creation",
+      "password": "set at creation or via Set password"
+    }
+  }
+}

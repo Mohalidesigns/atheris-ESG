@@ -2,6 +2,12 @@ package com.esg.reference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,7 +88,7 @@ class ReferenceDataTest extends ApiTestSupport {
     mvc.perform(get("/v1/carbon/factors/resolve?category=electricity_grid&country=NG&date=2023-06-30")
             .header("Authorization", bearerForRole("AUDITOR")))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("electricity_grid")));
+        .andExpect(jsonPath("$.detail").value(containsString("electricity_grid")));
   }
 
   @Test
@@ -246,9 +252,9 @@ class ReferenceDataTest extends ApiTestSupport {
     assertThat(scope1.path("dataType").asText()).isEqualTo("decimal");
     assertThat(scope1.path("requirements").findValuesAsText("code")).containsExactlyInAnyOrder("305-1", "S2-29(a)(i)(1)", "MT-b");
     mvc.perform(get("/v1/reference/metrics?pillar=G").header("Authorization", analyst))
-        .andExpect(jsonPath("$.data[*].pillar", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("G"))));
+        .andExpect(jsonPath("$.data[*].pillar", everyItem(is("G"))));
     mvc.perform(get("/v1/reference/metrics?framework=CBN_NSBP").header("Authorization", analyst))
-        .andExpect(jsonPath("$.data[*].metricKey", org.hamcrest.Matchers.containsInAnyOrder("employees_female", "women_in_management_pct")));
+        .andExpect(jsonPath("$.data[*].metricKey", containsInAnyOrder("employees_female", "women_in_management_pct")));
   }
 
   @Test
@@ -315,5 +321,25 @@ class ReferenceDataTest extends ApiTestSupport {
     // Another tenant's status rows don't count.
     mvc.perform(get("/v1/compliance/gaps?framework=CBN_NSBP&year=2031").header("Authorization", bearer(USER_B_ADMIN, PostgresTestDatabase.TENANT_B)))
         .andExpect(jsonPath("$.data.completed").value(0));
+  }
+
+  @Test
+  void emissionListFiltersByScope() throws Exception {
+    String director = bearerForRole("ESG_DIRECTOR");
+    String factor = resolve("ESG_DIRECTOR", "category=diesel_generator&country=NG&date=2026-05-01").path("factor").path("id").asText();
+    String id = data(mvc.perform(post("/v1/carbon/emissions").header("Authorization", director)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"diesel_generator\","
+                + "\"activityData\":10,\"activityUnit\":\"litre\",\"emissionFactorId\":\"" + factor + "\","
+                + "\"reportingPeriodStart\":\"2026-05-01\",\"reportingPeriodEnd\":\"2026-05-31\"}"))
+        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).path("id").asText();
+
+    mvc.perform(get("/v1/carbon/emissions?scope=scope_1&size=200").header("Authorization", director))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content[*].scope", everyItem(is("scope_1"))))
+        .andExpect(jsonPath("$.data.content[*].id", hasItem(id)));
+    mvc.perform(get("/v1/carbon/emissions?scope=scope_2&size=200").header("Authorization", director))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content[*].id", not(hasItem(id))));
   }
 }

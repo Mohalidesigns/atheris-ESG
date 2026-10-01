@@ -67,6 +67,21 @@ public class GlobalExceptionHandler {
         if (ex instanceof MaxUploadSizeExceededException) {
             return Problems.response(HttpStatus.PAYLOAD_TOO_LARGE, "ESG-413", "The file is larger than the upload limit", req.getRequestURI(), null);
         }
+        // Name the offending query/path parameter so the UI can show the error next to its filter (master plan §7.2).
+        if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
+            String expected = mismatch.getRequiredType() == null ? "a valid value" : switch (mismatch.getRequiredType().getSimpleName()) {
+                case "UUID" -> "a valid id";
+                case "Instant", "LocalDate", "LocalDateTime" -> "a valid ISO date";
+                case "int", "Integer", "long", "Long" -> "a whole number";
+                default -> "a valid value";
+            };
+            return Problems.response(HttpStatus.BAD_REQUEST, "ESG-400", "Malformed request", req.getRequestURI(),
+                    java.util.Map.of(mismatch.getName(), "must be " + expected));
+        }
+        if (ex instanceof MissingServletRequestParameterException missing) {
+            return Problems.response(HttpStatus.BAD_REQUEST, "ESG-400", "Malformed request", req.getRequestURI(),
+                    java.util.Map.of(missing.getParameterName(), "is required"));
+        }
         return Problems.response(HttpStatus.BAD_REQUEST, "ESG-400", "Malformed request", req.getRequestURI(), null);
     }
 

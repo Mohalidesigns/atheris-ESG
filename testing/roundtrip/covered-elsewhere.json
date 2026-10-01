@@ -1,0 +1,34 @@
+{
+  "_comment": "Inventory forms that aren't create/read/update forms (filters, searches, nested editors) and are proven by hand-written tests. FieldRoundTripTest checks each referenced test method exists.",
+  "Admin: role assignment": [
+    "com.esg.controller.AdminUserApiTest#roleAssignmentWithScopeAndExpiryRoundTrips",
+    "com.esg.controller.AdminUserApiTest#orgScopedRoleRequiresAnOrganisation",
+    "com.esg.controller.AdminUserApiTest#expiryMustBeInTheFuture"
+  ],
+  "Admin: set password": [
+    "com.esg.controller.TenancyApiTest#adminCanSetPasswordAndResetMfa"
+  ],
+  "Admin: user search": [
+    "com.esg.controller.AdminUserApiTest#searchFindsByNameAndEmail"
+  ],
+  "Admin: audit log filters": [
+    "com.esg.crosscutting.AuditTrailTest#auditViewerFiltersAndValidatesParameters"
+  ],
+  "Notification preferences": [
+    "com.esg.crosscutting.NotificationServiceTest#preferencesTurnChannelsOffAndUsersOnlySeeTheirOwnNotifications"
+  ],
+  "Data points filter bar": [
+    "com.esg.controller.DataPointApiTest#listSupportsFiltersPagingAndSorting"
+  ],
+  "Emission records filter": [
+    "com.esg.reference.ReferenceDataTest#emissionListFiltersByScope"
+  ],
+  "Gap analysis": [
+    "com.esg.reference.ReferenceDataTest#gapAnalysisIsComputedFromRequirementsAndTenantStatus"
+  ],
+  "Admin: module entitlement (platform)": [
+    "com.esg.subscription.SubscriptionEntitlementTest#overrideValidation",
+    "com.esg.subscription.SubscriptionEntitlementTest#starterPlanExcludesGrowthModulesUntilAnAddOnIsGranted",
+    "com.esg.subscription.SubscriptionEntitlementTest#onlyThePlatformChangesEntitlements"
+  ]
+}
