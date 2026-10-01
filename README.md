@@ -1,2 +1,66 @@
 # ESG
 Environmental, Social, and Governance (ESG) is a framework used by investors and organizations to measure a company's sustainability, ethical impact, and risk management beyond financial performance.
+
+**Atheris ESG** is a multi-tenant ESG management platform for Nigerian and African organisations. Project rules: [`CLAUDE.md`](CLAUDE.md). Completion plan and status: [`docs/esg-completion/`](docs/esg-completion/).
+
+| Part | Path | Stack |
+|---|---|---|
+| Backend | `esg-backend/` | Spring Boot 3.5, Java 25, PostgreSQL 17, Flyway |
+| Frontend | `esg-frontend/` | React 19, Vite, MUI, Redux Toolkit |
+| Local stack | `docker-compose.yml`, `scripts/dev.sh` | Postgres 17, Redis, MinIO, Mailpit |
+
+## Run locally in 5 minutes
+
+**Prerequisites:** JDK 25, Node 22, and either Docker *or* a running PostgreSQL 17 on `localhost:5432` with a superuser you can connect to without a password prompt.
+
+```bash
+./scripts/dev.sh
+```
+
+That one command:
+
+1. Prepares the database. With Docker it starts the compose stack (Postgres on **5433**, Redis, MinIO, Mailpit). Without Docker it uses your local PostgreSQL on 5432 and creates the `esg_owner` role and `esg_dev` database if missing. Force a mode with `ESG_DB_MODE=docker` or `ESG_DB_MODE=local`.
+2. Starts the backend with the `local` profile on http://localhost:8080/api (Flyway migrates on start).
+3. Starts the frontend on http://localhost:5173. Vite proxies `/api` to the backend.
+
+Use `./scripts/dev.sh db` to prepare only the database.
+
+### Local login (local profile only)
+
+| Email | Role | Password |
+|---|---|---|
+| `adaeze.usman@esgpro.ng` | ESG_DIRECTOR | `LocalDev!2026` |
+| `chidi.okafor@esgpro.ng` | seeded demo user | `LocalDev!2026` |
+| `amina.bello@esgpro.ng` | seeded demo user | `LocalDev!2026` |
+| `emeka.nwosu@esgpro.ng` | seeded demo user | `LocalDev!2026` |
+
+These passwords are set by `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. WP-13 replaces them with one seeded user per role (12 roles). The frontend still has a "Demo Login" bypass until WP-12 removes it; don't rely on it.
+
+## Profiles and configuration
+
+| Profile | Use | Secrets |
+|---|---|---|
+| `local` | Developer machines | Dev-only defaults; demo-user passwords seeded |
+| `test` | Automated tests | Test-only JWT key; DB from Testcontainers |
+| `staging`, `prod` | Shared environments | **All from env vars**; the app refuses to start without `JWT_SECRET` |
+
+Environment variables: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
+
+## Checks (same as CI)
+
+```bash
+cd esg-backend && ./mvnw verify
+```
+
+```bash
+cd esg-frontend && npm run lint && npm test && npm run build
+```
+
+```bash
+cd esg-frontend && npm run check:no-mocks
+```
+
+- `mvnw verify` runs tests, the JaCoCo coverage report and Checkstyle (Google style, warnings ratcheted up per module).
+- `check:no-mocks` lists hard-coded data in production pages. It's in REPORT mode now and becomes a failing gate at the end of WP-16. Current report: [`NO_MOCK_REPORT.md`](docs/esg-completion/NO_MOCK_REPORT.md).
+
+API docs (local): http://localhost:8080/api/v1/swagger-ui.html

@@ -45,13 +45,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v1/auth/login", "/v1/auth/refresh").permitAll()
                 .requestMatchers("/v1/governance/whistleblower").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui/**", "/swagger-ui/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui.html", "/v1/swagger-ui/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .headers(headers -> headers.frameOptions(f -> f.sameOrigin()))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

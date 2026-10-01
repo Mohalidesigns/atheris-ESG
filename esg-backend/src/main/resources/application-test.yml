@@ -1,0 +1,9 @@
+# Automated tests. Integration tests get their datasource from Testcontainers
+# (@ServiceConnection) once the WP-18 harness lands.
+esg:
+  security:
+    jwt-secret: ${JWT_SECRET:test-only-signing-key-used-by-automated-tests-0123456789abcdef0123}
+
+logging:
+  level:
+    com.esg: INFO

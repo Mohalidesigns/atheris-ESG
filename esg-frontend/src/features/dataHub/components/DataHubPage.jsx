@@ -31,7 +31,6 @@ const statusConfig = {
 const categoryColors = { E: '#2D7D46', S: '#1A365D', G: '#D4AF37' };
 
 export default function DataHubPage() {
-  const [tab, setTab] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
 
   const stats = {

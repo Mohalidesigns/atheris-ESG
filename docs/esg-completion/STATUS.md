@@ -2,10 +2,10 @@
 
 | Item | Value |
 |---|---|
-| Phase | **P0 complete — Gate G0 passed (1 Oct 2026)**; P1 Platform Foundation next |
+| Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | WP-00 (`AS_IS_ARCHITECTURE.md`), WP-01 (`FEATURE_REALITY_MATRIX.csv`), WP-02 (`FIELD_INVENTORY.csv`), WP-03 (`RTM.csv`, `BENCHMARK_REALITY.csv`), WP-04 (`GAP_BACKLOG.md`, `wp/`) |
-| Next | **WP-10** (build/CI) and **WP-11** (DB baseline + RLS) in parallel, then WP-12/13 |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (branch `feature/wp-10-build-ci`) |
+| Next | **WP-11** (DB baseline + RLS), then WP-12/13 |
 | Blockers | B1 Docker not installed (local PostgreSQL 17.9 available, so WP-11 can start); B2 no test frameworks (fixed by WP-10/18) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -15,12 +15,12 @@
 |---|---|---|
 | Fields at L4+ / total fields | **0 / 25** (0 fields WORK end-to-end) | `FIELD_INVENTORY.csv` |
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows (91 functional + 32 differentiators + 36 NFRs); 0 / 251 incl. TRD rows | `RTM.csv` |
-| Pages with zero mock data / total pages | **1 / 16** (only `/login` has no hard-coded dataset, and it has a demo-login bypass) | `FEATURE_REALITY_MATRIX.csv` type=page |
+| Pages with zero mock data / total pages | **1 / 16**. No-mock gate (REPORT mode): 36 findings in 15 files, 174 hard-coded dataset rows | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | **0 / 58** tested; 11 implemented, 2 stubs, 45 missing | type=trd_endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **0 %** (0 backend tests, no frontend test runner) | `AS_IS_ARCHITECTURE.md` §4 |
+| Test coverage | **Backend 2% lines** (4 unit tests, JaCoCo); **frontend 3 component tests** (Vitest). Ratchet starts at 0% | `esg-backend/target/site/jacoco`, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
-| Open critical/high security findings | **11**: 5 critical (S1, S2, S3, S4, S9) + 6 high (S5, S6, S7, S10, S11, S12) | `AS_IS_ARCHITECTURE.md` §7 |
+| Open critical/high security findings | **8**: 4 critical (S1, S2, S3, S9) + 4 high (S7, S10, S11, S12). WP-10 closed S4 (critical), S5, S6 (high) and S14, S17 (medium) | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
 
@@ -170,3 +170,31 @@ The 5 capabilities with untested partial code are Scope 1&2 calculation, Africa 
 | 10 | ACMI Integration | 5 | 0 | SWOT; depends on an external partner | P4 (WP-41) |
 
 The pricing items (affordable tier, local-currency billing, freemium; 15 claimed points) aren't on this list only because they're commercial. Note that **no WP builds them** (D15).
+
+
+---
+
+## WP-10 — Build, run & CI backbone
+
+Branch `feature/wp-10-build-ci` (stacked on the Phase 0 branch).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Fresh clone runs with one command | ✅ local mode / ⚠️ docker mode unverified | `./scripts/dev.sh` created role + DB on local PG 17 and starts both apps. Docker mode can't run here (no Docker); `docker-compose.yml` validated as YAML only |
+| CI green on main | ⏳ pending first run | `.github/workflows/ci.yml` (backend, frontend, OpenAPI + oasdiff) and `nightly-e2e.yml` added; same commands pass locally: `mvnw verify` (4 tests, 0 failures), `npm run lint`, `npm test` (3 passed), `npm run build` |
+| No-mock report generated | ✅ | `NO_MOCK_REPORT.md`: 36 findings, 15 files, 174 rows. Not detected by the script and tracked manually: hard-coded summary object in `features/carbon/slices/carbonSlice.js` |
+| DataSeeder and `/h2-console` gone; no start without `JWT_SECRET` outside local | ✅ | Probed live: `/h2-console` 403, `/actuator/metrics` 403, prod profile fails with "Could not resolve placeholder 'JWT_SECRET'" |
+| Real login through the UI | ✅ | Browser: `POST /api/v1/auth/login` via Vite proxy → 200, redirected to `/dashboard` |
+
+Other changes:
+- **Spring Boot 3.4.4 → 3.5.16** (D6); H2 removed; Testcontainers dependencies added (harness in WP-18); springdoc 2.8.17.
+- Profiles `local`, `test`, `staging`, `prod`; all connection details from env vars.
+- Local-only seed `db/seed/local/R__local_demo_users.sql` replaces `DataSeeder`. The V1_006 hash never matched `demo123`, which is why DataSeeder existed. Local password is now `LocalDev!2026` (README).
+- Checkstyle (Google): 2,302 warnings on existing code (mostly 2- vs 4-space indent), report-only; it ratchets up as modules are rebuilt. JaCoCo minimum 0% (ratchet).
+- Frontend: 3 lint errors fixed; Vitest + RTL; Prettier (not enforced yet); API base URL from `VITE_API_BASE_URL` with a `/api` dev proxy; **`npm audit` 11 → 0 vulnerabilities** (2 high in `react-router` shipped code).
+- PR template with the master plan §6 DoD checklist.
+
+Deviations from the WP-10 prompt:
+- **ESLint Airbnb not added.** `eslint-config-airbnb` doesn't support ESLint 9 flat config. We kept `@eslint/js` recommended + react-hooks; revisit if a maintained flat-config port is adopted.
+- **Kafka omitted** from compose (D1).
+- **Compose Postgres published on 5433** so it doesn't clash with a local server on 5432.

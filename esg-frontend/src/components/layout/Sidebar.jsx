@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
@@ -14,6 +13,7 @@ import { useAuth } from '../../features/auth/hooks/useAuth';
 
 const DRAWER_WIDTH = 260;
 
+// no-mock-gate: config — navigation menu definition, not data
 const navSections = [
   { label: 'MAIN', items: [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },

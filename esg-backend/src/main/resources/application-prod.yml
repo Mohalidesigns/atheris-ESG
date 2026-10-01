@@ -1,0 +1,8 @@
+# Production: all secrets via environment variables (DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS).
+springdoc:
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.esg: INFO

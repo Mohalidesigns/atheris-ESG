@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:8080/api/v1';
+// Base URL comes from VITE_API_BASE_URL; defaults to the same-origin path that the
+// Vite dev server proxies to the backend (vite.config.js). AS-IS S17.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 let authToken = null;
 

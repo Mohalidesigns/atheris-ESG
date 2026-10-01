@@ -14,6 +14,8 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
+    static final int MIN_SECRET_BYTES = 64;
+
     private final SecretKey key;
     private final long jwtExpirationMs;
     private final long refreshExpirationMs;
@@ -22,6 +24,10 @@ public class JwtTokenProvider {
             @Value("${esg.security.jwt-secret}") String jwtSecret,
             @Value("${esg.security.jwt-expiration-ms}") long jwtExpirationMs,
             @Value("${esg.security.refresh-expiration-ms}") long refreshExpirationMs) {
+        if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be set and at least " + MIN_SECRET_BYTES + " bytes (HS512)");
+        }
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationMs = jwtExpirationMs;
         this.refreshExpirationMs = refreshExpirationMs;

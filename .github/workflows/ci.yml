@@ -1,0 +1,126 @@
+# CI backbone (WP-10). Every PR and push to main must pass.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend build, test, coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: esg-backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'   # D6
+          cache: maven
+      - name: Verify (unit + integration tests, JaCoCo, Checkstyle)
+        run: ./mvnw -B verify
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f target/site/jacoco/jacoco.csv ]; then
+            awk -F, 'NR>1 {m+=$8; c+=$9} END {printf "Line coverage: %.1f%% (%d/%d)\n", (c/(m+c))*100, c, m+c}' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-reports
+          path: |
+            esg-backend/target/site/jacoco/
+            esg-backend/target/surefire-reports/
+            esg-backend/target/checkstyle-result.xml
+
+  frontend:
+    name: Frontend lint, test, build, no-mock report
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: esg-frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: esg-frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: No-mock gate (REPORT mode until end of WP-16)
+        run: |
+          npm run -s check:no-mocks -- --report no-mock-report.md
+          cat no-mock-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: no-mock-report
+          path: esg-frontend/no-mock-report.md
+
+  openapi:
+    name: OpenAPI spec + breaking-change diff
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17   # D11
+        env:
+          POSTGRES_USER: esg_owner
+          POSTGRES_PASSWORD: esg_owner_ci
+          POSTGRES_DB: esg_dev
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U esg_owner -d esg_dev"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/esg_dev
+      DB_USERNAME: esg_owner
+      DB_PASSWORD: esg_owner_ci
+      JWT_SECRET: ci-only-signing-key-for-openapi-generation-0123456789abcdef0123456789
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and export spec
+        working-directory: esg-backend
+        run: |
+          ./mvnw -B -q package -DskipTests -Dcheckstyle.skip -Djacoco.skip
+          java -jar target/esg-platform-*.jar --spring.profiles.active=test --server.port=8080 > app.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:8080/api/actuator/health && break; sleep 2; done
+          curl -sf localhost:8080/api/v1/api-docs -o ../openapi.json || (cat app.log; exit 1)
+      - uses: actions/upload-artifact@v7
+        with:
+          name: openapi
+          path: openapi.json
+      - name: Export base branch spec
+        if: github.event_name == 'pull_request'
+        continue-on-error: true   # base may predate WP-10 and use different config
+        run: |
+          pkill -f esg-platform || true
+          git fetch --depth=1 origin "${{ github.base_ref }}"
+          git worktree add ../base FETCH_HEAD
+          cd ../base/esg-backend
+          ./mvnw -B -q package -DskipTests -Dcheckstyle.skip -Djacoco.skip
+          java -jar target/esg-platform-*.jar --spring.profiles.active=test --server.port=8081 > app.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:8081/api/actuator/health && break; sleep 2; done
+          curl -sf localhost:8081/api/v1/api-docs -o "$GITHUB_WORKSPACE/openapi-base.json"
+      - name: Breaking changes (oasdiff)
+        if: github.event_name == 'pull_request' && hashFiles('openapi-base.json') != ''
+        run: |
+          docker run --rm -v "$PWD:/specs" tufin/oasdiff breaking /specs/openapi-base.json /specs/openapi.json --format markdown > oasdiff.md || true
+          { echo "## OpenAPI breaking changes"; cat oasdiff.md; } >> "$GITHUB_STEP_SUMMARY"

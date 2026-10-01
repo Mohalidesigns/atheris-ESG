@@ -1,0 +1,16 @@
+# Local development only. Started by scripts/dev.sh.
+spring:
+  flyway:
+    # db/seed/local sets known passwords for demo users (see README). Never add it to other profiles.
+    locations: classpath:db/migration,classpath:db/seed/local
+
+esg:
+  security:
+    # Development-only signing key. Real environments must set JWT_SECRET.
+    jwt-secret: ${JWT_SECRET:local-dev-only-signing-key-not-for-any-shared-environment-0123456789abcdef}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
+
+logging:
+  level:
+    com.esg: DEBUG
