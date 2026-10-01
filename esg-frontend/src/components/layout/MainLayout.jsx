@@ -7,7 +7,8 @@ export default function MainLayout() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#F7FAFC' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: 0 }}>
+      {/* minWidth 0 lets wide tables scroll inside their container instead of widening the page. */}
+      <Box sx={{ flex: 1, ml: 0, minWidth: 0 }}>
         <TopBar />
         <Box component="main" sx={{ mt: '56px', p: 3, minHeight: 'calc(100vh - 56px)' }}>
           <Outlet />
