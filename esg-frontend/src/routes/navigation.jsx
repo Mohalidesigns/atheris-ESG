@@ -29,7 +29,7 @@ export const navSections = [
   ]},
   { label: 'PLATFORM', items: [
     { text: 'Training', icon: <School />, path: '/training', anyOf: ['training:read'] },
-    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin', anyOf: ['users:read', 'roles:read'] },
+    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'tenants:read', 'audit_logs:read'] },
   ]},
 ];
 

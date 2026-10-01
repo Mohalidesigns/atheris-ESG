@@ -8,6 +8,7 @@ import { Add, DeleteOutline } from '@mui/icons-material';
 import { useListOrganisationsQuery, useListRolesQuery, useReplaceUserRolesMutation } from '../adminApi';
 import { roleAssignmentsSchema, toAssignmentsBody, toLocalInput } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
+import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { applyServerFieldErrors } from '../../../services/formErrors';
 
 
@@ -72,11 +73,9 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
                   </TextField>
                 )} />
                 <Controller name={`assignments.${index}.orgScopeId`} control={control} render={({ field }) => (
-                  <TextField select size="small" label={isOrgRole ? 'Organisation (required)' : 'Organisation'} sx={{ flex: 2 }}
-                    {...field} error={!!rowErrors.orgScopeId} helperText={rowErrors.orgScopeId?.message}>
-                    <MenuItem value="">All organisations</MenuItem>
-                    {orgs.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
-                  </TextField>
+                  <OrgTreeSelect size="small" label={isOrgRole ? 'Organisation (required)' : 'Organisation'} sx={{ flex: 2 }}
+                    orgs={orgs} emptyLabel="All organisations"
+                    {...field} error={!!rowErrors.orgScopeId} helperText={rowErrors.orgScopeId?.message} />
                 )} />
                 <Controller name={`assignments.${index}.expiresAt`} control={control} render={({ field }) => (
                   <TextField type="datetime-local" size="small" label="Expires (optional)" sx={{ flex: 2 }}

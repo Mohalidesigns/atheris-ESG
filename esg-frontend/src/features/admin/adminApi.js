@@ -37,13 +37,67 @@ export const adminApi = apiSlice.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: 'User', id }, { type: 'User', id: 'LIST' }],
     }),
     listRoles: build.query({ query: () => '/admin/roles', transformResponse: unwrap, providesTags: ['Role'] }),
-    listOrganisations: build.query({
-      query: () => '/admin/organisations', transformResponse: unwrap, providesTags: ['Organisation'],
+    resetUserMfa: build.mutation({
+      query: (id) => ({ url: `/admin/users/${id}/reset-mfa`, method: 'POST' }),
+      transformResponse: unwrap,
+      invalidatesTags: (_r, _e, id) => [{ type: 'User', id }, { type: 'User', id: 'LIST' }],
+    }),
+    setUserPassword: build.mutation({
+      query: ({ id, password }) => ({ url: `/admin/users/${id}/password`, method: 'POST', body: { password } }),
+      transformResponse: unwrap,
+    }),
+
+    // Organisations (WP-14) — flat list with parentOrgId; see components/org/orgTree.js.
+    listOrganisations: build.query({ query: () => '/organisations', transformResponse: unwrap, providesTags: ['Organisation'] }),
+    createOrganisation: build.mutation({
+      query: (body) => ({ url: '/organisations', method: 'POST', body }), transformResponse: unwrap, invalidatesTags: ['Organisation'],
+    }),
+    updateOrganisation: build.mutation({
+      query: ({ id, ...body }) => ({ url: `/organisations/${id}`, method: 'PUT', body }),
+      transformResponse: unwrap, invalidatesTags: ['Organisation'],
+    }),
+    deleteOrganisation: build.mutation({
+      query: (id) => ({ url: `/organisations/${id}`, method: 'DELETE' }), invalidatesTags: ['Organisation'],
+    }),
+
+    // Reporting periods
+    listPeriods: build.query({ query: () => '/reporting-periods', transformResponse: unwrap, providesTags: ['Period'] }),
+    createPeriod: build.mutation({
+      query: (body) => ({ url: '/reporting-periods', method: 'POST', body }), transformResponse: unwrap, invalidatesTags: ['Period'],
+    }),
+    updatePeriod: build.mutation({
+      query: ({ id, ...body }) => ({ url: `/reporting-periods/${id}`, method: 'PUT', body }),
+      transformResponse: unwrap, invalidatesTags: ['Period'],
+    }),
+    setPeriodLock: build.mutation({
+      query: ({ id, locked }) => ({ url: `/reporting-periods/${id}/${locked ? 'lock' : 'unlock'}`, method: 'POST' }),
+      transformResponse: unwrap, invalidatesTags: ['Period'],
+    }),
+
+    // Tenant settings
+    getSettings: build.query({ query: () => '/settings', transformResponse: unwrap, providesTags: ['Settings'] }),
+    updateSettings: build.mutation({
+      query: (body) => ({ url: '/settings', method: 'PUT', body }), transformResponse: unwrap, invalidatesTags: ['Settings'],
+    }),
+    listFrameworks: build.query({ query: () => '/compliance/frameworks', transformResponse: unwrap }),
+
+    // Platform tenants (SUPER_ADMIN)
+    listTenants: build.query({ query: () => '/platform/tenants', transformResponse: unwrap, providesTags: ['Tenant'] }),
+    createTenant: build.mutation({
+      query: (body) => ({ url: '/platform/tenants', method: 'POST', body }), transformResponse: unwrap, invalidatesTags: ['Tenant'],
+    }),
+    updateTenant: build.mutation({
+      query: ({ id, ...body }) => ({ url: `/platform/tenants/${id}`, method: 'PUT', body }),
+      transformResponse: unwrap, invalidatesTags: ['Tenant'],
     }),
   }),
 });
 
 export const {
   useListUsersQuery, useGetUserQuery, useCreateUserMutation, useUpdateUserMutation, useDeactivateUserMutation,
-  useReplaceUserRolesMutation, useListRolesQuery, useListOrganisationsQuery,
+  useReplaceUserRolesMutation, useListRolesQuery, useResetUserMfaMutation, useSetUserPasswordMutation,
+  useListOrganisationsQuery, useCreateOrganisationMutation, useUpdateOrganisationMutation, useDeleteOrganisationMutation,
+  useListPeriodsQuery, useCreatePeriodMutation, useUpdatePeriodMutation, useSetPeriodLockMutation,
+  useGetSettingsQuery, useUpdateSettingsMutation, useListFrameworksQuery,
+  useListTenantsQuery, useCreateTenantMutation, useUpdateTenantMutation,
 } = adminApi;

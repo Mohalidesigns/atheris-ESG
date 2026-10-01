@@ -3,9 +3,15 @@ import {
   Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Block, Edit, ManageAccounts, PersonAdd, Search } from '@mui/icons-material';
+import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '@mui/icons-material';
 import Can from '../../../components/rbac/Can';
-import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery } from '../adminApi';
+import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery, useResetUserMfaMutation } from '../adminApi';
+import { useAuth } from '../../auth/hooks/useAuth';
+import OrganisationsTab from './OrganisationsTab';
+import PeriodsTab from './PeriodsTab';
+import SettingsTab from './SettingsTab';
+import TenantsTab from './TenantsTab';
+import SetPasswordDialog from './SetPasswordDialog';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
 import RoleAssignmentDialog from './RoleAssignmentDialog';
@@ -18,7 +24,9 @@ function UsersTab() {
   const [size, setSize] = useState(20);
   const [editing, setEditing] = useState(undefined); // undefined = closed, null = create, object = edit
   const [rolesFor, setRolesFor] = useState(null);
+  const [passwordFor, setPasswordFor] = useState(null);
   const [deactivate] = useDeactivateUserMutation();
+  const [resetMfa] = useResetUserMfaMutation();
   const [actionError, setActionError] = useState('');
   const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, page, size });
 
@@ -27,6 +35,16 @@ function UsersTab() {
     setActionError('');
     try {
       await deactivate(user.id).unwrap();
+    } catch (err) {
+      setActionError(toFormError(err).message);
+    }
+  };
+
+  const onResetMfa = async (user) => {
+    if (!window.confirm(`Reset MFA for ${user.firstName} ${user.lastName}? They will set it up again at next sign-in.`)) return;
+    setActionError('');
+    try {
+      await resetMfa(user.id).unwrap();
     } catch (err) {
       setActionError(toFormError(err).message);
     }
@@ -97,6 +115,12 @@ function UsersTab() {
                       <Can permission="users:update">
                         <IconButton size="small" aria-label={`Edit ${u.email}`} onClick={() => setEditing(u)}><Edit fontSize="small" /></IconButton>
                       </Can>
+                      <Can permission="users:update">
+                        <IconButton size="small" aria-label={`Set password for ${u.email}`} onClick={() => setPasswordFor(u)}><Key fontSize="small" /></IconButton>
+                        {u.mfaEnabled && (
+                          <IconButton size="small" aria-label={`Reset MFA for ${u.email}`} onClick={() => onResetMfa(u)}><PhonelinkErase fontSize="small" /></IconButton>
+                        )}
+                      </Can>
                       <Can permission="roles:assign">
                         <IconButton size="small" aria-label={`Roles for ${u.email}`} onClick={() => setRolesFor(u)}><ManageAccounts fontSize="small" /></IconButton>
                       </Can>
@@ -123,6 +147,8 @@ function UsersTab() {
         open={editing !== undefined} user={editing ?? null} onClose={() => setEditing(undefined)} />
       <RoleAssignmentDialog key={`roles-${rolesFor?.id ?? 'closed'}`}
         open={Boolean(rolesFor)} user={rolesFor} onClose={() => setRolesFor(null)} />
+      <SetPasswordDialog key={`password-${passwordFor?.id ?? 'closed'}`}
+        open={Boolean(passwordFor)} user={passwordFor} onClose={() => setPasswordFor(null)} />
     </>
   );
 }
@@ -159,36 +185,40 @@ function RolesTab() {
   );
 }
 
+const TABS = [
+  { value: 'users', label: 'Users', permission: 'users:read', render: () => <UsersTab /> },
+  { value: 'roles', label: 'Roles', permission: 'roles:read', render: () => <RolesTab /> },
+  { value: 'organisations', label: 'Organisations', permission: 'org_structure:read', render: () => <OrganisationsTab /> },
+  { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
+  { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
+  { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
+  {
+    value: 'audit', label: 'Audit log', permission: 'audit_logs:read',
+    render: () => <Alert severity="info">The audit log viewer arrives with the audit service (WP-15).</Alert>,
+  },
+];
+
 export default function AdminPage() {
-  const [tab, setTab] = useState('users');
+  const { can } = useAuth();
+  const tabs = TABS.filter((t) => can(t.permission));
+  const [selected, setSelected] = useState(null);
+  const tab = tabs.find((t) => t.value === selected) ?? tabs[0];
 
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>Administration</Typography>
-        <Typography variant="body2" color="text.secondary">Users, roles and access</Typography>
+        <Typography variant="body2" color="text.secondary">Users, roles, organisation structure, reporting periods and settings</Typography>
       </Box>
-
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
-        <Tab label="Users" value="users" />
-        <Tab label="Roles" value="roles" />
-        <Tab label="Audit log" value="audit" />
-      </Tabs>
-
-      {tab === 'users' && (
-        <Can permission="users:read" fallback={<Alert severity="info">You don&apos;t have access to the user list.</Alert>}>
-          <UsersTab />
-        </Can>
-      )}
-      {tab === 'roles' && (
-        <Can permission="roles:read" fallback={<Alert severity="info">You don&apos;t have access to roles.</Alert>}>
-          <RolesTab />
-        </Can>
-      )}
-      {tab === 'audit' && (
-        <Alert severity="info">
-          The audit log viewer arrives with the audit service (WP-15). Nothing is shown here until it reads real audit records.
-        </Alert>
+      {!tab && <Alert severity="info">You don&apos;t have access to any administration area.</Alert>}
+      {tab && (
+        <>
+          <Tabs value={tab.value} onChange={(_, v) => setSelected(v)} variant="scrollable"
+            sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
+            {tabs.map((t) => <Tab key={t.value} label={t.label} value={t.value} />)}
+          </Tabs>
+          {tab.render()}
+        </>
       )}
     </Box>
   );

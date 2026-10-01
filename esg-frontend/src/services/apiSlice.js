@@ -72,6 +72,6 @@ export function toFormError(error) {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation'],
+  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant'],
   endpoints: () => ({}),
 });
