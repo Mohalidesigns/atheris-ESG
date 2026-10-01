@@ -429,7 +429,8 @@ class FieldRoundTripTest extends ApiTestSupport {
         return JsonNodeFactory.instance.textNode(node.asText()
             .replace("{u}", unique).replace("{yyyy}", year)
             .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2)
-            .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A));
+            .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A)
+            .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR")));
       }
       if (node.isObject() && node.has("$repeat")) {
         return JsonNodeFactory.instance.textNode(node.path("$repeat").get(0).asText().repeat(node.path("$repeat").get(1).asInt()));

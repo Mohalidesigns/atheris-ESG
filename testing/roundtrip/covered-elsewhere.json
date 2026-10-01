@@ -24,7 +24,8 @@
     "com.esg.reference.ReferenceDataTest#emissionListFiltersByScope"
   ],
   "Gap analysis": [
-    "com.esg.reference.ReferenceDataTest#gapAnalysisIsComputedFromRequirementsAndTenantStatus"
+    "com.esg.compliance.ComplianceApiTest#gapAnalysisForEveryFrameworkWithContent",
+    "com.esg.compliance.ComplianceApiTest#journey10EnteringDataClosesTheGap"
   ],
   "Admin: module entitlement (platform)": [
     "com.esg.subscription.SubscriptionEntitlementTest#overrideValidation",
@@ -41,5 +42,24 @@
     "com.esg.crosscutting.FileServiceTest#typeAndContentAndSizeAreChecked",
     "com.esg.crosscutting.FileServiceTest#permissionsAndTenantIsolation",
     "com.esg.datahub.DataPointWorkflowTest#qualityScoreBreakdownIsStoredAndEvidenceAndSourceRaiseCompleteness"
+  ],
+  "Requirement attestation": [
+    "com.esg.compliance.ComplianceApiTest#attestationRules",
+    "com.esg.compliance.ComplianceApiTest#journey11GriDataMapsToIssbAndAttestationsCarryAcrossEquivalents"
+  ],
+  "Filing submission": [
+    "com.esg.compliance.ComplianceApiTest#deadlineValidationAndFilingTracker"
+  ],
+  "Filing waiver": [
+    "com.esg.compliance.ComplianceApiTest#deadlineValidationAndFilingTracker"
+  ],
+  "Impact assessment": [
+    "com.esg.compliance.ComplianceApiTest#regulatoryChangeImpactAssessmentWorkflow"
+  ],
+  "Active frameworks": [
+    "com.esg.compliance.ComplianceApiTest#statusPerFrameworkAndActiveFrameworks"
+  ],
+  "Cross-framework mapping": [
+    "com.esg.compliance.ComplianceApiTest#journey11GriDataMapsToIssbAndAttestationsCarryAcrossEquivalents"
   ]
 }

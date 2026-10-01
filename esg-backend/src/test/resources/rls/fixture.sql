@@ -67,8 +67,13 @@ insert into compliance.framework_requirements (id, framework_id, requirement_cod
   from compliance.regulatory_frameworks where code = 'GRI';
 insert into compliance.tenant_compliance_status (framework_id, requirement_id, reporting_year)
   select id, 'a0000000-0000-4000-8000-0000000000e1', 2026 from compliance.regulatory_frameworks where code = 'GRI';
-insert into compliance.filing_deadlines (framework_id, deadline_date)
-  select id, '2026-12-31' from compliance.regulatory_frameworks where code = 'SEC_NG';
+insert into compliance.filing_deadlines (id, framework_id, deadline_date, description, owner_user_id)
+  select 'a0000000-0000-4000-8000-0000000000d1', id, '2026-12-31', 'Fixture filing', 'a0000000-0000-4000-8000-0000000000a1'
+  from compliance.regulatory_frameworks where code = 'SEC_NG';
+insert into compliance.deadline_reminders (deadline_id, kind, days_before, sent_on, recipient_id)
+  values ('a0000000-0000-4000-8000-0000000000d1', 'reminder', 90, '2026-10-02', 'a0000000-0000-4000-8000-0000000000a1');
+insert into compliance.regulatory_changes (regulator, title, published_date, owner_user_id)
+  values ('Fixture regulator', 'Fixture change', '2026-01-01', 'a0000000-0000-4000-8000-0000000000a1');
 
 insert into reporting.report_templates (name, tenant_id) values ('A custom template', '11111111-1111-4111-8111-111111111111');
 insert into reporting.reports (id, title) values ('a0000000-0000-4000-8000-0000000000f1', 'A report');

@@ -297,33 +297,6 @@ class ReferenceDataTest extends ApiTestSupport {
   }
 
   @Test
-  void gapAnalysisIsComputedFromRequirementsAndTenantStatus() throws Exception {
-    String officer = bearerForRole("COMPLIANCE_OFFICER");
-    // No status rows for 2031: every active CBN NSBP principle is a gap.
-    mvc.perform(get("/v1/compliance/gaps?framework=CBN_NSBP&year=2031").header("Authorization", officer))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.totalRequirements").value(9))
-        .andExpect(jsonPath("$.data.completed").value(0))
-        .andExpect(jsonPath("$.data.notStarted").value(9))
-        .andExpect(jsonPath("$.data.overallCompleteness").value(0))
-        .andExpect(jsonPath("$.data.gaps", hasSize(9)))
-        .andExpect(jsonPath("$.data.gaps[0].code").value("P1"));
-    asOwnerInTenantA("insert into compliance.tenant_compliance_status (framework_id, requirement_id, reporting_year, status, completeness_pct) "
-        + "select f.id, r.id, 2031, case when r.requirement_code = 'P1' then 'complete' else 'in_progress' end, 50 "
-        + "from compliance.regulatory_frameworks f join compliance.framework_requirements r on r.framework_id = f.id "
-        + "where f.code = 'CBN_NSBP' and r.requirement_code in ('P1', 'P2')");
-    mvc.perform(get("/v1/compliance/gaps?framework=CBN_NSBP&year=2031").header("Authorization", officer))
-        .andExpect(jsonPath("$.data.completed").value(1))
-        .andExpect(jsonPath("$.data.inProgress").value(1))
-        .andExpect(jsonPath("$.data.notStarted").value(7))
-        .andExpect(jsonPath("$.data.overallCompleteness").value(16.7))
-        .andExpect(jsonPath("$.data.gaps", hasSize(8)));
-    // Another tenant's status rows don't count.
-    mvc.perform(get("/v1/compliance/gaps?framework=CBN_NSBP&year=2031").header("Authorization", bearer(USER_B_ADMIN, PostgresTestDatabase.TENANT_B)))
-        .andExpect(jsonPath("$.data.completed").value(0));
-  }
-
-  @Test
   void emissionListFiltersByScope() throws Exception {
     String director = bearerForRole("ESG_DIRECTOR");
     String factor = resolve("ESG_DIRECTOR", "category=diesel_generator&country=NG&date=2026-05-01").path("factor").path("id").asText();

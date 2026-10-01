@@ -9,6 +9,9 @@ esg:
   files:
     storage: filesystem
     local-dir: ${java.io.tmpdir}/esg-test-files
+  compliance:
+    reminders:
+      enabled: false   # tests drive DeadlineReminderService.run(date) directly (time travel)
   notifications:
     dispatcher:
       enabled: false   # tests drive NotificationDispatcher.runOnce() directly

@@ -15,5 +15,12 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
   ('DEADLINE_REMINDER', 'in_app', 'en', '{{framework}} filing due in {{days}} days', '{{description}} is due on {{dueDate}}.'),
   ('DEADLINE_REMINDER', 'email', 'en', '{{framework}} filing due in {{days}} days',
    'Hello {{firstName}},' || chr(10) || chr(10) || '{{description}} is due on {{dueDate}} ({{days}} days).' || chr(10) || chr(10) || 'Atheris ESG'),
-  ('DEADLINE_REMINDER', 'sms', 'en', NULL, 'Atheris ESG: {{framework}} filing due {{dueDate}} ({{days}} days).')
+  ('DEADLINE_REMINDER', 'sms', 'en', NULL, 'Atheris ESG: {{framework}} filing due {{dueDate}} ({{days}} days).'),
+  ('DEADLINE_OVERDUE', 'in_app', 'en', '{{framework}} filing overdue', '{{description}} was due on {{dueDate}} and has not been marked submitted.'),
+  ('DEADLINE_OVERDUE', 'email', 'en', '{{framework}} filing overdue',
+   'Hello {{firstName}},' || chr(10) || chr(10) || '{{description}} was due on {{dueDate}} and has not been marked submitted.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('DEADLINE_OVERDUE', 'sms', 'en', NULL, 'Atheris ESG: {{framework}} filing due {{dueDate}} is overdue.'),
+  ('REGULATORY_CHANGE_ASSIGNED', 'in_app', 'en', 'Regulatory change to assess', '{{regulator}}: {{title}}. Assess its impact by {{dueDate}}.'),
+  ('REGULATORY_CHANGE_ASSIGNED', 'email', 'en', 'Regulatory change to assess: {{title}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been asked to assess the impact of a regulatory change from {{regulator}}: {{title}}.' || chr(10) || 'Please complete the assessment by {{dueDate}}.' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

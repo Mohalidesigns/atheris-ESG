@@ -79,6 +79,12 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  compliance:
+    reminders:
+      # Daily filing-deadline reminders (TRD §8.3 DeadlineScheduler); times are Lagos time.
+      enabled: true
+      cron: "0 0 6 * * *"
+      zone: Africa/Lagos
   notifications:
     dispatcher:
       enabled: true
