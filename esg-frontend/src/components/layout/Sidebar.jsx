@@ -14,7 +14,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const sections = visibleSections(user?.permissions ?? []);
+  const sections = visibleSections(user?.permissions ?? [], user?.modules);
 
   return (
     <Drawer
@@ -47,7 +47,7 @@ export default function Sidebar() {
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
       {/* Navigation */}
-      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+      <Box component="nav" aria-label="Main" sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         {sections.map((section) => (
           <Box key={section.label}>
             <Typography

@@ -88,7 +88,21 @@ export const adminApi = apiSlice.injectEndpoints({
     }),
     updateTenant: build.mutation({
       query: ({ id, ...body }) => ({ url: `/platform/tenants/${id}`, method: 'PUT', body }),
-      transformResponse: unwrap, invalidatesTags: ['Tenant'],
+      transformResponse: unwrap, invalidatesTags: ['Tenant', 'Subscription'],
+    }),
+
+    // Subscription and module entitlements (WP-19). Tenants read theirs; the platform changes them.
+    getSubscription: build.query({ query: () => '/subscription', transformResponse: unwrap, providesTags: ['Subscription'] }),
+    getTenantSubscription: build.query({
+      query: (id) => `/platform/tenants/${id}/subscription`, transformResponse: unwrap,
+      providesTags: (_r, _e, id) => [{ type: 'Subscription', id }],
+    }),
+    setTenantModule: build.mutation({
+      query: ({ tenantId, moduleCode, enabled, reason }) => ({
+        url: `/platform/tenants/${tenantId}/modules/${moduleCode}`, method: 'PUT', body: { enabled, reason },
+      }),
+      transformResponse: unwrap,
+      invalidatesTags: (_r, _e, { tenantId }) => [{ type: 'Subscription', id: tenantId }, 'Subscription'],
     }),
   }),
 });
@@ -100,4 +114,5 @@ export const {
   useListPeriodsQuery, useCreatePeriodMutation, useUpdatePeriodMutation, useSetPeriodLockMutation,
   useGetSettingsQuery, useUpdateSettingsMutation, useListFrameworksQuery,
   useListTenantsQuery, useCreateTenantMutation, useUpdateTenantMutation,
+  useGetSubscriptionQuery, useGetTenantSubscriptionQuery, useSetTenantModuleMutation,
 } = adminApi;

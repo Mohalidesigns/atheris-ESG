@@ -4,7 +4,7 @@ import { CircularProgress, Box, Typography } from '@mui/material';
 import { useSelector } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import { useRestoreSessionMutation } from '../features/auth/authApi';
-import { allNavItems, firstAllowedPath } from './navigation';
+import { allNavItems, firstAllowedPath, moduleEnabled } from './navigation';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
 const pages = {
@@ -39,19 +39,30 @@ export function Forbidden() {
   );
 }
 
-/** Requires a session; with `anyOf`, also one of those permissions (TRD §7.2.2). */
-export function ProtectedRoute({ anyOf, children }) {
+/** A module the tenant's subscription doesn't include (WP-19). */
+export function NotInPlan() {
+  return (
+    <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>This module isn't part of your subscription</Typography>
+      <Typography color="text.secondary">Your administrator can see your plan under Administration → Subscription.</Typography>
+    </Box>
+  );
+}
+
+/** Requires a session; with `module`, a subscription that includes it; with `anyOf`, one of those permissions (TRD §7.2.2). */
+export function ProtectedRoute({ anyOf, module, children }) {
   const { status, user } = useSelector((s) => s.auth);
   const location = useLocation();
   if (status !== 'authenticated') return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (module && !moduleEnabled(user?.modules, module)) return <NotInPlan />;
   const permissions = user?.permissions ?? [];
   if (anyOf && !anyOf.some((p) => permissions.includes(p))) return <Forbidden />;
   return children;
 }
 
 function Landing() {
-  const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
-  const path = firstAllowedPath(permissions);
+  const user = useSelector((s) => s.auth.user);
+  const path = firstAllowedPath(user?.permissions ?? [], user?.modules);
   return path ? <Navigate to={path} replace /> : <Forbidden />;
 }
 
@@ -71,10 +82,11 @@ export default function AppRoutes() {
         <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route index element={<Landing />} />
-          {allNavItems.map(({ path, anyOf }) => {
+          {allNavItems.map(({ path, anyOf, module }) => {
             const Page = pages[path];
             return (
-              <Route key={path} path={path.slice(1)} element={<ProtectedRoute anyOf={anyOf}><Page /></ProtectedRoute>} />
+              <Route key={path} path={path.slice(1)}
+                element={<ProtectedRoute anyOf={anyOf} module={module}><Page /></ProtectedRoute>} />
             );
           })}
         </Route>

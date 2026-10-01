@@ -5,11 +5,12 @@ import {
   Alert, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
   IconButton, MenuItem, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Edit } from '@mui/icons-material';
+import { Add, Edit, ViewModule } from '@mui/icons-material';
 import Can from '../../../components/rbac/Can';
 import { useCreateTenantMutation, useListTenantsQuery, useUpdateTenantMutation } from '../adminApi';
 import { createTenantSchema, CURRENCIES, TENANT_SERVER_FIELDS, TIERS, toCreateTenantBody, updateTenantSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
+import TenantModulesDialog from './TenantModulesDialog';
 import { applyServerFieldErrors } from '../../../services/formErrors';
 
 const emptyCreate = {
@@ -105,6 +106,7 @@ function TenantDialog({ open, tenant, onClose }) {
 export default function TenantsTab() {
   const { data: tenants = [], isLoading, isError, error } = useListTenantsQuery();
   const [dialog, setDialog] = useState(undefined);
+  const [modulesFor, setModulesFor] = useState(null);
   if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
   if (isError) return <Alert severity="error">{toFormError(error).message}</Alert>;
   return (
@@ -133,6 +135,7 @@ export default function TenantsTab() {
                   <TableCell><Chip size="small" label={t.active ? 'Active' : 'Suspended'} sx={{ fontSize: '0.65rem' }} /></TableCell>
                   <TableCell align="right">
                     <Can permission="tenants:update">
+                      <IconButton size="small" aria-label={`Modules for ${t.name}`} onClick={() => setModulesFor(t)}><ViewModule fontSize="small" /></IconButton>
                       <IconButton size="small" aria-label={`Edit ${t.name}`} onClick={() => setDialog(t)}><Edit fontSize="small" /></IconButton>
                     </Can>
                   </TableCell>
@@ -144,6 +147,7 @@ export default function TenantsTab() {
       </Card>
       <TenantDialog key={`tenant-${dialog === undefined ? 'closed' : dialog?.id ?? 'new'}`} open={dialog !== undefined}
         tenant={dialog ?? null} onClose={() => setDialog(undefined)} />
+      <TenantModulesDialog key={`modules-${modulesFor?.id ?? 'closed'}`} tenant={modulesFor} onClose={() => setModulesFor(null)} />
     </>
   );
 }
