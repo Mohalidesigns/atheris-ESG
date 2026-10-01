@@ -159,7 +159,7 @@ class CarbonApiTest extends ApiTestSupport {
     // A tenant factor for LPG in Nigeria now applies: recalculation switches to it and says so.
     postJson("/v1/carbon/factors", "{\"region\":\"NG\",\"category\":\"lpg\",\"factorValue\":3.1,\"unit\":\"kgCO2e/kg\","
         + "\"source\":\"Supplier certificate\",\"validFrom\":\"2026-11-01\",\"validTo\":\"2026-11-30\"}").andExpect(status().isCreated());
-    JsonNode recalc = data(postJson("/v1/carbon/recalculate", "{\"from\":\"" + day + "\",\"to\":\"" + day + "\"}").andExpect(status().isOk()));
+    JsonNode recalc = data(postJson("/v1/carbon/calculate", "{\"from\":\"" + day + "\",\"to\":\"" + day + "\"}").andExpect(status().isOk()));
     assertThat(recalc.path("updated").asInt()).isGreaterThanOrEqualTo(1);
     JsonNode after = data(mvc.perform(get("/v1/carbon/emissions/" + lpg.path("id").asText()).header("Authorization", director())));
     assertThat(after.path("factor").path("level").asText()).isEqualTo("custom");
@@ -200,6 +200,11 @@ class CarbonApiTest extends ApiTestSupport {
     assertThat(record).as("emission record for the approved point").isNotNull();
     assertThat(record.path("scope").asText()).isEqualTo("scope_2");
     assertThat(record.path("co2eTonnes").decimalValue()).isEqualByComparingTo("0.86");
+    // Lineage (TRD §6.6.2): the record links back to the data point and to the factor it was calculated from.
+    mvc.perform(get("/v1/audit/lineage?type=emission_record&id=" + record.path("id").asText()).header("Authorization", director()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.upstream[?(@.sourceType == 'data_point' && @.sourceId == '" + id + "')].relation").value("calculated_from"))
+        .andExpect(jsonPath("$.data.upstream[?(@.sourceType == 'emission_factor')]").isNotEmpty());
     // Editing it directly is refused: the Data Hub point is the source.
     mvc.perform(put("/v1/carbon/emissions/" + record.path("id").asText()).header("Authorization", director())
             .contentType(MediaType.APPLICATION_JSON).content("{\"orgId\":\"" + ORG_SITE_1 + "\",\"scope\":\"scope_2\","

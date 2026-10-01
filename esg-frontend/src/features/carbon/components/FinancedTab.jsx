@@ -84,7 +84,7 @@ export function FinancedDialog({ position, year, onClose }) {
   );
 }
 
-/** PCAF financed emissions (BRD-5.2.2-07): attribution = outstanding ÷ denominator; financed = attribution × counterparty emissions. */
+/** PCAF financed emissions (BRD-5.2.2-08): attribution = outstanding ÷ denominator; financed = attribution × counterparty emissions. */
 export default function FinancedTab({ year }) {
   const { data = [], isLoading, isError, error, refetch } = useFinancedQuery({ year });
   const summary = useFinancedSummaryQuery(year);

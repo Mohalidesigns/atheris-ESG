@@ -46,7 +46,7 @@ export const carbonApi = apiSlice.injectEndpoints({
         transformResponse: unwrap, invalidatesTags: ['Emission'],
       }),
       recalculate: build.mutation({
-        query: (body) => ({ url: '/carbon/recalculate', method: 'POST', body }), transformResponse: unwrap,
+        query: (body) => ({ url: '/carbon/calculate', method: 'POST', body }), transformResponse: unwrap,
         invalidatesTags: ['Emission', 'Target'],
       }),
       gwp: build.query({ query: () => '/carbon/gwp', transformResponse: unwrap }),

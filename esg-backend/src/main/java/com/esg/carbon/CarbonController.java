@@ -115,7 +115,8 @@ public class CarbonController {
         return ResponseEntity.ok(ApiResponse.ok(emissions.verify(id, body == null ? null : body.get("version")), "Verified"));
     }
 
-    @PostMapping("/recalculate")
+    /** TRD §6.4.2 "Trigger emission calculation job": re-runs factor selection for the records of a period (D22 (3)). */
+    @PostMapping("/calculate")
     @PreAuthorize("hasAuthority('carbon_data:update')")
     public ResponseEntity<ApiResponse<Recalculation>> recalculate(@RequestBody Map<String, String> body) {
         LocalDate from = date(body, "from");

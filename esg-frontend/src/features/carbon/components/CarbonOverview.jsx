@@ -31,7 +31,7 @@ function ChartCard({ title, children, empty }) {
   );
 }
 
-/** Carbon dashboard (BRD-5.2.2-01/08): totals by scope with location- and market-based Scope 2, trends, breakdowns and intensity. */
+/** Carbon dashboard (BRD-5.2.2-01, -07): totals by scope with location- and market-based Scope 2, trends, breakdowns and intensity. */
 export default function CarbonOverview({ year }) {
   const { data, isLoading, isError, error, refetch } = useEmissionsSummaryQuery(year);
   if (isLoading) return <LoadingState />;

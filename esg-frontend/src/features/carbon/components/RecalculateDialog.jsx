@@ -4,7 +4,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { useRecalculateMutation } from '../carbonApi';
 
 /**
- * Re-runs factor selection for every calculator and Data Hub record in a period (BRD-5.2.2-02: "recalculate when factors change").
+ * Re-runs factor selection for every calculator and Data Hub record in a period (TRD §6.4.2 POST /carbon/calculate).
  * Mirrors CarbonController.recalculate: from and to are required dates, to ≥ from.
  */
 export default function RecalculateDialog({ onClose }) {

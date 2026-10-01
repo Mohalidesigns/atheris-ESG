@@ -201,8 +201,8 @@ public class EmissionService {
 
     /**
      * Re-resolves the factor (and the tenant's GWP set) for every unverified, factor-based record in the range and
-     * updates those whose factor or result changed — e.g. after a new factor version or custom factor (BRD-5.2.2-06/07,
-     * "recalculation on data/factor change"). Records whose factor was chosen explicitly keep it.
+     * updates those whose factor or result changed — e.g. after a new factor version or custom factor (TRD §6.4.2 POST
+     * /carbon/calculate, "trigger emission calculation job"; BRD-5.2.2-02 audit trail). Records whose factor was chosen explicitly keep it.
      */
     @Transactional
     public Recalculation recalculate(LocalDate from, LocalDate to) {

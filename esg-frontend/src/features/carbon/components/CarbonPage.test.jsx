@@ -239,7 +239,7 @@ describe('CarbonPage factors', () => {
 
   it('recalculates a period and reports what changed', async () => {
     let sent;
-    fakeApi(routes({ 'POST /carbon/recalculate': (body) => { sent = body; return ok({ checked: 3, updated: 1, changes: ['diesel_generator Q1: 2.68 → 2.69 tCO2e'] }); } }));
+    fakeApi(routes({ 'POST /carbon/calculate': (body) => { sent = body; return ok({ checked: 3, updated: 1, changes: ['diesel_generator Q1: 2.68 → 2.69 tCO2e'] }); } }));
     renderWithStore(<CarbonPage />, { preloadedState: authenticated(WRITE) });
     await openTab('Emission factors');
     await userEvent.click(await screen.findByRole('button', { name: 'Recalculate emissions' }));
