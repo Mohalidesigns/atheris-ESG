@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (branch `feature/wp-18-19-test-harness-entitlements`, stacked on #6) |
-| Next | **Gate G1 review** (below); then P2 module build-outs **WP-20** (Data Hub), **WP-21** (Carbon), **WP-22** (Compliance). **Product owner:** confirm plan contents (D20). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (branch `feature/wp-20-data-hub`, stacked on #7) |
+| Next | **Gate G1 review**; **WP-21** (Carbon), **WP-22** (Compliance). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **75 / 76** active fields WORK end to end with tests; **every WORKS field is now covered by the round-trip generator** or a named test (build fails otherwise). WP-19 added the module-entitlement form (2). Earlier: (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
+| Fields at L4+ / total fields | **93 / 93** active fields WORK end to end with tests (WP-20 added the data point source/evidence/currency, data source, exchange rate and import mapping forms, and placed the evidence upload); **every WORKS field is now covered by the round-trip generator** or a named test (build fails otherwise). WP-19 added the module-entitlement form (2). Earlier: (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs E2E, WP-18). RTM overall (267 rows): **15 at L4**, 14 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (17 at L4), 38 missing. All code endpoints: **69 / 70 tested** (55 at L4, 13 at L3, 2 at L2) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **2 / 30**: journey 1 (tenant onboarding) and journey 2 (12 roles × menus), Cypress on a fresh seeded DB; CI `e2e` job added | `esg-frontend/cypress/e2e/` |
-| Test coverage | **Backend 85.6% lines** (389 tests incl. 98 generated round-trip tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 169 tests** (Vitest + RTL) + **14 Cypress** | JaCoCo, CI |
+| E2E journeys passing / 30 | **5 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 29 (audit trail of an approved point); 17 Cypress tests on a fresh seeded DB | `esg-frontend/cypress/e2e/` |
+| Test coverage | **Backend 86.8% lines** (456 tests incl. 130 generated round-trip tests; `com.esg.datahub` 90.7%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 192 tests** (Vitest + RTL) + **17 Cypress** | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,38 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-20 — M1 ESG Data Hub
+
+Branch `feature/wp-20-data-hub` (stacked on WP-18/19, PR #7).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Journeys 3, 4, 29 green | ✅ locally | `scripts/e2e.sh`: 5 specs, 17 tests, no retries (fresh seeded DB). CI `e2e` job runs them on the PR |
+| M1 fields 100% round-trip | ✅ | `FieldRoundTripTest`: data point (incl. source, evidence), currency data point, data source, exchange rate specs (130 generated tests in all); `roundTripReload.test.jsx` reloads each edit form; import mapping covered by `ImportApiTest`; coverage check green over all 93 working fields |
+| Quality score golden tests | ✅ | `QualityScoreCalculatorTest` (6): 1.00, the D21 worked example 0.55, 0.50, timeliness boundaries, zero means, half-up rounding |
+| M1 RTM rows at L5 | ⏳ | BRD-5.2.1-02/05/06/08 and TRD-8.1 rows meet every automated L5 item (L4 recorded); L5 after human code review. BRD-5.2.1-01 (connectors) WP-41, -03 offline WP-43, -04 SMS WP-44 |
+
+What was built:
+- **Workflow** (BRD-5.2.1-02): draft → submitted → validated → approved, rejection with reason back to the submitter, reopen with reason; segregation of duties; approval_workflows/steps rows; history from the audit trail; approved points locked by a database trigger.
+- **Rules engine** (TRD §8.1 DataValidationService): configurable range and cross-metric rules (`reference.metric_rules`), duplicate/overlap/future-period checks; error rules mirrored in the form; warnings shown with the point.
+- **Quality score** (TRD §8.1): stored breakdown with D21 sub-scores; shown as bars in the drawer.
+- **Multi-currency** (BRD-5.2.1-06): original amount and currency kept, converted with a dated tenant rate and its source; Exchange rates tab.
+- **Bulk import** (BRD-5.2.1-08): CSV/XLSX upload, suggested mapping, defaults for every row, background processing with progress, per-row errors; imported rows are drafts linked to the job.
+- **Data sources** register and **Data Collection Form** driven by the metric (number/text, unit, currency), with data source and evidence upload.
+- APIs follow the TRD catalogue (`PUT /data/points/{id}/validate`, `POST /data/import`), D21 (7).
+
+Bugs found and fixed:
+- Audit rows for partitioned tables were filed under the partition name (`data_hub.data_points_2026`), so the audit log filter for data points found nothing (since WP-15). V019 logs the parent; existing rows are immutable and readers accept both names.
+- `TenancyApiTest` left tenant A's base currency as USD, making currency tests order-dependent; it now restores the settings.
+
+Open:
+- **ESG SME:** confirm the quality sub-score definitions and rule thresholds (D21 (4), (5)).
+- No FX provider: rates are entered by the tenant with a source (D21 (6)).
+- Rule warnings aren't refreshed when the other metric of a cross-check changes later (D21 (5)).
+- Offline capture (WP-43), SMS/USSD (WP-44), automated connectors (WP-41).
 
 ---
 

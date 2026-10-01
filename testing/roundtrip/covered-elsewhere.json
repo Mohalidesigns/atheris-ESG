@@ -35,5 +35,11 @@
     "com.esg.datahub.ImportApiTest#csvImportCreatesDraftsAndReportsRowErrors",
     "com.esg.datahub.ImportApiTest#mappingIsValidated",
     "com.esg.datahub.ImportApiTest#excelImportUsesDefaultsForEveryRow"
+  ],
+  "Evidence file upload": [
+    "com.esg.crosscutting.FileServiceTest#uploadVersionDownloadRoundTripWithAccessLog",
+    "com.esg.crosscutting.FileServiceTest#typeAndContentAndSizeAreChecked",
+    "com.esg.crosscutting.FileServiceTest#permissionsAndTenantIsolation",
+    "com.esg.datahub.DataPointWorkflowTest#qualityScoreBreakdownIsStoredAndEvidenceAndSourceRaiseCompleteness"
   ]
 }
