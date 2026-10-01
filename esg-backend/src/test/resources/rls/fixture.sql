@@ -45,10 +45,21 @@ insert into carbon.emission_factors (region, category, factor_value, unit, sourc
 insert into carbon.emission_records (org_id, scope, source_activity, activity_data, activity_unit, co2e_tonnes,
                                      reporting_period_start, reporting_period_end)
   values ('a0000000-0000-4000-8000-00000000000a', 'scope_1', 'diesel_generator', 1000, 'litre', 2.68, '2026-01-01', '2026-03-31');
-insert into carbon.gas_flaring_records (facility_id, volume_mcf, co2e_tonnes, reporting_date)
-  values ('a0000000-0000-4000-8000-00000000000a', 100, 5.5, '2026-02-01');
-insert into carbon.reduction_targets (target_name, scope, base_year, base_value, target_year, target_value)
-  values ('Net zero', 'scope_1', 2024, 1000, 2030, 500);
+insert into carbon.gas_flaring_records (facility_id, volume_mcf, co2e_tonnes, reporting_date, reporting_period_start, reporting_period_end)
+  values ('a0000000-0000-4000-8000-00000000000a', 100, 5.5, '2026-02-01', '2026-02-01', '2026-02-01');
+insert into carbon.reduction_targets (target_name, target_type, scope, base_year, base_value, target_year, target_value)
+  values ('Net zero', 'absolute', 'scope_1', 2024, 1000, 2030, 500);
+-- WP-21: a tenant spend factor (test value) for spend-based Scope 3.
+insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from, is_custom, tenant_id, verification_status,
+                                     factor_method, spend_currency)
+  values ('NG', 'fixture_spend', 0.5, 'kgCO2e/USD', 'Fixture spend factor (test value)', '2020-01-01', true,
+          '11111111-1111-4111-8111-111111111111', 'tenant_provided', 'spend', 'USD');
+-- WP-21: a REC and a PCAF position for tenant A (test values).
+insert into carbon.energy_instruments (org_id, instrument_type, energy_source, mwh, reporting_period_start, reporting_period_end, supplier)
+  values ('a0000000-0000-4000-8000-00000000000a', 'rec', 'solar', 10, '2026-01-01', '2026-03-31', 'Fixture REC registry');
+insert into carbon.financed_positions (reporting_year, asset_class, counterparty, outstanding_amount, denominator_value, currency,
+                                       counterparty_emissions, data_quality_score, emissions_source, attribution_factor, financed_emissions)
+  values (2025, 'business_loans_unlisted_equity', 'Fixture Borrower Ltd', 25, 100, 'NGN', 400, 3, 'Fixture annual report', 0.25, 100);
 
 -- Inactive so it doesn't change the published requirement counts.
 insert into compliance.framework_requirements (id, framework_id, requirement_code, title, source, is_active)

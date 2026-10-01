@@ -67,10 +67,12 @@ public final class TenancyDtos {
             @NotNull @Min(1) @Max(12) Integer fiscalYearStartMonth,
             @NotBlank @Size(max = 50) String reportingTimezone,
             @NotNull @Size(max = 20) List<@NotBlank @Size(max = 50) String> defaultFrameworkCodes,
-            @NotNull Long version) {}
+            @NotNull Long version,
+            /** GWP-100 set for per-gas emission factors (WP-21); null keeps the current one. */
+            @Pattern(regexp = "^(AR5|AR6)$", message = "must be AR5 or AR6") String gwpSet) {}
 
     public record SettingsResponse(String tenantName, String baseCurrency, int fiscalYearStartMonth,
-                                   String reportingTimezone, List<String> defaultFrameworkCodes, Long version) {}
+                                   String reportingTimezone, List<String> defaultFrameworkCodes, Long version, String gwpSet) {}
 
     // ---------------------------------------------------------------- platform tenants (SUPER_ADMIN)
 

@@ -47,7 +47,8 @@ public final class ReferenceDtos {
                                  String derivation, String factorVersion,
                                  @JsonFormat(pattern = "yyyy-MM-dd") LocalDate validFrom,
                                  @JsonFormat(pattern = "yyyy-MM-dd") LocalDate validTo,
-                                 String verificationStatus, boolean custom, long version) {}
+                                 String verificationStatus, boolean custom, long version, BigDecimal co2Factor,
+                                 BigDecimal ch4Factor, BigDecimal n2oFactor, String factorMethod, String spendCurrency) {}
 
     /** Which level of the lookup hierarchy answered (TRD §8.2): tenant custom → country → region → global. */
     public record ResolvedFactor(EmissionFactor factor, String level, List<String> searched, BigDecimal activityData,
@@ -56,7 +57,13 @@ public final class ReferenceDtos {
     static final String REGION_REGEX = "^([A-Z]{2}|WEST_AFRICA|EAST_AFRICA|SOUTHERN_AFRICA|NORTH_AFRICA|CENTRAL_AFRICA|GLOBAL)$";
     static final String CATEGORY_REGEX = "^[a-z][a-z0-9_]*$";
 
-    /** A tenant's own factor. The value must name its source (e.g. supplier certificate, utility bill, study). */
+    static final String FACTOR_METHOD_REGEX = "^(activity|spend)$";
+    static final String CURRENCY_REGEX = "^(NGN|USD|EUR|GBP|KES|ZAR|GHS|XOF|EGP)$";
+
+    /**
+     * A tenant's own factor. The value must name its source (e.g. supplier certificate, utility bill, study). A spend
+     * factor (WP-21, Scope 3 spend-based) is kgCO2e per unit of {@code spendCurrency}.
+     */
     public record CustomFactorRequest(
             @NotBlank @Pattern(regexp = REGION_REGEX, message = "must be an ISO country code or a region such as WEST_AFRICA") String region,
             @NotBlank @Size(max = 100) @Pattern(regexp = CATEGORY_REGEX, message = "lower-case letters, digits and underscores") String category,
@@ -66,5 +73,13 @@ public final class ReferenceDtos {
             @NotBlank @Size(max = 255) String source,
             @NotNull LocalDate validFrom,
             LocalDate validTo,
-            Long version) {}
+            Long version,
+            @Pattern(regexp = FACTOR_METHOD_REGEX, message = "must be activity or spend") String factorMethod,
+            @Pattern(regexp = CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") String spendCurrency) {
+
+        /** "activity" unless "spend" is given. */
+        public String method() {
+            return factorMethod == null || factorMethod.isBlank() ? "activity" : factorMethod;
+        }
+    }
 }

@@ -1,0 +1,57 @@
+{
+  "id": "custom-spend-factor",
+  "forms": [
+    "Custom emission factor"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/factors"
+  },
+  "read": {
+    "path": "/v1/carbon/factors/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/factors/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "region": "NG",
+    "category": "spend_cat1_{u}",
+    "factorValue": 0.42,
+    "unit": "kgCO2e/USD",
+    "source": "Supplier EEIO study {u}",
+    "validFrom": "2026-01-01",
+    "factorMethod": "spend",
+    "spendCurrency": "USD"
+  },
+  "changes": {
+    "spendCurrency": "GBP",
+    "factorValue": 0.5
+  },
+  "invalid": [
+    {
+      "field": "spendCurrency",
+      "value": null,
+      "rule": "required for spend factors"
+    },
+    {
+      "field": "spendCurrency",
+      "value": "BTC",
+      "rule": "ISO list"
+    },
+    {
+      "field": "factorMethod",
+      "value": "vibes",
+      "rule": "activity or spend"
+    }
+  ],
+  "ui": {
+    "pending": "filled in with the WP-21 factor dialog"
+  }
+}

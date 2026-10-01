@@ -240,7 +240,7 @@ class ReferenceDataTest extends ApiTestSupport {
     String analyst = bearerForRole("ESG_ANALYST");
     JsonNode metrics = data(mvc.perform(get("/v1/reference/metrics").header("Authorization", analyst))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data", hasSize(31)))
+        .andExpect(jsonPath("$.data", hasSize(33)))
         .andReturn().getResponse().getContentAsString());
     JsonNode scope1 = null;
     for (JsonNode m : metrics) {

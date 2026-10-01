@@ -1,0 +1,101 @@
+{
+  "id": "financed-position",
+  "forms": [
+    "Financed position (PCAF)"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/financed"
+  },
+  "read": {
+    "path": "/v1/carbon/financed/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/financed/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "reportingYear": 2026,
+    "assetClass": "project_finance",
+    "counterparty": "Solar IPP {u}",
+    "sector": "Power",
+    "outstandingAmount": 5000000,
+    "denominatorValue": 20000000,
+    "currency": "USD",
+    "counterpartyEmissions": 800,
+    "dataQualityScore": 3,
+    "emissionsSource": "Project ESIA 2025"
+  },
+  "changes": {
+    "reportingYear": 2025,
+    "assetClass": "commercial_real_estate",
+    "counterparty": "Office tower {u}",
+    "sector": "Real estate",
+    "outstandingAmount": 6000000,
+    "denominatorValue": 24000000,
+    "currency": "NGN",
+    "counterpartyEmissions": 900,
+    "dataQualityScore": 4,
+    "emissionsSource": "Energy audit 2025"
+  },
+  "derived": {
+    "attributionFactor": 0.25,
+    "financedEmissions": 200
+  },
+  "invalid": [
+    {
+      "field": "assetClass",
+      "value": "crypto",
+      "rule": "PCAF asset class"
+    },
+    {
+      "field": "counterparty",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "outstandingAmount",
+      "value": 30000000,
+      "rule": "<= denominator"
+    },
+    {
+      "field": "denominatorValue",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "currency",
+      "value": "BTC",
+      "rule": "ISO list"
+    },
+    {
+      "field": "counterpartyEmissions",
+      "value": -1,
+      "rule": ">= 0"
+    },
+    {
+      "field": "dataQualityScore",
+      "value": 6,
+      "rule": "1..5"
+    },
+    {
+      "field": "emissionsSource",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "reportingYear",
+      "value": 1999,
+      "rule": "2000..2100"
+    }
+  ],
+  "ui": {
+    "pending": "filled in with the WP-21 PCAF form"
+  }
+}

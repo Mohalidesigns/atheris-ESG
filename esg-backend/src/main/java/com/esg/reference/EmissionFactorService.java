@@ -28,7 +28,8 @@ public class EmissionFactorService {
 
     static final String GLOBAL = "GLOBAL";
     private static final String COLUMNS = "id, region, category, sub_category, factor_value, unit, source, source_year, gwp_set, "
-            + "ghg_basis, derivation, factor_version, valid_from, valid_to, verification_status, is_custom, version";
+            + "ghg_basis, derivation, factor_version, valid_from, valid_to, verification_status, is_custom, version, "
+            + "co2_factor, ch4_factor, n2o_factor, factor_method, spend_currency";
 
     private final JdbcTemplate jdbc;
 
@@ -93,10 +94,10 @@ public class EmissionFactorService {
     public EmissionFactor createCustom(CustomFactorRequest r) {
         checkDates(r);
         UUID id = jdbc.queryForObject("insert into carbon.emission_factors (region, category, sub_category, factor_value, unit, "
-                + "source, valid_from, valid_to, is_custom, tenant_id, verification_status) "
-                + "values (?, ?, ?, ?, ?, ?, ?, ?, true, ?, 'tenant_provided') returning id", UUID.class,
+                + "source, valid_from, valid_to, is_custom, tenant_id, verification_status, factor_method, spend_currency) "
+                + "values (?, ?, ?, ?, ?, ?, ?, ?, true, ?, 'tenant_provided', ?, ?) returning id", UUID.class,
                 r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.unit().trim(), r.source().trim(),
-                r.validFrom(), r.validTo(), TenantContext.requireTenantId());
+                r.validFrom(), r.validTo(), TenantContext.requireTenantId(), r.method(), spendCurrency(r));
         return get(id);
     }
 
@@ -117,17 +118,18 @@ public class EmissionFactorService {
         boolean used = Boolean.TRUE.equals(jdbc.queryForObject(
                 "select exists (select 1 from carbon.emission_records where emission_factor_id = ?)", Boolean.class, id));
         boolean valueChanged = current.factorValue().compareTo(r.factorValue()) != 0 || !current.unit().equals(r.unit().trim())
-                || !current.category().equals(r.category()) || !current.region().equals(r.region());
+                || !current.category().equals(r.category()) || !current.region().equals(r.region())
+                || !current.factorMethod().equals(r.method()) || !java.util.Objects.equals(current.spendCurrency(), spendCurrency(r));
         if (used && valueChanged) {
             throw ApiException.conflict("ESG-409-FACTOR-IN-USE",
                     "This factor has been used in calculations, so its value, unit, category and region can't change. "
                             + "Set an end date and add a new factor.");
         }
         int updated = jdbc.update("update carbon.emission_factors set region = ?, category = ?, sub_category = ?, factor_value = ?, "
-                + "unit = ?, source = ?, valid_from = ?, valid_to = ?, version = version + 1, updated_at = now() "
-                + "where id = ? and version = ? and is_custom",
+                + "unit = ?, source = ?, valid_from = ?, valid_to = ?, factor_method = ?, spend_currency = ?, version = version + 1, "
+                + "updated_at = now() where id = ? and version = ? and is_custom",
                 r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.unit().trim(), r.source().trim(),
-                r.validFrom(), r.validTo(), id, r.version());
+                r.validFrom(), r.validTo(), r.method(), spendCurrency(r), id, r.version());
         if (updated == 0) {
             throw ApiException.conflict("ESG-409-VERSION", "Someone else changed this factor. Reload and try again.");
         }
@@ -138,6 +140,17 @@ public class EmissionFactorService {
         if (r.validTo() != null && r.validTo().isBefore(r.validFrom())) {
             throw FieldValidationException.of("validTo", "must be on or after the start date");
         }
+        boolean spend = "spend".equals(r.method());
+        if (spend && (r.spendCurrency() == null || r.spendCurrency().isBlank())) {
+            throw FieldValidationException.of("spendCurrency", "is required for a spend-based factor");
+        }
+        if (!spend && r.spendCurrency() != null && !r.spendCurrency().isBlank()) {
+            throw FieldValidationException.of("spendCurrency", "only applies to spend-based factors");
+        }
+    }
+
+    private static String spendCurrency(CustomFactorRequest r) {
+        return "spend".equals(r.method()) ? r.spendCurrency() : null;
     }
 
     private static String blankToNull(String s) {
@@ -150,6 +163,7 @@ public class EmissionFactorService {
                 rs.getString("source"), (Integer) rs.getObject("source_year"), rs.getString("gwp_set"), rs.getString("ghg_basis"),
                 rs.getString("derivation"), rs.getString("factor_version"), rs.getObject("valid_from", LocalDate.class),
                 rs.getObject("valid_to", LocalDate.class), rs.getString("verification_status"), rs.getBoolean("is_custom"),
-                rs.getLong("version"));
+                rs.getLong("version"), rs.getBigDecimal("co2_factor"), rs.getBigDecimal("ch4_factor"), rs.getBigDecimal("n2o_factor"),
+                rs.getString("factor_method"), rs.getString("spend_currency"));
     }
 }

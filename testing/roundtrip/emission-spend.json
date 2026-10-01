@@ -1,0 +1,72 @@
+{
+  "id": "emission-spend",
+  "forms": [
+    "Emission Calculator"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/emissions"
+  },
+  "read": {
+    "path": "/v1/carbon/emissions/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/emissions/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "orgId": "{ORG_HQ}",
+    "scope": "scope_3",
+    "scope3Category": 1,
+    "calculationMethod": "spend_based",
+    "sourceActivity": "fixture_spend",
+    "spendAmount": 2000,
+    "spendCurrency": "USD",
+    "reportingPeriodStart": "{yyyy}-04-01",
+    "reportingPeriodEnd": "{yyyy}-06-30"
+  },
+  "changes": {
+    "scope3Category": 2,
+    "spendAmount": 3000
+  },
+  "derived": {
+    "co2eTonnes": 1,
+    "activityUnit": "USD"
+  },
+  "invalid": [
+    {
+      "field": "scope3Category",
+      "value": null,
+      "rule": "required for Scope 3"
+    },
+    {
+      "field": "scope3Category",
+      "value": 16,
+      "rule": "1..15"
+    },
+    {
+      "field": "spendAmount",
+      "value": null,
+      "rule": "required (spend-based)"
+    },
+    {
+      "field": "spendCurrency",
+      "value": "EUR",
+      "rule": "needs a dated rate"
+    },
+    {
+      "field": "spendCurrency",
+      "value": "BTC",
+      "rule": "ISO list"
+    }
+  ],
+  "ui": {
+    "pending": "filled in with the WP-21 calculator"
+  }
+}

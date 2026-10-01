@@ -1,0 +1,119 @@
+{
+  "id": "emission-record",
+  "forms": [
+    "Emission Calculator"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/emissions"
+  },
+  "read": {
+    "path": "/v1/carbon/emissions/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/emissions/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "orgId": "{ORG_HQ}",
+    "scope": "scope_1",
+    "calculationMethod": "activity_based",
+    "sourceActivity": "diesel_generator",
+    "activityData": 1000,
+    "activityUnit": "litre",
+    "reportingPeriodStart": "{yyyy}-01-05",
+    "reportingPeriodEnd": "{yyyy}-03-31",
+    "notes": "Generator 2 logbook"
+  },
+  "changes": {
+    "orgId": "{ORG_SITE_2}",
+    "sourceActivity": "kerosene",
+    "activityData": 2500.5,
+    "reportingPeriodStart": "{yyyy}-01-06",
+    "reportingPeriodEnd": "{yyyy}-03-30",
+    "notes": "Corrected logbook"
+  },
+  "derived": {
+    "co2eTonnes": 2.68,
+    "recordSource": "manual"
+  },
+  "coveredBy": {
+    "emissionFactorId": "com.esg.crosscutting.AuditTrailTest#emissionCalculatedFromAFactorRecordsLineage"
+  },
+  "invalid": [
+    {
+      "field": "scope",
+      "value": "scope_4",
+      "rule": "enum"
+    },
+    {
+      "field": "scope",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "sourceActivity",
+      "value": "Diesel!",
+      "rule": "pattern"
+    },
+    {
+      "field": "sourceActivity",
+      "value": "unicorn_fuel",
+      "rule": "a factor must apply"
+    },
+    {
+      "field": "activityData",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "activityData",
+      "value": null,
+      "rule": "required (activity-based)"
+    },
+    {
+      "field": "activityUnit",
+      "value": "kg",
+      "rule": "must match the factor unit"
+    },
+    {
+      "field": "calculationMethod",
+      "value": "guess",
+      "rule": "enum"
+    },
+    {
+      "field": "scope3Category",
+      "value": 3,
+      "rule": "Scope 3 only"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "{yyyy}-01-01",
+      "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    }
+  ],
+  "ui": {
+    "pending": "filled in with the WP-21 calculator"
+  }
+}

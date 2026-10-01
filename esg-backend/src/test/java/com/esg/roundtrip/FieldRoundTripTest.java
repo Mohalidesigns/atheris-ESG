@@ -93,7 +93,8 @@ class FieldRoundTripTest extends ApiTestSupport {
       String property = row.get("dto_property");
       boolean covered = formSpecs.stream().anyMatch(spec -> {
         String field = spec.path("inventoryAliases").path(property).asText(property);
-        return spec.path("values").has(field) || spec.path("writeOnly").has(field) || spec.path("derived").has(field);
+        return spec.path("values").has(field) || spec.path("writeOnly").has(field) || spec.path("derived").has(field)
+            || spec.path("coveredBy").has(field);
       });
       if (!covered) {
         problems.add("'" + form + "' field " + property + " has no value in any spec for that form");
@@ -110,6 +111,7 @@ class FieldRoundTripTest extends ApiTestSupport {
       }
     });
     specs().stream().filter(s -> s.has("successCoveredBy")).forEach(s -> references.add(s.path("successCoveredBy").asText()));
+    specs().forEach(s -> s.path("coveredBy").forEach(r -> references.add(r.asText())));
     for (String reference : references) {
       String[] parts = reference.split("#");
       try {
@@ -478,6 +480,13 @@ class FieldRoundTripTest extends ApiTestSupport {
       } catch (NumberFormatException e) {
         return false;
       }
+    }
+    if (expected.isObject() && actual.isObject()) {
+      // e.g. a gas composition: same keys with the same values (numbers compared numerically)
+      java.util.Set<String> keys = new java.util.HashSet<>();
+      expected.fieldNames().forEachRemaining(keys::add);
+      actual.fieldNames().forEachRemaining(keys::add);
+      return keys.stream().allMatch(k -> same(expected.get(k), actual.get(k)));
     }
     if (expected.isArray() && actual.isArray()) {
       if (expected.size() != actual.size()) {

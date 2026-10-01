@@ -65,10 +65,13 @@ public class DataPointService {
     private final DataSourceService sources;
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public DataPointService(DataPointRepository repository, OrgScopeService orgScope, ReportingPeriodService periods,
                             ReferenceService reference, DataValidationService validation, FxRateService fx,
-                            DataSourceService sources, JdbcTemplate jdbc, ObjectMapper json) {
+                            DataSourceService sources, JdbcTemplate jdbc, ObjectMapper json,
+                            org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.repository = repository;
         this.orgScope = orgScope;
         this.periods = periods;
@@ -208,6 +211,7 @@ public class DataPointService {
         dp.setApprovedAt(Instant.now());
         repository.saveAndFlush(dp);
         recordStep(dp, 2, user, "approved", null);
+        events.publishEvent(new DataPointEvents.Approved(id));
         return get(id);
     }
 
@@ -247,6 +251,7 @@ public class DataPointService {
         dp.setValidatedBy(null);
         dp.setValidatedAt(null);
         repository.saveAndFlush(dp);
+        events.publishEvent(new DataPointEvents.Reopened(id));
         return get(id);
     }
 
