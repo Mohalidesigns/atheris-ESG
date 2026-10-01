@@ -34,8 +34,10 @@ jobs:
         working-directory: esg-backend
         env:
           DB_URL: jdbc:postgresql://localhost:5433/esg_dev
-          DB_USERNAME: esg_owner
-          DB_PASSWORD: esg_owner_local
+          DB_USERNAME: esg_app
+          DB_PASSWORD: esg_app_local
+          DB_OWNER_USERNAME: esg_owner
+          DB_OWNER_PASSWORD: esg_owner_local
         run: |
           ./mvnw -B -q package -DskipTests -Dcheckstyle.skip -Djacoco.skip
           java -jar target/esg-platform-*.jar --spring.profiles.active=local > app.log 2>&1 &

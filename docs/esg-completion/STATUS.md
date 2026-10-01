@@ -4,9 +4,9 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (branch `feature/wp-10-build-ci`) |
-| Next | **WP-11** (DB baseline + RLS), then WP-12/13 |
-| Blockers | B1 Docker not installed (local PostgreSQL 17.9 available, so WP-11 can start); B2 no test frameworks (fixed by WP-10/18) |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2, CI green), **WP-11** (branch `feature/wp-11-db-baseline`) |
+| Next | **WP-12** (auth & sessions) → WP-13 (RBAC); WP-15/16/17 can start in parallel |
+| Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
 ## Headline KPIs (master plan §8)
@@ -14,13 +14,13 @@
 | KPI | Value | Source |
 |---|---|---|
 | Fields at L4+ / total fields | **0 / 25** (0 fields WORK end-to-end) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows (91 functional + 32 differentiators + 36 NFRs); 0 / 251 incl. TRD rows | `RTM.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows; RTM overall: 1 at L4 (TRD-11.2.1-03 cross-tenant RLS test), 1 at L3 (BRD-7.2-02 multi-tenant isolation) | `RTM.csv` |
 | Pages with zero mock data / total pages | **1 / 16**. No-mock gate (REPORT mode): 36 findings in 15 files, 174 hard-coded dataset rows | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | **0 / 58** tested; 11 implemented, 2 stubs, 45 missing | type=trd_endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **Backend 2% lines** (4 unit tests, JaCoCo); **frontend 3 component tests** (Vitest). Ratchet starts at 0% | `esg-backend/target/site/jacoco`, CI |
+| Test coverage | **Backend 28.6% lines** (48 tests: 40 RLS, 4 tenant-context/login, 4 JWT); CI floor 25%. **Frontend** 3 component tests | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
-| Open critical/high security findings | **8**: 4 critical (S1, S2, S3, S9) + 4 high (S7, S10, S11, S12). WP-10 closed S4 (critical), S5, S6 (high) and S14, S17 (medium) | `AS_IS_ARCHITECTURE.md` §7 |
+| Open critical/high security findings | **5**: 3 critical (S1 no `@PreAuthorize`, S2 refresh-as-access, S3 frontend demo bypass) + 2 high (S11 sessions/MFA, S12 role scoping). Closed: S4, S5, S6 (WP-10); **S7, S9, S10** (WP-11); medium S8, S14, S17 | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
 
@@ -198,3 +198,36 @@ Deviations from the WP-10 prompt:
 - **ESLint Airbnb not added.** `eslint-config-airbnb` doesn't support ESLint 9 flat config. We kept `@eslint/js` recommended + react-hooks; revisit if a maintained flat-config port is adopted.
 - **Kafka omitted** from compose (D1).
 - **Compose Postgres published on 5433** so it doesn't clash with a local server on 5432.
+
+
+---
+
+## WP-11 — Database baseline, tenancy & RLS
+
+Branch `feature/wp-11-db-baseline` (stacked on WP-10).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| All migrations apply on an empty DB | ✅ | `V001`–`V009` + local seed applied on PostgreSQL 17.9 (`./scripts/dev.sh reset-db`); Hibernate `validate` passes as `esg_app` |
+| …and on a copy of the current dev DB | ➖ not applicable | D9: re-baseline. The only existing database was today's WP-10 `esg_dev` with demo data; it's recreated by `reset-db` |
+| RLS test suite passes for 100% of business tables | ✅ | `RlsIsolationTest`: **31 tenant tables** discovered from the catalogue × SELECT/UPDATE/DELETE/WITH CHECK, plus coverage (ENABLE+FORCE+policy on all 39 tables and partitions), role, append-only audit, global data, factors, login lookup, cross-tenant FK. 40/40 pass |
+| Mutation check | ✅ | Removing RLS from `social.community_projects` made 2 tests fail (coverage + isolation); reverted |
+| Pooled connections don't leak tenants | ✅ | `TenantContextIntegrationTest` alternates tenants 5× on a **1-connection pool** |
+| `pg_policies` covers every business table | ✅ | 44 policies; 40 tables/partitions with RLS enabled and forced |
+
+What changed:
+- **Schemas:** 16 module schemas (TRD §2.3); 35 tables moved into their schemas with UUID ids, TIMESTAMPTZ, audit columns (`created_by/at`, `updated_by/at`, `version`), `deleted_at` where soft-delete applies, and the 4 missing TRD columns (`permissions.field_scope`, `data_points.evidence_file_ids`, `emission_records.evidence_ids`, `filing_deadlines.reminder_days`).
+- **Partitioning:** `data_points` and `emission_records` by year (2025, 2026, 2027, default).
+- **Roles:** the application now connects as **`esg_app`** (not owner, not superuser, no BYPASSRLS); Flyway migrates as `esg_owner`.
+- **RLS:** ENABLE + FORCE on every tenant table, applied by catalogue loop. Bespoke rules for `tenants` (own row), mixed global/tenant tables (`emission_factors`, `report_templates`), read-only global reference data, and an append-only audit log (no UPDATE/DELETE grant).
+- **Same-tenant composite FKs**, because PostgreSQL FK checks ignore RLS. Tested: tenant B can't reference tenant A's organisation.
+- **`TenantAwareDataSource`** sets `app.current_tenant`/`app.current_user` on every connection checkout from the JWT; audit trigger fills `updated_by`.
+- **Code:** entities and repositories moved to UUIDs and schemas; IDOR in data-point get/validate fixed (S7); cross-tenant factor leak closed by RLS (S8).
+- **Login rebuilt** around a `SECURITY DEFINER` email→tenant lookup. **Fixed a pre-existing bug:** failed logins were rolled back with the exception, so the 5-attempt lockout never persisted. It now does (tested).
+- **Local seed:** the demo tenant is local-profile only (D10); no demo data in test/staging/prod.
+
+Deviations: D16 in `DECISIONS.md` (TRD DDL fixes, composite FKs, login lookup, per-checkout `set_config` instead of `SET LOCAL`, renames).
+
+Not done here (by design):
+- Tables for modules not yet built (51 TRD tables still MISSING) are created in their module WPs with the same helpers (`auth.apply_tenant_rls`, `auth.apply_audit_trigger`). `RlsIsolationTest` automatically covers any new tenant table.
+- Item 6 of the WP-11 prompt (NO_COLUMN fields approved in DECISIONS.md): none were approved yet.

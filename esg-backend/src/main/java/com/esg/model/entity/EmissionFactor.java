@@ -1,15 +1,21 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "emission_factors")
+@Table(name = "emission_factors", schema = "carbon")
 public class EmissionFactor {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(nullable = false)
     private String region;
@@ -38,15 +44,15 @@ public class EmissionFactor {
     private Boolean isCustom;
 
     @Column(name = "tenant_id")
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(name = "created_at")
     private Instant createdAt;
 
     public EmissionFactor() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
     public String getRegion() { return this.region; }
     public void setRegion(String region) { this.region = region; }
     public String getCategory() { return this.category; }
@@ -65,8 +71,10 @@ public class EmissionFactor {
     public void setValidTo(LocalDate validTo) { this.validTo = validTo; }
     public Boolean getIsCustom() { return this.isCustom; }
     public void setIsCustom(Boolean isCustom) { this.isCustom = isCustom; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
     public Instant getCreatedAt() { return this.createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Long getVersion() { return this.version; }
 }

@@ -1,24 +1,30 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "data_points")
+@Table(name = "data_points", schema = "data_hub")
 public class DataPoint {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(name = "org_id", nullable = false)
-    private String orgId;
+    private UUID orgId;
 
     @Column(name = "source_id")
-    private String sourceId;
+    private UUID sourceId;
 
     @Column(nullable = false, length = 10)
     private String category;
@@ -50,15 +56,16 @@ public class DataPoint {
     private String validationStatus;
 
     @Column(name = "validated_by")
-    private String validatedBy;
+    private UUID validatedBy;
 
     @Column(name = "validated_at")
     private Instant validatedAt;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String metadata;
 
     @Column(name = "created_by", nullable = false)
-    private String createdBy;
+    private UUID createdBy;
 
     @Column(name = "created_at")
     private Instant createdAt;
@@ -68,7 +75,6 @@ public class DataPoint {
 
     @PrePersist
     public void prePersist() {
-        if (id == null) id = java.util.UUID.randomUUID().toString();
         if (createdAt == null) createdAt = Instant.now();
         if (updatedAt == null) updatedAt = Instant.now();
         if (validationStatus == null) validationStatus = "pending";
@@ -76,14 +82,14 @@ public class DataPoint {
 
     public DataPoint() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-    public String getOrgId() { return this.orgId; }
-    public void setOrgId(String orgId) { this.orgId = orgId; }
-    public String getSourceId() { return this.sourceId; }
-    public void setSourceId(String sourceId) { this.sourceId = sourceId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public UUID getOrgId() { return this.orgId; }
+    public void setOrgId(UUID orgId) { this.orgId = orgId; }
+    public UUID getSourceId() { return this.sourceId; }
+    public void setSourceId(UUID sourceId) { this.sourceId = sourceId; }
     public String getCategory() { return this.category; }
     public void setCategory(String category) { this.category = category; }
     public String getSubCategory() { return this.subCategory; }
@@ -104,16 +110,18 @@ public class DataPoint {
     public void setQualityScore(BigDecimal qualityScore) { this.qualityScore = qualityScore; }
     public String getValidationStatus() { return this.validationStatus; }
     public void setValidationStatus(String validationStatus) { this.validationStatus = validationStatus; }
-    public String getValidatedBy() { return this.validatedBy; }
-    public void setValidatedBy(String validatedBy) { this.validatedBy = validatedBy; }
+    public UUID getValidatedBy() { return this.validatedBy; }
+    public void setValidatedBy(UUID validatedBy) { this.validatedBy = validatedBy; }
     public Instant getValidatedAt() { return this.validatedAt; }
     public void setValidatedAt(Instant validatedAt) { this.validatedAt = validatedAt; }
     public String getMetadata() { return this.metadata; }
     public void setMetadata(String metadata) { this.metadata = metadata; }
-    public String getCreatedBy() { return this.createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+    public UUID getCreatedBy() { return this.createdBy; }
+    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
     public Instant getCreatedAt() { return this.createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return this.updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    public Long getVersion() { return this.version; }
 }

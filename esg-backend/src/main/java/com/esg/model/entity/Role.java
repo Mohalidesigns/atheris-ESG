@@ -1,17 +1,23 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.time.Instant;
 import java.util.Set;
 
 @Entity
-@Table(name = "roles")
+@Table(name = "roles", schema = "auth")
 public class Role {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(nullable = false)
     private String name;
@@ -25,17 +31,17 @@ public class Role {
     private Instant createdAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "role_permissions",
+    @JoinTable(name = "role_permissions", schema = "auth",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissions;
 
     public Role() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
     public String getName() { return this.name; }
     public void setName(String name) { this.name = name; }
     public String getDescription() { return this.description; }
@@ -46,4 +52,6 @@ public class Role {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Set<Permission> getPermissions() { return this.permissions; }
     public void setPermissions(Set<Permission> permissions) { this.permissions = permissions; }
+
+    public Long getVersion() { return this.version; }
 }

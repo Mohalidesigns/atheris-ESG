@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 public class DataHubService {
@@ -21,7 +22,7 @@ public class DataHubService {
     private final DataPointRepository dataPointRepository;
 
     public Page<DataPoint> getDataPoints(String category, String status, Pageable pageable) {
-        String tenantId = TenantContext.getTenantId();
+        UUID tenantId = TenantContext.requireTenantId();
         if (category != null && !category.equalsIgnoreCase("all")) {
             return dataPointRepository.findByTenantIdAndCategory(tenantId, category, pageable);
         }
@@ -32,8 +33,8 @@ public class DataHubService {
     }
 
     @Transactional
-    public DataPoint createDataPoint(DataPointDto dto, String userId) {
-        String tenantId = TenantContext.getTenantId();
+    public DataPoint createDataPoint(DataPointDto dto, UUID userId) {
+        UUID tenantId = TenantContext.requireTenantId();
 
         // Calculate quality score
         BigDecimal qualityScore = calculateQualityScore(dto);
@@ -59,17 +60,17 @@ public class DataHubService {
     }
 
     @Transactional
-    public DataPoint validateDataPoint(String id, String status, String userId) {
-        DataPoint dp = dataPointRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Data point not found: " + id));
+    public DataPoint validateDataPoint(UUID id, String status, UUID userId) {
+        DataPoint dp = getDataPoint(id);
         dp.setValidationStatus(status);
         dp.setValidatedBy(userId);
         dp.setValidatedAt(java.time.Instant.now());
         return dataPointRepository.save(dp);
     }
 
-    public DataPoint getDataPoint(String id) {
-        return dataPointRepository.findById(id)
+    /** Tenant-scoped lookup (AS-IS S7); RLS also hides other tenants' rows. */
+    public DataPoint getDataPoint(UUID id) {
+        return dataPointRepository.findByIdAndTenantId(id, TenantContext.requireTenantId())
                 .orElseThrow(() -> new RuntimeException("Data point not found: " + id));
     }
 

@@ -27,8 +27,9 @@ jobs:
           distribution: temurin
           java-version: '25'   # D6
           cache: maven
-      - name: Verify (unit + integration tests, JaCoCo, Checkstyle)
-        run: ./mvnw -B verify
+      - name: Verify (unit + Testcontainers integration tests incl. RLS suite, JaCoCo, Checkstyle)
+        # Coverage ratchet (master plan §7.1): raise the floor as coverage grows; local runs default to 0.
+        run: ./mvnw -B verify -Djacoco.line.minimum=0.25
       - name: Coverage summary
         if: always()
         run: |
@@ -86,8 +87,10 @@ jobs:
           --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       DB_URL: jdbc:postgresql://localhost:5432/esg_dev
-      DB_USERNAME: esg_owner
-      DB_PASSWORD: esg_owner_ci
+      DB_USERNAME: esg_app            # non-owner application role (WP-11, RLS applies)
+      DB_PASSWORD: esg_app_ci
+      DB_OWNER_USERNAME: esg_owner    # Flyway migrations
+      DB_OWNER_PASSWORD: esg_owner_ci
       JWT_SECRET: ci-only-signing-key-for-openapi-generation-0123456789abcdef0123456789
     steps:
       - uses: actions/checkout@v7
@@ -96,6 +99,11 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+      - name: Create application role
+        run: |
+          PGPASSWORD=esg_owner_ci psql -h localhost -U esg_owner -d esg_dev -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE esg_app LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD 'esg_app_ci'" \
+            -c "GRANT CONNECT ON DATABASE esg_dev TO esg_app"
       - name: Build and export spec
         working-directory: esg-backend
         run: |

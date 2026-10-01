@@ -1,13 +1,15 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "regulatory_frameworks")
+@Table(name = "regulatory_frameworks", schema = "compliance")
 public class RegulatoryFramework {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String code;
@@ -31,8 +33,8 @@ public class RegulatoryFramework {
 
     public RegulatoryFramework() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
     public String getCode() { return this.code; }
     public void setCode(String code) { this.code = code; }
     public String getName() { return this.name; }

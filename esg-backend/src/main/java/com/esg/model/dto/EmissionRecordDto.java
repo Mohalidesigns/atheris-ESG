@@ -4,16 +4,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class EmissionRecordDto {
-    private String id;
-    @NotBlank private String orgId;
+    private UUID id;
+    @NotNull private UUID orgId;
     @NotBlank private String scope;
     private Integer scope3Category;
     @NotBlank private String sourceActivity;
     @NotNull private BigDecimal activityData;
     @NotBlank private String activityUnit;
-    private String emissionFactorId;
+    private UUID emissionFactorId;
     private BigDecimal co2eTonnes;
     @NotNull private LocalDate reportingPeriodStart;
     @NotNull private LocalDate reportingPeriodEnd;
@@ -22,10 +23,10 @@ public class EmissionRecordDto {
 
     public EmissionRecordDto() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getOrgId() { return this.orgId; }
-    public void setOrgId(String orgId) { this.orgId = orgId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getOrgId() { return this.orgId; }
+    public void setOrgId(UUID orgId) { this.orgId = orgId; }
     public String getScope() { return this.scope; }
     public void setScope(String scope) { this.scope = scope; }
     public Integer getScope3Category() { return this.scope3Category; }
@@ -36,8 +37,8 @@ public class EmissionRecordDto {
     public void setActivityData(BigDecimal activityData) { this.activityData = activityData; }
     public String getActivityUnit() { return this.activityUnit; }
     public void setActivityUnit(String activityUnit) { this.activityUnit = activityUnit; }
-    public String getEmissionFactorId() { return this.emissionFactorId; }
-    public void setEmissionFactorId(String emissionFactorId) { this.emissionFactorId = emissionFactorId; }
+    public UUID getEmissionFactorId() { return this.emissionFactorId; }
+    public void setEmissionFactorId(UUID emissionFactorId) { this.emissionFactorId = emissionFactorId; }
     public BigDecimal getCo2eTonnes() { return this.co2eTonnes; }
     public void setCo2eTonnes(BigDecimal co2eTonnes) { this.co2eTonnes = co2eTonnes; }
     public LocalDate getReportingPeriodStart() { return this.reportingPeriodStart; }

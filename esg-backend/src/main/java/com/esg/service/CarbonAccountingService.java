@@ -16,6 +16,7 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class CarbonAccountingService {
@@ -29,7 +30,7 @@ public class CarbonAccountingService {
     private final EmissionFactorRepository emissionFactorRepository;
 
     public Page<EmissionRecord> getEmissions(String scope, Pageable pageable) {
-        String tenantId = TenantContext.getTenantId();
+        UUID tenantId = TenantContext.requireTenantId();
         if (scope != null && !scope.equalsIgnoreCase("all")) {
             return emissionRecordRepository.findByTenantIdAndScope(tenantId, scope, pageable);
         }
@@ -42,12 +43,13 @@ public class CarbonAccountingService {
      */
     @Transactional
     public EmissionRecord calculateAndSave(EmissionRecordDto dto) {
-        String tenantId = TenantContext.getTenantId();
+        UUID tenantId = TenantContext.requireTenantId();
 
         BigDecimal co2eTonnes = dto.getCo2eTonnes();
 
         // Auto-calculate if emission factor is specified
         if (dto.getEmissionFactorId() != null && co2eTonnes == null) {
+            // RLS limits this to global factors and the tenant's own custom factors (AS-IS S8)
             EmissionFactor factor = emissionFactorRepository.findById(dto.getEmissionFactorId())
                     .orElseThrow(() -> new RuntimeException("Emission factor not found"));
 
@@ -79,7 +81,7 @@ public class CarbonAccountingService {
     }
 
     public Map<String, Object> getEmissionsSummary() {
-        String tenantId = TenantContext.getTenantId();
+        UUID tenantId = TenantContext.requireTenantId();
         Map<String, Object> summary = new HashMap<>();
 
         BigDecimal scope1 = emissionRecordRepository.sumCo2eByTenantAndScope(tenantId, "scope_1");
@@ -99,6 +101,7 @@ public class CarbonAccountingService {
         if (region != null) {
             return emissionFactorRepository.findByRegion(region);
         }
+        // RLS returns global factors plus this tenant's custom factors only (AS-IS S8)
         return emissionFactorRepository.findAll();
     }
 }

@@ -4,10 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class DataPointDto {
-    private String id;
-    @NotBlank private String orgId;
+    private UUID id;
+    @NotNull private UUID orgId;
     @NotBlank private String category;
     @NotBlank private String subCategory;
     @NotBlank private String metricKey;
@@ -19,14 +20,14 @@ public class DataPointDto {
     private BigDecimal qualityScore;
     private String validationStatus;
     private String metadata;
-    private String sourceId;
+    private UUID sourceId;
 
     public DataPointDto() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getOrgId() { return this.orgId; }
-    public void setOrgId(String orgId) { this.orgId = orgId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getOrgId() { return this.orgId; }
+    public void setOrgId(UUID orgId) { this.orgId = orgId; }
     public String getCategory() { return this.category; }
     public void setCategory(String category) { this.category = category; }
     public String getSubCategory() { return this.subCategory; }
@@ -49,6 +50,6 @@ public class DataPointDto {
     public void setValidationStatus(String validationStatus) { this.validationStatus = validationStatus; }
     public String getMetadata() { return this.metadata; }
     public void setMetadata(String metadata) { this.metadata = metadata; }
-    public String getSourceId() { return this.sourceId; }
-    public void setSourceId(String sourceId) { this.sourceId = sourceId; }
+    public UUID getSourceId() { return this.sourceId; }
+    public void setSourceId(UUID sourceId) { this.sourceId = sourceId; }
 }

@@ -27,8 +27,10 @@
       "port": 8090,
       "cwd": "esg-backend",
       "env": {
-        "DB_USERNAME": "esg_owner",
-        "DB_PASSWORD": "esg_owner_local"
+        "DB_USERNAME": "esg_app",
+        "DB_PASSWORD": "esg_app_local",
+        "DB_OWNER_USERNAME": "esg_owner",
+        "DB_OWNER_PASSWORD": "esg_owner_local"
       }
     },
     {

@@ -50,6 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Set tenant context for downstream use
             TenantContext.setTenantId(tenantId);
+            TenantContext.setUserId(userId);
         }
 
         try {

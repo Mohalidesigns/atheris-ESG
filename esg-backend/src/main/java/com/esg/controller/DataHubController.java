@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/data")
@@ -36,7 +37,7 @@ public class DataHubController {
     }
 
     @GetMapping("/points/{id}")
-    public ResponseEntity<ApiResponse<DataPoint>> getDataPoint(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<DataPoint>> getDataPoint(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(dataHubService.getDataPoint(id)));
     }
 
@@ -44,17 +45,17 @@ public class DataHubController {
     public ResponseEntity<ApiResponse<DataPoint>> createDataPoint(
             @Valid @RequestBody DataPointDto dto,
             @AuthenticationPrincipal UserPrincipal principal) {
-        DataPoint dp = dataHubService.createDataPoint(dto, principal.getId());
+        DataPoint dp = dataHubService.createDataPoint(dto, UUID.fromString(principal.getId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(dp, "Data point created"));
     }
 
     @PutMapping("/points/{id}/validate")
     public ResponseEntity<ApiResponse<DataPoint>> validateDataPoint(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserPrincipal principal) {
         String status = body.getOrDefault("status", "validated");
-        DataPoint dp = dataHubService.validateDataPoint(id, status, principal.getId());
+        DataPoint dp = dataHubService.validateDataPoint(id, status, UUID.fromString(principal.getId()));
         return ResponseEntity.ok(ApiResponse.ok(dp, "Data point " + status));
     }
 }

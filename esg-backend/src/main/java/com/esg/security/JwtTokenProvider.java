@@ -48,10 +48,13 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(String userId) {
+    public String generateRefreshToken(String userId, String tenantId) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(userId)
+                // The tenant is needed to load the user under RLS during refresh (WP-11).
+                // Distinguishing refresh from access tokens is WP-12 (AS-IS S2).
+                .claim("tenant_id", tenantId)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + refreshExpirationMs))
                 .signWith(key)

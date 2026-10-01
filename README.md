@@ -19,11 +19,15 @@ Environmental, Social, and Governance (ESG) is a framework used by investors and
 
 That one command:
 
-1. Prepares the database. With Docker it starts the compose stack (Postgres on **5433**, Redis, MinIO, Mailpit). Without Docker it uses your local PostgreSQL on 5432 and creates the `esg_owner` role and `esg_dev` database if missing. Force a mode with `ESG_DB_MODE=docker` or `ESG_DB_MODE=local`.
+1. Prepares the database. With Docker it starts the compose stack (Postgres on **5433**, Redis, MinIO, Mailpit). Without Docker it uses your local PostgreSQL on 5432 and creates the `esg_owner` and `esg_app` roles and the `esg_dev` database if missing. Force a mode with `ESG_DB_MODE=docker` or `ESG_DB_MODE=local`.
 2. Starts the backend with the `local` profile on http://localhost:8080/api (Flyway migrates on start).
 3. Starts the frontend on http://localhost:5173. Vite proxies `/api` to the backend.
 
 Use `./scripts/dev.sh db` to prepare only the database.
+
+> **After pulling WP-11 (database re-baseline):** run `./scripts/dev.sh reset-db` once. The migrations were rebuilt from scratch (decision D9), so an existing `esg_dev` from WP-10 can't be upgraded in place.
+
+**Database roles.** `esg_owner` owns the schema and runs Flyway. The application connects as `esg_app`, which is not the owner, not a superuser and has no `BYPASSRLS`, so PostgreSQL Row-Level Security isolates tenants for every query. `dev.sh` creates both roles.
 
 ### Local login (local profile only)
 
@@ -44,13 +48,25 @@ These passwords are set by `esg-backend/src/main/resources/db/seed/local/`, whic
 | `test` | Automated tests | Test-only JWT key; DB from Testcontainers |
 | `staging`, `prod` | Shared environments | **All from env vars**; the app refuses to start without `JWT_SECRET` |
 
-Environment variables: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
+Environment variables: `DB_URL`, `DB_USERNAME`/`DB_PASSWORD` (application role, default `esg_app`), `DB_OWNER_USERNAME`/`DB_OWNER_PASSWORD` (migration role, default `esg_owner`), `DB_APP_ROLE`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
 
 ## Checks (same as CI)
 
 ```bash
 cd esg-backend && ./mvnw verify
 ```
+
+Integration tests (including the Row-Level Security suite) need PostgreSQL. With Docker they start a `postgres:17` Testcontainer automatically. Without Docker, create a throwaway test database once and point the tests at it:
+
+```bash
+./scripts/dev.sh testdb
+```
+
+```bash
+cd esg-backend && ESG_TEST_DB_URL=jdbc:postgresql://localhost:5432/esg_test ./mvnw verify
+```
+
+With neither, the database tests are skipped (CI always runs them).
 
 ```bash
 cd esg-frontend && npm run lint && npm test && npm run build

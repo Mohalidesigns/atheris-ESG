@@ -1,21 +1,27 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "emission_records")
+@Table(name = "emission_records", schema = "carbon")
 public class EmissionRecord {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(name = "org_id", nullable = false)
-    private String orgId;
+    private UUID orgId;
 
     @Column(nullable = false, length = 10)
     private String scope;
@@ -33,7 +39,7 @@ public class EmissionRecord {
     private String activityUnit;
 
     @Column(name = "emission_factor_id")
-    private String emissionFactorId;
+    private UUID emissionFactorId;
 
     @Column(name = "co2e_tonnes", nullable = false)
     private BigDecimal co2eTonnes;
@@ -63,26 +69,25 @@ public class EmissionRecord {
     private Boolean isVerified;
 
     @Column(name = "verified_by")
-    private String verifiedBy;
+    private UUID verifiedBy;
 
     @Column(name = "created_at")
     private Instant createdAt;
 
     @PrePersist
     public void prePersist() {
-        if (id == null) id = java.util.UUID.randomUUID().toString();
         if (createdAt == null) createdAt = Instant.now();
         if (isVerified == null) isVerified = false;
     }
 
     public EmissionRecord() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-    public String getOrgId() { return this.orgId; }
-    public void setOrgId(String orgId) { this.orgId = orgId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public UUID getOrgId() { return this.orgId; }
+    public void setOrgId(UUID orgId) { this.orgId = orgId; }
     public String getScope() { return this.scope; }
     public void setScope(String scope) { this.scope = scope; }
     public Integer getScope3Category() { return this.scope3Category; }
@@ -93,8 +98,8 @@ public class EmissionRecord {
     public void setActivityData(BigDecimal activityData) { this.activityData = activityData; }
     public String getActivityUnit() { return this.activityUnit; }
     public void setActivityUnit(String activityUnit) { this.activityUnit = activityUnit; }
-    public String getEmissionFactorId() { return this.emissionFactorId; }
-    public void setEmissionFactorId(String emissionFactorId) { this.emissionFactorId = emissionFactorId; }
+    public UUID getEmissionFactorId() { return this.emissionFactorId; }
+    public void setEmissionFactorId(UUID emissionFactorId) { this.emissionFactorId = emissionFactorId; }
     public BigDecimal getCo2eTonnes() { return this.co2eTonnes; }
     public void setCo2eTonnes(BigDecimal co2eTonnes) { this.co2eTonnes = co2eTonnes; }
     public BigDecimal getCo2Tonnes() { return this.co2Tonnes; }
@@ -113,8 +118,10 @@ public class EmissionRecord {
     public void setDataQualityScore(BigDecimal dataQualityScore) { this.dataQualityScore = dataQualityScore; }
     public Boolean getIsVerified() { return this.isVerified; }
     public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
-    public String getVerifiedBy() { return this.verifiedBy; }
-    public void setVerifiedBy(String verifiedBy) { this.verifiedBy = verifiedBy; }
+    public UUID getVerifiedBy() { return this.verifiedBy; }
+    public void setVerifiedBy(UUID verifiedBy) { this.verifiedBy = verifiedBy; }
     public Instant getCreatedAt() { return this.createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Long getVersion() { return this.version; }
 }
