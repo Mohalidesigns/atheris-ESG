@@ -49,7 +49,9 @@ FROM (VALUES
   ('subscription:read', 'View subscription'), ('subscription:configure', 'Change subscription'),
   ('tenants:create', 'Create tenants (platform)'), ('tenants:read', 'View tenants (platform)'), ('tenants:update', 'Update tenants (platform)'),
   ('audit_logs:read', 'View audit logs'),
-  ('notifications:read', 'View own notifications')
+  ('notifications:read', 'View own notifications'),
+  ('reference_data:read', 'View reference data: metrics, factors, frameworks, catalogues'),
+  ('emission_factors:manage', 'Add and update the tenant''s custom emission factors')
 ) AS v(p, d)
 ON CONFLICT (resource, action) DO UPDATE SET description = EXCLUDED.description;
 
@@ -83,6 +85,7 @@ INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT r, split_part(p, ':', 1), split_part(p, ':', 2)
 FROM (VALUES
   ('ESG_DIRECTOR', ARRAY[
+    'reference_data:read', 'emission_factors:manage',
     'reporting_periods:create', 'reporting_periods:read', 'reporting_periods:update', 'reporting_periods:approve', 'tenant_settings:read', 'files:create', 'files:read', 'files:delete',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'users:read', 'roles:read', 'audit_logs:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:delete', 'data_points:approve', 'data_points:export',
@@ -94,6 +97,7 @@ FROM (VALUES
     'social:create', 'social:read', 'social:update', 'social:approve',
     'governance:read', 'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
   ('ESG_MANAGER', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
@@ -102,6 +106,7 @@ FROM (VALUES
     'risk:create', 'risk:read', 'risk:update', 'supply_chain:create', 'supply_chain:read', 'supply_chain:update',
     'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read']),
   ('ESG_ANALYST', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update',
@@ -109,16 +114,20 @@ FROM (VALUES
     'compliance:read', 'reports:create', 'reports:read', 'reports:update',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:read']),
   ('DATA_COLLECTOR', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'carbon_data:create', 'carbon_data:read']),
   ('AUDITOR', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'audit_logs:read',
     'data_points:read', 'carbon_data:read', 'compliance:read', 'reports:read', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'governance:read', 'analytics:read', 'carbon_market:read']),
-  ('INVESTOR_VIEWER', ARRAY['notifications:read', 'investor:read']),
+  ('INVESTOR_VIEWER', ARRAY[
+    'reference_data:read','notifications:read', 'investor:read']),
   ('CONSULTANT', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
@@ -126,14 +135,17 @@ FROM (VALUES
     'compliance:read', 'reports:create', 'reports:read', 'reports:update', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:create', 'analytics:read']),
   ('BOARD_MEMBER', ARRAY[
+    'reference_data:read',
     'files:read',
     'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'compliance:create', 'compliance:read', 'compliance:update', 'compliance:configure', 'compliance:approve',
     'reports:create', 'reports:read', 'reports:update', 'reports:export', 'data_points:read', 'carbon_data:read']),
   ('TRAINING_ADMIN', ARRAY[
+    'reference_data:read',
     'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure'])
 ) AS v(r, perms), unnest(perms) AS p;
 

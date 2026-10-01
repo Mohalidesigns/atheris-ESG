@@ -38,8 +38,9 @@ insert into data_hub.approval_steps (workflow_id, step_number, approver_id)
 insert into data_hub.offline_sync_queue (user_id, device_id, payload)
   values ('a0000000-0000-4000-8000-0000000000a1', 'device-1', '{}');
 
-insert into carbon.emission_factors (region, category, factor_value, unit, valid_from, is_custom, tenant_id)
-  values ('NG', 'custom_fuel', 1.5, 'kgCO2e/litre', '2026-01-01', true, '11111111-1111-4111-8111-111111111111');
+insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from, is_custom, tenant_id, verification_status)
+  values ('NG', 'custom_fuel', 1.5, 'kgCO2e/litre', 'Supplier fuel certificate 2026', '2026-01-01', true,
+          '11111111-1111-4111-8111-111111111111', 'tenant_provided');
 insert into carbon.emission_records (org_id, scope, source_activity, activity_data, activity_unit, co2e_tonnes,
                                      reporting_period_start, reporting_period_end)
   values ('a0000000-0000-4000-8000-00000000000a', 'scope_1', 'diesel_generator', 1000, 'litre', 2.68, '2026-01-01', '2026-03-31');
@@ -48,8 +49,10 @@ insert into carbon.gas_flaring_records (facility_id, volume_mcf, co2e_tonnes, re
 insert into carbon.reduction_targets (target_name, scope, base_year, base_value, target_year, target_value)
   values ('Net zero', 'scope_1', 2024, 1000, 2030, 500);
 
-insert into compliance.framework_requirements (id, framework_id, requirement_code, title)
-  select 'a0000000-0000-4000-8000-0000000000e1', id, 'FIXTURE-1', 'Fixture requirement' from compliance.regulatory_frameworks where code = 'GRI';
+-- Inactive so it doesn't change the published requirement counts.
+insert into compliance.framework_requirements (id, framework_id, requirement_code, title, source, is_active)
+  select 'a0000000-0000-4000-8000-0000000000e1', id, 'FIXTURE-1', 'Fixture requirement', 'test fixture', false
+  from compliance.regulatory_frameworks where code = 'GRI';
 insert into compliance.tenant_compliance_status (framework_id, requirement_id, reporting_year)
   select id, 'a0000000-0000-4000-8000-0000000000e1', 2026 from compliance.regulatory_frameworks where code = 'GRI';
 insert into compliance.filing_deadlines (framework_id, deadline_date)

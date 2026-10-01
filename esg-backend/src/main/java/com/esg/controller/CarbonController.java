@@ -2,7 +2,6 @@ package com.esg.controller;
 
 import com.esg.model.dto.ApiResponse;
 import com.esg.model.dto.EmissionRecordDto;
-import com.esg.model.entity.EmissionFactor;
 import com.esg.model.entity.EmissionRecord;
 import com.esg.service.CarbonAccountingService;
 import jakarta.validation.Valid;
@@ -49,10 +48,5 @@ public class CarbonController {
         return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissionsSummary()));
     }
 
-    @GetMapping("/factors")
-    @PreAuthorize("hasAuthority('carbon_data:read')")
-    public ResponseEntity<ApiResponse<List<EmissionFactor>>> getEmissionFactors(
-            @RequestParam(required = false) String region) {
-        return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissionFactors(region)));
-    }
+    // Emission factors moved to EmissionFactorController (/v1/carbon/factors, WP-17).
 }

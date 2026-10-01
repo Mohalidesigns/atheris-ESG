@@ -35,6 +35,7 @@ class RbacMatrixTest extends ApiTestSupport {
       "users:read", () -> get("/v1/admin/users"),
       "roles:read", () -> get("/v1/admin/roles"),
       "orgs:read", () -> get("/v1/organisations"),
+      "reference:read", () -> get("/v1/reference/metrics"),
       "me", () -> get("/v1/auth/me"));
 
   private static final Set<String> ALL = ENDPOINTS.keySet();
@@ -44,15 +45,15 @@ class RbacMatrixTest extends ApiTestSupport {
       Map.entry("SUPER_ADMIN", ALL),
       Map.entry("TENANT_ADMIN", ALL),
       Map.entry("ESG_DIRECTOR", ALL),
-      Map.entry("ESG_MANAGER", Set.of("data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("ESG_ANALYST", Set.of("data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("DATA_COLLECTOR", Set.of("data:read", "data:create", "carbon:read", "orgs:read", "me")),
-      Map.entry("AUDITOR", Set.of("data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("INVESTOR_VIEWER", Set.of("me")),
-      Map.entry("CONSULTANT", Set.of("data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("BOARD_MEMBER", Set.of("me")),
-      Map.entry("COMPLIANCE_OFFICER", Set.of("data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("TRAINING_ADMIN", Set.of("users:read", "me")));
+      Map.entry("ESG_MANAGER", Set.of("reference:read", "data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
+      Map.entry("ESG_ANALYST", Set.of("reference:read", "data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
+      Map.entry("DATA_COLLECTOR", Set.of("reference:read", "data:read", "data:create", "carbon:read", "orgs:read", "me")),
+      Map.entry("AUDITOR", Set.of("reference:read", "data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
+      Map.entry("INVESTOR_VIEWER", Set.of("reference:read", "me")),
+      Map.entry("CONSULTANT", Set.of("reference:read", "data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
+      Map.entry("BOARD_MEMBER", Set.of("reference:read", "me")),
+      Map.entry("COMPLIANCE_OFFICER", Set.of("reference:read", "data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
+      Map.entry("TRAINING_ADMIN", Set.of("reference:read", "users:read", "me")));
 
   static Stream<Arguments> matrix() {
     return ROLES.stream().flatMap(role -> ALL.stream().sorted()

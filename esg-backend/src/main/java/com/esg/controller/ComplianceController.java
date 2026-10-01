@@ -1,7 +1,8 @@
 package com.esg.controller;
 
 import com.esg.model.dto.ApiResponse;
-import com.esg.model.entity.RegulatoryFramework;
+import com.esg.reference.FrameworkCatalogService;
+import com.esg.reference.ReferenceDtos;
 import com.esg.service.ComplianceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,26 +15,37 @@ import java.util.Map;
 @RequestMapping("/v1/compliance")
 public class ComplianceController {
 
-    public ComplianceController(ComplianceService complianceService) {
+    public ComplianceController(ComplianceService complianceService, FrameworkCatalogService catalog) {
         this.complianceService = complianceService;
+        this.catalog = catalog;
     }
 
     private final ComplianceService complianceService;
+    private final FrameworkCatalogService catalog;
 
     @GetMapping("/frameworks")
     @PreAuthorize("hasAuthority('compliance:read')")
-    public ResponseEntity<ApiResponse<List<RegulatoryFramework>>> getFrameworks(
+    public ResponseEntity<ApiResponse<List<ReferenceDtos.Framework>>> getFrameworks(
             @RequestParam(required = false) String jurisdiction) {
-        List<RegulatoryFramework> frameworks = jurisdiction != null
-                ? complianceService.getFrameworksByJurisdiction(jurisdiction)
-                : complianceService.getFrameworks();
-        return ResponseEntity.ok(ApiResponse.ok(frameworks));
+        return ResponseEntity.ok(ApiResponse.ok(catalog.frameworks(jurisdiction)));
     }
 
     @GetMapping("/frameworks/{code}")
     @PreAuthorize("hasAuthority('compliance:read')")
-    public ResponseEntity<ApiResponse<RegulatoryFramework>> getFramework(@PathVariable String code) {
-        return ResponseEntity.ok(ApiResponse.ok(complianceService.getFrameworkByCode(code)));
+    public ResponseEntity<ApiResponse<ReferenceDtos.Framework>> getFramework(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(catalog.framework(code)));
+    }
+
+    @GetMapping("/frameworks/{code}/requirements")
+    @PreAuthorize("hasAuthority('compliance:read')")
+    public ResponseEntity<ApiResponse<List<ReferenceDtos.Requirement>>> getRequirements(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(catalog.requirements(code)));
+    }
+
+    @GetMapping("/mappings")
+    @PreAuthorize("hasAuthority('compliance:read')")
+    public ResponseEntity<ApiResponse<List<ReferenceDtos.Mapping>>> getMappings(@RequestParam(required = false) String framework) {
+        return ResponseEntity.ok(ApiResponse.ok(catalog.mappings(framework)));
     }
 
     @GetMapping("/gaps")

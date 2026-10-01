@@ -172,10 +172,18 @@ class RlsIsolationTest {
     try (Connection app = PostgresTestDatabase.appConnection()) {
       setTenant(app, TENANT_A);
       assertThat(count(app, "select count(*) from auth.permissions")).isPositive();
-      assertThat(count(app, "select count(*) from compliance.regulatory_frameworks")).isEqualTo(10);
-      assertThatThrownBy(() -> update(app, "insert into auth.permissions (resource, action) values ('x', 'y')"))
-          .isInstanceOf(SQLException.class)
-          .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
+      assertThat(count(app, "select count(*) from compliance.regulatory_frameworks")).isEqualTo(12);
+      assertThat(count(app, "select count(*) from reference.metrics")).isPositive();
+      for (String write : new String[] {
+          "insert into auth.permissions (resource, action) values ('x', 'y')",
+          "update reference.metrics set unit = 'x'",
+          "delete from reference.currencies",
+          "update compliance.framework_requirements set title = 'x'",
+          "delete from compliance.requirement_mappings"}) {
+        assertThatThrownBy(() -> update(app, write)).as(write)
+            .isInstanceOf(SQLException.class)
+            .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
+      }
     }
   }
 
@@ -183,11 +191,18 @@ class RlsIsolationTest {
   void emissionFactorsShowGlobalPlusOwnCustomOnly() throws SQLException {
     try (Connection app = PostgresTestDatabase.appConnection()) {
       setTenant(app, TENANT_B);
-      assertThat(count(app, "select count(*) from carbon.emission_factors")).as("global factors only").isEqualTo(10);
+      long global = count(app, "select count(*) from carbon.emission_factors where tenant_id is null");
+      assertThat(global).as("platform factors are loaded").isGreaterThanOrEqualTo(15);
+      assertThat(count(app, "select count(*) from carbon.emission_factors where tenant_id is not null"))
+          .as("tenant B has no custom factors and sees no one else's").isZero();
       setTenant(app, TENANT_A);
-      assertThat(count(app, "select count(*) from carbon.emission_factors")).as("global + own custom").isEqualTo(11);
-      assertThatThrownBy(() -> update(app, "insert into carbon.emission_factors (region, category, factor_value, unit, valid_from) "
-          + "values ('NG', 'fake_global', 1, 'kg', '2026-01-01')"))
+      assertThat(count(app, "select count(*) from carbon.emission_factors where tenant_id is null")).isEqualTo(global);
+      assertThat(count(app, "select count(*) from carbon.emission_factors where tenant_id is not null"))
+          .as("own custom factors only")
+          .isPositive()
+          .isEqualTo(count(app, "select count(*) from carbon.emission_factors where tenant_id = '" + TENANT_A + "'"));
+      assertThatThrownBy(() -> update(app, "insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from) "
+          + "values ('NG', 'fake_global', 1, 'kg', 'test', '2026-01-01')"))
           .as("the application must not create global factors")
           .isInstanceOf(SQLException.class)
           .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));

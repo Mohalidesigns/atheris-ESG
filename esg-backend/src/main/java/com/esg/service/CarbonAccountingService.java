@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,10 +62,7 @@ public class CarbonAccountingService {
             EmissionFactor factor = emissionFactorRepository.findById(dto.getEmissionFactorId())
                     .orElseThrow(() -> FieldValidationException.of("emissionFactorId", "Unknown emission factor"));
 
-            // CO2e (kg) = activity_data * factor_value
-            BigDecimal co2eKg = dto.getActivityData().multiply(factor.getFactorValue());
-            // Convert to tonnes
-            co2eTonnes = co2eKg.divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP);
+            co2eTonnes = com.esg.reference.EmissionCalculator.co2eTonnes(dto.getActivityData(), factor.getFactorValue());
         }
 
         if (co2eTonnes == null) {
@@ -114,13 +109,5 @@ public class CarbonAccountingService {
         summary.put("totalCO2e", total);
 
         return summary;
-    }
-
-    public List<EmissionFactor> getEmissionFactors(String region) {
-        if (region != null) {
-            return emissionFactorRepository.findByRegion(region);
-        }
-        // RLS returns global factors plus this tenant's custom factors only (AS-IS S8)
-        return emissionFactorRepository.findAll();
     }
 }
