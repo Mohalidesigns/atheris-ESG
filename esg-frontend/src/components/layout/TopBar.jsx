@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import {
-  AppBar, Toolbar, Box, IconButton, InputBase, Avatar, Menu, MenuItem,
-  Typography, Divider,
+  AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Typography, Divider,
 } from '@mui/material';
-import {
-  Search, HelpOutline, Language,
-} from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Can from '../rbac/Can';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
@@ -26,27 +22,9 @@ export default function TopBar() {
       }}
     >
       <Toolbar sx={{ minHeight: '56px !important', px: 3 }}>
-        {/* Search */}
-        <Box sx={{
-          display: 'flex', alignItems: 'center', bgcolor: '#F7FAFC', borderRadius: 2,
-          px: 1.5, py: 0.5, width: 320, border: '1px solid #E2E8F0',
-        }}>
-          <Search sx={{ color: '#718096', fontSize: 20, mr: 1 }} />
-          <InputBase
-            placeholder="Search ESG data, reports, frameworks..."
-            sx={{ flex: 1, fontSize: '0.8125rem', color: '#2D3748' }}
-          />
-        </Box>
-
+        {/* Global search isn't built yet (FIELD_INVENTORY "Global search" row); no non-working search box until it is. */}
         <Box sx={{ flex: 1 }} />
 
-        {/* Actions */}
-        <IconButton size="small" sx={{ mr: 1 }}>
-          <Language sx={{ color: '#718096', fontSize: 20 }} />
-        </IconButton>
-        <IconButton size="small" sx={{ mr: 1 }}>
-          <HelpOutline sx={{ color: '#718096', fontSize: 20 }} />
-        </IconButton>
         <Can permission="notifications:read">
           <NotificationBell />
         </Can>

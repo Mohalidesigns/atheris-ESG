@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (branch `feature/wp-14-15-org-crosscutting`, stacked on #4) |
-| Next | **WP-16** (design system, no-mock gate to ENFORCE), **WP-17** (i18n), **WP-18** (E2E runner + journeys 1–2) |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (branch `feature/wp-16-17-data-layer-refdata`, stacked on #5) |
+| Next | **WP-18** (E2E runner + field round-trip generator), **WP-19** (subscriptions); then P2 module build-outs **WP-20** (Data Hub), **WP-21** (Carbon), **WP-22** (Compliance). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **54 / 77** WORK end to end with tests (login 2, MFA 1, Admin users/roles/search 16, organisation 8, period 4, settings 4, tenant 12, set password 1, notification preferences 1, audit filters 5); 23 still UI-only or hard-coded options (incl. the file upload component, which no page uses yet); 1 removed (Remember me) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (audit now exists; L5 still needs E2E, WP-18). RTM overall (267 rows, 16 added for TRD §5.6, §6.6, §12.3): **12 at L4**, 8 at L3 | `RTM.csv` |
-| Pages with zero mock data / total pages | **3 / 16** (Login, Admin Console, app shell incl. the notification bell). No-mock gate: 33 findings in 13 files, 163 rows (unchanged; 5 new enum constants marked `no-mock-gate: config`) | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (11 at L4), 38 missing. All code endpoints: **47 / 58 tested** (38 at L4, 9 at L3: lineage and files have no page yet) | type=trd_endpoint, type=endpoint |
+| Fields at L4+ / total fields | **73 / 74** active fields WORK end to end with tests (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs E2E, WP-18). RTM overall (267 rows): **15 at L4**, 14 at L3 | `RTM.csv` |
+| Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (17 at L4), 38 missing. All code endpoints: **69 / 70 tested** (55 at L4, 13 at L3, 2 at L2) | type=trd_endpoint, type=endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **Backend 81.6% lines** (232 tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 86 tests** (Vitest + RTL) | JaCoCo, CI |
+| Test coverage | **Backend 84.6% lines** (278 tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 153 tests** (Vitest + RTL) | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,4 +300,48 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-16 + WP-17 — Data layer & mock quarantine; reference data & metric catalogue
+
+Branch `feature/wp-16-17-data-layer-refdata` (stacked on WP-14/15, PR #5).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| WP-16: no-mock gate ENFORCE passes | ✅ | `check-no-mocks.mjs --enforce`: 0 findings; CI now fails on any finding (mutation-checked: a planted 2-row dataset fails the gate) |
+| WP-16: 0 hard-coded datasets in `src/features/*/components` | ✅ | Same gate; all 33 flagged datasets (163 rows) removed, Analytics' fabricated predictions removed (rule 10); legacy Redux slices (incl. carbonSlice's hard-coded summary) deleted; `yup` was already gone |
+| WP-16: form kit unit tests incl. error mapping | ✅ | `FormKit.test.jsx` (applyProblem: field renaming, array indexes, unplaced errors, offline; all five field types); `DataTable.test.jsx`; `States.test.jsx` |
+| WP-17: repeatable migrations; every value has a source | ✅ | `R__ref_01..04`; `ReferenceDataTest.everyPlatformValueHasASourceAndADerivation`; migration refuses in-place factor edits (`migrationRefusesToChangeAPublishedFactorValue`) |
+| WP-17: golden NG grid 10,000 kWh → 4.3 t; diesel 1,000 L → 2.68 t (lookup level) | ✅ | `ReferenceDataTest.goldenNigeriaGridElectricity`, `goldenNigeriaDieselGenerator` via `GET /carbon/factors/resolve` |
+| WP-17: requirement counts per framework published | ✅ | Table below |
+| WP-17: ESG SME verifies every value before G2 | ⏳ | All factors and requirements are `pending_sme`; needs the SME (master plan §10) |
+
+Requirements per framework (active, 1 Oct 2026; all pending SME verification):
+
+| Framework | Requirements | Content |
+|---|---|---|
+| GRI Standards (2-1…2-30, 3-1…3-3, topic disclosures 205/302/303/305/306/401/403/404/405 with their standards as parents) | 61 | Loaded |
+| IFRS S2 Climate-related Disclosures (governance, strategy, risk management, metrics incl. 29(a)(i)(1)–(3), targets) | 23 | Loaded |
+| TCFD Recommendations (4 pillars + 11 recommended disclosures) | 15 | Loaded |
+| CBN Nigerian Sustainable Banking Principles (Principles 1–9) | 9 | Loaded |
+| IFRS S1 General Requirements (core content pillars) | 4 | Loaded |
+| SEC Nigeria, NGX, NAICOM, PenCom, SASB | 0 | **Pending SME**: not invented |
+| CDP, GHG Protocol | 0 | Not a disclosure checklist here (GHG Protocol is implemented as calculation rules) |
+
+Cross-framework mappings: 14 (GRI 305-1/2/3/5, 2-12/13 and the TCFD disclosures ↔ IFRS S2). Metric catalogue: 31 metrics with 43 links to requirements.
+
+What was built:
+- **WP-17 backend:** `reference` schema (currencies 9, countries 16 with UN M49 regions, SDGs 17, Scope 3 categories 15, ISIC sectors 21, metrics 31); emission factors with source, derivation, version, GWP set and validity (10 legacy + 5 IPCC-derived: diesel, petrol, kerosene, HFO, LPG); lookup hierarchy; tenant custom factors; framework requirements and mappings APIs; `reference_data:read` (all roles) and `emission_factors:manage` permissions. The audit trigger now skips tenant-less global rows (their history is the migration history).
+- **WP-16 backend fixes found on the way:** `/compliance/gaps` returned hard-coded numbers; now computed from requirements and the tenant's status rows. Unknown `sort` fields returned 500; list endpoints now whitelist sort fields (400). Data points are validated against the metric catalogue (category and unit come from it).
+- **WP-16 frontend:** `DataTable` + `useServerTable` (TRD §6.4.1 paging/sort/filter), form kit (React Hook Form + Zod) with `applyProblem` (RFC 7807 → fields), loading/empty/error/Not-yet-available states, RTK Query slices per domain. Data Hub (list, filters, add with metric picker, review), Carbon (summary, records, factor library with provenance, custom factors), Compliance (framework library, requirements with mappings, gap analysis), Dashboard (permission-gated live KPIs), Admin → Reference data tab. Nine modules are honest placeholders. Removed dead controls (top-bar search, language, help) and a layout bug where wide tables widened the whole page.
+
+Verified in the browser (local profile, fresh DB, as the ESG director): Data Hub empty state → client rules caught a negative value and an end date before the start → a valid diesel entry saved with pillar and unit from the catalogue and counters updated; Carbon factor library listed sources and statuses and a custom factor was added; Compliance showed the IFRS S2 hierarchy with GRI/TCFD mappings; no console errors across eight pages.
+
+Honest gaps (scheduled):
+- **ESG SME:** verify all factors and requirements; supply SEC NG, NGX, NAICOM, PenCom content; confirm NAICOM/PenCom instruments; choose SASB industries; supply DEFRA transport and EEIO factor datasets; SDG targets.
+- Data quality score (TRD §8.1) is placeholder logic on the server and hidden in the UI (WP-20). Data points carry no currency yet (WP-20). Global search isn't scheduled in any WP yet.
+- Carbon calculator, flaring, targets and Scope 3 totals (WP-21); compliance status workflow and deadlines (WP-22); executive dashboard content (WP-24).
+
+Design choices for review: D19 in `DECISIONS.md`.
 
