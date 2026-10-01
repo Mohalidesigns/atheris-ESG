@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (branch `feature/wp-21-carbon`, stacked on #8) |
-| Next | **Gate G1 review**; **WP-22** (Compliance). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (branch `feature/wp-22-compliance`, stacked on #9) |
+| Next | **Gate G1 review**; **WP-23** (Reporting). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **146 / 146** active fields WORK end to end with tests (WP-21 added the Emission Calculator, gas flaring, energy instrument, reduction target, PCAF position and spend-factor forms and the GWP setting); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`); 15 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (16 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 42 at L4**, 15 at L3 | `RTM.csv` |
+| Fields at L4+ / total fields | **176 / 176** active fields WORK end to end with tests (WP-22 added filing deadline, filing submission and waiver, regulatory change, impact assessment, requirement attestation, active frameworks and cross-framework mapping); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`) or named API tests (`covered-elsewhere.json`); 15 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (20 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 52 at L4**, 16 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | TRD catalogue: **24 / 58** implemented (23 at L4), 34 missing. All code endpoints: **105 / 105 tested** (93 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **10 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5 (Scope 2 grid + REC), 6 (diesel generator), 7 (gas flaring), 8 (Scope 3 spend), 9 (reduction target), 29 (audit trail); 22 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
-| Test coverage | **Backend 87.1% lines** (560 tests incl. 212 generated round-trip tests; `com.esg.carbon` 85.0%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 257 tests** (Vitest + RTL) + **22 Cypress** | JaCoCo, Vitest |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **27 / 58** implemented (26 at L4), 31 missing. All code endpoints: **115 / 115 tested** (103 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
+| E2E journeys passing / 30 | **13 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon: grid + REC, diesel, flaring, Scope 3 spend, target), 10 (gap closes on data), 11 (GRI maps to ISSB), 12 (deadline alert), 29 (audit trail); 25 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
+| Test coverage | **Backend 88.2% lines** (609 tests incl. 242 generated round-trip tests; `com.esg.compliance` 94.4%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 302 tests** (Vitest + RTL) + **25 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,37 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-22 — M3 Regulatory Compliance Manager
+
+Branch `feature/wp-22-compliance` (stacked on WP-21, PR #9).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Journeys 10–12 green | ✅ locally | `scripts/e2e.sh`: 13 specs, 25 tests, no retries. 10: GRI 303-3 Missing → Partial (submitted) → Met (approved); 11: Scope 1 data meets GRI 305-1 and IFRS S2-29(a)(i)(1), a TCFD GOV-a attestation meets IFRS S2-6(a); 12: a filing due in 7 days fires the owner's reminder into their notifications |
+| Gap analysis test per framework | ✅ | `ComplianceApiTest.gapAnalysisForEveryFrameworkWithContent` (GRI, ISSB S1, ISSB S2, TCFD, CBN NSBP; SEC Nigeria reports no content); `GapAnalysisEngineTest` (8 golden: statuses, completeness, priority scores, mappings, intervals) |
+| Alert intervals tested with fixed Clock | ✅ | `ComplianceApiTest.journey12RemindersFireAt90_60_30_14_7_1DaysThenOverdue`: walks 1 Mar → 3 Jul 2050 day by day with `Clock.fixed`; reminders fire exactly on 1 Apr, 1 May, 31 May, 16 Jun, 23 Jun, 29 Jun, overdue on 1 Jul; a late deadline gets one reminder, not a backlog |
+| M3 RTM rows at L5 | ⏳ | BRD-5.2.3-04/05/06/07 and TRD-8.3 Gap/Mapper/DeadlineScheduler, TRD-11.2.3-01/02/03 at L4; L5 after human review. BRD-5.2.3-01 waits for SME content (SEC NG, NGX, NAICOM, PenCom, FRCN) |
+
+What was built:
+- **Gap analysis engine** (TRD §8.3): status per requirement from approved Data Hub data (and Carbon records for the emission metrics), attestations with evidence, and equivalent cross-framework mappings; completeness, priority score and the next step for every gap. Computed live: entering data closes the gap at once (D23 (1)–(4)).
+- **Compliance status** per framework (TRD `GET /compliance/status`) and the frameworks the tenant reports against.
+- **Attestations** with notes and evidence; quantitative requirements are met by data (or attested with partial data when the rest doesn't apply).
+- **Cross-framework mapping** (TRD `POST /compliance/map`): which target requirements a framework answers, via mappings or shared data.
+- **Filing deadlines**: calendar and tracker (submit with reference and evidence, waive with reason, reopen) and the **daily reminder job** (90/60/30/14/7/1 days, then overdue) on an injectable `Clock`, logged so nothing is ever sent twice.
+- **Regulatory change log** with impact assessment and sign-off by someone other than the assessor.
+- **Compliance Dashboard**: overview, checklist and gaps, frameworks, mapping, filing deadlines, regulatory changes; the "Not yet available" placeholder is gone.
+
+Fixed along the way:
+- The daily job's tenant listing needed an owner-only SELECT policy: FORCE RLS applies to the schema owner too, so the definer function saw nothing (caught by the time-travel test; a mutation check confirms the test fails without it).
+
+Open:
+- **Product owner:** journey 10 runs on GRI because SEC Nigeria has no content yet; priority weights (D23 (4), (7)).
+- **ESG SME:** SEC Nigeria, NGX, NAICOM, PenCom, FRCN requirements; SASB/CDP/SDG mappings; verification of the loaded content.
+- Year is the calendar year of the data's period end; fiscal-year alignment is open (D23 (1)).
+- No regulator feed: changes are recorded by hand until a feed adapter exists.
 
 ---
 
