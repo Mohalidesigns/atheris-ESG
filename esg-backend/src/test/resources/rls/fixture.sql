@@ -74,6 +74,11 @@ insert into governance.governance_policies (name) values ('Anti-bribery');
 insert into governance.whistleblower_reports (case_reference, description) values ('WB-A-0001', 'Concern');
 
 insert into audit.audit_logs (action, resource) values ('create', 'fixture');
+insert into auth.tenant_settings (base_currency, default_framework_codes) values ('NGN', '{SEC_NG}');
+-- An old locked year (used by the period-lock tests) and an open current quarter.
+insert into auth.reporting_periods (id, name, period_type, start_date, end_date, status) values
+  ('a0000000-0000-4000-8000-0000000003a1', 'FY2020', 'annual', '2020-01-01', '2020-12-31', 'locked'),
+  ('a0000000-0000-4000-8000-0000000003a2', 'Q1 2026', 'quarterly', '2026-01-01', '2026-03-31', 'open');
 insert into notifications.notification_queue (user_id, title) values ('a0000000-0000-4000-8000-0000000000a1', 'Welcome');
 
 -- One user per built-in role (RBAC matrix tests). Email: <role in lower case>@fixture.test.
@@ -102,6 +107,7 @@ select set_config('app.current_user', 'b0000000-0000-4000-8000-0000000000b1', fa
 insert into auth.tenants (id, name, slug, country_code) values ('22222222-2222-4222-8222-222222222222', 'Tenant B', 'tenant-b', 'KE');
 insert into auth.organisations (id, name, org_type) values ('b0000000-0000-4000-8000-00000000000b', 'B HQ', 'headquarters');
 select auth.sync_system_roles('22222222-2222-4222-8222-222222222222');
+insert into auth.tenant_settings (base_currency) values ('KES');
 insert into auth.users (id, email, password_hash, first_name, last_name)
   values ('b0000000-0000-4000-8000-0000000000b1', 'user.b@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Bola', 'Tenant');
 

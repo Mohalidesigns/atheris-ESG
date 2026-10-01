@@ -48,7 +48,7 @@ class AccessControlIntegrationTest extends ApiTestSupport {
 
   @Test
   void organisationsListIsScopedToo() throws Exception {
-    mvc.perform(get("/v1/admin/organisations").header("Authorization", bearerForRole("ESG_ANALYST")))
+    mvc.perform(get("/v1/organisations").header("Authorization", bearerForRole("ESG_ANALYST")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data[*].id", everyItem(is(ORG_SITE_1))));
   }

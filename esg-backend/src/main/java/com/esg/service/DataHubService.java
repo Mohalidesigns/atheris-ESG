@@ -22,13 +22,15 @@ public class DataHubService {
     /** Outcomes a reviewer may record (WP-13 interim; the full workflow states arrive with WP-20). */
     static final Set<String> REVIEW_STATUSES = Set.of("validated", "rejected", "flagged");
 
-    public DataHubService(DataPointRepository dataPointRepository, OrgScopeService orgScope) {
+    public DataHubService(DataPointRepository dataPointRepository, OrgScopeService orgScope, ReportingPeriodService periods) {
         this.dataPointRepository = dataPointRepository;
         this.orgScope = orgScope;
+        this.periods = periods;
     }
 
     private final DataPointRepository dataPointRepository;
     private final OrgScopeService orgScope;
+    private final ReportingPeriodService periods;
 
     /** Lists data points the caller may see: RLS limits to the tenant, org scope limits org-scoped roles. */
     public Page<DataPoint> getDataPoints(String category, String status, Pageable pageable) {
@@ -41,6 +43,7 @@ public class DataHubService {
     public DataPoint createDataPoint(DataPointDto dto, UUID userId) {
         UUID tenantId = TenantContext.requireTenantId();
         orgScope.requireAccess(dto.getOrgId());
+        periods.requireOpen(dto.getReportingPeriodStart(), dto.getReportingPeriodEnd());
 
         // Calculate quality score
         BigDecimal qualityScore = calculateQualityScore(dto);
@@ -72,6 +75,7 @@ public class DataHubService {
             throw FieldValidationException.of("status", "must be one of validated, rejected, flagged");
         }
         DataPoint dp = getDataPoint(id);
+        periods.requireOpen(dp.getReportingPeriodStart(), dp.getReportingPeriodEnd());
         if (userId.equals(dp.getCreatedBy())) {
             throw ApiException.forbidden("You can't review a data point you created");
         }

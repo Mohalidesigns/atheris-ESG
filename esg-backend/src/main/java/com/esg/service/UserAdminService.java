@@ -3,7 +3,6 @@ package com.esg.service;
 import com.esg.exception.ApiException;
 import com.esg.exception.FieldValidationException;
 import com.esg.model.dto.AdminDtos.CreateUserRequest;
-import com.esg.model.dto.AdminDtos.OrganisationOption;
 import com.esg.model.dto.AdminDtos.PageResponse;
 import com.esg.model.dto.AdminDtos.ReplaceRolesRequest;
 import com.esg.model.dto.AdminDtos.RoleAssignmentRequest;
@@ -27,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -142,6 +140,34 @@ public class UserAdminService {
         return toResponse(saved, assignments(List.of(id)));
     }
 
+    /** Clears a user's MFA enrolment (lost device) and ends their sessions; they enrol again at next sign-in. */
+    @Transactional
+    public UserResponse resetMfa(UUID id) {
+        User user = find(id);
+        user.setMfaEnabled(false);
+        user.setMfaSecret(null);
+        User saved = users.saveAndFlush(user);
+        refreshTokens.revokeAllSessions(id);
+        return toResponse(saved, assignments(List.of(id)));
+    }
+
+    /** Sets a new password chosen by an administrator, unlocks the account and ends all sessions. */
+    @Transactional
+    public UserResponse setPassword(UUID id, String password) {
+        User user = find(id);
+        List<String> problems = passwordPolicy.violations(password, user.getEmail());
+        if (!problems.isEmpty()) {
+            throw FieldValidationException.of("password", "Password needs " + String.join(", ", problems));
+        }
+        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setPasswordChangedAt(Instant.now());
+        user.setFailedLoginCount(0);
+        user.setLockedUntil(null);
+        User saved = users.saveAndFlush(user);
+        refreshTokens.revokeAllSessions(id);
+        return toResponse(saved, assignments(List.of(id)));
+    }
+
     @Transactional(readOnly = true)
     public List<RoleAssignmentResponse> getRoles(UUID userId) {
         find(userId);
@@ -204,17 +230,6 @@ public class UserAdminService {
                 .map(r -> new RoleResponse(r.id(), r.name(), r.description(), r.scopeType(), r.mfaRequired(),
                         r.systemRole(), r.permissions().stream().sorted().toList()))
                 .toList();
-    }
-
-    /** Organisations the caller can see (all, or their scoped subtree). */
-    @Transactional(readOnly = true)
-    public List<OrganisationOption> listOrganisations() {
-        Optional<Set<UUID>> scope = orgScope.accessibleOrgIds();
-        return jdbc.query("select id, name, parent_org_id, org_type from auth.organisations "
-                        + "where deleted_at is null order by name",
-                        (rs, i) -> new OrganisationOption(rs.getObject(1, UUID.class), rs.getString(2),
-                                rs.getObject(3, UUID.class), rs.getString(4)))
-                .stream().filter(o -> scope.isEmpty() || scope.get().contains(o.id())).toList();
     }
 
     // ------------------------------------------------------------------ internals

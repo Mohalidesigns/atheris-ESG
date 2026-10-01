@@ -24,8 +24,9 @@ import java.util.UUID;
 public class CarbonAccountingService {
 
     public CarbonAccountingService(EmissionRecordRepository emissionRecordRepository, EmissionFactorRepository emissionFactorRepository,
-                                   OrgScopeService orgScope) {
+                                   OrgScopeService orgScope, ReportingPeriodService periods) {
         this.orgScope = orgScope;
+        this.periods = periods;
         this.emissionRecordRepository = emissionRecordRepository;
         this.emissionFactorRepository = emissionFactorRepository;
     }
@@ -33,6 +34,7 @@ public class CarbonAccountingService {
     private final EmissionRecordRepository emissionRecordRepository;
     private final EmissionFactorRepository emissionFactorRepository;
     private final OrgScopeService orgScope;
+    private final ReportingPeriodService periods;
 
     public Page<EmissionRecord> getEmissions(String scope, Pageable pageable) {
         OrgScopeService.QueryScope orgs = orgScope.queryScope();
@@ -49,6 +51,7 @@ public class CarbonAccountingService {
     public EmissionRecord calculateAndSave(EmissionRecordDto dto) {
         UUID tenantId = TenantContext.requireTenantId();
         orgScope.requireAccess(dto.getOrgId());
+        periods.requireOpen(dto.getReportingPeriodStart(), dto.getReportingPeriodEnd());
 
         BigDecimal co2eTonnes = dto.getCo2eTonnes();
 

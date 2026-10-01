@@ -64,6 +64,35 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error("Malformed request"));
     }
 
+    /** Errors raised by the database itself (RLS/definer permission checks, period-lock trigger, constraints). */
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDatabase(org.springframework.dao.DataAccessException ex) {
+        java.sql.SQLException sql = null;
+        for (Throwable t = ex; t != null && sql == null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLException s && s.getSQLState() != null) {
+                sql = s;
+            }
+        }
+        String state = sql == null ? "" : sql.getSQLState();
+        return switch (state) {
+            case "42501" -> ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("You do not have permission to perform this action"));
+            case "P0L01" -> ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(firstLine(sql.getMessage())));
+            case "P0V01" -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("This record was changed by someone else. Reload and try again."));
+            case "23505" -> ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error("A record with these values already exists"));
+            case "23503" -> ResponseEntity.badRequest().body(ApiResponse.error("A referenced record doesn't exist or is still in use"));
+            case "23514" -> ResponseEntity.badRequest().body(ApiResponse.error("A value is outside the allowed range"));
+            default -> handleUnexpected(ex);
+        };
+    }
+
+    private static String firstLine(String message) {
+        String text = message == null ? "" : message.replaceFirst("^ERROR: ", "");
+        int newline = text.indexOf('\n');
+        return newline < 0 ? text : text.substring(0, newline);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(RuntimeException ex) {
         log.error("Unhandled error", ex);

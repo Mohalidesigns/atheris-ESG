@@ -34,7 +34,7 @@ class RbacMatrixTest extends ApiTestSupport {
       "compliance:read", () -> get("/v1/compliance/frameworks"),
       "users:read", () -> get("/v1/admin/users"),
       "roles:read", () -> get("/v1/admin/roles"),
-      "orgs:read", () -> get("/v1/admin/organisations"),
+      "orgs:read", () -> get("/v1/organisations"),
       "me", () -> get("/v1/auth/me"));
 
   private static final Set<String> ALL = ENDPOINTS.keySet();

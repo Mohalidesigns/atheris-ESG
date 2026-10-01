@@ -66,3 +66,17 @@ INSERT INTO auth.user_roles (user_id, role_id, org_scope_id, granted_by) VALUES
   ('0d000000-0000-4000-8000-000000000011', '0c000000-0000-4000-8000-000000000011', NULL, '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000012', '0c000000-0000-4000-8000-000000000012', NULL, '0d000000-0000-4000-8000-000000000005')
 ON CONFLICT DO NOTHING;
+
+-- Tenant settings and reporting periods (WP-14). FY2025 is locked: data for 2025 can't be changed.
+INSERT INTO auth.tenant_settings (tenant_id, base_currency, fiscal_year_start_month, reporting_timezone, default_framework_codes)
+VALUES ('0a000000-0000-4000-8000-000000000001', 'NGN', 1, 'Africa/Lagos', '{SEC_NG,NGX,ISSB_S2,GRI}')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO auth.reporting_periods (name, period_type, start_date, end_date, status, locked_at) VALUES
+  ('FY2025', 'annual', '2025-01-01', '2025-12-31', 'locked', now()),
+  ('FY2026', 'annual', '2026-01-01', '2026-12-31', 'open', NULL),
+  ('Q1 2026', 'quarterly', '2026-01-01', '2026-03-31', 'open', NULL),
+  ('Q2 2026', 'quarterly', '2026-04-01', '2026-06-30', 'open', NULL),
+  ('Q3 2026', 'quarterly', '2026-07-01', '2026-09-30', 'open', NULL),
+  ('Q4 2026', 'quarterly', '2026-10-01', '2026-12-31', 'open', NULL)
+ON CONFLICT DO NOTHING;

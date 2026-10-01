@@ -41,7 +41,10 @@ FROM (VALUES
   ('users:delete', 'Deactivate users'), ('users:read_pii', 'See user contact details (field-level)'),
   ('roles:read', 'View roles and permissions'), ('roles:assign', 'Assign and revoke roles'),
   ('org_structure:create', 'Create organisations'), ('org_structure:read', 'View organisation structure'),
-  ('org_structure:update', 'Update organisations'),
+  ('org_structure:update', 'Update organisations'), ('org_structure:delete', 'Remove organisations'),
+  ('reporting_periods:create', 'Create reporting periods'), ('reporting_periods:read', 'View reporting periods'),
+  ('reporting_periods:update', 'Edit open reporting periods'), ('reporting_periods:approve', 'Lock and unlock reporting periods'),
+  ('files:create', 'Upload files and new versions'), ('files:read', 'View and download files'), ('files:delete', 'Delete files'),
   ('tenant_settings:read', 'View tenant settings'), ('tenant_settings:configure', 'Change tenant settings'),
   ('subscription:read', 'View subscription'), ('subscription:configure', 'Change subscription'),
   ('tenants:create', 'Create tenants (platform)'), ('tenants:read', 'View tenants (platform)'), ('tenants:update', 'Update tenants (platform)'),
@@ -80,6 +83,7 @@ INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT r, split_part(p, ':', 1), split_part(p, ':', 2)
 FROM (VALUES
   ('ESG_DIRECTOR', ARRAY[
+    'reporting_periods:create', 'reporting_periods:read', 'reporting_periods:update', 'reporting_periods:approve', 'tenant_settings:read', 'files:create', 'files:read', 'files:delete',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'users:read', 'roles:read', 'audit_logs:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:delete', 'data_points:approve', 'data_points:export',
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update', 'carbon_data:delete', 'carbon_data:approve', 'carbon_data:export',
@@ -90,6 +94,7 @@ FROM (VALUES
     'social:create', 'social:read', 'social:update', 'social:approve',
     'governance:read', 'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
   ('ESG_MANAGER', ARRAY[
+    'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update', 'carbon_data:export',
@@ -97,28 +102,34 @@ FROM (VALUES
     'risk:create', 'risk:read', 'risk:update', 'supply_chain:create', 'supply_chain:read', 'supply_chain:update',
     'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read']),
   ('ESG_ANALYST', ARRAY[
+    'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update',
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update',
     'compliance:read', 'reports:create', 'reports:read', 'reports:update',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:read']),
   ('DATA_COLLECTOR', ARRAY[
+    'reporting_periods:read', 'files:create', 'files:read',
     'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'carbon_data:create', 'carbon_data:read']),
   ('AUDITOR', ARRAY[
+    'reporting_periods:read', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'audit_logs:read',
     'data_points:read', 'carbon_data:read', 'compliance:read', 'reports:read', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'governance:read', 'analytics:read', 'carbon_market:read']),
   ('INVESTOR_VIEWER', ARRAY['notifications:read', 'investor:read']),
   ('CONSULTANT', ARRAY[
+    'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update', 'carbon_data:export',
     'compliance:read', 'reports:create', 'reports:read', 'reports:update', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:create', 'analytics:read']),
   ('BOARD_MEMBER', ARRAY[
+    'files:read',
     'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
+    'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'compliance:create', 'compliance:read', 'compliance:update', 'compliance:configure', 'compliance:approve',
     'reports:create', 'reports:read', 'reports:update', 'reports:export', 'data_points:read', 'carbon_data:read']),
