@@ -23,6 +23,8 @@ export const SCOPES = [
   { value: 'scope_2', label: 'Scope 2 — purchased energy' },
   { value: 'scope_3', label: 'Scope 3 — value chain' },
 ];
+// no-mock-gate: config — labels for EmissionService factor levels (FactorUsed.level)
+export const FACTOR_LEVELS = { selected: 'chosen', custom: 'your own factor', country: 'country factor', region: 'regional factor', global: 'global factor' };
 // no-mock-gate: config — enum labels mirroring CarbonDtos patterns
 export const FLARING_REASONS = ['routine', 'safety', 'upset', 'maintenance'];
 // no-mock-gate: config — gas components FlaringCalculator understands (mole %)

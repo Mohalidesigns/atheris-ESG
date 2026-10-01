@@ -11,7 +11,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { CURRENCIES } from '../../admin/schemas';
 import { useScope3CategoriesQuery } from '../../reference/referenceApi';
 import { useCreateEmissionMutation, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation } from '../carbonApi';
-import { SCOPES, activityLabel, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
+import { FACTOR_LEVELS, SCOPES, activityLabel, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
 
 // no-mock-gate: config — wizard step labels (TRD §7.4: scope → activity → factor → calculate → save)
 const STEPS = ['Scope', 'Activity', 'Amount', 'Factor & result'];
@@ -40,7 +40,7 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
   const [runPreview, previewState] = usePreviewEmissionMutation();
   const [create, createState] = useCreateEmissionMutation();
   const [update, updateState] = useUpdateEmissionMutation();
-  const { control, handleSubmit, setError, trigger, getValues, setValue } = useForm({
+  const { control, handleSubmit, setError, trigger, getValues, setValue, formState } = useForm({
     defaultValues: record ? toEmissionForm(record) : emptyEmission,
     resolver: zodResolver(emissionSchema),
   });
@@ -58,14 +58,25 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
   const categoryFactors = factors.filter((f) => f.category === activity);
   const unit = factorActivityUnit(activities.find((a) => a.category === activity)?.unit);
 
-  const report = (err) => setFormError(applyProblem(err, setError, { knownFields: Object.keys(emptyEmission) }));
+  // An error on a field of another step (client rule or server problem) would be invisible: go to that step.
+  const showStepWithError = (names) => {
+    const first = STEP_FIELDS.findIndex((fields) => fields.some((f) => names.includes(f)));
+    if (first >= 0) setStep(first);
+  };
+  const report = (err) => {
+    setFormError(applyProblem(err, setError, { knownFields: Object.keys(emptyEmission) }));
+    showStepWithError(Object.keys(err?.data?.errors ?? {}));
+  };
 
   const next = async () => {
     setFormError('');
     if (!(await trigger(STEP_FIELDS[step]))) return;
     if (step === 1 && !spend) setValue('activityUnit', unit);
     if (step === 2) {
-      if (!(await trigger())) return;
+      if (!(await trigger())) {
+        showStepWithError(Object.keys(formState.errors));
+        return;
+      }
       try {
         setPreview(await runPreview(toEmissionBody(getValues())).unwrap());
       } catch (err) {
@@ -148,22 +159,15 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
 
           <Box hidden={step !== 2}>
             <Grid container spacing={2}>
-              {spend ? (
-                <>
-                  <Grid size={{ xs: 12, sm: 7 }}><FormNumberField control={control} name="spendAmount" label="Amount spent" /></Grid>
-                  <Grid size={{ xs: 12, sm: 5 }}>
-                    <FormSelect control={control} name="spendCurrency" label="Currency"
-                      options={CURRENCIES.map((c) => ({ value: c, label: c }))} />
-                  </Grid>
-                </>
-              ) : (
-                <>
-                  <Grid size={{ xs: 12, sm: 7 }}><FormNumberField control={control} name="activityData" label="Activity data" unit={unit} /></Grid>
-                  <Grid size={{ xs: 12, sm: 5 }}>
-                    <FormTextField control={control} name="activityUnit" label="Unit" disabled helperText="Set by the emission factor" />
-                  </Grid>
-                </>
-              )}
+              {/* Both sets stay mounted (one hidden) so switching method never drops a field's value from the form. */}
+              <Grid size={{ xs: 12, sm: 7 }} hidden={!spend}><FormNumberField control={control} name="spendAmount" label="Amount spent" /></Grid>
+              <Grid size={{ xs: 12, sm: 5 }} hidden={!spend}>
+                <FormSelect control={control} name="spendCurrency" label="Currency" options={CURRENCIES.map((c) => ({ value: c, label: c }))} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 7 }} hidden={spend}><FormNumberField control={control} name="activityData" label="Activity data" unit={unit} /></Grid>
+              <Grid size={{ xs: 12, sm: 5 }} hidden={spend}>
+                <FormTextField control={control} name="activityUnit" label="Unit" disabled helperText="Set by the emission factor" />
+              </Grid>
             </Grid>
           </Box>
 
@@ -179,7 +183,7 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
                       <TableCell>{t(preview.activityData)} {preview.activityUnit}{preview.fxRate ? ` (converted at ${t(preview.fxRate)})` : ''}</TableCell></TableRow>
                     <TableRow><TableCell>Emission factor</TableCell>
                       <TableCell>{t(preview.factor.value)} {preview.factor.unit} · {preview.factor.region} · version {preview.factor.version}
-                        {' '}({preview.factor.level === 'selected' ? 'chosen' : `${preview.factor.level} factor`})</TableCell></TableRow>
+                        {' '}({FACTOR_LEVELS[preview.factor.level] ?? preview.factor.level})</TableCell></TableRow>
                     <TableRow><TableCell>Source</TableCell><TableCell>{preview.factor.source}</TableCell></TableRow>
                     <TableRow><TableCell>GWP</TableCell>
                       <TableCell>{preview.perGas ? `${preview.gwpSet} (CO2 ${t(preview.co2Tonnes)} t, CH4 ${t(preview.ch4Tonnes)} t, N2O ${t(preview.n2oTonnes)} t)`

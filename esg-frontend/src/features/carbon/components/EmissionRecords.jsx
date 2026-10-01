@@ -6,7 +6,7 @@ import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';
 import { toFormError } from '../../../services/apiSlice';
 import { useDeleteEmissionMutation, useEmissionsQuery, useVerifyEmissionMutation } from '../carbonApi';
-import { activityLabel } from '../schemas';
+import { FACTOR_LEVELS, activityLabel } from '../schemas';
 import EmissionCalculator from './EmissionCalculator';
 
 // no-mock-gate: config — labels for EmissionResponse.recordSource values
@@ -43,11 +43,11 @@ export default function EmissionRecords({ year, orgs }) {
         : `${Number(r.activityData).toLocaleString()} ${r.activityUnit}`) },
     { field: 'co2eTonnes', header: 'tCO2e', align: 'right', sortable: true, render: (r) => <strong>{tonnes(r.co2eTonnes)}</strong> },
     { field: 'factor', header: 'Factor',
-      render: (r) => (
-        <Tooltip title={`${r.factor.source} · ${r.factor.level} factor${r.gwpSet ? ` · ${r.gwpSet}` : ''}`}>
+      render: (r) => (!r.factor ? `Gas composition${r.gwpSet ? ` · ${r.gwpSet}` : ''}` : (
+        <Tooltip title={`${r.factor.source} · ${FACTOR_LEVELS[r.factor.level] ?? r.factor.level}${r.gwpSet ? ` · ${r.gwpSet}` : ''}`}>
           <span>{Number(r.factor.value).toLocaleString(undefined, { maximumFractionDigits: 6 })} {r.factor.unit} · v{r.factor.version}</span>
         </Tooltip>
-      ) },
+      )) },
     { field: 'orgName', header: 'Organisation' },
     { field: 'reportingPeriodStart', header: 'Period', sortable: true, render: (r) => `${r.reportingPeriodStart} – ${r.reportingPeriodEnd}` },
     { field: 'recordSource', header: 'Source', render: (r) => SOURCES[r.recordSource] ?? r.recordSource },

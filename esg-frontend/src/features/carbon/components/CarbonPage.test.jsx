@@ -24,7 +24,8 @@ const summary = {
 };
 const routes = (extra = {}) => ({
   'GET /carbon/emissions/summary': () => ok(summary),
-  'GET /carbon/emissions': () => ok({ content: [record(), record({ id: 'e2', recordSource: 'data_hub', sourceActivity: 'electricity_grid', scope: 'scope_2' })], totalElements: 2, number: 0, size: 20 }),
+  'GET /carbon/emissions': () => ok({ content: [record(), record({ id: 'e2', recordSource: 'data_hub', sourceActivity: 'electricity_grid', scope: 'scope_2' }),
+    record({ id: 'e3', recordSource: 'flaring', sourceActivity: 'gas_flaring', calculationMethod: 'flaring_composition', factor: null, activityData: 1000, activityUnit: 'Mcf' })], totalElements: 3, number: 0, size: 20 }),
   'GET /organisations': () => ok([{ id: 'hq', name: 'Lagos HQ', parentOrgId: null }]),
   'GET /carbon/factors': () => ok([diesel, mine, platform]),
   'GET /reference/scope3-categories': () => ok([{ category: 1, name: 'Purchased goods and services', direction: 'upstream' }]),
@@ -69,6 +70,9 @@ describe('CarbonPage overview and records', () => {
     expect(within(table).getByText('Data Hub')).toBeInTheDocument();
     expect(within(table).getByLabelText(`Edit diesel_generator ${YEAR}-01-01`)).toBeInTheDocument();
     expect(within(table).queryByLabelText(`Edit electricity_grid ${YEAR}-01-01`)).not.toBeInTheDocument();
+    // Flaring records carry no emission factor: they are calculated from the gas composition.
+    expect(within(table).getByText('Gas composition · AR6')).toBeInTheDocument();
+    expect(within(table).queryByLabelText(`Edit gas_flaring ${YEAR}-01-01`)).not.toBeInTheDocument();
     expect(calls.find((c) => c.key === 'GET /carbon/emissions').query).toMatchObject({ from: `${YEAR}-01-01`, to: `${YEAR}-12-31` });
   });
 
@@ -127,8 +131,38 @@ describe('CarbonPage overview and records', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
     await userEvent.type(within(dialog).getByLabelText('Activity data'), '5');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Calculate' }));
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
-    expect(await within(dialog).findByText('no emission factor applies to this activity, place and period')).toBeInTheDocument();
+    // The error is on a field of step 2 (Activity): the wizard goes back there so it can be seen.
+    expect(await within(dialog).findByText('no emission factor applies to this activity, place and period')).toBeVisible();
+  });
+
+  it('calculator, spend-based Scope 3: posts amount and currency, no activity data', async () => {
+    let previewed;
+    const spendFactor = { ...mine, id: 'f9', category: 'purchased_goods', unit: 'kgCO2e/USD', factorMethod: 'spend', spendCurrency: 'USD' };
+    fakeApi(routes({
+      'GET /carbon/factors': () => ok([diesel, spendFactor]),
+      'POST /carbon/emissions/preview': (body) => {
+        previewed = body;
+        return ok({ activityData: 2000, activityUnit: 'USD', spendAmount: 2000, spendCurrency: 'USD', fxRate: null, factor: { ...factorUsed, unit: 'kgCO2e/USD', level: 'custom' }, gwpSet: null, perGas: false, co2eTonnes: 1 });
+      },
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated(WRITE) });
+    await openTab('Emission records');
+    await userEvent.click(await screen.findByRole('button', { name: 'Calculate emissions' }));
+    const dialog = await screen.findByRole('dialog');
+    await choose(dialog, 'Scope', 'Scope 3 — value chain');
+    await choose(dialog, 'Scope 3 category', '1. Purchased goods and services');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Spend-based (amount spent)' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    await choose(dialog, 'Activity', 'Purchased goods (kgCO2e/USD)');
+    await choose(dialog, 'Organisation', 'Lagos HQ');
+    await userEvent.type(within(dialog).getByLabelText('Period start'), `${YEAR}-04-01`);
+    await userEvent.type(within(dialog).getByLabelText('Period end'), `${YEAR}-06-30`);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    await userEvent.type(within(dialog).getByLabelText('Amount spent'), '2000');
+    await choose(dialog, 'Currency', 'USD');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(await within(dialog).findByLabelText('Calculation result')).toHaveTextContent('(your own factor)');
+    expect(previewed).toMatchObject({ scope: 'scope_3', scope3Category: 1, calculationMethod: 'spend_based', sourceActivity: 'purchased_goods', activityData: null, activityUnit: null, spendAmount: 2000, spendCurrency: 'USD' });
   });
 });
 
