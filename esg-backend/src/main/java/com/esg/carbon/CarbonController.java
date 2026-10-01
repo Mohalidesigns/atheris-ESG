@@ -90,6 +90,12 @@ public class CarbonController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(emissions.create(request), "Emissions calculated"));
     }
 
+    @PostMapping("/emissions/preview")
+    @PreAuthorize("hasAuthority('carbon_data:create')")
+    public ResponseEntity<ApiResponse<CarbonDtos.Preview>> preview(@Valid @RequestBody EmissionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(emissions.preview(request)));
+    }
+
     @PutMapping("/emissions/{id}")
     @PreAuthorize("hasAuthority('carbon_data:update')")
     public ResponseEntity<ApiResponse<EmissionResponse>> update(@PathVariable UUID id, @Valid @RequestBody EmissionRequest request) {

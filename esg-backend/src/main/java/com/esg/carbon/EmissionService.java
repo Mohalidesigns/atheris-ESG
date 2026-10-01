@@ -136,6 +136,16 @@ public class EmissionService {
         return get(id);
     }
 
+    /** Runs the calculation without saving (the calculator's result step). */
+    public CarbonDtos.Preview preview(EmissionRequest r) {
+        Calculation c = calculate(r);
+        EmissionFactor f = c.factor();
+        return new CarbonDtos.Preview(c.activity(), c.unit(), c.spendAmount(), c.spendCurrency(), c.fxRate(),
+                new FactorUsed(f.id(), f.factorVersion(), f.factorValue(), f.unit(), c.level(), f.source(), f.category(), f.region()),
+                c.result().gwpSet(), c.result().perGas(), c.result().co2eTonnes(), c.result().co2Tonnes(), c.result().ch4Tonnes(),
+                c.result().n2oTonnes());
+    }
+
     /** Manual, unverified records only; recalculated from the new values. */
     @Transactional
     public EmissionResponse update(UUID id, EmissionRequest r) {

@@ -70,6 +70,21 @@ class CarbonApiTest extends ApiTestSupport {
   }
 
   @Test
+  void previewCalculatesWithoutSaving() throws Exception {
+    String body = "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"heavy_fuel_oil\","
+        + "\"activityData\":1000,\"reportingPeriodStart\":\"2026-08-15\",\"reportingPeriodEnd\":\"2026-08-15\"}";
+    JsonNode p = data(postJson("/v1/carbon/emissions/preview", body).andExpect(status().isOk()));
+    assertThat(p.path("co2eTonnes").decimalValue()).isEqualByComparingTo("3.074445");
+    assertThat(p.path("perGas").asBoolean()).isTrue();
+    assertThat(p.path("activityUnit").asText()).isEqualTo("litre");
+    assertThat(p.path("factor").path("source").asText()).startsWith("IPCC 2006");
+    JsonNode list = data(mvc.perform(get("/v1/carbon/emissions?from=2026-08-15&to=2026-08-15").header("Authorization", director())));
+    for (JsonNode r : list.path("content")) {
+      assertThat(r.path("sourceActivity").asText()).isNotEqualTo("heavy_fuel_oil");
+    }
+  }
+
+  @Test
   void journey6DieselGeneratorAndPerGasFactors() throws Exception {
     JsonNode ng = emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"diesel_generator\","
         + "\"activityData\":1000," + period() + "}");

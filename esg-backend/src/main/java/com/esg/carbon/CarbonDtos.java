@@ -63,6 +63,11 @@ public final class CarbonDtos {
 
     public record Recalculation(int checked, int updated, List<String> changes) {}
 
+    /** The calculator's result step: exactly what saving would store, without storing it. */
+    public record Preview(BigDecimal activityData, String activityUnit, BigDecimal spendAmount, String spendCurrency, BigDecimal fxRate,
+                          FactorUsed factor, String gwpSet, boolean perGas, BigDecimal co2eTonnes, BigDecimal co2Tonnes,
+                          BigDecimal ch4Tonnes, BigDecimal n2oTonnes) {}
+
     // ---------------------------------------------------------------- gas flaring
 
     public record FlaringRequest(
