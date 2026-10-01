@@ -16,6 +16,7 @@ Cypress.Commands.add('pick', (label, option, { within } = {}) => {
 /** Signs in through the login page and waits for the app shell. Default password: the seeded one (config env). */
 Cypress.Commands.add('login', (email, password) => {
   const signIn = (secret) => {
+    cy.clearCookies(); // an API login (cy.apiToken) leaves a refresh cookie that would restore another session
     cy.visit('/login');
     cy.field('Email Address').clear().type(email);
     cy.field('Password').clear().type(secret, { log: false });
@@ -34,3 +35,17 @@ Cypress.Commands.add('logout', () => {
 /** Labels of the sidebar items, in order. */
 Cypress.Commands.add('menu', () =>
   cy.get('nav[aria-label="Main"] .MuiListItemText-primary').then(($items) => Cypress._.map($items, 'innerText')));
+
+/** A one-day period in 2026 unique to this attempt (fresh DB per run; retries must not collide with themselves). */
+Cypress.Commands.add('uniqueDay', () => {
+  const day = new Date(Date.UTC(2026, 0, 1) + (Math.floor(Date.now() / 1000) % 330) * 86400000);
+  return cy.wrap(day.toISOString().slice(0, 10));
+});
+
+/** Signs in through the API and yields a bearer token (for setting up data a journey only needs to look at). */
+Cypress.Commands.add('apiToken', (email) => cy.env(['password']).then(({ password }) =>
+  cy.request('POST', '/api/v1/auth/login', { email, password }).its('body.data.accessToken')));
+
+/** Calls the API with a bearer token. */
+Cypress.Commands.add('api', (token, method, url, body) =>
+  cy.request({ method, url: `/api/v1${url}`, body, headers: { Authorization: `Bearer ${token}` } }).its('body.data'));
