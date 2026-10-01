@@ -223,6 +223,17 @@ class RlsIsolationTest {
     }
   }
 
+  @Test
+  void organisationCannotHaveAnotherTenantsParent() throws SQLException {
+    try (Connection app = PostgresTestDatabase.appConnection()) {
+      setTenant(app, TENANT_B);
+      assertThatThrownBy(() -> update(app, "insert into auth.organisations (name, parent_org_id) "
+          + "values ('B child of A', 'a0000000-0000-4000-8000-00000000000a')"))
+          .isInstanceOf(SQLException.class)
+          .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("23503"));
+    }
+  }
+
   // ---------------------------------------------------------------- helpers
 
   private static void setTenant(Connection app, String tenantId) throws SQLException {
