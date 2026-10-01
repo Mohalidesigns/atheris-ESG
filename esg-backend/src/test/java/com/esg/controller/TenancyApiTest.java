@@ -119,7 +119,7 @@ class TenancyApiTest extends ApiTestSupport {
         "{\"name\":\"Q3 2027\",\"periodType\":\"quarterly\",\"startDate\":\"2027-07-01\",\"endDate\":\"2027-09-30\"}")
         .andExpect(status().isCreated()));
     String id = period.path("id").asText();
-    String dataPoint = "{\"orgId\":\"" + ORG_HQ + "\",\"category\":\"E\",\"subCategory\":\"Energy\",\"metricKey\":\"kwh\","
+    String dataPoint = "{\"orgId\":\"" + ORG_HQ + "\",\"category\":\"E\",\"subCategory\":\"Energy\",\"metricKey\":\"electricity_kwh\","
         + "\"numericValue\":1,\"unit\":\"kWh\",\"reportingPeriodStart\":\"2027-08-01\",\"reportingPeriodEnd\":\"2027-08-31\"}";
 
     // Only roles with reporting_periods:approve can lock.

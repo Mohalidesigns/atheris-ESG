@@ -28,13 +28,16 @@ public class DataHubController {
 
     private final DataHubService dataHubService;
 
+    static final java.util.Set<String> SORTABLE =
+            java.util.Set.of("createdAt", "reportingPeriodStart", "metricKey", "category", "validationStatus", "numericValue");
+
     @GetMapping("/points")
     @PreAuthorize("hasAuthority('data_points:read')")
     public ResponseEntity<ApiResponse<Page<DataPoint>>> getDataPoints(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<DataPoint> page = dataHubService.getDataPoints(category, status, pageable);
+        Page<DataPoint> page = dataHubService.getDataPoints(category, status, SortableFields.check(pageable, SORTABLE));
         return ResponseEntity.ok(ApiResponse.ok(page));
     }
 

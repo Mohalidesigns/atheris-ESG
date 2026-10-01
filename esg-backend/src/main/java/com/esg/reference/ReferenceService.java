@@ -51,6 +51,11 @@ public class ReferenceService {
                 (rs, i) -> new Sector(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)));
     }
 
+    /** One active metric, if it exists. */
+    public java.util.Optional<Metric> metric(String metricKey) {
+        return metrics(null, null).stream().filter(m -> m.metricKey().equals(metricKey)).findFirst();
+    }
+
     /** Active metrics, optionally filtered by pillar and/or a framework they feed. */
     public List<Metric> metrics(String pillar, String framework) {
         Map<String, List<RequirementRef>> refs = new LinkedHashMap<>();

@@ -22,7 +22,9 @@ public class DataHubService {
     /** Outcomes a reviewer may record (WP-13 interim; the full workflow states arrive with WP-20). */
     static final Set<String> REVIEW_STATUSES = Set.of("validated", "rejected", "flagged");
 
-    public DataHubService(DataPointRepository dataPointRepository, OrgScopeService orgScope, ReportingPeriodService periods) {
+    public DataHubService(DataPointRepository dataPointRepository, OrgScopeService orgScope, ReportingPeriodService periods,
+                          com.esg.reference.ReferenceService reference) {
+        this.reference = reference;
         this.dataPointRepository = dataPointRepository;
         this.orgScope = orgScope;
         this.periods = periods;
@@ -31,6 +33,7 @@ public class DataHubService {
     private final DataPointRepository dataPointRepository;
     private final OrgScopeService orgScope;
     private final ReportingPeriodService periods;
+    private final com.esg.reference.ReferenceService reference;
 
     /** Lists data points the caller may see: RLS limits to the tenant, org scope limits org-scoped roles. */
     public Page<DataPoint> getDataPoints(String category, String status, Pageable pageable) {
@@ -43,6 +46,13 @@ public class DataHubService {
     public DataPoint createDataPoint(DataPointDto dto, UUID userId) {
         UUID tenantId = TenantContext.requireTenantId();
         orgScope.requireAccess(dto.getOrgId());
+        com.esg.reference.ReferenceDtos.Metric metric = reference.metric(dto.getMetricKey()).orElse(null);
+        java.util.Map<String, String> errors = DataPointRules.check(dto, metric);
+        if (!errors.isEmpty()) {
+            throw new com.esg.exception.FieldValidationException(errors);
+        }
+        dto.setCategory(metric.pillar());
+        dto.setUnit(metric.unit());
         periods.requireOpen(dto.getReportingPeriodStart(), dto.getReportingPeriodEnd());
 
         // Calculate quality score
@@ -52,12 +62,13 @@ public class DataHubService {
         dp.setTenantId(tenantId);
         dp.setOrgId(dto.getOrgId());
         dp.setSourceId(dto.getSourceId());
-        dp.setCategory(dto.getCategory());
-        dp.setSubCategory(dto.getSubCategory());
+        // Category and unit come from the metric catalogue (WP-17); the sub-category defaults to the metric's category.
+        dp.setCategory(metric.pillar());
+        dp.setSubCategory(dto.getSubCategory() == null || dto.getSubCategory().isBlank() ? metric.category() : dto.getSubCategory().trim());
         dp.setMetricKey(dto.getMetricKey());
         dp.setNumericValue(dto.getNumericValue());
         dp.setTextValue(dto.getTextValue());
-        dp.setUnit(dto.getUnit());
+        dp.setUnit(metric.unit());
         dp.setReportingPeriodStart(dto.getReportingPeriodStart());
         dp.setReportingPeriodEnd(dto.getReportingPeriodEnd());
         dp.setQualityScore(qualityScore);

@@ -26,12 +26,15 @@ public class CarbonController {
 
     private final CarbonAccountingService carbonService;
 
+    static final java.util.Set<String> SORTABLE =
+            java.util.Set.of("createdAt", "reportingPeriodStart", "scope", "sourceActivity", "co2eTonnes");
+
     @GetMapping("/emissions")
     @PreAuthorize("hasAuthority('carbon_data:read')")
     public ResponseEntity<ApiResponse<Page<EmissionRecord>>> getEmissions(
             @RequestParam(required = false) String scope,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissions(scope, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(carbonService.getEmissions(scope, SortableFields.check(pageable, SORTABLE))));
     }
 
     @PostMapping("/emissions")

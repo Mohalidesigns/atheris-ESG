@@ -1,6 +1,9 @@
 package com.esg.model.dto;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,12 +12,14 @@ import java.util.UUID;
 public class DataPointDto {
     private UUID id;
     @NotNull private UUID orgId;
-    @NotBlank private String category;
-    @NotBlank private String subCategory;
-    @NotBlank private String metricKey;
-    private BigDecimal numericValue;
-    private String textValue;
-    private String unit;
+    /** Optional: derived from the metric's pillar; if sent it must match. */
+    @Pattern(regexp = "^[ESG]$", message = "must be E, S or G") private String category;
+    @Size(max = 100) private String subCategory;
+    @NotBlank @Size(max = 100) private String metricKey;
+    @Digits(integer = 14, fraction = 6) private BigDecimal numericValue;
+    @Size(max = 2000) private String textValue;
+    /** Optional: the metric's unit; if sent it must match. */
+    @Size(max = 50) private String unit;
     @NotNull private LocalDate reportingPeriodStart;
     @NotNull private LocalDate reportingPeriodEnd;
     private BigDecimal qualityScore;
