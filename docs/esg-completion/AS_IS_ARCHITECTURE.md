@@ -6,7 +6,7 @@
 | Date | 1 October 2026 |
 | Commit inspected | `bba8252` (main) + docs-only commit `baf0754` on `feature/wp-00-repo-recon` |
 | Method | Static reading of every source file, plus local build, lint, test and a live boot of the backend with HTTP probes. No application code changed. |
-| Environment | macOS arm64, OpenJDK 25.0.2, Node 22.23.2 / npm 10.9.8. **Docker: not installed. psql/PostgreSQL: not installed.** |
+| Environment | macOS arm64, OpenJDK 25.0.2, Node 22.23.2 / npm 10.9.8. **Docker: not installed.** PostgreSQL: **Homebrew PostgreSQL 17.9 server running on localhost:5432** (trust auth for local superusers `mac`/`postgres`); `psql` 18.3 client at `/Library/PostgreSQL/18/bin` (not on PATH). *Corrected in WP-01: the first WP-00 pass missed the server because `psql` isn't on PATH.* |
 
 ---
 
@@ -94,7 +94,7 @@
 | Frontend build | `npm run build` | ✅ built in 2.7 s | Largest chunk 303 kB (95 kB gzip). |
 | Frontend lint | `npm run lint` | ❌ 3 errors | Unused vars: `src/components/layout/Sidebar.jsx:1`, `src/features/dataHub/components/DataHubPage.jsx:34`. |
 | Frontend tests | `npm test -- --watchAll=false` | ❌ `Missing script: "test"` | No test framework. |
-| Full stack against Postgres | — | ⛔ Not possible | No Postgres, no Docker, no compose file. Whether the migrations run on PostgreSQL 16 is **unverified**. |
+| Backend on PostgreSQL | `java -jar … --spring.datasource.url=jdbc:postgresql://localhost:5432/esg_wp01_probe` (scratch DB, dropped afterwards) | ✅ Boots, health UP | All 6 Flyway migrations apply on **PostgreSQL 17.9**; Hibernate `validate` passes; 35 tables in `public`; **0 rows in `pg_policies`** (no RLS). Not yet verified on PG 16 (TRD target). |
 
 ---
 
@@ -213,7 +213,7 @@ Real JWT: **yes (HS512, jjwt)**. RLS: **no**. `@PreAuthorize`: **none**. `tenant
 
 | # | Blocker | Blocks | Proposed resolution |
 |---|---|---|---|
-| B1 | **Docker not installed** on the dev machine, and no Postgres | WP-10 compose stack, WP-11 RLS, WP-18 Testcontainers, E2E | Install Docker Desktop (or Colima/OrbStack), or use a managed dev Postgres. Needs the user's action. |
+| B1 | **Docker not installed** on the dev machine (PostgreSQL 17.9 *is* available locally) | WP-10 compose stack, WP-18 Testcontainers, nightly E2E stack | WP-11 RLS work can proceed against the local PG 17 server now. For Testcontainers and compose, install Docker Desktop / Colima / OrbStack (user action), or fall back to a `test` profile pointing at a dedicated local test database. Decide PG version: TRD says 16, local is 17 (new decision D11). |
 | B2 | No test frameworks: no Testcontainers (BE), no Vitest/Jest + RTL (FE), no E2E | Every L4/L5 claim | WP-10 / WP-18. Needs decisions D3 and D7. |
 | B3 | Java 25 vs TRD Java 21; Spring Boot 3.4.4 support for 25 unverified | Toolchain, CI image, Lombok | Decision D6. |
 | B4 | H2-only migrations with `VARCHAR(36)` IDs and no schemas | WP-11 baseline | Acceptable to re-baseline: no production data exists (H2 in-memory). Confirm in DECISIONS.md. |
@@ -241,3 +241,4 @@ Real JWT: **yes (HS512, jjwt)**. RLS: **no**. `@PreAuthorize`: **none**. `tenant
 | **D8** | Form validation library: Zod (plan) vs Yup (installed, unused) | `yup` and `@hookform/resolvers` in `package.json`, 0 imports. | **Zod**, per the plan; remove `yup`. Nothing to migrate. |
 | **D9** | Keep or re-baseline the migrations | No real data exists (H2 in-memory); IDs `VARCHAR(36)`, `TIMESTAMP`, single schema. | **Re-baseline** in WP-11: a new V2 baseline with UUIDs, TIMESTAMPTZ, per-module schemas and RLS. The master plan's "ALTER, don't DROP" rule protects data that doesn't exist here, so confirm the exception explicitly. |
 | **D10** | Demo/seed users and the demo login | S3/S4; the demo login is how the UI is currently shown. | Remove the frontend demo login and `DataSeeder`. Replace them with Flyway seed users for all 12 roles, **local/test profiles only**, with credentials documented in the README (per WP-12/13). |
+| **D11** | PostgreSQL version: 16 (TRD) vs 17 (installed locally) | Local server is Homebrew PG 17.9; migrations verified on it. | **Standardise on 17** for dev, CI and prod (RLS semantics unchanged; TRD says "16+" in §3). Pin the same major in CI and compose. |
