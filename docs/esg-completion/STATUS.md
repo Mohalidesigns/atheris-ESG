@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (branch `feature/wp-12-13-auth-rbac`) |
-| Next | **WP-14** (tenancy, org tree, periods) and **WP-15** (audit, files, notifications, RFC 7807); WP-16/17 in parallel |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (branch `feature/wp-14-15-org-crosscutting`, stacked on #4) |
+| Next | **WP-16** (design system, no-mock gate to ENFORCE), **WP-17** (i18n), **WP-18** (E2E runner + journeys 1–2) |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,14 +13,14 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **19 / 41** WORK end to end with tests (login 2, MFA 1, Admin create/edit/roles/search 16); 22 still UI-only or hard-coded options; 1 removed (Remember me) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs audit + E2E). RTM overall: **7 at L4**, 1 at L3 | `RTM.csv` |
-| Pages with zero mock data / total pages | **3 / 16** (Login, Admin Console, app shell). No-mock gate: 33 findings in 13 files, 163 rows | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | **13 / 58** tested (8 at L4: auth + admin users/roles; 5 data/carbon/compliance endpoints RBAC-tested but UI not wired); 41 missing | type=trd_endpoint |
+| Fields at L4+ / total fields | **54 / 77** WORK end to end with tests (login 2, MFA 1, Admin users/roles/search 16, organisation 8, period 4, settings 4, tenant 12, set password 1, notification preferences 1, audit filters 5); 23 still UI-only or hard-coded options (incl. the file upload component, which no page uses yet); 1 removed (Remember me) | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (audit now exists; L5 still needs E2E, WP-18). RTM overall (267 rows, 16 added for TRD §5.6, §6.6, §12.3): **12 at L4**, 8 at L3 | `RTM.csv` |
+| Pages with zero mock data / total pages | **3 / 16** (Login, Admin Console, app shell incl. the notification bell). No-mock gate: 33 findings in 13 files, 163 rows (unchanged; 5 new enum constants marked `no-mock-gate: config`) | `NO_MOCK_REPORT.md` |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (11 at L4), 38 missing. All code endpoints: **47 / 58 tested** (38 at L4, 9 at L3: lineage and files have no page yet) | type=trd_endpoint, type=endpoint |
 | E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **Backend 75.6% lines** (198 tests); CI floor raised to **70%**. **Frontend 46 tests** (Vitest + RTL) | JaCoCo, CI |
+| Test coverage | **Backend 81.6% lines** (232 tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 86 tests** (Vitest + RTL) | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
-| Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. Still open: S15 RFC 7807 errors (medium, WP-15) | `AS_IS_ARCHITECTURE.md` §7 |
+| Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
 
@@ -265,3 +265,39 @@ Bugs found and fixed while verifying in the browser:
 3. **Duplicate React keys** on the two admin dialogs; fixed.
 
 Design choices for review: D17 in `DECISIONS.md` (cookie-only refresh token, per-request permission reload, no MFA in the local profile, generic lockout message, escalation rule, known gaps).
+
+---
+
+## WP-14 + WP-15 — Tenancy & organisation, cross-cutting services
+
+Branch `feature/wp-14-15-org-crosscutting` (stacked on WP-12/13, PR #4).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| WP-14: org tree, periods, settings forms round-trip 100% of fields | ✅ | `TenancyApiTest` (12): organisation create-all/update, period and settings round trip and validation, tenant + first admin, admin set password / reset MFA; `TenancyTabs.test.jsx` (8): edit reloads every field, settings sent back with version, server errors land on the field |
+| WP-14: locked period rejects writes | ✅ | API → 409 and unlock allows it again; a DB trigger blocks writes into locked periods even outside the API (`databaseTriggerBlocksWritesIntoLockedPeriodsEvenWithoutTheApi`) |
+| WP-15: create/update/delete writes an audit row; audit rows can't be changed | ✅ | `AuditTrailTest` (4): actor, IP, user agent, no password hash, only changed columns on update; UPDATE/DELETE rejected even for the schema owner; viewer RBAC |
+| WP-15: file versioning tested | ✅ | `FileServiceTest` (3): upload, v2, download each version, access log rows, 415 (type or content), 413, RBAC, other tenant 404. `S3FileStorageTest` (MinIO) runs where Docker is available (CI); skipped here (B1) |
+| WP-15: notification preference respected | ✅ | `NotificationServiceTest` (3): in-app off → nothing created; email outbox sent / retried with backoff / skipped when unconfigured; users only see and mark their own |
+| WP-15: validation errors return field names in problem details | ✅ | `ProblemDetailTest` (2) plus every API test now asserts `$.errors.<field>` / `$.detail`; frontend `toFormError` reads the problem format |
+
+What was built:
+- **WP-14 backend:** organisations CRUD (no cycles, delete refused while in use, scoped lists), reporting periods with lock/unlock and the `auth.assert_periods_open` trigger on data tables, tenant settings (currency, fiscal year, time zone, default frameworks), platform tenant management through `SECURITY DEFINER` functions, admin password set and MFA reset (`V011`).
+- **WP-14 frontend:** Admin Console tabs for organisations (tree, parent picker that excludes the org's own subtree), periods (lock/unlock), settings, tenants (SUPER_ADMIN), set-password dialog; shared `OrgTreeSelect` used by role assignment.
+- **RFC 7807:** `GlobalExceptionHandler` rewritten; database errors mapped (RLS → 403, locked period → 409, unique → 409, FK/check → 400); 401/403 from the security filters use the same format.
+- **Audit & lineage (`V014`):** trigger-based audit on every tenant table; client IP and user agent passed from each request to the database session; `audit.data_lineage` (emission ← factor recorded); `GET /v1/audit/logs` with filters and the **Audit log** tab (before/after diff).
+- **Files (`V012`):** filesystem (dev) and S3/MinIO adapters, extension + leading-bytes check, 50 MB limit, SHA-256, immutable versions, access log, pre-signed downloads, virus-scan hook; reusable `<FileUpload>` with client checks that mirror the server.
+- **Notifications (`V013`):** templates (en), per-user channel preferences, in-app inbox, email outbox with dispatcher and retries, Africa's Talking SMS sandbox adapter; producers for welcome, roles changed, password set by admin. Top-bar bell with unread count and a preferences dialog (SMS labelled **Sandbox**).
+- **Found in review and fixed:** `auth.organisations.parent_org_id` was still a plain FK, so the database would accept another tenant's organisation as a parent (FK checks ignore RLS). `V015` makes it a same-tenant composite FK; `RlsIsolationTest.organisationCannotHaveAnotherTenantsParent` fails without it (mutation-checked).
+
+Verified in the browser (local profile, fresh DB): as the auditor, the bell showed the real "Your access changed" notification after the admin re-assigned the role; opening it cleared the badge; preferences showed email disabled (no SMTP configured) and SMS as Sandbox; the Audit log tab listed the login, role change and file upload with the before/after diff. The dispatcher marked the email `skipped` ("Email is not configured"), not `sent`.
+
+Honest gaps (scheduled):
+- `<FileUpload>` isn't on any page yet: the Data Hub still runs on local state (WP-20). Its field is counted UI_ONLY.
+- Lineage has no UI (WP-21 calculation detail). Data point → emission and report → data point links come with WP-21/23.
+- Virus scanning not configured (WP-51); per-tier upload limits (WP-19); push notifications (P4); fr/sw templates (WP-17); audit search at scale and retention/archival (WP-51).
+- Reporting time zone is checked for length only, on both sides; validate against IANA zone ids (small follow-up).
+- Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
+
+Design choices for review: D18 in `DECISIONS.md`.
+

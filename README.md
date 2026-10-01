@@ -60,6 +60,23 @@ These come from `esg-backend/src/main/resources/db/seed/local/`, which only the 
 
 Environment variables: `DATA_ENCRYPTION_KEY` (base64, 32 bytes; encrypts MFA secrets), `DB_URL`, `DB_USERNAME`/`DB_PASSWORD` (application role, default `esg_app`), `DB_OWNER_USERNAME`/`DB_OWNER_PASSWORD` (migration role, default `esg_owner`), `DB_APP_ROLE`, `JWT_SECRET` (≥ 64 bytes), `CORS_ALLOWED_ORIGINS`, `PORT`. Frontend: `VITE_API_BASE_URL` (default `/api/v1`), `VITE_BACKEND_URL` for the dev proxy.
 
+Files and notifications (WP-15):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `FILES_STORAGE` | `s3` (`filesystem` in `local`/`test`) | `s3` = AWS S3 or MinIO; `filesystem` is for development only |
+| `FILES_LOCAL_DIR` | `./var/files` | Where the filesystem adapter stores files |
+| `S3_ENDPOINT` | empty (AWS) | e.g. `http://localhost:9000` for the MinIO in `docker-compose.yml` |
+| `S3_REGION`, `S3_BUCKET` | `af-south-1`, `atheris-esg-files` | |
+| `S3_ACCESS_KEY`, `S3_SECRET_KEY` | empty (default AWS credential chain) | |
+| `S3_SSE` | `true` | AES-256 server-side encryption; set `false` for MinIO without a KMS |
+| `ESG_FILES_S3_CREATEBUCKET` | `false` | Create the bucket at start-up (handy for MinIO) |
+| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT` | unset | SMTP server. Unset = email is "not configured": deliveries are marked `skipped`, never `sent`. Mailpit in `docker-compose.yml` listens on `localhost:1025` (web UI on 8025) |
+| `MAIL_FROM` | `no-reply@atheris-esg.local` | Sender address |
+| `AT_USERNAME`, `AT_API_KEY`, `AT_URL` | `sandbox`, empty, Africa's Talking sandbox URL | SMS. Empty key = SMS not configured. Shown as **Sandbox** in the UI |
+
+To use MinIO and Mailpit locally: `docker compose up -d minio mailpit`, then start the backend with `FILES_STORAGE=s3 S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=esg-local S3_SECRET_KEY=esg-local-secret S3_SSE=false ESG_FILES_S3_CREATEBUCKET=true SPRING_MAIL_HOST=localhost SPRING_MAIL_PORT=1025`.
+
 ## Checks (same as CI)
 
 ```bash
