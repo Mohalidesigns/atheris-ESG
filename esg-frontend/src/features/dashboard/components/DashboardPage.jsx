@@ -29,7 +29,7 @@ function EmissionsKpi() {
 }
 
 function PendingReviewKpi() {
-  const { data, isLoading, isError } = useDataPointsQuery({ status: 'pending', page: 0, size: 1 });
+  const { data, isLoading, isError } = useDataPointsQuery({ status: 'submitted', page: 0, size: 1 });
   return <Kpi title="Data points awaiting review" value={fmt(data?.totalElements ?? data?.page?.totalElements)} loading={isLoading} error={isError} />;
 }
 

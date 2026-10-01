@@ -7,6 +7,9 @@ import SettingsTab from '../features/admin/components/SettingsTab';
 import TenantsTab from '../features/admin/components/TenantsTab';
 import UserFormDialog from '../features/admin/components/UserFormDialog';
 import CustomFactorDialog from '../features/carbon/components/CustomFactorDialog';
+import DataPointDialog from '../features/dataHub/components/DataPointDialog';
+import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab';
+import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -24,26 +27,60 @@ const specs = Object.entries(specFiles)
 const ORG_HQ = 'a0000000-0000-4000-8000-00000000000a';
 const ORG_SITE_1 = 'a0000000-0000-4000-8000-0000000001a1';
 const ORG_SITE_2 = 'a0000000-0000-4000-8000-0000000002a2';
+const SOURCE_A = 'a0000000-0000-4000-8000-0000000000c1';
+const FILE_A = 'a0000000-0000-4000-8000-0000000004f1';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
     return v.replaceAll('{u}', 'rt0001').replaceAll('{yyyy}', '2301')
-      .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2);
+      .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
+      .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A);
   }
   if (Array.isArray(v)) return v.map(resolve);
   return v;
 };
 
-/** The record as the API returns it: spec values (write-only fields never come back) + id and version. */
+/**
+ * The record as the API returns it: spec values (write-only fields never come back; readAliases say where a value is
+ * returned, e.g. a converted amount's original in originalAmount) + server-derived fields + id and version.
+ */
 const savedRecord = (spec) => {
   const record = { id: `${spec.id}-1`, version: 3 };
   Object.entries(spec.values).forEach(([k, v]) => {
-    if (!spec.writeOnly?.[k] && !k.includes('.')) record[k] = resolve(v);
+    if (!spec.writeOnly?.[k] && !k.includes('.')) record[spec.readAliases?.[k] ?? k] = resolve(v);
   });
   return { ...record, ...(spec.derived ?? {}) };
 };
 
-const ALL = ['org_structure:read', 'org_structure:update', 'reporting_periods:read', 'reporting_periods:update',
+/** Value the edit form shows for a ui field: the alias target if the API returns it under another name. */
+const shownValue = (spec, record, field) => record[spec.readAliases?.[field] ?? field];
+
+// Catalogue metrics the data point specs use (shape of GET /reference/metrics).
+const METRICS = [
+  { metricKey: 'diesel_litres', pillar: 'E', category: 'Energy', name: 'Diesel consumed', unit: 'L', dataType: 'decimal', description: '', requirements: [] },
+  { metricKey: 'community_investment', pillar: 'S', category: 'Community', name: 'Community investment', unit: 'currency', dataType: 'currency', description: '', requirements: [] },
+];
+const FIXTURE_ORGS = [
+  { id: ORG_HQ, name: 'A HQ', parentOrgId: null }, { id: ORG_SITE_1, name: 'A Site 1', parentOrgId: ORG_HQ },
+  { id: ORG_SITE_2, name: 'A Site 2', parentOrgId: ORG_HQ },
+];
+const dataPointApi = () => fakeApi({
+  'GET /data/rules': () => ok([]),
+  'GET /data/sources': () => ok([{ id: SOURCE_A, name: 'Manual', sourceType: 'manual', active: true, dataPoints: 1, version: 0 }]),
+  'GET /files': () => ok([{ id: FILE_A, originalName: 'evidence.pdf' }]),
+  'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 1000, allowedExtensions: 'pdf', virusScanning: 'Not configured' }),
+});
+const openDataPoint = async (record) => {
+  dataPointApi();
+  renderWithStore(<DataPointDialog open point={record} metrics={METRICS} orgs={FIXTURE_ORGS} onClose={() => {}} />,
+    { preloadedState: authenticated(ALL) });
+  const dialog = await screen.findByRole('dialog');
+  await within(dialog).findByText('Manual', {}, { timeout: 2000 }).catch(() => null);
+  return dialog;
+};
+
+const ALL = ['data_points:create', 'data_points:update', 'data_sources:read', 'data_sources:manage', 'fx_rates:read',
+  'fx_rates:manage', 'files:create', 'files:read', 'org_structure:read', 'org_structure:update', 'reporting_periods:read', 'reporting_periods:update',
   'tenant_settings:read', 'tenant_settings:configure', 'compliance:read', 'tenants:read', 'tenants:update',
   'users:read', 'users:update', 'emission_factors:manage', 'reference_data:read'];
 
@@ -84,6 +121,16 @@ const openers = {
     await userEvent.click(await screen.findByLabelText(`Edit ${record.name}`));
     return screen.findByRole('dialog');
   },
+  'data-point': openDataPoint,
+  'data-point-currency': openDataPoint,
+  'data-source': async (record) => {
+    renderWithStore(<DataSourceDialog source={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'fx-rate': async (record) => {
+    renderWithStore(<FxRateDialog rate={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
   'custom-emission-factor': async (record) => {
     renderWithStore(<CustomFactorDialog open factor={{ ...record, custom: true }} onClose={() => {}} />,
       { preloadedState: authenticated(ALL) });
@@ -111,7 +158,7 @@ describe('UI reload generator: edit forms show every saved value', () => {
     const record = savedRecord(spec);
     const form = within(await openers[spec.id](record));
     for (const [field, ui] of Object.entries(spec.ui.fields)) {
-      const value = record[field];
+      const value = shownValue(spec, record, field);
       const shown = ui.display ?? (value == null ? '' : String(value));
       if (ui.kind === 'select') {
         expect(form.getByRole('combobox', { name: ui.label }), `${spec.id}.${field}`).toHaveTextContent(shown);
@@ -119,6 +166,8 @@ describe('UI reload generator: edit forms show every saved value', () => {
         const input = form.getByLabelText(ui.label);
         if (value) expect(input, `${spec.id}.${field}`).toBeChecked();
         else expect(input, `${spec.id}.${field}`).not.toBeChecked();
+      } else if (ui.kind === 'text') {
+        expect(await form.findByText(ui.display), `${spec.id}.${field}`).toBeInTheDocument();
       } else if (ui.kind === 'checkboxes') {
         for (const option of ui.options) {
           const box = form.getByLabelText(option);

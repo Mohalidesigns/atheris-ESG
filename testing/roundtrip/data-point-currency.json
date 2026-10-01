@@ -55,6 +55,31 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-20 form"
+    "fields": {
+      "metricKey": {
+        "label": "Metric",
+        "display": "Community investment (money)"
+      },
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A HQ"
+      },
+      "numericValue": {
+        "label": "Amount",
+        "display": "200"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      }
+    }
   }
 }

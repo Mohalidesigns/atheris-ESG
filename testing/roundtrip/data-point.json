@@ -117,6 +117,38 @@
     "evidenceFileIds": []
   },
   "ui": {
-    "pending": "filled in with the WP-20 form"
+    "fields": {
+      "metricKey": {
+        "label": "Metric",
+        "display": "Diesel consumed (L)"
+      },
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 1"
+      },
+      "numericValue": {
+        "label": "Value",
+        "display": "1234.5"
+      },
+      "subCategory": {
+        "label": "Sub-category (optional)"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "sourceId": {
+        "label": "Data source (optional)",
+        "kind": "select",
+        "display": "Manual"
+      },
+      "evidenceFileIds": {
+        "kind": "text",
+        "display": "evidence.pdf"
+      }
+    }
   }
 }

@@ -1,66 +1,52 @@
 import { useMemo, useState } from 'react';
-import { Box, Button, Card, CardContent, Chip, Grid, IconButton, MenuItem, TextField, Tooltip, Typography, Alert } from '@mui/material';
-import { Add, CheckCircle, Flag, Cancel } from '@mui/icons-material';
+import {
+  Box, Button, Card, CardContent, Chip, Grid, MenuItem, Tab, Tabs, TextField, Typography,
+} from '@mui/material';
+import { Add, Warning as WarningIcon } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
 import Can from '../../../components/rbac/Can';
 import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';
-import { NotYetAvailable, PageHeader } from '../../../components/states/States';
-import { toFormError } from '../../../services/apiSlice';
+import { PageHeader } from '../../../components/states/States';
 import { useListOrganisationsQuery } from '../../admin/adminApi';
 import { useMetricsQuery } from '../../reference/referenceApi';
-import { useDataPointsQuery, useReviewDataPointMutation } from '../dataHubApi';
+import { useDataPointsQuery } from '../dataHubApi';
+import { STATUS } from '../schemas';
 import DataPointDialog from './DataPointDialog';
+import DataPointDrawer from './DataPointDrawer';
+import DataSourcesTab from './DataSourcesTab';
+import FxRatesTab from './FxRatesTab';
+import ImportWizard from './ImportWizard';
+import StatusChip from './StatusChip';
 
-const STATUS_STYLE = {
-  pending: { color: '#975A16', bg: '#FEF9E7' },
-  validated: { color: '#2D7D46', bg: '#E6F4EA' },
-  flagged: { color: '#C05621', bg: '#FEF3E2' },
-  rejected: { color: '#C53030', bg: '#FEE2E2' },
-};
 const CATEGORY_COLOURS = { E: '#2D7D46', S: '#1A365D', G: '#B7791F' };
+const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
 
-function Count({ label, params, colour }) {
-  const { data, isLoading, isError } = useDataPointsQuery({ ...params, page: 0, size: 1 });
+function Count({ label, status }) {
+  const { data, isLoading, isError } = useDataPointsQuery({ ...(status ? { status } : {}), page: 0, size: 1 });
   return (
     <Card>
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Typography variant="caption" color="text.secondary">{label}</Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: colour }}>
-          {isLoading ? '…' : isError ? '—' : (data?.totalElements ?? data?.page?.totalElements ?? 0).toLocaleString()}
+        <Typography variant="h4" sx={{ fontWeight: 700, color: STATUS[status]?.color ?? '#1A365D' }}>
+          {isLoading ? '…' : isError ? '—' : (data?.totalElements ?? 0).toLocaleString()}
         </Typography>
       </CardContent>
     </Card>
   );
 }
 
-export default function DataHubPage() {
-  const [adding, setAdding] = useState(false);
-  const [filters, setFilters] = useState({ category: '', status: '' });
-  const [reviewError, setReviewError] = useState('');
+/** A server-paged list of data points with fixed and user filters; "Open" shows the detail drawer. */
+function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage }) {
   const table = useServerTable({ defaultSort: { field: 'createdAt', direction: 'desc' } });
-  const query = useDataPointsQuery({ ...table.params, category: filters.category || undefined, status: filters.status || undefined });
-  const { data: metrics = [] } = useMetricsQuery();
-  const { data: orgs = [] } = useListOrganisationsQuery();
-  const [review] = useReviewDataPointMutation();
-  const metricsByKey = useMemo(() => Object.fromEntries(metrics.map((m) => [m.metricKey, m])), [metrics]);
-  const orgName = useMemo(() => Object.fromEntries(orgs.map((o) => [o.id, o.name])), [orgs]);
-
-  const setFilter = (name) => (e) => { setFilters((f) => ({ ...f, [name]: e.target.value })); table.resetPage(); };
-  const onReview = async (dp, status) => {
-    setReviewError('');
-    try {
-      await review({ id: dp.id, status }).unwrap();
-    } catch (err) {
-      setReviewError(toFormError(err).message);
-    }
-  };
-
+  const params = Object.fromEntries(Object.entries({ ...filters, ...fixed }).filter(([, v]) => v));
+  const query = useDataPointsQuery({ ...table.params, ...params });
   const columns = [
     {
       field: 'metricKey', header: 'Metric', sortable: true,
       render: (dp) => (
         <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>{metricsByKey[dp.metricKey]?.name ?? dp.metricKey}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{dp.metricName ?? dp.metricKey}</Typography>
           <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace', color: 'text.secondary' }}>{dp.metricKey}</Typography>
         </Box>
       ),
@@ -69,7 +55,6 @@ export default function DataHubPage() {
       field: 'category', header: 'Pillar', sortable: true,
       render: (dp) => <Chip label={dp.category} size="small" sx={{ bgcolor: CATEGORY_COLOURS[dp.category], color: '#fff', fontWeight: 700, minWidth: 28 }} />,
     },
-    { field: 'subCategory', header: 'Sub-category' },
     {
       field: 'numericValue', header: 'Value', align: 'right', sortable: true,
       render: (dp) => (
@@ -78,79 +63,150 @@ export default function DataHubPage() {
             {dp.numericValue != null ? Number(dp.numericValue).toLocaleString() : dp.textValue}
           </Typography>
           <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>{dp.unit}</Typography>
+          {dp.originalCurrency && (
+            <Typography variant="caption" display="block" color="text.secondary">
+              {Number(dp.originalAmount).toLocaleString()} {dp.originalCurrency}
+            </Typography>
+          )}
         </>
       ),
     },
-    { field: 'orgId', header: 'Organisation', render: (dp) => orgName[dp.orgId] ?? '—' },
+    { field: 'orgName', header: 'Organisation', render: (dp) => dp.orgName ?? '—' },
     { field: 'reportingPeriodStart', header: 'Period', sortable: true, render: (dp) => `${dp.reportingPeriodStart} – ${dp.reportingPeriodEnd}` },
     {
-      field: 'validationStatus', header: 'Status', sortable: true,
+      field: 'qualityScore', header: 'Quality', align: 'right', sortable: true,
       render: (dp) => (
-        <Chip size="small" label={dp.validationStatus} sx={{
-          bgcolor: STATUS_STYLE[dp.validationStatus]?.bg, color: STATUS_STYLE[dp.validationStatus]?.color,
-          fontWeight: 600, fontSize: '0.65rem', textTransform: 'capitalize',
-        }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+          {(dp.validationWarnings ?? []).length > 0 && (
+            <WarningIcon fontSize="small" sx={{ color: '#C05621' }} aria-label={`${dp.validationWarnings.length} warning(s)`} />
+          )}
+          {dp.qualityScore != null ? `${Math.round(Number(dp.qualityScore) * 100)}%` : '—'}
+        </Box>
       ),
     },
+    { field: 'validationStatus', header: 'Status', sortable: true, render: (dp) => <StatusChip status={dp.validationStatus} /> },
     {
-      field: 'actions', header: '', align: 'right',
+      field: 'open', header: '', align: 'right',
       render: (dp) => (
-        <Can permission="data_points:approve">
-          <Box sx={{ whiteSpace: 'nowrap' }}>
-            <Tooltip title="Validate"><IconButton size="small" aria-label={`Validate ${dp.metricKey}`} onClick={() => onReview(dp, 'validated')}><CheckCircle fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Flag for follow-up"><IconButton size="small" aria-label={`Flag ${dp.metricKey}`} onClick={() => onReview(dp, 'flagged')}><Flag fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Reject"><IconButton size="small" aria-label={`Reject ${dp.metricKey}`} onClick={() => onReview(dp, 'rejected')}><Cancel fontSize="small" /></IconButton></Tooltip>
-          </Box>
-        </Can>
+        <Button size="small" onClick={() => onOpen(dp.id)}
+          aria-label={`Open ${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}`}>Open</Button>
       ),
     },
   ];
+  return <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage} />;
+}
 
+function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
+  const set = (name) => (e) => setFilters((f) => ({ ...f, [name]: e.target.value }));
+  const filtered = Object.values(filters).some(Boolean);
   return (
-    <Box>
-      <PageHeader title="ESG Data Hub" subtitle="Centralised data collection, validation and review"
-        actions={(
-          <Can permission="data_points:create">
-            <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setAdding(true)} disabled={!metrics.length}>
-              Add data point
-            </Button>
-          </Can>
-        )} />
-
+    <>
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Data points" params={{}} colour="#1A365D" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Pending review" params={{ status: 'pending' }} colour="#975A16" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Validated" params={{ status: 'validated' }} colour="#2D7D46" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Rejected" params={{ status: 'rejected' }} colour="#C53030" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label="Drafts" status="draft" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label="Awaiting validation" status="submitted" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label="Awaiting approval" status="validated" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label="Approved" status="approved" /></Grid>
       </Grid>
-
       <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <TextField select size="small" label="Pillar" value={filters.category} onChange={setFilter('category')} sx={{ minWidth: 160 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField select size="small" label="Pillar" value={filters.category} onChange={set('category')} sx={{ minWidth: 140 }}>
             <MenuItem value="">All</MenuItem>
             <MenuItem value="E">Environmental</MenuItem>
             <MenuItem value="S">Social</MenuItem>
             <MenuItem value="G">Governance</MenuItem>
           </TextField>
-          <TextField select size="small" label="Status" value={filters.status} onChange={setFilter('status')} sx={{ minWidth: 160 }}>
+          <TextField select size="small" label="Status" value={filters.status} onChange={set('status')} sx={{ minWidth: 150 }}>
             <MenuItem value="">All</MenuItem>
-            {Object.keys(STATUS_STYLE).map((s) => <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>{s}</MenuItem>)}
+            {Object.entries(STATUS).map(([s, v]) => <MenuItem key={s} value={s}>{v.label}</MenuItem>)}
           </TextField>
+          <TextField select size="small" label="Metric" value={filters.metricKey} onChange={set('metricKey')} sx={{ minWidth: 200 }}>
+            <MenuItem value="">All</MenuItem>
+            {metrics.map((m) => <MenuItem key={m.metricKey} value={m.metricKey}>{m.name}</MenuItem>)}
+          </TextField>
+          <TextField select size="small" label="Organisation" value={filters.orgId} onChange={set('orgId')} sx={{ minWidth: 180 }}>
+            <MenuItem value="">All</MenuItem>
+            {orgs.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+          </TextField>
+          <TextField size="small" type="date" label="From" value={filters.from} onChange={set('from')} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" type="date" label="To" value={filters.to} onChange={set('to')} InputLabelProps={{ shrink: true }} />
+          {filters.importJobId && (
+            <Chip label="From one import" onDelete={() => setFilters((f) => ({ ...f, importJobId: '' }))} />
+          )}
+          {filtered && <Button size="small" onClick={() => setFilters(emptyFilters)}>Clear filters</Button>}
         </CardContent>
       </Card>
+      <PointsList filters={filters} onOpen={onOpen} ariaLabel="Data points" emptyTitle="No data points yet"
+        emptyMessage={filtered ? 'No data points match these filters.' : 'Add the first data point or import a file.'} />
+    </>
+  );
+}
 
-      {reviewError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setReviewError('')}>{reviewError}</Alert>}
-      <DataTable columns={columns} query={query} table={table} ariaLabel="Data points"
-        emptyTitle="No data points yet"
-        emptyMessage={filters.category || filters.status ? 'No data points match these filters.' : 'Add the first data point to start collecting ESG data.'} />
+function ReviewTab({ onOpen }) {
+  return (
+    <>
+      <Can permission="data_points:validate">
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Awaiting validation</Typography>
+        <PointsList fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel="Awaiting validation"
+          emptyTitle="Nothing to validate" emptyMessage="Submitted data points appear here." />
+      </Can>
+      <Can permission="data_points:approve">
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 3, mb: 1 }}>Awaiting approval</Typography>
+        <PointsList fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel="Awaiting approval"
+          emptyTitle="Nothing to approve" emptyMessage="Validated data points appear here." />
+      </Can>
+    </>
+  );
+}
 
-      <Box sx={{ mt: 2 }}>
-        <NotYetAvailable title="Bulk import, offline sync, evidence files and data quality scores" plannedIn="WP-20 / WP-43">
-          CSV/Excel import, offline capture, attaching evidence and the TRD §8.1 quality score come with the Data Hub build-out.
-        </NotYetAvailable>
-      </Box>
+// no-mock-gate: config — tab definitions, each gated by a permission
+const TABS = [
+  { value: 'data', label: 'Data', anyOf: ['data_points:read'] },
+  { value: 'review', label: 'Review', anyOf: ['data_points:validate', 'data_points:approve'] },
+  { value: 'import', label: 'Import', anyOf: ['data_points:create'] },
+  { value: 'sources', label: 'Sources', anyOf: ['data_sources:read'] },
+  { value: 'rates', label: 'Exchange rates', anyOf: ['fx_rates:read'] },
+];
 
-      {adding && <DataPointDialog open onClose={() => setAdding(false)} metrics={metrics} orgs={orgs} />}
+/** M1 ESG Data Hub (WP-20): collect → validate → approve, with quality scores, import, sources and exchange rates. */
+export default function DataHubPage() {
+  const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
+  const tabs = TABS.filter((t) => t.anyOf.some((p) => permissions.includes(p)));
+  const [tab, setTab] = useState('data');
+  const [filters, setFilters] = useState(emptyFilters);
+  const [editing, setEditing] = useState(undefined); // undefined closed, null new, object edit
+  const [openId, setOpenId] = useState(null);
+  const { data: metrics = [] } = useMetricsQuery();
+  const { data: orgs = [] } = useListOrganisationsQuery();
+  const current = tabs.some((t) => t.value === tab) ? tab : tabs[0]?.value;
+  const sortedMetrics = useMemo(() => [...metrics].sort((a, b) => a.name.localeCompare(b.name)), [metrics]);
+
+  return (
+    <Box>
+      <PageHeader title="ESG Data Hub" subtitle="Collect, validate and approve ESG data"
+        actions={(
+          <Can permission="data_points:create">
+            <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setEditing(null)} disabled={!metrics.length}>
+              Add data point
+            </Button>
+          </Can>
+        )} />
+      <Tabs value={current} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile>
+        {tabs.map((t) => <Tab key={t.value} value={t.value} label={t.label} />)}
+      </Tabs>
+
+      {current === 'data' && <DataTab metrics={sortedMetrics} orgs={orgs} onOpen={setOpenId} filters={filters} setFilters={setFilters} />}
+      {current === 'review' && <ReviewTab onOpen={setOpenId} />}
+      {current === 'import' && (
+        <ImportWizard orgs={orgs} onShowImported={(jobId) => { setFilters({ ...emptyFilters, importJobId: jobId }); setTab('data'); }} />
+      )}
+      {current === 'sources' && <DataSourcesTab />}
+      {current === 'rates' && <FxRatesTab />}
+
+      <DataPointDrawer id={openId} onClose={() => setOpenId(null)} onEdit={(dp) => setEditing(dp)} />
+      {editing !== undefined && (
+        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing}
+          onClose={(saved) => { setEditing(undefined); if (saved?.id) setOpenId(saved.id); }} />
+      )}
     </Box>
   );
 }

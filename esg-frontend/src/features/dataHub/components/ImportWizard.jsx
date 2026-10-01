@@ -1,0 +1,234 @@
+import { useMemo, useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, MenuItem, Step, StepLabel, Stepper, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
+} from '@mui/material';
+import { Download, UploadFile } from '@mui/icons-material';
+import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
+import { FormDateField, FormSelect } from '../../../components/form/FormFields';
+import { toFormError } from '../../../services/apiSlice';
+import { applyProblem } from '../../../services/formErrors';
+import {
+  dataHubApi, useDataSourcesQuery, useImportJobQuery, useImportTemplateMutation, useImportsQuery, useStartImportMutation, useUploadImportMutation,
+} from '../dataHubApi';
+import { IMPORT_FIELDS, importStartSchema, toImportStartBody } from '../schemas';
+
+// no-mock-gate: config — wizard step labels
+const STEPS = ['Upload a file', 'Map the columns', 'Import'];
+
+function Result({ jobId, onShowImported }) {
+  // Poll while the background job runs (TRD §8.1 async processing with progress); stop once it has finished.
+  const cached = dataHubApi.endpoints.importJob.useQueryState(jobId);
+  const running = !cached.data || cached.data.status === 'processing';
+  const { data: job } = useImportJobQuery(jobId, { pollingInterval: running ? 1000 : 0 });
+  if (!job) return <LinearProgress />;
+  const done = job.status !== 'processing';
+  const errors = job.rowErrors ?? [];
+  return (
+    <Box aria-label="Import result">
+      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{job.fileName}</Typography>
+      {!done && (
+        <Box sx={{ my: 2 }}>
+          <LinearProgress variant="determinate" value={job.totalRows ? (100 * job.processedRows) / job.totalRows : 0} />
+          <Typography variant="caption">{job.processedRows} of {job.totalRows} rows</Typography>
+        </Box>
+      )}
+      {done && (
+        <Alert severity={job.status === 'failed' ? 'error' : job.failedRows ? 'warning' : 'success'} sx={{ my: 2 }}>
+          {job.failure ?? `${job.succeededRows} of ${job.processedRows} rows imported as drafts${job.failedRows ? `; ${job.failedRows} need fixing` : ''}.`}
+        </Alert>
+      )}
+      {done && job.succeededRows > 0 && (
+        <Button size="small" onClick={() => onShowImported(job.id)} sx={{ mb: 2 }}>Show the imported drafts</Button>
+      )}
+      {errors.length > 0 && (
+        <TableContainer component={Card} variant="outlined">
+          <Table size="small" aria-label="Row errors">
+            <TableHead><TableRow><TableCell>Row</TableCell><TableCell>Column</TableCell><TableCell>Problem</TableCell></TableRow></TableHead>
+            <TableBody>
+              {errors.map((e, i) => (
+                <TableRow key={`${e.row}-${i}`}>
+                  <TableCell>{e.row}</TableCell><TableCell>{e.column ?? '—'}</TableCell><TableCell>{e.message}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Box>
+  );
+}
+
+function Mapping({ job, orgs, onStarted }) {
+  const { data: sources = [] } = useDataSourcesQuery({ activeOnly: true });
+  const [start, { isLoading }] = useStartImportMutation();
+  const [formError, setFormError] = useState('');
+  const defaults = useMemo(() => ({
+    mapping: Object.fromEntries(IMPORT_FIELDS.map((f) => [f.key, job.suggestedMapping?.[f.key] ?? ''])),
+    defaultOrgId: '', defaultPeriodStart: '', defaultPeriodEnd: '', sourceId: '',
+  }), [job]);
+  const { control, handleSubmit, setError } = useForm({ defaultValues: defaults, resolver: zodResolver(importStartSchema) });
+  const mapping = useWatch({ control, name: 'mapping' });
+
+  const submit = handleSubmit(async (v) => {
+    setFormError('');
+    try {
+      await start({ id: job.id, ...toImportStartBody(v, job.version) }).unwrap();
+      onStarted();
+    } catch (err) {
+      setFormError(applyProblem(err, setError, {
+        knownFields: ['defaultOrgId', 'defaultPeriodStart', 'defaultPeriodEnd', 'sourceId', ...IMPORT_FIELDS.map((f) => `mapping.${f.key}`)],
+      }));
+    }
+  });
+
+  return (
+    <form onSubmit={submit} noValidate>
+      {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+      <Typography variant="body2" sx={{ mb: 2 }}>
+        {job.fileName}: {job.totalRows} rows. Match each field to a column; organisation and period can instead apply to every row.
+      </Typography>
+      <Grid container spacing={2}>
+        {IMPORT_FIELDS.map((f) => (
+          <Grid key={f.key} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Controller name={`mapping.${f.key}`} control={control} render={({ field, fieldState }) => (
+              <TextField select fullWidth size="small" label={`${f.label}${f.required ? ' *' : ''}`} {...field}
+                error={!!fieldState.error} helperText={fieldState.error?.message ?? f.hint}>
+                <MenuItem value="">Not in the file</MenuItem>
+                {job.columns.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              </TextField>
+            )} />
+          </Grid>
+        ))}
+      </Grid>
+      <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>For every row</Typography>
+      <Grid container spacing={2}>
+        {!mapping.organisation && (
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller name="defaultOrgId" control={control} render={({ field, fieldState }) => (
+              <OrgTreeSelect {...field} orgs={orgs} label="Organisation for every row" size="small" fullWidth
+                error={!!fieldState.error} helperText={fieldState.error?.message} />
+            )} />
+          </Grid>
+        )}
+        {!mapping.periodStart && <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="defaultPeriodStart" label="Period start for every row" /></Grid>}
+        {!mapping.periodEnd && <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="defaultPeriodEnd" label="Period end for every row" /></Grid>}
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <FormSelect control={control} name="sourceId" label="Data source for every row"
+            options={[{ value: '', label: 'Not recorded' }, ...sources.map((s) => ({ value: s.id, label: s.name }))]} />
+        </Grid>
+      </Grid>
+      {job.sampleRows?.length > 0 && (
+        <TableContainer component={Card} variant="outlined" sx={{ mt: 3 }}>
+          <Table size="small" aria-label="File preview">
+            <TableHead><TableRow>{job.columns.map((c) => <TableCell key={c}>{c}</TableCell>)}</TableRow></TableHead>
+            <TableBody>
+              {job.sampleRows.map((row, i) => (
+                <TableRow key={i}>{row.map((cell, j) => <TableCell key={`${i}-${j}`}>{cell}</TableCell>)}</TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button type="submit" variant="contained" disabled={isLoading}>Import {job.totalRows} rows</Button>
+      </Box>
+    </form>
+  );
+}
+
+/** Bulk CSV/Excel import (journey 4): upload → map → background import with per-row errors. Rows become drafts. */
+export default function ImportWizard({ orgs, onShowImported }) {
+  const input = useRef(null);
+  const [job, setJob] = useState(null);
+  const [step, setStep] = useState(0);
+  const [problem, setProblem] = useState('');
+  const [upload, { isLoading }] = useUploadImportMutation();
+  const [getTemplate] = useImportTemplateMutation();
+  const { data: recent = [] } = useImportsQuery();
+
+  const onChosen = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setProblem('');
+    if (!/\.(csv|xlsx)$/i.test(file.name)) {
+      setProblem('Upload a .csv or .xlsx file');
+      return;
+    }
+    try {
+      setJob(await upload(file).unwrap());
+      setStep(1);
+    } catch (err) {
+      const { message, fieldErrors } = toFormError(err);
+      setProblem(fieldErrors?.file ?? message);
+    }
+  };
+
+  const onTemplate = async () => {
+    const csv = await getTemplate().unwrap();
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'esg-data-import-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Box>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Stepper activeStep={step} sx={{ mb: 3 }}>{STEPS.map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}</Stepper>
+          {step === 0 && (
+            <Box>
+              {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                The first row must hold column names. Up to 5,000 rows; each becomes a draft you can review and submit.
+              </Typography>
+              <input ref={input} type="file" hidden accept=".csv,.xlsx" onChange={onChosen} data-testid="import-file" />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button variant="contained" startIcon={<UploadFile />} disabled={isLoading} onClick={() => input.current.click()}>
+                  Choose CSV or Excel file
+                </Button>
+                <Button startIcon={<Download />} onClick={onTemplate}>Download template</Button>
+              </Box>
+            </Box>
+          )}
+          {step === 1 && job && <Mapping job={job} orgs={orgs} onStarted={() => setStep(2)} />}
+          {step === 2 && job && (
+            <>
+              <Result jobId={job.id} onShowImported={onShowImported} />
+              <Button sx={{ mt: 2 }} onClick={() => { setJob(null); setStep(0); }}>Import another file</Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+      {recent.length > 0 && (
+        <Card>
+          <TableContainer>
+            <Table size="small" aria-label="Recent imports">
+              <TableHead><TableRow>
+                <TableCell>File</TableCell><TableCell>Status</TableCell><TableCell align="right">Imported</TableCell>
+                <TableCell align="right">Failed</TableCell><TableCell>When</TableCell>
+              </TableRow></TableHead>
+              <TableBody>
+                {recent.map((j) => (
+                  <TableRow key={j.id} hover sx={{ cursor: 'pointer' }} onClick={() => { setJob(j); setStep(j.status === 'uploaded' ? 1 : 2); }}>
+                    <TableCell>{j.fileName}</TableCell>
+                    <TableCell><Chip size="small" label={j.status} /></TableCell>
+                    <TableCell align="right">{j.succeededRows}</TableCell>
+                    <TableCell align="right">{j.failedRows}</TableCell>
+                    <TableCell>{new Date(j.createdAt).toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
+      )}
+    </Box>
+  );
+}
