@@ -100,7 +100,7 @@ class AccessControlIntegrationTest extends ApiTestSupport {
     mvc.perform(put("/v1/data/points/" + HQ_DATA_POINT + "/validate").header("Authorization", bearerForRole("ESG_DIRECTOR"))
             .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"approved-by-magic\"}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data.status").exists());
+        .andExpect(jsonPath("$.errors.status").exists());
   }
 
   @Test

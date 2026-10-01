@@ -31,7 +31,7 @@ describe('route guards', () => {
 
 describe('session restore on startup', () => {
   it('without a valid refresh cookie, shows the login page', async () => {
-    const calls = fakeApi({ 'POST /auth/refresh': () => [401, { success: false, message: 'No active session' }] });
+    const calls = fakeApi({ 'POST /auth/refresh': () => [401, { title: 'Error', detail: 'No active session' }] });
     renderWithStore(<AppRoutes />, { route: '/dashboard' });
     expect(await screen.findByRole('button', { name: 'Sign In' })).toBeInTheDocument();
     expect(calls.map((c) => c.key)).toEqual(['POST /auth/refresh']);

@@ -94,7 +94,7 @@ describe('TenantsTab', () => {
   it('maps the admin password error from the server onto the form', async () => {
     fakeApi({
       'GET /platform/tenants': () => ok([]),
-      'POST /platform/tenants': () => [400, { success: false, message: 'Validation failed', data: { slug: 'This slug is already taken' } }],
+      'POST /platform/tenants': () => [400, { title: 'Validation failed', status: 400, detail: 'One or more fields are invalid', errorCode: 'ESG-400-VALIDATION', errors: { slug: 'This slug is already taken' } }],
     });
     renderWithStore(<TenantsTab />, { preloadedState: authenticated(['tenants:read', 'tenants:create']) });
     await userEvent.click(await screen.findByRole('button', { name: 'New tenant' }));

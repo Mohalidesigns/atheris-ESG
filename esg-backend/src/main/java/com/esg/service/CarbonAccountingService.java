@@ -24,9 +24,11 @@ import java.util.UUID;
 public class CarbonAccountingService {
 
     public CarbonAccountingService(EmissionRecordRepository emissionRecordRepository, EmissionFactorRepository emissionFactorRepository,
-                                   OrgScopeService orgScope, ReportingPeriodService periods) {
+                                   OrgScopeService orgScope, ReportingPeriodService periods,
+                                   com.esg.audit.LineageService lineage) {
         this.orgScope = orgScope;
         this.periods = periods;
+        this.lineage = lineage;
         this.emissionRecordRepository = emissionRecordRepository;
         this.emissionFactorRepository = emissionFactorRepository;
     }
@@ -35,6 +37,7 @@ public class CarbonAccountingService {
     private final EmissionFactorRepository emissionFactorRepository;
     private final OrgScopeService orgScope;
     private final ReportingPeriodService periods;
+    private final com.esg.audit.LineageService lineage;
 
     public Page<EmissionRecord> getEmissions(String scope, Pageable pageable) {
         OrgScopeService.QueryScope orgs = orgScope.queryScope();
@@ -85,7 +88,14 @@ public class CarbonAccountingService {
         record.setReportingPeriodEnd(dto.getReportingPeriodEnd());
         record.setCalculationMethod(dto.getCalculationMethod());
 
-        return emissionRecordRepository.save(record);
+        EmissionRecord saved = emissionRecordRepository.save(record);
+        if (saved.getEmissionFactorId() != null) {
+            // TRD §6.6.2: emission calculations link back to the factor they used.
+            lineage.record("emission_factor", saved.getEmissionFactorId(), "emission_record", saved.getId(), "calculated_from",
+                    java.util.Map.of("activityData", saved.getActivityData(), "activityUnit", saved.getActivityUnit(),
+                            "co2eTonnes", saved.getCo2eTonnes()));
+        }
+        return saved;
     }
 
     public Map<String, Object> getEmissionsSummary() {

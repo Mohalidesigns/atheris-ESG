@@ -132,9 +132,9 @@ class AuthFlowIntegrationTest extends ApiTestSupport {
   @Test
   void unknownEmailWrongPasswordAndLockedAccountAllLookTheSame() throws Exception {
     login("nobody@fixture.test", PASSWORD).andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value("Invalid email or password"));
+        .andExpect(jsonPath("$.detail").value("Invalid email or password"));
     login("esg_analyst@fixture.test", "wrong").andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value("Invalid email or password"));
+        .andExpect(jsonPath("$.detail").value("Invalid email or password"));
   }
 
   @Test

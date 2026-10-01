@@ -52,19 +52,20 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, e) -> writeError(response, 401, "Authentication required"))
-                .accessDeniedHandler((request, response, e) ->
-                    writeError(response, 403, "You do not have permission to perform this action")))
+                .authenticationEntryPoint((request, response, e) -> writeError(request, response,
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "ESG-401", "Sign in to continue"))
+                .accessDeniedHandler((request, response, e) -> writeError(request, response,
+                    org.springframework.http.HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action")))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    private static void writeError(jakarta.servlet.http.HttpServletResponse response, int status, String message)
-            throws java.io.IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"success\":false,\"message\":\"" + message + "\"}");
+    private static void writeError(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response,
+                                   org.springframework.http.HttpStatus status, String code, String detail) throws java.io.IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/problem+json");
+        response.getWriter().write(com.esg.exception.Problems.json(status, code, detail, request.getRequestURI()));
     }
 
     @Bean

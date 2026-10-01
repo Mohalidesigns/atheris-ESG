@@ -6,6 +6,13 @@ esg:
     data-encryption-key: ${DATA_ENCRYPTION_KEY:S5gZx/LBue1vcvNZoRCnZrSAJI+G1tekOSj6v5Is6Y0=}
     cookie-secure: false
 
+  files:
+    storage: filesystem
+    local-dir: ${java.io.tmpdir}/esg-test-files
+  notifications:
+    dispatcher:
+      enabled: false   # tests drive NotificationDispatcher.runOnce() directly
+
 logging:
   level:
     com.esg: INFO

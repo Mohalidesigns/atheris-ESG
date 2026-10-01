@@ -126,7 +126,7 @@ class AdminUserApiTest extends ApiTestSupport {
     mvc.perform(post("/v1/admin/users").header("Authorization", admin())
             .contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data." + field).exists());
+        .andExpect(jsonPath("$.errors." + field).exists());
   }
 
   @Test
@@ -156,7 +156,7 @@ class AdminUserApiTest extends ApiTestSupport {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"assignments\":[{\"roleId\":\"" + roleId("DATA_COLLECTOR") + "\"}]}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data['assignments[0].orgScopeId']").exists());
+        .andExpect(jsonPath("$.errors['assignments[0].orgScopeId']").exists());
   }
 
   @Test

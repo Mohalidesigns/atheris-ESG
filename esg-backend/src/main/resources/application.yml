@@ -34,6 +34,12 @@ spring:
     placeholders:
       app_role: ${DB_APP_ROLE:esg_app}
 
+  servlet:
+    multipart:
+      # TRD §6.6.4: 50 MB per upload (esg.files.max-bytes enforces the exact limit with a clear error).
+      max-file-size: 50MB
+      max-request-size: 51MB
+
   jackson:
     default-property-inclusion: non_null
     serialization:
@@ -60,6 +66,30 @@ esg:
       enforce: true
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  files:
+    storage: ${FILES_STORAGE:s3}           # s3 (AWS S3 / MinIO) | filesystem (local/test only)
+    local-dir: ${FILES_LOCAL_DIR:./var/files}
+    max-bytes: 52428800                    # 50 MB (TRD §6.6.4)
+    presign-ttl: PT10M
+    s3:
+      endpoint: ${S3_ENDPOINT:}            # empty = AWS; http://localhost:9000 for MinIO
+      region: ${S3_REGION:af-south-1}
+      bucket: ${S3_BUCKET:atheris-esg-files}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+      server-side-encryption: ${S3_SSE:true}
+      create-bucket: false
+  notifications:
+    dispatcher:
+      enabled: true
+      interval-ms: 10000
+    email:
+      from: ${MAIL_FROM:no-reply@atheris-esg.local}
+    sms:
+      # Africa's Talking sandbox (CLAUDE.md rule 9: labelled "Sandbox" in the UI). Empty key = SMS not configured.
+      africastalking-username: ${AT_USERNAME:sandbox}
+      africastalking-api-key: ${AT_API_KEY:}
+      africastalking-url: ${AT_URL:https://api.sandbox.africastalking.com/version1/messaging}
 
 springdoc:
   api-docs:

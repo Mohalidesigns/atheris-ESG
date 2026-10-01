@@ -35,6 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
+            // Recorded for every request (including login) so database-level audit rows carry the client (V014).
+            TenantContext.setClient(request.getRemoteAddr(), request.getHeader("User-Agent"));
             Optional<Claims> claims = Optional.ofNullable(extractToken(request)).flatMap(tokenProvider::parseAccessToken);
             if (claims.isPresent()) {
                 authenticate(claims.get(), request);

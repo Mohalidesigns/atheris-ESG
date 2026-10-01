@@ -23,7 +23,7 @@ describe('LoginForm', () => {
   });
 
   it('shows the server error for bad credentials', async () => {
-    fakeApi({ 'POST /auth/login': () => [401, { success: false, message: 'Invalid email or password' }] });
+    fakeApi({ 'POST /auth/login': () => [401, { title: 'Error', detail: 'Invalid email or password' }] });
     renderWithStore(<LoginForm />, { preloadedState: anonymous });
     await userEvent.type(screen.getByLabelText(/email address/i), 'ada@example.com');
     await userEvent.type(screen.getByLabelText(/^password/i), 'wrong');

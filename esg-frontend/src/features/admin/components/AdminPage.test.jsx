@@ -59,7 +59,7 @@ describe('AdminPage', () => {
   it('shows server field errors next to the field', async () => {
     fakeApi({
       'GET /admin/users': () => page([]),
-      'POST /admin/users': () => [400, { success: false, message: 'Validation failed', data: { email: 'This email is already in use' } }],
+      'POST /admin/users': () => [400, { title: 'Validation failed', status: 400, detail: 'One or more fields are invalid', errorCode: 'ESG-400-VALIDATION', errors: { email: 'This email is already in use' } }],
     });
     renderWithStore(<AdminPage />, { preloadedState: authenticated(ADMIN) });
     await userEvent.click(await screen.findByRole('button', { name: 'New user' }));

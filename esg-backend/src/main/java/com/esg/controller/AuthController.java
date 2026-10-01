@@ -68,20 +68,18 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @PublicEndpoint("Authorised by the refresh token")
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+    public ResponseEntity<?> refresh(
             @CookieValue(name = REFRESH_COOKIE, required = false) String cookieToken,
             @RequestBody(required = false) Map<String, String> body, HttpServletRequest http) {
         String token = cookieToken != null ? cookieToken : body == null ? null : body.get("refreshToken");
         if (token == null) {
-            return ResponseEntity.status(401).header(HttpHeaders.SET_COOKIE, clearCookie())
-                    .body(ApiResponse.error("No active session"));
+            return refreshFailed(org.springframework.http.HttpStatus.UNAUTHORIZED, "ESG-401", "No active session", http);
         }
         try {
             return withSession(authService.refresh(token, client(http)));
         } catch (ApiException e) {
             // A refresh token that didn't work is cleared so the browser stops sending it.
-            return ResponseEntity.status(e.getStatus()).header(HttpHeaders.SET_COOKIE, clearCookie())
-                    .body(ApiResponse.error(e.getMessage()));
+            return refreshFailed(e.getStatus(), e.getCode(), e.getMessage(), http);
         }
     }
 
@@ -111,6 +109,13 @@ public class AuthController {
                     .build().toString());
         }
         return response.body(ApiResponse.ok(result.body()));
+    }
+
+    private ResponseEntity<org.springframework.http.ProblemDetail> refreshFailed(org.springframework.http.HttpStatus status,
+                                                                                  String code, String detail, HttpServletRequest http) {
+        return ResponseEntity.status(status).header(HttpHeaders.SET_COOKIE, clearCookie())
+                .contentType(org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON)
+                .body(com.esg.exception.Problems.of(status, code, detail, http.getRequestURI(), null));
     }
 
     private String clearCookie() {

@@ -75,6 +75,17 @@ insert into governance.whistleblower_reports (case_reference, description) value
 
 insert into audit.audit_logs (action, resource) values ('create', 'fixture');
 insert into auth.tenant_settings (base_currency, default_framework_codes) values ('NGN', '{SEC_NG}');
+insert into audit.data_lineage (source_type, source_id, target_type, target_id, relation)
+  values ('data_point', 'a0000000-0000-4000-8000-0000000000dd', 'report', 'a0000000-0000-4000-8000-0000000000f1', 'used_in');
+insert into files.file_metadata (id, original_name, content_type, size_bytes, sha256)
+  values ('a0000000-0000-4000-8000-0000000004f1', 'evidence.pdf', 'application/pdf', 4, repeat('0', 64));
+insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256)
+  values ('a0000000-0000-4000-8000-0000000004f1', 1, 'fixture/evidence-v1.pdf', 'application/pdf', 4, repeat('0', 64));
+insert into files.file_access_log (file_id, version_no, action) values ('a0000000-0000-4000-8000-0000000004f1', 1, 'upload');
+insert into notifications.user_preferences (user_id, notification_type, channel, enabled)
+  values ('a0000000-0000-4000-8000-0000000000a1', 'ROLES_CHANGED', 'sms', true);
+insert into notifications.delivery_log (user_id, notification_type, channel, recipient, body, status)
+  values ('a0000000-0000-4000-8000-0000000000a1', 'WELCOME', 'email', 'user.a@fixture.test', 'Hello', 'skipped');
 -- An old locked year (used by the period-lock tests) and an open current quarter.
 insert into auth.reporting_periods (id, name, period_type, start_date, end_date, status) values
   ('a0000000-0000-4000-8000-0000000003a1', 'FY2020', 'annual', '2020-01-01', '2020-12-31', 'locked'),

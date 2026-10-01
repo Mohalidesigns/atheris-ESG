@@ -10,6 +10,22 @@ import java.util.UUID;
 public class TenantContext {
     private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USER_ID = new ThreadLocal<>();
+    private static final ThreadLocal<String> CLIENT_IP = new ThreadLocal<>();
+    private static final ThreadLocal<String> USER_AGENT = new ThreadLocal<>();
+
+    /** Client details for the audit trail (V014); set for every request by JwtAuthenticationFilter. */
+    public static void setClient(String ip, String userAgent) {
+        CLIENT_IP.set(ip);
+        USER_AGENT.set(userAgent);
+    }
+
+    public static String getClientIp() {
+        return CLIENT_IP.get();
+    }
+
+    public static String getUserAgent() {
+        return USER_AGENT.get();
+    }
 
     public static void setTenantId(String tenantId) {
         TENANT_ID.set(tenantId);
@@ -39,5 +55,7 @@ public class TenantContext {
     public static void clear() {
         TENANT_ID.remove();
         USER_ID.remove();
+        CLIENT_IP.remove();
+        USER_AGENT.remove();
     }
 }

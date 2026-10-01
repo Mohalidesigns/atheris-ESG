@@ -53,8 +53,12 @@ public class UserAdminService {
     private final OrgScopeService orgScope;
     private final RefreshTokenService refreshTokens;
 
+    private final com.esg.notifications.NotificationService notifications;
+
     public UserAdminService(UserRepository users, JdbcTemplate jdbc, PasswordEncoder passwordEncoder,
-                            PasswordPolicy passwordPolicy, OrgScopeService orgScope, RefreshTokenService refreshTokens) {
+                            PasswordPolicy passwordPolicy, OrgScopeService orgScope, RefreshTokenService refreshTokens,
+                            com.esg.notifications.NotificationService notifications) {
+        this.notifications = notifications;
         this.users = users;
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
@@ -105,6 +109,7 @@ public class UserAdminService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setPasswordChangedAt(Instant.now());
         User saved = users.saveAndFlush(user);
+        notifications.notifyAfterCommit(saved.getId(), "WELCOME", Map.of());
         return toResponse(saved, Map.of());
     }
 
@@ -165,6 +170,7 @@ public class UserAdminService {
         user.setLockedUntil(null);
         User saved = users.saveAndFlush(user);
         refreshTokens.revokeAllSessions(id);
+        notifications.notifyAfterCommit(id, "PASSWORD_SET_BY_ADMIN", Map.of());
         return toResponse(saved, assignments(List.of(id)));
     }
 
@@ -219,7 +225,10 @@ public class UserAdminService {
                     userId, a.roleId(), a.orgScopeId(), assigner.userId(),
                     a.expiresAt() == null ? null : Timestamp.from(a.expiresAt()));
         }
-        return assignments(List.of(userId)).getOrDefault(userId, List.of());
+        List<RoleAssignmentResponse> result = assignments(List.of(userId)).getOrDefault(userId, List.of());
+        String roleNames = result.isEmpty() ? "none" : String.join(", ", result.stream().map(r -> r.roleName().replace('_', ' ')).toList());
+        notifications.notifyAfterCommit(userId, "ROLES_CHANGED", Map.of("roles", roleNames));
+        return result;
     }
 
     @Transactional(readOnly = true)

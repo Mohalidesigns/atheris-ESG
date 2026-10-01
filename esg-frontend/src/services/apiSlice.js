@@ -56,12 +56,17 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 /** Unwraps the backend envelope {data, success, message}. */
 export const unwrap = (response) => response.data;
 
-/** Server error → { message, fieldErrors } for forms (field errors come back keyed by field name). */
+/**
+ * Server error → { message, fieldErrors, code } for forms. Errors are RFC 7807 problem details
+ * ({ title, status, detail, errorCode, errors: { field: message } }; TRD §12.3).
+ */
 export function toFormError(error) {
   const body = error?.data;
+  const fallback = error?.status === 'FETCH_ERROR' ? 'Cannot reach the server' : 'Something went wrong';
   return {
-    message: body?.message || (error?.status === 'FETCH_ERROR' ? 'Cannot reach the server' : 'Something went wrong'),
-    fieldErrors: body?.message === 'Validation failed' && body?.data && typeof body.data === 'object' ? body.data : {},
+    message: body?.detail || body?.title || fallback,
+    fieldErrors: body?.errors && typeof body.errors === 'object' ? body.errors : {},
+    code: body?.errorCode,
   };
 }
 

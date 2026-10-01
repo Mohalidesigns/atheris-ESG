@@ -15,6 +15,11 @@ esg:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
 
+  files:
+    storage: ${FILES_STORAGE:filesystem}   # MinIO via docker compose: FILES_STORAGE=s3 S3_ENDPOINT=http://localhost:9000
+    s3:
+      create-bucket: true
+
 logging:
   level:
     com.esg: DEBUG

@@ -84,7 +84,7 @@ class TenancyApiTest extends ApiTestSupport {
     String body = "{\"name\":\"A HQ\",\"parentOrgId\":\"" + ORG_SITE_1 + "\",\"orgType\":\"headquarters\",\"version\":" + hq.path("version").asLong() + "}";
     send(put("/v1/organisations/" + ORG_HQ), admin(), body)
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data.parentOrgId").exists());
+        .andExpect(jsonPath("$.errors.parentOrgId").exists());
   }
 
   @Test
@@ -96,11 +96,11 @@ class TenancyApiTest extends ApiTestSupport {
   @Test
   void organisationValidationMirrorsTheRules() throws Exception {
     send(post("/v1/organisations"), admin(), "{\"name\":\"X\",\"orgType\":\"castle\",\"parentOrgId\":\"" + ORG_HQ + "\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.orgType").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.orgType").exists());
     send(post("/v1/organisations"), admin(), "{\"name\":\"X\",\"orgType\":\"site\",\"latitude\":91,\"parentOrgId\":\"" + ORG_HQ + "\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.latitude").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.latitude").exists());
     send(post("/v1/organisations"), admin(), "{\"name\":\"\",\"orgType\":\"site\",\"countryCode\":\"nigeria\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.name").exists()).andExpect(jsonPath("$.data.countryCode").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.name").exists()).andExpect(jsonPath("$.errors.countryCode").exists());
   }
 
   @Test
@@ -130,7 +130,7 @@ class TenancyApiTest extends ApiTestSupport {
 
     send(post("/v1/data/points"), bearerForRole("ESG_DIRECTOR"), dataPoint)
         .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Q3 2027")));
+        .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Q3 2027")));
 
     mvc.perform(post("/v1/reporting-periods/" + id + "/unlock").header("Authorization", bearerForRole("ESG_DIRECTOR")))
         .andExpect(jsonPath("$.data.status").value("open"));
@@ -154,11 +154,11 @@ class TenancyApiTest extends ApiTestSupport {
   @Test
   void periodValidation() throws Exception {
     send(post("/v1/reporting-periods"), admin(), "{\"name\":\"Bad\",\"periodType\":\"quarterly\",\"startDate\":\"2028-06-30\",\"endDate\":\"2028-04-01\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.endDate").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.endDate").exists());
     send(post("/v1/reporting-periods"), admin(), "{\"name\":\"Overlap\",\"periodType\":\"quarterly\",\"startDate\":\"2026-02-01\",\"endDate\":\"2026-04-30\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.startDate").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.startDate").exists());
     send(post("/v1/reporting-periods"), admin(), "{\"name\":\"X\",\"periodType\":\"weekly\",\"startDate\":\"2029-01-01\",\"endDate\":\"2029-01-07\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.periodType").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.periodType").exists());
   }
 
   // ---------------------------------------------------------------- settings
@@ -181,11 +181,11 @@ class TenancyApiTest extends ApiTestSupport {
     send(put("/v1/settings"), admin(), "{\"baseCurrency\":\"BTC\",\"fiscalYearStartMonth\":13,\"reportingTimezone\":\"x\","
         + "\"defaultFrameworkCodes\":[],\"version\":" + next + "}")
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data.baseCurrency").exists())
-        .andExpect(jsonPath("$.data.fiscalYearStartMonth").exists());
+        .andExpect(jsonPath("$.errors.baseCurrency").exists())
+        .andExpect(jsonPath("$.errors.fiscalYearStartMonth").exists());
     send(put("/v1/settings"), admin(), "{\"baseCurrency\":\"NGN\",\"fiscalYearStartMonth\":1,\"reportingTimezone\":\"Africa/Lagos\","
         + "\"defaultFrameworkCodes\":[\"MADE_UP\"],\"version\":" + next + "}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.defaultFrameworkCodes").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.defaultFrameworkCodes").exists());
 
     // Directors can read but not change settings.
     send(put("/v1/settings"), bearerForRole("ESG_DIRECTOR"), body).andExpect(status().isForbidden());
@@ -218,9 +218,9 @@ class TenancyApiTest extends ApiTestSupport {
 
     // Duplicate slug and weak admin password are rejected without creating anything.
     send(post("/v1/platform/tenants"), bearerForRole("SUPER_ADMIN"), body.replace(email, "other." + email))
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.slug").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.slug").exists());
     send(post("/v1/platform/tenants"), bearerForRole("SUPER_ADMIN"), body.replace("Str0ng!Passw0rd", "weak"))
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data['admin.password']").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors['admin.password']").exists());
   }
 
   @Test
@@ -240,7 +240,7 @@ class TenancyApiTest extends ApiTestSupport {
   void adminCanSetPasswordAndResetMfa() throws Exception {
     String target = roleUserId("BOARD_MEMBER");
     send(post("/v1/admin/users/" + target + "/password"), admin(), "{\"password\":\"weak\"}")
-        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data.password").exists());
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.password").exists());
     send(post("/v1/admin/users/" + target + "/password"), admin(), "{\"password\":\"N3w!Password2026\"}")
         .andExpect(status().isOk());
     send(post("/v1/auth/login"), "", "{\"email\":\"board_member@fixture.test\",\"password\":\"N3w!Password2026\"}")
