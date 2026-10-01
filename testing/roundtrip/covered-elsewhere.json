@@ -61,5 +61,15 @@
   ],
   "Cross-framework mapping": [
     "com.esg.compliance.ComplianceApiTest#journey11GriDataMapsToIssbAndAttestationsCarryAcrossEquivalents"
+  ],
+  "Report sections editor": [
+    "com.esg.reporting.ReportingApiTest#journey13TemplateAutoPopulatedVersionedApprovedExported"
+  ],
+  "Report approval decision": [
+    "com.esg.reporting.ReportingApiTest#journey13TemplateAutoPopulatedVersionedApprovedExported",
+    "com.esg.reporting.ReportingApiTest#approverCantApproveOwnSubmissionOrTwoSteps"
+  ],
+  "Report export": [
+    "com.esg.reporting.ReportingApiTest#journey13TemplateAutoPopulatedVersionedApprovedExported"
   ]
 }

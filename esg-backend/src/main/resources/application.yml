@@ -79,6 +79,12 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  reporting:
+    sla:
+      # Daily reminder for report approval steps past their 5-day SLA (TRD §8.4).
+      enabled: true
+      cron: "0 30 6 * * *"
+      zone: Africa/Lagos
   compliance:
     reminders:
       # Daily filing-deadline reminders (TRD §8.3 DeadlineScheduler); times are Lagos time.

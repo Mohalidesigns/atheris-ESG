@@ -146,14 +146,16 @@ FROM (VALUES
   ('BOARD_MEMBER', ARRAY[
     'reference_data:read',
     'files:read',
-    'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'whistleblower:read_summary']),
+    -- WP-23: reports:approve for the board sign-off step of report approval (TRD §6.5.3 'CFO/CEO sign-off', D24).
+    'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'reports:approve', 'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
     'data_sources:read', 'fx_rates:read',
     'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'compliance:create', 'compliance:read', 'compliance:update', 'compliance:configure', 'compliance:approve',
-    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'data_points:read', 'carbon_data:read']),
+    -- WP-23: reports:approve for the compliance review step of report approval (TRD §6.5.3, D24).
+    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'reports:approve', 'data_points:read', 'carbon_data:read']),
   ('TRAINING_ADMIN', ARRAY[
     'reference_data:read',
     'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure'])

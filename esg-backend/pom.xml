@@ -142,6 +142,22 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- WP-23 report export (TRD §8.4 ExportEngine: Thymeleaf + Flying Saucer for PDF; Apache POI for Excel) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.xhtmlrenderer</groupId>
+            <artifactId>flying-saucer-pdf</artifactId>
+            <version>10.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.6</version>
+            <scope>test</scope>
+        </dependency>
         <!-- WP-20 bulk import (TRD §8.1 BulkImportProcessor: Apache POI for Excel, OpenCSV for CSV) -->
         <dependency>
             <groupId>org.apache.poi</groupId>

@@ -75,9 +75,20 @@ insert into compliance.deadline_reminders (deadline_id, kind, days_before, sent_
 insert into compliance.regulatory_changes (regulator, title, published_date, owner_user_id)
   values ('Fixture regulator', 'Fixture change', '2026-01-01', 'a0000000-0000-4000-8000-0000000000a1');
 
-insert into reporting.report_templates (name, tenant_id) values ('A custom template', '11111111-1111-4111-8111-111111111111');
-insert into reporting.reports (id, title) values ('a0000000-0000-4000-8000-0000000000f1', 'A report');
+insert into reporting.report_templates (id, name, tenant_id, template_data) values ('a0000000-0000-4000-8000-0000000000f4', 'A custom template',
+  '11111111-1111-4111-8111-111111111111', '{"sections": [{"title": "Energy", "type": "data", "content": "Electricity: {{metric:electricity_kwh}}"}]}');
+insert into reporting.reports (id, title, reporting_period_start, reporting_period_end)
+  values ('a0000000-0000-4000-8000-0000000000f1', 'A report', '2026-01-01', '2026-12-31');
 insert into reporting.report_sections (report_id, title, sort_order) values ('a0000000-0000-4000-8000-0000000000f1', 'Intro', 1);
+insert into reporting.report_versions (report_id, label, event, sections, snapshot)
+  values ('a0000000-0000-4000-8000-0000000000f1', 'v0.1', 'created', '[]', '{}');
+insert into reporting.export_jobs (report_id, version_label, format, status, error)
+  values ('a0000000-0000-4000-8000-0000000000f1', 'v1.0', 'pdf', 'failed', 'fixture');
+insert into data_hub.approval_workflows (id, report_id, workflow_type, total_steps, initiated_by)
+  values ('a0000000-0000-4000-8000-0000000000f2', 'a0000000-0000-4000-8000-0000000000f1', 'report_approval', 1, 'a0000000-0000-4000-8000-0000000000a1');
+insert into data_hub.approval_steps (id, workflow_id, step_number, role_name, label)
+  values ('a0000000-0000-4000-8000-0000000000f3', 'a0000000-0000-4000-8000-0000000000f2', 1, 'ESG_DIRECTOR', 'Fixture step');
+insert into reporting.approval_reminders (step_id, sent_on) values ('a0000000-0000-4000-8000-0000000000f3', '2026-01-10');
 
 insert into risk.risk_assessments (id, name, assessment_type) values ('a0000000-0000-4000-8000-000000000101', 'Materiality 2026', 'double_materiality');
 insert into risk.materiality_items (assessment_id, topic, category) values ('a0000000-0000-4000-8000-000000000101', 'Climate', 'E');

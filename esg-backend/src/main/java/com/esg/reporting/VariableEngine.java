@@ -1,0 +1,210 @@
+package com.esg.reporting;
+
+import com.esg.compliance.ComplianceDtos.GapReport;
+import com.esg.compliance.ComplianceService;
+import com.esg.exception.ApiException;
+import com.esg.reporting.ReportingDtos.VariableValue;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Date;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * ReportTemplateEngine variables (TRD §8.4; D24 (2)). Section text holds {{source:key}} placeholders; {@link #resolve}
+ * computes each from the tenant's data for the report period and {@link #render} substitutes a frozen snapshot, so a
+ * report shows (and exports) exactly the values captured when it was created or last refreshed — never live data.
+ * <ul>
+ *   <li>{@code metric:<key>} — approved Data Hub values whose period ends inside the report period: summed, or the
+ *       latest value for stock metrics (reference.metrics.aggregation);</li>
+ *   <li>{@code carbon:scope1|scope2_location|scope3|total_location|flaring} — tCO2e from Carbon records ending in the period;</li>
+ *   <li>{@code compliance:<FRAMEWORK>:completeness|met|total} — gap analysis for the period's end year;</li>
+ *   <li>{@code report:title|period}, {@code tenant:name}.</li>
+ * </ul>
+ */
+@Component
+public class VariableEngine {
+
+    static final Pattern VAR = Pattern.compile("\\{\\{\\s*([a-z]+):([A-Za-z0-9_]+(?::[a-z]+)?)\\s*}}");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK);
+    private static final Set<String> CARBON = Set.of("scope1", "scope2_location", "scope3", "total_location", "flaring");
+    private static final Set<String> COMPLIANCE = Set.of("completeness", "met", "total");
+    private static final Set<String> REPORT = Set.of("title", "period");
+
+    private final JdbcTemplate jdbc;
+    private final ComplianceService compliance;
+
+    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance) {
+        this.jdbc = jdbc;
+        this.compliance = compliance;
+    }
+
+    /** Every distinct variable in the texts, in order of appearance. */
+    public static Set<String> variables(List<String> texts) {
+        Set<String> out = new LinkedHashSet<>();
+        for (String t : texts) {
+            if (t == null) {
+                continue;
+            }
+            Matcher m = VAR.matcher(t);
+            while (m.find()) {
+                out.add(m.group(1) + ":" + m.group(2));
+            }
+        }
+        return out;
+    }
+
+    /** Names of variables in the text that this engine doesn't know (for validation). */
+    public List<String> unknown(String text) {
+        return variables(List.of(text == null ? "" : text)).stream().filter(v -> !known(v)).toList();
+    }
+
+    boolean known(String variable) {
+        String[] p = variable.split(":", 2);
+        return switch (p[0]) {
+            case "metric" -> Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from reference.metrics where metric_key = ?)",
+                    Boolean.class, p[1]));
+            case "carbon" -> CARBON.contains(p[1]);
+            case "compliance" -> {
+                String[] q = p[1].split(":");
+                yield q.length == 2 && COMPLIANCE.contains(q[1]) && Boolean.TRUE.equals(jdbc.queryForObject(
+                        "select exists (select 1 from compliance.regulatory_frameworks where code = ?)", Boolean.class, q[0]));
+            }
+            case "report" -> REPORT.contains(p[1]);
+            case "tenant" -> "name".equals(p[1]);
+            default -> false;
+        };
+    }
+
+    /** Resolves every variable for the period. */
+    public Map<String, VariableValue> resolve(Set<String> variables, LocalDate start, LocalDate end, String title) {
+        Map<String, VariableValue> out = new LinkedHashMap<>();
+        for (String v : variables) {
+            out.put(v, resolveOne(v, start, end, title));
+        }
+        return out;
+    }
+
+    private VariableValue resolveOne(String variable, LocalDate start, LocalDate end, String title) {
+        String[] p = variable.split(":", 2);
+        switch (p[0]) {
+            case "metric" -> {
+                return metric(p[1], start, end);
+            }
+            case "carbon" -> {
+                return carbon(p[1], start, end);
+            }
+            case "compliance" -> {
+                String[] q = p[1].split(":");
+                GapReport g;
+                try {
+                    g = compliance.gaps(q[0], end.getYear());
+                } catch (ApiException e) {
+                    return missing("unknown framework");
+                }
+                if (g.totalRequirements() == 0) {
+                    return missing("framework content not loaded");
+                }
+                String basis = "gap analysis " + q[0] + " " + end.getYear();
+                return switch (q[1]) {
+                    case "completeness" -> new VariableValue(num(g.overallCompleteness()) + "%", g.overallCompleteness(), "%", "ok", basis);
+                    case "met" -> new VariableValue(String.valueOf(g.met()), BigDecimal.valueOf(g.met()), null, "ok", basis);
+                    default -> new VariableValue(String.valueOf(g.totalRequirements()), BigDecimal.valueOf(g.totalRequirements()), null, "ok", basis);
+                };
+            }
+            case "report" -> {
+                String text = "title".equals(p[1]) ? title : DAY.format(start) + " to " + DAY.format(end);
+                return new VariableValue(text, null, null, "ok", "report");
+            }
+            case "tenant" -> {
+                String name = jdbc.queryForObject("select name from auth.tenants where id = auth.current_tenant_id()", String.class);
+                return new VariableValue(name, null, null, "ok", "tenant");
+            }
+            default -> {
+                return missing("unknown variable");
+            }
+        }
+    }
+
+    private VariableValue metric(String key, LocalDate start, LocalDate end) {
+        List<Map<String, Object>> m = jdbc.queryForList("select name, unit, aggregation from reference.metrics where metric_key = ?", key);
+        if (m.isEmpty()) {
+            return missing("unknown metric");
+        }
+        String unit = (String) m.get(0).get("unit");
+        boolean latest = "latest".equals(m.get(0).get("aggregation"));
+        String where = "from data_hub.data_points where deleted_at is null and validation_status = 'approved' and metric_key = ? "
+                + "and reporting_period_end between ? and ?";
+        Object[] args = {key, Date.valueOf(start), Date.valueOf(end)};
+        Integer n = jdbc.queryForObject("select count(*) " + where, Integer.class, args);
+        if (n == null || n == 0) {
+            return missing("no approved data in the period");
+        }
+        BigDecimal value = latest
+                // Latest period end; several organisations reporting that period are added up (e.g. headcount per site).
+                ? jdbc.queryForObject("select sum(numeric_value) " + where + " and reporting_period_end = (select max(reporting_period_end) "
+                        + where + ")", BigDecimal.class, key, Date.valueOf(start), Date.valueOf(end), key, Date.valueOf(start), Date.valueOf(end))
+                : jdbc.queryForObject("select sum(numeric_value) " + where, BigDecimal.class, args);
+        String display = num(value) + (unit == null || "count".equals(unit) ? "" : "%".equals(unit) ? "%" : " " + unit);
+        return new VariableValue(display, value, unit, "ok", n + " approved data point" + (n == 1 ? "" : "s") + (latest ? ", latest period" : ""));
+    }
+
+    private VariableValue carbon(String key, LocalDate start, LocalDate end) {
+        String filter = switch (key) {
+            case "scope1" -> "scope = 'scope_1'";
+            case "scope2_location" -> "scope = 'scope_2'";
+            case "scope3" -> "scope = 'scope_3'";
+            case "flaring" -> "record_source = 'flaring'";
+            default -> "true";
+        };
+        Map<String, Object> r = jdbc.queryForMap("select count(*) as n, coalesce(sum(co2e_tonnes), 0) as t from carbon.emission_records "
+                + "where deleted_at is null and reporting_period_end between ? and ? and " + filter, Date.valueOf(start), Date.valueOf(end));
+        long n = ((Number) r.get("n")).longValue();
+        if (n == 0) {
+            return missing("no emission records in the period");
+        }
+        BigDecimal t = ((BigDecimal) r.get("t")).setScale(3, RoundingMode.HALF_UP);
+        return new VariableValue(num(t) + " tCO2e", t, "tCO2e", "ok", n + " emission record" + (n == 1 ? "" : "s"));
+    }
+
+    /** Replaces each variable with its snapshot display value ("[not reported]" when missing). */
+    public static String render(String text, Map<String, VariableValue> snapshot) {
+        if (text == null) {
+            return null;
+        }
+        Matcher m = VAR.matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            VariableValue v = snapshot.get(m.group(1) + ":" + m.group(2));
+            String value = v == null || !"ok".equals(v.status()) ? "[not reported]" : v.display();
+            m.appendReplacement(out, Matcher.quoteReplacement(value));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    private static VariableValue missing(String why) {
+        return new VariableValue("[not reported]", null, null, "missing", why);
+    }
+
+    /** 1234567.5 → "1,234,567.5" (up to 3 decimals; no trailing zeros). */
+    static String num(BigDecimal v) {
+        if (v == null) {
+            return "";
+        }
+        DecimalFormat f = new DecimalFormat("#,##0.###", DecimalFormatSymbols.getInstance(Locale.UK));
+        return f.format(v);
+    }
+}

@@ -75,6 +75,24 @@ public class FileService {
         return get(fileId);
     }
 
+    /** Stores a file the platform produced (e.g. a report export) through the same checks, scan and storage as uploads. */
+    @Transactional
+    public FileInfo storeGenerated(byte[] content, String fileName, String contentType, String resourceType, UUID resourceId) {
+        return upload(new GeneratedFile(content, fileName, contentType), resourceType, resourceId);
+    }
+
+    /** Minimal in-memory MultipartFile for generated content. */
+    private record GeneratedFile(byte[] content, String fileName, String type) implements MultipartFile {
+        @Override public String getName() { return "file"; }
+        @Override public String getOriginalFilename() { return fileName; }
+        @Override public String getContentType() { return type; }
+        @Override public boolean isEmpty() { return content.length == 0; }
+        @Override public long getSize() { return content.length; }
+        @Override public byte[] getBytes() { return content.clone(); }
+        @Override public InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
+        @Override public void transferTo(java.io.File dest) throws IOException { Files.write(dest.toPath(), content); }
+    }
+
     @Transactional
     public FileInfo addVersion(UUID fileId, MultipartFile file) {
         FileInfo current = get(fileId);
