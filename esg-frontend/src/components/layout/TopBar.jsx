@@ -4,9 +4,11 @@ import {
   Typography, Divider,
 } from '@mui/material';
 import {
-  Search, NotificationsOutlined, HelpOutline, Language,
+  Search, HelpOutline, Language,
 } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import Can from '../rbac/Can';
+import NotificationBell from '../../features/notifications/components/NotificationBell';
 
 export default function TopBar() {
   const { user, logout } = useAuth();
@@ -45,10 +47,9 @@ export default function TopBar() {
         <IconButton size="small" sx={{ mr: 1 }}>
           <HelpOutline sx={{ color: '#718096', fontSize: 20 }} />
         </IconButton>
-        <IconButton size="small" sx={{ mr: 1 }}>
-          {/* Notification count arrives with the notification service (WP-15); no fake badge. */}
-          <NotificationsOutlined sx={{ color: '#718096', fontSize: 20 }} />
-        </IconButton>
+        <Can permission="notifications:read">
+          <NotificationBell />
+        </Can>
 
         <Divider orientation="vertical" flexItem sx={{ mx: 1.5 }} />
 

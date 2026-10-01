@@ -11,6 +11,7 @@ import OrganisationsTab from './OrganisationsTab';
 import PeriodsTab from './PeriodsTab';
 import SettingsTab from './SettingsTab';
 import TenantsTab from './TenantsTab';
+import AuditLogTab from '../../audit/components/AuditLogTab';
 import SetPasswordDialog from './SetPasswordDialog';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
@@ -185,6 +186,7 @@ function RolesTab() {
   );
 }
 
+// no-mock-gate: config — tab definitions, each gated by a permission
 const TABS = [
   { value: 'users', label: 'Users', permission: 'users:read', render: () => <UsersTab /> },
   { value: 'roles', label: 'Roles', permission: 'roles:read', render: () => <RolesTab /> },
@@ -192,10 +194,7 @@ const TABS = [
   { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
   { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
-  {
-    value: 'audit', label: 'Audit log', permission: 'audit_logs:read',
-    render: () => <Alert severity="info">The audit log viewer arrives with the audit service (WP-15).</Alert>,
-  },
+  { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
 ];
 
 export default function AdminPage() {

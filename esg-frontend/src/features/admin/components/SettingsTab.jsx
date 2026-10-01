@@ -9,6 +9,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
 import { useAuth } from '../../auth/hooks/useAuth';
 
+// no-mock-gate: config — calendar month names
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function SettingsTab() {

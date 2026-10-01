@@ -35,6 +35,7 @@ export function subtreeIds(orgs, rootId) {
   return result;
 }
 
+// no-mock-gate: config — mirrors the organisations_org_type_check constraint (V011)
 export const ORG_TYPES = [
   { value: 'group', label: 'Group' },
   { value: 'headquarters', label: 'Headquarters' },

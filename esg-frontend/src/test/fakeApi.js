@@ -11,7 +11,8 @@ export function fakeApi(routes) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/api\/v1/, '');
     const key = `${request.method} ${path}`;
-    const text = await request.text();
+    const isJson = (request.headers.get('Content-Type') ?? '').includes('json');
+    const text = isJson ? await request.text() : '';
     const body = text ? JSON.parse(text) : undefined;
     calls.push({ key, body, query: Object.fromEntries(url.searchParams), headers: request.headers });
     const handler = routes[key];
