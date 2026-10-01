@@ -96,6 +96,43 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 PCAF form"
+    "fields": {
+      "reportingYear": {
+        "label": "Year"
+      },
+      "assetClass": {
+        "label": "Asset class",
+        "kind": "select",
+        "display": "Project finance"
+      },
+      "counterparty": {
+        "label": "Counterparty"
+      },
+      "sector": {
+        "label": "Sector (optional)"
+      },
+      "outstandingAmount": {
+        "label": "Outstanding"
+      },
+      "denominatorValue": {
+        "label": "Denominator"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "counterpartyEmissions": {
+        "label": "Counterparty emissions"
+      },
+      "dataQualityScore": {
+        "label": "PCAF data quality",
+        "kind": "select",
+        "display": "3 — physical activity based"
+      },
+      "emissionsSource": {
+        "label": "Emissions source"
+      }
+    }
   }
 }

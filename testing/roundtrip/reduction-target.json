@@ -92,6 +92,41 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 targets form"
+    "fields": {
+      "targetName": {
+        "label": "Name"
+      },
+      "targetType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Absolute (tCO2e)"
+      },
+      "scope": {
+        "label": "Scope",
+        "kind": "select",
+        "display": "Scopes 1 + 2"
+      },
+      "baseYear": {
+        "label": "Base year"
+      },
+      "baseValue": {
+        "label": "Base value"
+      },
+      "targetYear": {
+        "label": "Target year"
+      },
+      "targetValue": {
+        "label": "Target value"
+      },
+      "pathway": {
+        "label": "Pathway",
+        "kind": "select",
+        "display": "Linear (equal tonnes each year)"
+      },
+      "sbtiAligned": {
+        "label": "Check against SBTi criteria",
+        "kind": "switch"
+      }
+    }
   }
 }

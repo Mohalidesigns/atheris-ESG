@@ -67,6 +67,45 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 calculator"
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A HQ"
+      },
+      "scope": {
+        "label": "Scope",
+        "kind": "select",
+        "display": "Scope 3 — value chain"
+      },
+      "scope3Category": {
+        "label": "Scope 3 category",
+        "kind": "select",
+        "display": "1. Purchased goods and services"
+      },
+      "calculationMethod": {
+        "label": "Spend-based (amount spent)",
+        "kind": "toggle"
+      },
+      "sourceActivity": {
+        "label": "Activity",
+        "kind": "select",
+        "display": "Fixture spend (kgCO2e/USD)"
+      },
+      "spendAmount": {
+        "label": "Amount spent"
+      },
+      "spendCurrency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      }
+    }
   }
 }

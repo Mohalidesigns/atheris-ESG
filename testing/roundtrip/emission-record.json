@@ -114,6 +114,41 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 calculator"
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A HQ"
+      },
+      "scope": {
+        "label": "Scope",
+        "kind": "select",
+        "display": "Scope 1 — direct"
+      },
+      "calculationMethod": {
+        "label": "Activity-based (litres, kWh, km…)",
+        "kind": "toggle"
+      },
+      "sourceActivity": {
+        "label": "Activity",
+        "kind": "select",
+        "display": "Diesel generator (kgCO2e/litre)"
+      },
+      "activityData": {
+        "label": "Activity data"
+      },
+      "activityUnit": {
+        "label": "Unit"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
   }
 }

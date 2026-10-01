@@ -85,6 +85,40 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 instruments form"
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A HQ"
+      },
+      "instrumentType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "REC (certificate)"
+      },
+      "energySource": {
+        "label": "Energy source",
+        "kind": "select",
+        "display": "Solar"
+      },
+      "mwh": {
+        "label": "Electricity covered"
+      },
+      "emissionFactor": {
+        "label": "Emission factor"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "certificateRef": {
+        "label": "Certificate reference"
+      },
+      "supplier": {
+        "label": "Supplier / registry"
+      }
+    }
   }
 }

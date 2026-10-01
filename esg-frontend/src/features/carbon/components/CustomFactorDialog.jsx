@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
-import { FormDateField, FormNumberField, FormTextField } from '../../../components/form/FormFields';
+import { FormDateField, FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
+import { CURRENCIES } from '../../admin/schemas';
 import { useCreateFactorMutation, useUpdateFactorMutation } from '../carbonApi';
 import { customFactorSchema, emptyFactor, toFactorBody, toFactorForm } from '../schemas';
 
@@ -12,10 +13,11 @@ export default function CustomFactorDialog({ open, factor, onClose }) {
   const [create, { isLoading: creating }] = useCreateFactorMutation();
   const [update, { isLoading: updating }] = useUpdateFactorMutation();
   const [formError, setFormError] = useState('');
-  const { control, handleSubmit, setError } = useForm({
+  const { control, handleSubmit, setError, setValue } = useForm({
     defaultValues: factor ? toFactorForm(factor) : emptyFactor,
     resolver: zodResolver(customFactorSchema),
   });
+  const method = useWatch({ control, name: 'factorMethod' });
 
   const onSubmit = async (values) => {
     setFormError('');
@@ -39,11 +41,21 @@ export default function CustomFactorDialog({ open, factor, onClose }) {
           </Typography>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormSelect control={control} name="factorMethod" label="Factor type"
+                onChange={(e) => { setValue('factorMethod', e.target.value); if (e.target.value !== 'spend') setValue('spendCurrency', ''); }}
+                options={[{ value: 'activity', label: 'Activity-based (per litre, kWh…)' }, { value: 'spend', label: 'Spend-based (per currency unit)' }]} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              {method === 'spend' && (
+                <FormSelect control={control} name="spendCurrency" label="Spend currency" options={CURRENCIES.map((c) => ({ value: c, label: c }))} />
+              )}
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="category" label="Category" placeholder="diesel_generator" /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="region" label="Country or region" /></Grid>
             <Grid size={12}><FormTextField control={control} name="subCategory" label="Description (optional)" /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="factorValue" label="Value" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="unit" label="Unit" placeholder="kgCO2e/litre" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="unit" label="Unit" placeholder={method === 'spend' ? 'kgCO2e/USD' : 'kgCO2e/litre'} /></Grid>
             <Grid size={12}><FormTextField control={control} name="source" label="Source" placeholder="e.g. supplier certificate 2026" /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="validFrom" label="Valid from" /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="validTo" label="Valid to (optional)" /></Grid>

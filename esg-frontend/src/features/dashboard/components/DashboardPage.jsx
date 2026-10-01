@@ -25,7 +25,7 @@ function Kpi({ title, value, unit, loading, error }) {
 
 function EmissionsKpi() {
   const { data, isLoading, isError } = useEmissionsSummaryQuery();
-  return <Kpi title="Total emissions" value={fmt(data?.totalCO2e)} unit="tCO2e, all recorded periods" loading={isLoading} error={isError} />;
+  return <Kpi title="Total emissions" value={fmt(data?.totalLocation)} unit={`tCO2e in ${data?.year ?? 'this year'} (location-based)`} loading={isLoading} error={isError} />;
 }
 
 function PendingReviewKpi() {
@@ -45,9 +45,9 @@ function FrameworksKpi() {
 function ScopeMix() {
   const { data, isLoading, isError, error, refetch } = useEmissionsSummaryQuery();
   const slices = [
-    { name: 'Scope 1', value: Number(data?.scope1Total ?? 0) },
-    { name: 'Scope 2', value: Number(data?.scope2Total ?? 0) },
-    { name: 'Scope 3', value: Number(data?.scope3Total ?? 0) },
+    { name: 'Scope 1', value: Number(data?.scope1 ?? 0) },
+    { name: 'Scope 2 (location)', value: Number(data?.scope2Location ?? 0) },
+    { name: 'Scope 3', value: Number(data?.scope3 ?? 0) },
   ];
   return (
     <Card sx={{ height: '100%' }}>

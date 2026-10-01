@@ -68,7 +68,7 @@ describe('SettingsTab', () => {
   it('loads saved settings and sends them back with the version', async () => {
     const calls = fakeApi({
       'GET /settings': () => ok({ tenantName: 'Demo', baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi',
-        defaultFrameworkCodes: ['GRI'], version: 5 }),
+        defaultFrameworkCodes: ['GRI'], gwpSet: 'AR5', version: 5 }),
       'GET /compliance/frameworks': () => ok([{ code: 'GRI' }, { code: 'ISSB_S2' }]),
       'PUT /settings': (body) => ok({ tenantName: 'Demo', ...body, version: 6 }),
     });
@@ -78,7 +78,8 @@ describe('SettingsTab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save settings' }));
     await waitFor(() => expect(calls.some((c) => c.key === 'PUT /settings')).toBe(true));
     expect(calls.find((c) => c.key === 'PUT /settings').body).toEqual({
-      baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi', defaultFrameworkCodes: ['GRI', 'ISSB_S2'], version: 5,
+      baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi', defaultFrameworkCodes: ['GRI', 'ISSB_S2'], gwpSet: 'AR5',
+      version: 5,
     });
   });
 

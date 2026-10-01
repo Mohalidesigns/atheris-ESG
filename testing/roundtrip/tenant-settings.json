@@ -89,6 +89,11 @@
           "TCFD",
           "ISSB_S2"
         ]
+      },
+      "gwpSet": {
+        "label": "Global warming potentials",
+        "kind": "select",
+        "display": "IPCC AR5 (CH4 28, N2O 265)"
       }
     }
   }

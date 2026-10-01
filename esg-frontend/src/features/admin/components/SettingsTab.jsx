@@ -21,13 +21,14 @@ export default function SettingsTab() {
   const [message, setMessage] = useState(null);
   const { register, control, handleSubmit, reset, setError, formState: { errors } } = useForm({
     resolver: zodResolver(settingsSchema),
-    defaultValues: { baseCurrency: 'NGN', fiscalYearStartMonth: 1, reportingTimezone: '', defaultFrameworkCodes: [] },
+    defaultValues: { baseCurrency: 'NGN', fiscalYearStartMonth: 1, reportingTimezone: '', defaultFrameworkCodes: [], gwpSet: 'AR6' },
   });
 
   useEffect(() => {
     if (settings) {
       reset({ baseCurrency: settings.baseCurrency, fiscalYearStartMonth: settings.fiscalYearStartMonth,
-        reportingTimezone: settings.reportingTimezone, defaultFrameworkCodes: settings.defaultFrameworkCodes });
+        reportingTimezone: settings.reportingTimezone, defaultFrameworkCodes: settings.defaultFrameworkCodes,
+        gwpSet: settings.gwpSet ?? 'AR6' });
     }
   }, [settings, reset]);
 
@@ -70,6 +71,15 @@ export default function SettingsTab() {
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField fullWidth size="small" label="Reporting time zone" disabled={!canEdit} {...register('reportingTimezone')}
               error={!!errors.reportingTimezone} helperText={errors.reportingTimezone?.message} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Controller name="gwpSet" control={control} render={({ field }) => (
+              <TextField select fullWidth size="small" label="Global warming potentials" disabled={!canEdit} {...field}
+                error={!!errors.gwpSet} helperText={errors.gwpSet?.message ?? 'Converts CH4 and N2O to CO2e. New calculations use it; run Recalculate for past ones.'}>
+                <MenuItem value="AR6">IPCC AR6 (CH4 29.8, N2O 273)</MenuItem>
+                <MenuItem value="AR5">IPCC AR5 (CH4 28, N2O 265)</MenuItem>
+              </TextField>
+            )} />
           </Grid>
           <Grid size={12}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Default frameworks</Typography>

@@ -52,6 +52,35 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 factor dialog"
+    "fields": {
+      "region": {
+        "label": "Country or region"
+      },
+      "category": {
+        "label": "Category"
+      },
+      "factorValue": {
+        "label": "Value"
+      },
+      "unit": {
+        "label": "Unit"
+      },
+      "source": {
+        "label": "Source"
+      },
+      "validFrom": {
+        "label": "Valid from"
+      },
+      "factorMethod": {
+        "label": "Factor type",
+        "kind": "select",
+        "display": "Spend-based (per currency unit)"
+      },
+      "spendCurrency": {
+        "label": "Spend currency",
+        "kind": "select",
+        "display": "USD"
+      }
+    }
   }
 }

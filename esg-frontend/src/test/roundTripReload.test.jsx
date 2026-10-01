@@ -7,6 +7,11 @@ import SettingsTab from '../features/admin/components/SettingsTab';
 import TenantsTab from '../features/admin/components/TenantsTab';
 import UserFormDialog from '../features/admin/components/UserFormDialog';
 import CustomFactorDialog from '../features/carbon/components/CustomFactorDialog';
+import EmissionCalculator from '../features/carbon/components/EmissionCalculator';
+import { FinancedDialog } from '../features/carbon/components/FinancedTab';
+import { FlaringDialog } from '../features/carbon/components/FlaringTab';
+import { InstrumentDialog } from '../features/carbon/components/InstrumentsTab';
+import { TargetDialog } from '../features/carbon/components/TargetsTab';
 import DataPointDialog from '../features/dataHub/components/DataPointDialog';
 import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab';
 import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
@@ -79,10 +84,32 @@ const openDataPoint = async (record) => {
   return dialog;
 };
 
+// Factors the calculator offers (shape of GET /carbon/factors): the activities the emission specs use.
+const FACTORS = [
+  { id: 'ef-diesel', region: 'GLOBAL', category: 'diesel_generator', factorValue: 2.68, unit: 'kgCO2e/litre', source: 'IPCC 2006', factorVersion: '1', factorMethod: 'activity' },
+  { id: 'ef-spend', region: 'GLOBAL', category: 'fixture_spend', factorValue: 0.5, unit: 'kgCO2e/USD', source: 'Fixture', factorVersion: '1', factorMethod: 'spend', spendCurrency: 'USD' },
+];
+const openEmission = async (record) => {
+  fakeApi({
+    'GET /carbon/factors': () => ok(FACTORS),
+    'GET /reference/scope3-categories': () => ok([{ category: 1, name: 'Purchased goods and services', direction: 'upstream' }]),
+  });
+  renderWithStore(<EmissionCalculator open record={record} orgs={FIXTURE_ORGS} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+  const dialog = await screen.findByRole('dialog');
+  // The activity select shows its label only once the factor list has loaded.
+  await within(dialog).findByText(/\(kgCO2e\//, {}, { timeout: 2000 }).catch(() => null);
+  await new Promise((r) => { setTimeout(r, 50); });
+  return dialog;
+};
+const dialogOf = (element) => async (record) => {
+  renderWithStore(element(record), { preloadedState: authenticated(ALL) });
+  return screen.findByRole('dialog');
+};
+
 const ALL = ['data_points:create', 'data_points:update', 'data_sources:read', 'data_sources:manage', 'fx_rates:read',
   'fx_rates:manage', 'files:create', 'files:read', 'org_structure:read', 'org_structure:update', 'reporting_periods:read', 'reporting_periods:update',
   'tenant_settings:read', 'tenant_settings:configure', 'compliance:read', 'tenants:read', 'tenants:update',
-  'users:read', 'users:update', 'emission_factors:manage', 'reference_data:read'];
+  'users:read', 'users:update', 'emission_factors:manage', 'reference_data:read', 'carbon_data:create', 'carbon_data:update'];
 
 /** How to open each form's edit view with a saved record. Returns the element containing the form. */
 const openers = {
@@ -136,6 +163,17 @@ const openers = {
       { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
+  'custom-spend-factor': async (record) => {
+    renderWithStore(<CustomFactorDialog open factor={{ ...record, custom: true }} onClose={() => {}} />,
+      { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'emission-record': openEmission,
+  'emission-spend': openEmission,
+  'gas-flaring': dialogOf((r) => <FlaringDialog record={r} orgs={FIXTURE_ORGS} onClose={() => {}} />),
+  'energy-instrument': dialogOf((r) => <InstrumentDialog instrument={r} orgs={FIXTURE_ORGS} onClose={() => {}} />),
+  'reduction-target': dialogOf((r) => <TargetDialog target={r} onClose={() => {}} />),
+  'financed-position': dialogOf((r) => <FinancedDialog position={r} year={2026} onClose={() => {}} />),
 };
 
 const editable = specs.filter((s) => s.kind !== 'command' && !s.ui?.createOnly);
@@ -161,7 +199,14 @@ describe('UI reload generator: edit forms show every saved value', () => {
       const value = shownValue(spec, record, field);
       const shown = ui.display ?? (value == null ? '' : String(value));
       if (ui.kind === 'select') {
-        expect(form.getByRole('combobox', { name: ui.label }), `${spec.id}.${field}`).toHaveTextContent(shown);
+        // hidden: true — multi-step forms (the emission calculator) keep later steps in the DOM but hidden.
+        expect(form.getByRole('combobox', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveTextContent(shown);
+      } else if (ui.kind === 'toggle') {
+        expect(form.getByRole('button', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveAttribute('aria-pressed', 'true');
+      } else if (ui.kind === 'object') {
+        for (const [key, label] of Object.entries(ui.labels)) {
+          expect(form.getByLabelText(label), `${spec.id}.${field}.${key}`).toHaveValue(value[key] == null ? '' : String(value[key]));
+        }
       } else if (ui.kind === 'switch') {
         const input = form.getByLabelText(ui.label);
         if (value) expect(input, `${spec.id}.${field}`).toBeChecked();

@@ -101,6 +101,44 @@
     }
   ],
   "ui": {
-    "pending": "filled in with the WP-21 flaring form"
+    "fields": {
+      "facilityId": {
+        "label": "Facility",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "volumeMcf": {
+        "label": "Volume flared"
+      },
+      "gasComposition": {
+        "kind": "object",
+        "labels": {
+          "methane": "Methane (CH4)",
+          "ethane": "Ethane (C2H6)",
+          "propane": "Propane (C3H8)",
+          "butane": "Butane (C4H10)",
+          "pentane_plus": "Pentane+ (C5+)",
+          "co2": "Carbon dioxide (CO2)",
+          "nitrogen": "Nitrogen (N2)"
+        }
+      },
+      "combustionEfficiency": {
+        "label": "Combustion efficiency"
+      },
+      "flaringReason": {
+        "label": "Reason",
+        "kind": "select",
+        "display": "Routine"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
   }
 }
