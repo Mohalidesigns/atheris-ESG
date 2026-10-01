@@ -49,3 +49,34 @@ Cypress.Commands.add('apiToken', (email) => cy.env(['password']).then(({ passwor
 /** Calls the API with a bearer token. */
 Cypress.Commands.add('api', (token, method, url, body) =>
   cy.request({ method, url: `/api/v1${url}`, body, headers: { Authorization: `Bearer ${token}` } }).its('body.data'));
+
+/**
+ * Runs the Emission Calculator (Carbon → Emission records → Calculate emissions) up to the server-calculated result.
+ * Leaves the dialog open on the result step so the journey can check it and save.
+ */
+Cypress.Commands.add('calculateEmission', ({ scope, scope3Category, spend = false, activity, org, day, amount, currency }) => {
+  cy.contains('button', 'Calculate emissions').click();
+  const dialog = '[role="dialog"]';
+  if (scope) cy.pick('Scope', scope, { within: dialog });
+  if (scope3Category) cy.pick('Scope 3 category', scope3Category, { within: dialog });
+  if (spend) cy.get(dialog).contains('button', 'Spend-based').click();
+  cy.get(dialog).contains('button', 'Next').click();
+  cy.pick('Activity', activity, { within: dialog });
+  cy.pick('Organisation', org, { within: dialog });
+  cy.get(dialog).within(() => {
+    cy.field('Period start').type(day);
+    cy.field('Period end').type(day);
+    cy.contains('button', 'Next').click();
+    cy.field(spend ? 'Amount spent' : 'Activity data').type(String(amount));
+  });
+  if (currency) cy.pick('Currency', currency, { within: dialog });
+  cy.get(dialog).contains('button', 'Calculate').click();
+  cy.get('[aria-label="Calculation result"]').should('be.visible');
+});
+
+/** Opens a Carbon Accounting tab for a year. */
+Cypress.Commands.add('carbonTab', (tab, year) => {
+  cy.visit('/carbon');
+  if (year) cy.pick('Year', String(year));
+  cy.contains('[role="tab"]', tab).click();
+});
