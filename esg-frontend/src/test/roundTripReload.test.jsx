@@ -12,6 +12,8 @@ import { FinancedDialog } from '../features/carbon/components/FinancedTab';
 import { FlaringDialog } from '../features/carbon/components/FlaringTab';
 import { InstrumentDialog } from '../features/carbon/components/InstrumentsTab';
 import { TargetDialog } from '../features/carbon/components/TargetsTab';
+import { ChangeDialog } from '../features/compliance/components/ChangesTab';
+import { DeadlineDialog } from '../features/compliance/components/DeadlinesTab';
 import DataPointDialog from '../features/dataHub/components/DataPointDialog';
 import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab';
 import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
@@ -34,12 +36,15 @@ const ORG_SITE_1 = 'a0000000-0000-4000-8000-0000000001a1';
 const ORG_SITE_2 = 'a0000000-0000-4000-8000-0000000002a2';
 const SOURCE_A = 'a0000000-0000-4000-8000-0000000000c1';
 const FILE_A = 'a0000000-0000-4000-8000-0000000004f1';
+const USER_COMPLIANCE = 'a1000000-0000-4000-8000-000000000011';
+const USER_DIRECTOR = 'a1000000-0000-4000-8000-000000000003';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
     return v.replaceAll('{u}', 'rt0001').replaceAll('{yyyy}', '2301')
       .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
-      .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A);
+      .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
+      .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR);
   }
   if (Array.isArray(v)) return v.map(resolve);
   return v;
@@ -99,6 +104,24 @@ const openEmission = async (record) => {
   // The activity select shows its label only once the factor list has loaded.
   await within(dialog).findByText(/\(kgCO2e\//, {}, { timeout: 2000 }).catch(() => null);
   await new Promise((r) => { setTimeout(r, 50); });
+  return dialog;
+};
+// Frameworks and owners the compliance forms offer (shapes of GET /compliance/frameworks and /compliance/owners).
+const complianceApi = () => fakeApi({
+  'GET /compliance/frameworks': () => ok([
+    { code: 'CBN_NSBP', name: 'CBN Nigerian Sustainable Banking Principles', requirementCount: 9 },
+    { code: 'ISSB_S2', name: 'IFRS S2 Climate-related Disclosures', requirementCount: 43 },
+  ]),
+  'GET /compliance/owners': () => ok([
+    { id: USER_COMPLIANCE, name: 'Compliance Officer Fixture', email: 'compliance_officer@fixture.test' },
+    { id: USER_DIRECTOR, name: 'Esg Director Fixture', email: 'esg_director@fixture.test' },
+  ]),
+});
+const openCompliance = (element) => async (record) => {
+  complianceApi();
+  renderWithStore(element(record), { preloadedState: authenticated(ALL) });
+  const dialog = await screen.findByRole('dialog');
+  await within(dialog).findByText(/Compliance Officer Fixture/, {}, { timeout: 2000 });
   return dialog;
 };
 const dialogOf = (element) => async (record) => {
@@ -174,6 +197,8 @@ const openers = {
   'energy-instrument': dialogOf((r) => <InstrumentDialog instrument={r} orgs={FIXTURE_ORGS} onClose={() => {}} />),
   'reduction-target': dialogOf((r) => <TargetDialog target={r} onClose={() => {}} />),
   'financed-position': dialogOf((r) => <FinancedDialog position={r} year={2026} onClose={() => {}} />),
+  'filing-deadline': openCompliance((r) => <DeadlineDialog deadline={r} onClose={() => {}} />),
+  'regulatory-change': openCompliance((r) => <ChangeDialog change={r} onClose={() => {}} />),
 };
 
 const editable = specs.filter((s) => s.kind !== 'command' && !s.ui?.createOnly);
@@ -215,8 +240,8 @@ describe('UI reload generator: edit forms show every saved value', () => {
         expect(await form.findByText(ui.display), `${spec.id}.${field}`).toBeInTheDocument();
       } else if (ui.kind === 'checkboxes') {
         for (const option of ui.options) {
-          const box = form.getByLabelText(option);
-          if (value.includes(option)) expect(box, `${spec.id}.${field}=${option}`).toBeChecked();
+          const box = form.getByLabelText(String(option));
+          if (value.map(String).includes(String(option))) expect(box, `${spec.id}.${field}=${option}`).toBeChecked();
           else expect(box, `${spec.id}.${field}=${option}`).not.toBeChecked();
         }
       } else {

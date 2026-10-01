@@ -24,15 +24,10 @@ export const referenceApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       providesTags: ['Framework'],
     }),
-    gapAnalysis: build.query({
-      query: ({ framework, year }) => ({ url: '/compliance/gaps', params: { framework, year } }),
-      transformResponse: unwrap,
-      providesTags: ['Gap'],
-    }),
   }),
 });
 
 export const {
   useMetricsQuery, useCurrenciesQuery, useCountriesQuery, useSdgsQuery, useScope3CategoriesQuery, useSectorsQuery,
-  useFrameworksQuery, useRequirementsQuery, useMappingsQuery, useGapAnalysisQuery,
+  useFrameworksQuery, useRequirementsQuery, useMappingsQuery,
 } = referenceApi;

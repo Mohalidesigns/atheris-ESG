@@ -7,15 +7,20 @@ import { useListFilesQuery, useStorageInfoQuery, useUploadFileMutation } from '.
 import { MAX_EVIDENCE } from '../schemas';
 
 /**
- * Evidence for a data point form (FIELD_INVENTORY F2.1). Files upload straight away (type and size checked exactly as
- * FileTypePolicy does) and the form keeps their ids; the server links them to the point when it's saved.
+ * Evidence for a form (FIELD_INVENTORY F2.1; reused by Compliance attestations and filings). Files upload straight away
+ * (type and size checked exactly as FileTypePolicy does) and the form keeps their ids; the server links them on save.
+ * `resourceType` tags the upload; saved names are listed by `resourceType` (+ `dataPointId` for data points).
  */
-export default function EvidencePicker({ value, onChange, dataPointId, error, disabled }) {
+export default function EvidencePicker({
+  value, onChange, dataPointId, error, disabled, resourceType = 'data_point', max = MAX_EVIDENCE,
+  caption = 'Evidence (invoices, meter photos, reports)',
+}) {
   const input = useRef(null);
   const [problem, setProblem] = useState('');
   const [names, setNames] = useState({});
   const { data: info } = useStorageInfoQuery();
-  const { data: saved = [] } = useListFilesQuery({ resourceType: 'data_point', resourceId: dataPointId }, { skip: !dataPointId });
+  const { data: saved = [] } = useListFilesQuery({ resourceType, resourceId: dataPointId },
+    { skip: resourceType === 'data_point' ? !dataPointId : value.length === 0 });
   const [upload, { isLoading }] = useUploadFileMutation();
   const label = useMemo(() => ({ ...Object.fromEntries(saved.map((f) => [f.id, f.originalName])), ...names }), [saved, names]);
 
@@ -30,7 +35,7 @@ export default function EvidencePicker({ value, onChange, dataPointId, error, di
       return;
     }
     try {
-      const stored = await upload({ file, resourceType: 'data_point' }).unwrap();
+      const stored = await upload({ file, resourceType }).unwrap();
       setNames((n) => ({ ...n, [stored.id]: stored.originalName }));
       onChange([...value, stored.id]);
     } catch (err) {
@@ -40,7 +45,7 @@ export default function EvidencePicker({ value, onChange, dataPointId, error, di
 
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary">Evidence (invoices, meter photos, reports)</Typography>
+      <Typography variant="caption" color="text.secondary">{caption}</Typography>
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', mt: 0.5 }}>
         {value.map((id) => (
           <Chip key={id} size="small" icon={<AttachFile />} label={label[id] ?? 'Attached file'}
@@ -48,7 +53,7 @@ export default function EvidencePicker({ value, onChange, dataPointId, error, di
         ))}
         <input ref={input} type="file" hidden onChange={onChosen} data-testid="evidence-input" />
         <Button size="small" variant="outlined" onClick={() => input.current.click()}
-          disabled={disabled || isLoading || value.length >= MAX_EVIDENCE}
+          disabled={disabled || isLoading || value.length >= max}
           startIcon={isLoading ? <CircularProgress size={14} /> : <AttachFile />}>
           Attach evidence
         </Button>
