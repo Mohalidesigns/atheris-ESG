@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (branch `feature/wp-20-data-hub`, stacked on #7) |
-| Next | **Gate G1 review**; **WP-21** (Carbon), **WP-22** (Compliance). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (branch `feature/wp-21-carbon`, stacked on #8) |
+| Next | **Gate G1 review**; **WP-22** (Compliance). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **93 / 93** active fields WORK end to end with tests (WP-20 added the data point source/evidence/currency, data source, exchange rate and import mapping forms, and placed the evidence upload); **every WORKS field is now covered by the round-trip generator** or a named test (build fails otherwise). WP-19 added the module-entitlement form (2). Earlier: (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs E2E, WP-18). RTM overall (267 rows): **15 at L4**, 14 at L3 | `RTM.csv` |
+| Fields at L4+ / total fields | **146 / 146** active fields WORK end to end with tests (WP-21 added the Emission Calculator, gas flaring, energy instrument, reduction target, PCAF position and spend-factor forms and the GWP setting); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`); 15 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (16 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 42 at L4**, 15 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (17 at L4), 38 missing. All code endpoints: **69 / 70 tested** (55 at L4, 13 at L3, 2 at L2) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **5 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 29 (audit trail of an approved point); 17 Cypress tests on a fresh seeded DB | `esg-frontend/cypress/e2e/` |
-| Test coverage | **Backend 86.8% lines** (456 tests incl. 130 generated round-trip tests; `com.esg.datahub` 90.7%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 192 tests** (Vitest + RTL) + **17 Cypress** | JaCoCo, CI |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **24 / 58** implemented (23 at L4), 34 missing. All code endpoints: **105 / 105 tested** (93 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
+| E2E journeys passing / 30 | **10 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5 (Scope 2 grid + REC), 6 (diesel generator), 7 (gas flaring), 8 (Scope 3 spend), 9 (reduction target), 29 (audit trail); 22 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
+| Test coverage | **Backend 87.1% lines** (560 tests incl. 212 generated round-trip tests; `com.esg.carbon` 85.0%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 257 tests** (Vitest + RTL) + **22 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,41 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-21 — M2 Carbon Accounting
+
+Branch `feature/wp-21-carbon` (stacked on WP-20, PR #8).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Journeys 5–9 green | ✅ locally | `scripts/e2e.sh`: 10 specs, 22 tests, no retries (fresh seeded DB). Each journey checks a golden value: 10,000 kWh → 4.3 t (+ REC 5 MWh → 2.15 t avoided), 1,000 L diesel → 2.68 t (edit → 4.02 t), 1,000 Mcf flared → 69.828 t, USD 2,000 × 0.5 → 1 t, target 40 → 20 with 10 t actual → achieved |
+| Golden tests pass | ✅ | `CarbonCalculatorsTest` (8): CO2e-only factors, per-gas AR5/AR6, flaring (pure methane, composition with inert CO2), PCAF, pathways, SBTi checks; API-level goldens in `CarbonApiTest` (12) |
+| Each record stores factor id + version | ✅ | factor id, version, value, unit, level, GWP set and per-gas tonnes on `emission_records` (V020); lineage to factor and data point (`CarbonApiTest`, `AuditTrailTest`) |
+| M2 fields 100% round-trip | ✅ | 8 carbon specs (emission record, spend emission, flaring, instrument, target, PCAF position, custom + spend factor) + GWP setting in `FieldRoundTripTest` (212 generated tests) and `roundTripReload.test.jsx`; mutation-checked: breaking the reload of a field in five of the forms (emission, flaring, target, spend factor, PCAF) fails the generator |
+| M2 RTM rows at L5 | ⏳ | BRD-5.2.2-01/02/04/05/06/07/08 and the TRD §8.2 calculators meet every automated L5 item (L4 recorded); L5 after human code review. BRD-5.2.2-03 and Scope3Estimator stay L3 (datasets), satellite integration L3 (Sandbox only) |
+
+What was built:
+- **Engine** (TRD §8.2): per-gas CO2e with the tenant's GWP set (AR6 default, AR5 option in Admin → Settings); factor hierarchy custom → country → region → global; provenance stored per record; recalculation job (`POST /carbon/calculate`, TRD path); the client can't send tonnes.
+- **Emission Calculator** (TRD §7.4): scope → activity (organisation, period) → amount → server-calculated result with factor source, version, level and per-gas split → save. Activity- or spend-based.
+- **Data Hub link**: approving electricity/fuel data points creates Scope 1/2 records with lineage; reopening removes them.
+- **Scope 2 market-based** with RECs, PPAs and green tariffs; **Scope 3** by category, spend-based with tenant spend factors (FX-converted).
+- **Gas flaring** by gas composition and combustion efficiency, one Scope 1 record per flaring record; satellite check via a **Sandbox** adapter.
+- **Targets**: linear/contraction pathways, progress against recorded emissions, status, SBTi near-term findings, chart.
+- **Intensity** per million revenue, per employee, per unit produced (approved Data Hub denominators); **PCAF** financed emissions for 6 asset classes.
+- **Overview dashboard** for a chosen year: scope totals (location and market), monthly, by source, by organisation, Scope 3 by category, intensity. The Executive Dashboard reads the new summary.
+
+Bugs found and fixed (by the E2E journeys):
+- The Records tab crashed when a flaring record was listed (those records have no factor).
+- Switching the calculator to spend-based dropped the hidden activity amount from the form, so Calculate silently did nothing; errors on another wizard step are now shown by returning to that step.
+
+Open:
+- **ESG SME:** method choices and constants in D22 (GWP default, flaring stoichiometry and 98% efficiency, SBTi subset, market-based simplifications); per-gas fuel factors.
+- Two RECs over the same grid records can each claim the same kWh; no residual-mix factors (D22 (5)).
+- No EEIO spend dataset and no hybrid Scope 3 method; Cat 3 well-to-tank factors missing (D22 (6)).
+- Satellite flaring data: only the Sandbox adapter (needs a provider, WP-41/43 timeframe).
+- Lineage viewer UI.
 
 ---
 
