@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (branch `feature/wp-22-compliance`, stacked on #9) |
-| Next | **Gate G1 review**; **WP-23** (Reporting). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (branch `feature/wp-23-reporting`, stacked on #10) |
+| Next | **Gate G1 review**; **WP-24** (Executive Dashboard). **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **176 / 176** active fields WORK end to end with tests (WP-22 added filing deadline, filing submission and waiver, regulatory change, impact assessment, requirement attestation, active frameworks and cross-framework mapping); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`) or named API tests (`covered-elsewhere.json`); 15 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (20 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 52 at L4**, 16 at L3 | `RTM.csv` |
+| Fields at L4+ / total fields | **188 / 188** active fields WORK end to end with tests (WP-23 rebuilt the Create New Report form on the real API and added the section editor, approval decision and export); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`) or named API tests (`covered-elsewhere.json`); 10 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (22 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 57 at L4**, 20 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | TRD catalogue: **27 / 58** implemented (26 at L4), 31 missing. All code endpoints: **115 / 115 tested** (103 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **13 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon: grid + REC, diesel, flaring, Scope 3 spend, target), 10 (gap closes on data), 11 (GRI maps to ISSB), 12 (deadline alert), 29 (audit trail); 25 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
-| Test coverage | **Backend 88.2% lines** (609 tests incl. 242 generated round-trip tests; `com.esg.compliance` 94.4%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 302 tests** (Vitest + RTL) + **25 Cypress** | JaCoCo, Vitest |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **32 / 58** implemented (31 at L4), 26 missing. All code endpoints: **128 / 128 tested** (116 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
+| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); 26 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
+| Test coverage | **Backend 88.5% lines** (633 tests incl. 254 generated round-trip tests; `com.esg.reporting` 91.9%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 324 tests** (Vitest + RTL) + **26 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,34 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-23 — M4 Reporting (basic)
+
+Branch `feature/wp-23-reporting` (stacked on WP-22, PR #10).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| Journey 13 green | ✅ locally | `scripts/e2e.sh`: 14 specs, 26 tests, no retries. The manager creates a GRI report for a period with approved electricity (8,420 kWh appears in the snapshot), edits it (v0.2), submits; ESG Director, Compliance Officer and Board Member approve in turn (v1.0); the PDF export of v1.0 is a real PDF |
+| Generated report values match snapshot | ✅ | `ReportingApiTest.journey13…`: the PDF text contains the snapshot's values (1,750 kWh, 2.68 tCO2e, "[not reported]") and not data approved after approval; every row of the Excel Data sheet equals the approved version's snapshot, value by value; a reopened report still exports v1.0 |
+| M4 basic fields 100% round-trip | ✅ | `report` spec (create + details) in `FieldRoundTripTest` and the UI reload generator; sections, approval decision and export covered by `ReportingApiTest` (`covered-elsewhere.json`) |
+
+What was built:
+- **Templates** (GRI, IFRS S2, CBN NSBP): guidance prompts and data text with `{{variables}}` for Data Hub metrics, Carbon scopes, compliance completeness and report details (D24 (1), (2)).
+- **Snapshot**: values captured at creation and on "Refresh data" only; approval and exports never read live data. Missing values show "[not reported]" with the reason.
+- **Versions**: v0.n drafts, vN.0 approvals, revisions after reopening; immutable copies with a compare (line diff).
+- **Approval**: ESG Director review → Compliance review → Board sign-off, 5-day SLA per step with a daily overdue reminder; nobody approves their own submission or two steps; send-back with comments.
+- **Export**: PDF (Thymeleaf + Flying Saucer) and Excel (Apache POI) of the approved version, stored via the file service.
+- **Reporting page**: list, create from a template with preview, section editor with "Insert data", data snapshot, approval panel, versions, exports.
+
+Fixed along the way:
+- `NotificationServiceTest` assumed its email was in the dispatcher's first batch of 50; with more tests queuing email it now drains the queue.
+
+Open:
+- **Product owner:** approval chain (Board stands in for CFO/CEO sign-off) and the 5-day SLA (D24 (4)).
+- **ESG SME:** SEC Nigeria and NGX templates; review of the GRI, IFRS S2 and CBN templates.
+- WYSIWYG/drag-and-drop builder, collaborative editing, HTML/Word/XBRL exports, multi-language and white-label: later WPs (XBRL WP-30).
 
 ---
 
