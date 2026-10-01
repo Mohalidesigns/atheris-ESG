@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (branch `feature/wp-16-17-data-layer-refdata`, stacked on #5) |
-| Next | **WP-18** (E2E runner + field round-trip generator), **WP-19** (subscriptions); then P2 module build-outs **WP-20** (Data Hub), **WP-21** (Carbon), **WP-22** (Compliance). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (branch `feature/wp-18-19-test-harness-entitlements`, stacked on #6) |
+| Next | **Gate G1 review** (below); then P2 module build-outs **WP-20** (Data Hub), **WP-21** (Carbon), **WP-22** (Compliance). **Product owner:** confirm plan contents (D20). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,12 +13,12 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **73 / 74** active fields WORK end to end with tests (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
+| Fields at L4+ / total fields | **75 / 76** active fields WORK end to end with tests; **every WORKS field is now covered by the round-trip generator** or a named test (build fails otherwise). WP-19 added the module-entitlement form (2). Earlier: (WP-16/17 added Data Hub add-form 6, Data Hub filters 2, custom emission factor 8, emissions filter 1, gap analysis 2). The 1 left is the file upload component (no host page until WP-20). 15 removed: fake controls and dialogs with no backend (calculator, report dialog, top-bar search, derived category/unit) | `FIELD_INVENTORY.csv` |
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (L5 needs E2E, WP-18). RTM overall (267 rows): **15 at L4**, 14 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **20 / 58** implemented (17 at L4), 38 missing. All code endpoints: **69 / 70 tested** (55 at L4, 13 at L3, 2 at L2) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **0 / 30** (no E2E framework) | — |
-| Test coverage | **Backend 84.6% lines** (278 tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 153 tests** (Vitest + RTL) | JaCoCo, CI |
+| E2E journeys passing / 30 | **2 / 30**: journey 1 (tenant onboarding) and journey 2 (12 roles × menus), Cypress on a fresh seeded DB; CI `e2e` job added | `esg-frontend/cypress/e2e/` |
+| Test coverage | **Backend 85.6% lines** (389 tests incl. 98 generated round-trip tests; 1 MinIO test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 169 tests** (Vitest + RTL) + **14 Cypress** | JaCoCo, CI |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,46 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-18 + WP-19 — Test harness & field round-trip generator; subscriptions & module entitlements
+
+Branch `feature/wp-18-19-test-harness-entitlements` (stacked on WP-16/17, PR #6).
+
+| Acceptance criterion | Result | Evidence |
+|---|---|---|
+| WP-18: generator produces passing tests for Login + Admin forms | ✅ | `FieldRoundTripTest`: 98 generated tests over 8 specs (login, MFA, user create/edit, organisation, reporting period, tenant settings, platform tenant, data point, custom factor); `roundTripReload.test.jsx`: every edit form reloads every saved value. Mutation-checked: dropping the timezone update and the stateRegion reload each failed the generator |
+| WP-18: inventory coverage enforced | ✅ | `inventoryIsFullyCovered`: every `WORKS` row has a spec value or a named, existing hand-written test (`covered-elsewhere.json`); mutation-checked by removing `timezone` from a spec |
+| WP-18: Testcontainers base + local fallback; 12-role factories | ✅ | `PostgresTestDatabase` (PG 17 Testcontainer, non-owner app role, RLS; `ESG_TEST_DB_URL` fallback while Docker is missing); fixture users for all 12 roles in two tenants (`fixture.sql`, `ApiTestSupport.bearerForRole`) |
+| WP-18: Cypress project, seeded DB, login helpers; journeys 1–2 | ✅ locally, CI job added | `scripts/e2e.sh` (fresh `esg_e2e`, backend jar on the local seed, `vite preview`): 14/14 passing, no retries. CI `e2e` job runs the same on PR #7 |
+| WP-19: module disabled → its endpoints 403 and menu hidden | ✅ | `SubscriptionEntitlementTest.disabledModuleReturns403AndLeavesTheMenuWithTheSameToken` (same token: 200 → 403 → 200; `/auth/me` drops the permissions and module); `navigation.test.js`, `AppRoutes.test.jsx` (not-in-plan page) |
+| Gate G1 (master plan §5) | ⏳ team review | See below |
+
+**Gate G1 status**
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| A user of each of the 12 roles can log in on a clean clone | ✅ | Journey 2 on a freshly created database |
+| Cross-tenant access returns nothing (tested) | ✅ | `RlsIsolationTest` (every tenant table), generator isolation test per form, `SubscriptionEntitlementTest.tenantsCannotSeeEachOthersOverrides` |
+| CI is green | ⏳ | PRs #6 and #7 waiting for CI |
+| No mock imports in `src/pages` | ✅ | No-mock gate ENFORCE, 0 findings |
+| Admin Console at L5 | ⏳ | All automated DoD items met (API, RLS, RBAC, validation mirror, round-trip generator, reload tests, E2E journey 1, module note `docs/modules/admin-console.md`); remaining: human code review |
+
+What was built:
+- **WP-18:** field round-trip generator (`testing/roundtrip/*.json` → JUnit dynamic tests + RTL reload tests), schema-wide guard that every tenant table has the change-log trigger (it caught V017 missing one), Cypress 16 with label-based commands, journeys 1–2, `scripts/e2e.sh`, CI `e2e` job. Three hand-written tests added for filters the generator doesn't cover (user search, audit-log filters, emission scope filter).
+- **WP-19:** `reference.modules` / `module_resources` / `subscription_plans` / `plan_modules`, per-tenant `auth.tenant_module_overrides` (RLS, audited, platform-only writes), `auth.tenant_modules()`; enforcement in `AccessService`; `GET /subscription`, platform `GET …/subscription` and `PUT …/modules/{module}`; Admin → Subscription tab; platform module dialog; not-in-plan route state. The app role can no longer update `auth.tenants` directly.
+
+Bugs found by the new harness and fixed:
+- Bad query parameters (e.g. `resourceId=not-a-uuid`) returned 400 without naming the field; problem details now name it (master plan §7.2).
+- Typing quickly in Admin → Users search crashed the page ("Maximum update depth exceeded"); search is now debounced (D20 (6)).
+- V017 first shipped without the audit-log trigger on the new table (caught by the new guard before commit).
+
+Open:
+- **Product owner:** plan contents (D20 (1)); pricing and Freemium.
+- Payment provider and local-currency invoices: P4 (BRD-6.7-02, D15).
+- After the platform changes a tenant's modules, signed-in users see the new menu at their next token refresh (≤ 15 min) or reload; the API enforces immediately.
+- E2E journeys 3–30 arrive with their modules (WP-20 onward).
 
 ---
 
