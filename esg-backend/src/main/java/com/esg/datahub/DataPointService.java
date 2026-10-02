@@ -482,6 +482,28 @@ public class DataPointService {
         return actions;
     }
 
+    /**
+     * Phase 2: steps the user's role allows but segregation of duties forbids on this point, with the reason, so the UI
+     * can show them disabled and explain instead of hiding them (the server refuses them regardless: ESG-403-SOD).
+     */
+    Map<String, String> blockedActions(DataPoint dp) {
+        UUID user = CurrentUser.access().userId();
+        boolean own = user.equals(dp.getCreatedBy()) || user.equals(dp.getSubmittedBy());
+        String s = dp.getValidationStatus();
+        Map<String, String> blocked = new java.util.LinkedHashMap<>();
+        if (SUBMITTED.equals(s) && own && CurrentUser.hasPermission("data_points:validate")) {
+            blocked.put("validate", "You entered or submitted this — another person must validate it");
+        }
+        if (VALIDATED.equals(s) && CurrentUser.hasPermission("data_points:approve")) {
+            if (user.equals(dp.getValidatedBy())) {
+                blocked.put("approve", "You validated this — another approver must approve it");
+            } else if (own) {
+                blocked.put("approve", "You entered or submitted this — another person must approve it");
+            }
+        }
+        return blocked;
+    }
+
     private record Lookups(Map<UUID, String> orgs, Map<UUID, String> sources, Map<String, String> metrics, Map<UUID, String> users) {}
 
     private Lookups lookups(Collection<DataPoint> points) {
@@ -519,7 +541,7 @@ public class DataPointService {
                 dp.getSubmittedAt(), dp.getValidatedBy(), dp.getValidatedAt(), dp.getApprovedBy(), dp.getApprovedAt(),
                 dp.getEvidenceFileIds() == null ? List.of() : List.of(dp.getEvidenceFileIds()), dp.getImportJobId(),
                 dp.getCreatedBy(), l.users().get(dp.getCreatedBy()), dp.getCreatedAt(), dp.getUpdatedAt(), dp.getVersion(),
-                actions(dp), dp.getNotes());
+                actions(dp), dp.getNotes(), blockedActions(dp));
     }
 
     private HistoryEntry historyEntry(Timestamp at, UUID userId, String userName, String action, String oldJson, String newJson) {

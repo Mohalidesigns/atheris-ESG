@@ -39,9 +39,11 @@ public class AdminUserController {
     @PreAuthorize("hasAuthority('users:read')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> list(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(service.list(search, page, size)));
+        return ResponseEntity.ok(ApiResponse.ok(service.list(search, role, status, page, size)));
     }
 
     @GetMapping("/{id}")

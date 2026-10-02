@@ -447,6 +447,10 @@ class ComplianceApiTest extends ApiTestSupport {
         + "\"requiredActions\":\"Scope 3 inventory; board training\"}").andExpect(status().isOk()));
     assertThat(c.path("status").asText()).isEqualTo("assessed");
     assertThat(c.path("assessedBy").asText()).isEqualTo("Esg Director Fixture");
+    // Phase 2: the assessor is told why they can't sign off; the officer isn't.
+    assertThat(c.path("closeBlockedReason").asText()).isEqualTo("You assessed this change — another person must sign it off");
+    JsonNode asOfficer = data(mvc.perform(get("/v1/compliance/changes/" + id).header("Authorization", officer())));
+    assertThat(asOfficer.path("closeBlockedReason").isMissingNode() || asOfficer.path("closeBlockedReason").isNull()).isTrue();
     // Edits are locked once assessed; the assessor can't sign off their own assessment.
     send("PUT", "/v1/compliance/changes/" + id, officer(), body.replace("}", ",\"version\":" + c.path("version").asLong() + "}"))
         .andExpect(status().isConflict());

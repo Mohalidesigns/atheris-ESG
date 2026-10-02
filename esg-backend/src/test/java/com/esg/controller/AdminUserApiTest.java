@@ -271,6 +271,43 @@ class AdminUserApiTest extends ApiTestSupport {
   }
 
   @Test
+  void userListFiltersByRoleAndStatusAndSortsByName() throws Exception {
+    // Phase 2: role and status filters; sorted by first name.
+    String auditors = mvc.perform(get("/v1/admin/users?role=AUDITOR&size=100").header("Authorization", admin()))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    for (JsonNode u : json.readTree(auditors).path("data").path("content")) {
+      org.assertj.core.api.Assertions.assertThat(u.path("roles").toString()).contains("AUDITOR");
+    }
+    org.assertj.core.api.Assertions.assertThat(json.readTree(auditors).path("data").path("content").size()).isPositive();
+    String id = createUser(unique("inactive")).path("id").asText();
+    mvc.perform(post("/v1/admin/users/" + id + "/deactivate").header("Authorization", admin())).andExpect(status().isOk());
+    String inactive = mvc.perform(get("/v1/admin/users?status=inactive&size=100").header("Authorization", admin()))
+        .andReturn().getResponse().getContentAsString();
+    org.assertj.core.api.Assertions.assertThat(inactive).contains(id);
+    for (JsonNode u : json.readTree(inactive).path("data").path("content")) {
+      org.assertj.core.api.Assertions.assertThat(u.path("active").asBoolean()).isFalse();
+    }
+    mvc.perform(get("/v1/admin/users?status=sleeping").header("Authorization", admin()))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.status").exists());
+    java.util.List<String> names = new java.util.ArrayList<>();
+    json.readTree(mvc.perform(get("/v1/admin/users?size=100").header("Authorization", admin())).andReturn().getResponse()
+        .getContentAsString()).path("data").path("content").forEach(u -> names.add(u.path("firstName").asText().toLowerCase()));
+    org.assertj.core.api.Assertions.assertThat(names).isSorted();
+  }
+
+  @Test
+  void integrationsReportEachExternalService() throws Exception {
+    // Phase 2, item 11: status straight from the adapters (test profile: sandbox scanner, no SMTP, no SMS key).
+    mvc.perform(get("/v1/integrations").header("Authorization", admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[?(@.key == 'virus_scanner')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'satellite_flaring')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'regulator_feed')].status").value(org.hamcrest.Matchers.contains("not_configured")))
+        .andExpect(jsonPath("$.data.length()").value(5));
+    mvc.perform(get("/v1/integrations").header("Authorization", bearerForRole("DATA_COLLECTOR"))).andExpect(status().isForbidden());
+  }
+
+  @Test
   void rolesEndpointListsTheElevenTenantRolesWithPermissions() throws Exception {
     mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
         .andExpect(status().isOk())
