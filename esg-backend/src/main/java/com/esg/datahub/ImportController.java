@@ -56,6 +56,15 @@ public class ImportController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(service.start(id, request), "Import started"));
     }
 
+    /** The failed rows with their reasons, as CSV (F3). */
+    @GetMapping(value = "/{id}/failed-rows", produces = "text/csv")
+    @PreAuthorize("hasAuthority('data_points:read')")
+    public ResponseEntity<byte[]> failedRows(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"failed-rows.csv\"")
+                .body(service.failedRows(id).getBytes(StandardCharsets.UTF_8));
+    }
+
     @GetMapping(value = "/template", produces = "text/csv")
     @PreAuthorize("hasAuthority('data_points:create')")
     public ResponseEntity<byte[]> template() {

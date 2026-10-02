@@ -54,6 +54,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ComplianceService {
 
     /** Metrics the Carbon module supplies: met for a year when emission records of the scope exist (D23 (2)). */
+    /** Prefix of non-metric evidence in the engine's metric lists (reference.requirement_data_sources, F7). */
+    static final String SOURCE = "source:";
+
     static final Map<String, String> CARBON_METRICS = Map.of(
             "scope1_tco2e", "scope_1", "scope2_location_tco2e", "scope_2", "scope3_tco2e", "scope_3");
 
@@ -133,7 +136,8 @@ public class ComplianceService {
         Framework f = catalog.framework(r.framework());
         List<Map<String, Object>> reqs = jdbc.queryForList("select r.id, exists (select 1 from compliance.framework_requirements c "
                         + "where c.parent_req_id = r.id and c.is_active) as heading, r.data_type = 'quantitative' and exists (select 1 "
-                        + "from reference.metric_requirements m where m.requirement_id = r.id) as quantitative "
+                        + "from reference.metric_requirements m where m.requirement_id = r.id union all select 1 "
+                        + "from reference.requirement_data_sources d where d.requirement_id = r.id) as quantitative "
                         + "from compliance.framework_requirements r "
                         + "where r.framework_id = ? and r.requirement_code = ? and r.is_active", f.id(), r.requirementCode());
         if (reqs.isEmpty()) {
@@ -307,6 +311,14 @@ public class ComplianceService {
                         }
                     });
                 }, year);
+        // F7: requirements evidenced by platform data other than metrics, e.g. an active reduction target for the year.
+        jdbc.query("select data_source, requirement_id from reference.requirement_data_sources", rs -> {
+            metrics.computeIfAbsent(rs.getObject(2, UUID.class), k -> new ArrayList<>()).add(SOURCE + rs.getString(1));
+        });
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from carbon.reduction_targets where deleted_at is null "
+                + "and base_year <= ? and target_year >= ?)", Boolean.class, year, year))) {
+            states.put(SOURCE + "carbon.reduction_targets", new MetricState(true, false));
+        }
         Map<UUID, Attestation> attestations = new HashMap<>();
         jdbc.query("select requirement_id, status from compliance.tenant_compliance_status where reporting_year = ?",
                 rs -> { attestations.put(rs.getObject(1, UUID.class), new Attestation(rs.getString(2))); }, year);
@@ -319,6 +331,7 @@ public class ComplianceService {
                         rs.getObject(5, UUID.class), rs.getString(6), rs.getString(7), rs.getString(8), rs.getString(9)));
         Map<String, String> names = new HashMap<>();
         jdbc.query("select metric_key, name from reference.metrics", rs -> { names.put(rs.getString(1), rs.getString(2)); });
+        names.put(SOURCE + "carbon.reduction_targets", "a GHG reduction target (Carbon → Reduction targets)");
         return new Context(year, metrics, states, attestations, edges, names);
     }
 

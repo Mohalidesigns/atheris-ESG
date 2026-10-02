@@ -92,16 +92,12 @@ public class TargetService {
             case "scope_1_2_3" -> List.of("scope_1", "scope_2", "scope_3");
             default -> List.of(scope);
         };
-        StringBuilder where = new StringBuilder("where r.deleted_at is null and r.scope = any(?::text[]) "
-                + "and r.reporting_period_start between ? and ?");
-        List<Object> args = new ArrayList<>(List.of(scopes.toArray(String[]::new), Date.valueOf(LocalDate.of(year, 1, 1)),
-                Date.valueOf(LocalDate.of(year, 12, 31))));
-        Map<String, Object> agg = jdbc.queryForMap("select count(*) as n, coalesce(sum(r.co2e_tonnes), 0) as t "
-                + "from carbon.emission_records r " + where, args.toArray());
-        if (((Number) agg.get("n")).intValue() == 0) {
+        // F6: the same totals as the Carbon Overview (EmissionService.scopeTotals), tenant-wide.
+        Map<String, BigDecimal> totals = emissions.scopeTotals(year, false);
+        if (scopes.stream().noneMatch(totals::containsKey)) {
             return null;
         }
-        BigDecimal tonnes = (BigDecimal) agg.get("t");
+        BigDecimal tonnes = scopes.stream().map(s -> totals.getOrDefault(s, BigDecimal.ZERO)).reduce(BigDecimal.ZERO, BigDecimal::add);
         if (!"intensity".equals(type)) {
             return tonnes.setScale(6, RoundingMode.HALF_UP);
         }
@@ -133,7 +129,8 @@ public class TargetService {
         for (int y = baseYear; y <= targetYear; y++) {
             BigDecimal a = actual(scope, type, denominator, y);
             points.add(new PathwayPoint(y, TargetMath.expected(pathway, base, target, baseYear, targetYear, y), a));
-            if (a != null && y > baseYear) {
+            // F6: the base year counts too, so a target set this year shows this year's actual against its pathway.
+            if (a != null) {
                 progressYear = y;
                 current = a;
             }

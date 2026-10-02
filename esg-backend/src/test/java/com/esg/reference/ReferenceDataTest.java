@@ -131,8 +131,13 @@ class ReferenceDataTest extends ApiTestSupport {
         .andExpect(jsonPath("$.errors.region").exists())
         .andExpect(jsonPath("$.errors.category").exists())
         .andExpect(jsonPath("$.errors.factorValue").exists())
-        .andExpect(jsonPath("$.errors.unit").exists())
         .andExpect(jsonPath("$.errors.source").exists());
+    // F11: an activity factor needs its unit (kgCO2e per unit); checked once the fields are well-formed.
+    mvc.perform(post("/v1/carbon/factors").header("Authorization", director).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"region\":\"NG\",\"category\":\"diesel_generator\",\"factorValue\":1,\"unit\":\"\",\"source\":\"s\","
+                + "\"validFrom\":\"2026-01-01\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.unit").value("is required"));
     mvc.perform(post("/v1/carbon/factors").header("Authorization", director).contentType(MediaType.APPLICATION_JSON)
             .content("{\"region\":\"NG\",\"category\":\"x\",\"factorValue\":1,\"unit\":\"kg\",\"source\":\"s\","
                 + "\"validFrom\":\"2026-01-01\",\"validTo\":\"2025-01-01\"}"))
@@ -154,7 +159,7 @@ class ReferenceDataTest extends ApiTestSupport {
         .andExpect(status().isForbidden());
 
     String body = "{\"region\":\"NG\",\"category\":\"test_fuel\",\"factorValue\":1.5,\"unit\":\"kgCO2e/litre\","
-        + "\"source\":\"Lab test\",\"validFrom\":\"2026-01-01\"}";
+        + "\"source\":\"Lab test\",\"validFrom\":\"2026-01-01\",\"activityLabel\":\"Test fuel\",\"activityScope\":\"scope_1\"}";
     JsonNode f = data(mvc.perform(post("/v1/carbon/factors").header("Authorization", director)
         .contentType(MediaType.APPLICATION_JSON).content(body)).andReturn().getResponse().getContentAsString());
     String id = f.path("id").asText();
@@ -314,5 +319,20 @@ class ReferenceDataTest extends ApiTestSupport {
     mvc.perform(get("/v1/carbon/emissions?scope=scope_2&size=200").header("Authorization", director))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.content[*].id", not(hasItem(id))));
+  }
+
+  @Test
+  void referenceEndpointsAreNeverEmpty() throws Exception {
+    // Definition of done (Phase 1, F9): every catalogue a form picks from has content.
+    for (String path : java.util.List.of("sectors", "countries", "currencies", "scope3-categories", "metrics", "timezones")) {
+      mvc.perform(get("/v1/reference/" + path).header("Authorization", bearerForRole("ESG_ANALYST")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+    }
+    for (String path : java.util.List.of("activities", "regions")) {
+      mvc.perform(get("/v1/carbon/factors/" + path).header("Authorization", bearerForRole("ESG_ANALYST")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+    }
   }
 }

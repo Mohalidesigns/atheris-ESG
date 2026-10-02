@@ -59,6 +59,52 @@ class ImportApiTest extends ApiTestSupport {
   }
 
   @Test
+  void theDownloadedTemplateImportsWithoutFailures() throws Exception {
+    // F1: the template's organisation, period, metrics and currency are valid for the user who downloads it.
+    String template = mvc.perform(get("/v1/data/import/template").header("Authorization", collector()))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    assertThat(template).startsWith("organisation,metric,value,currency,period_start,period_end,sub_category,notes")
+        .contains("A Site 1").doesNotContain("Lagos HQ").doesNotContain("USD");
+    JsonNode job = upload(collector(), new MockMultipartFile("file", "template.csv", "text/csv", template.getBytes(StandardCharsets.UTF_8)));
+    // Every column maps itself (F3: headers match the automatic mapping, notes included).
+    assertThat(job.path("suggestedMapping").size()).isEqualTo(8);
+    JsonNode mapping = job.path("suggestedMapping");
+    JsonNode done = await(collector(), start(collector(), job, "{\"version\":" + job.path("version").asLong() + ",\"mapping\":" + mapping + "}"));
+    try {
+      assertThat(done.path("failedRows").asInt()).as(done.path("rowErrors").toString()).isZero();
+      assertThat(done.path("succeededRows").asInt()).isEqualTo(3);
+      JsonNode drafts = json.readTree(mvc.perform(get("/v1/data/points?importJobId=" + job.path("id").asText()).header("Authorization", collector()))
+          .andReturn().getResponse().getContentAsString()).path("data").path("content");
+      assertThat(drafts.toString()).contains("From the utility bill"); // the notes column was imported
+    } finally {
+      asOwnerInTenantA("update data_hub.data_points set deleted_at = now() where import_job_id = '" + job.path("id").asText() + "'");
+    }
+  }
+
+  @Test
+  void commonHeaderNamesAutoMapAndFailedRowsDownloadWithReasons() throws Exception {
+    // F3: metric_code / Metric-Code / KPI, comment columns; the failed rows come back with why.
+    assertThat(ImportService.suggest(java.util.List.of("Facility", "Metric_Code", "Reading", "Date From", "Date-To", "Comment")))
+        .containsEntry("organisation", "Facility").containsEntry("metric", "Metric_Code").containsEntry("value", "Reading")
+        .containsEntry("periodStart", "Date From").containsEntry("periodEnd", "Date-To").containsEntry("notes", "Comment");
+    assertThat(ImportService.suggest(java.util.List.of("KPI", "amount"))).containsEntry("metric", "KPI");
+
+    String csv = "Facility,metric_code,Reading,period_start,period_end,Comment\n"
+        + "A Site 1,diesel_litres,oops,2026-11-01,2026-11-30,typo in value\n"
+        + "A Site 1,no_such_metric,5,2026-11-01,2026-11-30,\n";
+    JsonNode job = upload(collector(), new MockMultipartFile("file", "november.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)));
+    JsonNode done = await(collector(), start(collector(), job, "{\"version\":" + job.path("version").asLong() + ",\"mapping\":"
+        + job.path("suggestedMapping") + "}"));
+    assertThat(done.path("failedRows").asInt()).isEqualTo(2);
+    String failed = mvc.perform(get("/v1/data/import/" + job.path("id").asText() + "/failed-rows").header("Authorization", collector()))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    assertThat(failed.split("\n")).containsExactly(
+        "Facility,metric_code,Reading,period_start,period_end,Comment,error",
+        "A Site 1,diesel_litres,oops,2026-11-01,2026-11-30,typo in value,Reading: 'oops' isn't a number",
+        "A Site 1,no_such_metric,5,2026-11-01,2026-11-30,,metric_code: Unknown metric 'no_such_metric'");
+  }
+
+  @Test
   void csvImportCreatesDraftsAndReportsRowErrors() throws Exception {
     String csv = "Site,Metric,Value,Start,End\n"
         + "A Site 1,diesel_litres,\"1,250.5\",2026-08-01,2026-08-31\n"         // ok (thousands separator)

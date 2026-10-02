@@ -56,9 +56,12 @@ public class EmissionService {
     private final ReportingPeriodService periods;
     private final FxRateService fx;
     private final LineageService lineage;
+    private final com.esg.reference.EmissionActivityService activities;
 
     public EmissionService(JdbcTemplate jdbc, EmissionFactorService factors, OrgScopeService orgScope,
-                           ReportingPeriodService periods, FxRateService fx, LineageService lineage) {
+                           ReportingPeriodService periods, FxRateService fx, LineageService lineage,
+                           com.esg.reference.EmissionActivityService activities) {
+        this.activities = activities;
         this.jdbc = jdbc;
         this.factors = factors;
         this.orgScope = orgScope;
@@ -315,11 +318,7 @@ public class EmissionService {
         StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_start between ? and ?");
         List<Object> args = new ArrayList<>(List.of(Date.valueOf(from), Date.valueOf(to)));
         appendOrgScope(where, args, "r.org_id");
-        Map<String, BigDecimal> scopes = new LinkedHashMap<>();
-        jdbc.query("select r.scope, sum(r.co2e_tonnes) from carbon.emission_records r " + where + " group by r.scope",
-                rs -> {
-                    scopes.put(rs.getString(1), rs.getBigDecimal(2));
-                }, args.toArray());
+        Map<String, BigDecimal> scopes = scopeTotals(year, true);
         BigDecimal s1 = scopes.getOrDefault("scope_1", BigDecimal.ZERO);
         BigDecimal s2 = scopes.getOrDefault("scope_2", BigDecimal.ZERO);
         BigDecimal s3 = scopes.getOrDefault("scope_3", BigDecimal.ZERO);
@@ -330,8 +329,14 @@ public class EmissionService {
                 + " and r.calculation_method = 'flaring_composition'", BigDecimal.class, args.toArray());
         Integer count = jdbc.queryForObject("select count(*) from carbon.emission_records r " + where, Integer.class, args.toArray());
 
-        List<Bucket> byMonth = jdbc.query("select to_char(r.reporting_period_start, 'YYYY-MM') as m, sum(r.co2e_tonnes) "
-                + "from carbon.emission_records r " + where + " group by m order by m",
+        // F15: a record covering several months is split across them pro rata by days (a quarter's diesel isn't all in
+        // its first month). Records belong to the year they start in, like the totals, so a record running into next
+        // year shows its later months as they are (e.g. 2027-01) and the months add up to the total.
+        List<Bucket> byMonth = jdbc.query("select to_char(m, 'YYYY-MM') as month, sum(r.co2e_tonnes * "
+                + "((least(r.reporting_period_end, (m + interval '1 month' - interval '1 day')::date) - greatest(r.reporting_period_start, m::date) + 1)::numeric "
+                + "/ (r.reporting_period_end - r.reporting_period_start + 1))) from carbon.emission_records r "
+                + "cross join lateral generate_series(date_trunc('month', r.reporting_period_start), "
+                + "date_trunc('month', r.reporting_period_end), interval '1 month') m " + where + " group by month order by month",
                 (rs, i) -> new Bucket(rs.getString(1), rs.getString(1), scale(rs.getBigDecimal(2))), args.toArray());
         List<Bucket> bySource = jdbc.query("select r.source_activity, sum(r.co2e_tonnes) s from carbon.emission_records r " + where
                 + " group by r.source_activity order by s desc",
@@ -346,6 +351,25 @@ public class EmissionService {
         BigDecimal total = s1.add(s2).add(s3);
         return new Summary(year, scale(s1), scale(s2), scale(s2Market), scale(s3), scale(total), scale(s1.add(s2Market).add(s3)),
                 scale(flaring), byMonth, bySource, byOrg, byCat, intensity(year, total), count == null ? 0 : count);
+    }
+
+    /**
+     * Tonnes per scope (location-based Scope 2) of the records that start in the year: the basis of the Overview's
+     * totals and of reduction-target actuals (F6), so the two always agree. {@code orgScoped}: only the caller's
+     * organisations (the Overview); targets are tenant-wide.
+     */
+    public Map<String, BigDecimal> scopeTotals(int year, boolean orgScoped) {
+        StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_start between ? and ?");
+        List<Object> args = new ArrayList<>(List.of(Date.valueOf(LocalDate.of(year, 1, 1)), Date.valueOf(LocalDate.of(year, 12, 31))));
+        if (orgScoped) {
+            appendOrgScope(where, args, "r.org_id");
+        }
+        Map<String, BigDecimal> scopes = new LinkedHashMap<>();
+        jdbc.query("select r.scope, sum(r.co2e_tonnes) from carbon.emission_records r " + where + " group by r.scope",
+                rs -> {
+                    scopes.put(rs.getString(1), rs.getBigDecimal(2));
+                }, args.toArray());
+        return scopes;
     }
 
     /** BRD-5.2.2-07: carbon intensity by revenue, headcount and production, from approved Data Hub points of the year. */
@@ -417,6 +441,14 @@ public class EmissionService {
         } else if (r.activityData() == null) {
             errors.put("activityData", "is required");
         }
+        // F5: the activity must belong to the chosen scope (and Scope 3 category).
+        activities.find(r.sourceActivity()).ifPresentOrElse(a -> {
+            if (!a.scope().equals(r.scope())) {
+                errors.put("sourceActivity", a.label() + " is a " + scopeName(a.scope()) + " activity, not " + scopeName(r.scope()));
+            } else if ("scope_3".equals(a.scope()) && r.scope3Category() != null && !r.scope3Category().equals(a.scope3Category())) {
+                errors.put("sourceActivity", a.label() + " belongs to Scope 3 category " + a.scope3Category());
+            }
+        }, () -> errors.put("sourceActivity", "Unknown activity: choose one from the list or add a custom factor for it"));
         if (!errors.isEmpty()) {
             throw new FieldValidationException(errors);
         }
@@ -549,6 +581,10 @@ public class EmissionService {
                             + "organisation blocks provisional factors (Administration → Settings). Add a custom factor or ask an "
                             + "administrator.");
         }
+    }
+
+    private static String scopeName(String scope) {
+        return "Scope " + scope.substring(scope.length() - 1);
     }
 
     private static BigDecimal scale(BigDecimal v) {

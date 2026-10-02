@@ -12,7 +12,12 @@ public class FieldValidationException extends ApiException {
     private final Map<String, String> errors;
 
     public FieldValidationException(Map<String, String> errors) {
-        super(HttpStatus.BAD_REQUEST, "ESG-400-VALIDATION", "Validation failed");
+        this("ESG-400-VALIDATION", errors);
+    }
+
+    /** A field error with its own code (e.g. ESG-400-TIMEZONE), still shown next to the field. */
+    public FieldValidationException(String code, Map<String, String> errors) {
+        super(HttpStatus.BAD_REQUEST, code, "Validation failed");
         this.errors = Map.copyOf(errors);
     }
 

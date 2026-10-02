@@ -25,7 +25,8 @@
     "sourceId": "{SOURCE_A}",
     "evidenceFileIds": [
       "{FILE_A}"
-    ]
+    ],
+    "notes": "Read from meter G-2 on site"
   },
   "derived": {
     "category": "E",
@@ -99,6 +100,16 @@
       "field": "reportingPeriodEnd",
       "value": "{yyyy}-03-31",
       "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
     }
   ],
   "update": {
@@ -114,7 +125,8 @@
     "reportingPeriodStart": "{yyyy}-04-02",
     "reportingPeriodEnd": "{yyyy}-06-29",
     "sourceId": null,
-    "evidenceFileIds": []
+    "evidenceFileIds": [],
+    "notes": "Corrected after the supplier invoice"
   },
   "ui": {
     "fields": {
@@ -148,6 +160,9 @@
       "evidenceFileIds": {
         "kind": "text",
         "display": "evidence.pdf"
+      },
+      "notes": {
+        "label": "Notes (optional)"
       }
     }
   }

@@ -124,6 +124,47 @@ class ComplianceApiTest extends ApiTestSupport {
   }
 
   @Test
+  void aReductionTargetEvidencesIfrsS2Paragraph33AndGri305Dash5() throws Exception {
+    // F7: the climate-targets requirements see Carbon's reduction targets as supporting data.
+    int year = 2071;
+    asOwnerInTenantA("update carbon.reduction_targets set deleted_at = now() where deleted_at is null and base_year <= " + year
+        + " and target_year >= " + year);
+    JsonNode before = requirement(gaps("ISSB_S2", year), "S2-33");
+    assertThat(before.path("status").asText()).isEqualTo("missing");
+    assertThat(before.path("metricKeys").toString()).contains("source:carbon.reduction_targets");
+    JsonNode griBefore = requirement(gaps("GRI", year), "305-5");
+    assertThat(griBefore.path("missingMetrics").toString()).contains("source:carbon.reduction_targets");
+    assertThat(griBefore.path("recommendation").asText()).contains("Set up a GHG reduction target (Carbon → Reduction targets)");
+
+    send("POST", "/v1/carbon/targets", bearerForRole("ESG_DIRECTOR"), "{\"targetName\":\"Compliance target " + year + "\","
+        + "\"targetType\":\"absolute\",\"scope\":\"scope_1_2\",\"baseYear\":" + year + ",\"baseValue\":100,\"targetYear\":" + (year + 5)
+        + ",\"targetValue\":50}").andExpect(status().isCreated());
+    JsonNode after = requirement(gaps("ISSB_S2", year), "S2-33");
+    assertThat(after.path("status").asText()).isEqualTo("partial"); // narrative: supporting data; an attestation completes it
+    assertThat(after.path("basis").asText()).isEqualTo("supporting_data");
+    JsonNode gri = requirement(gaps("GRI", year), "305-5");
+    assertThat(gri.path("missingMetrics").toString()).doesNotContain("source:carbon.reduction_targets");
+  }
+
+  @Test
+  void frameworkCountsMatchTheGapAnalysis() throws Exception {
+    // F8: IFRS S2 has 23 rows of which 5 are section headings; the gap analysis assesses the other 18.
+    JsonNode frameworks = data(mvc.perform(get("/v1/compliance/frameworks").header("Authorization", officer())));
+    for (JsonNode f : frameworks) {
+      if (f.path("requirementCount").asInt() == 0) {
+        continue;
+      }
+      assertThat(f.path("assessableCount").asInt() + f.path("headingCount").asInt()).isEqualTo(f.path("requirementCount").asInt());
+      JsonNode report = gaps(f.path("code").asText(), 2026);
+      assertThat(report.path("totalRequirements").asInt()).as(f.path("code").asText()).isEqualTo(f.path("assessableCount").asInt());
+      if ("ISSB_S2".equals(f.path("code").asText())) {
+        assertThat(f.path("assessableCount").asInt()).isEqualTo(18);
+        assertThat(f.path("headingCount").asInt()).isEqualTo(5);
+      }
+    }
+  }
+
+  @Test
   void journey10EnteringDataClosesTheGap() throws Exception {
     assertThat(requirement(gaps("GRI", 2042), "303-3").path("status").asText()).isEqualTo("missing");
     // Submitted but not approved: partial, 0% — data in the workflow doesn't count yet.

@@ -54,6 +54,10 @@ insert into carbon.emission_factors (region, category, factor_value, unit, sourc
                                      factor_method, spend_currency)
   values ('NG', 'fixture_spend', 0.5, 'kgCO2e/USD', 'Fixture spend factor (test value)', '2020-01-01', true,
           '11111111-1111-4111-8111-111111111111', 'tenant_provided', 'spend', 'USD');
+-- WP-52b F5/F11: the tenant activities of those custom factors (scope + unit).
+insert into carbon.emission_activities (tenant_id, category, label, scope, scope3_category, factor_method, activity_unit, source)
+  values ('11111111-1111-4111-8111-111111111111', 'custom_fuel', 'Custom fuel (fixture)', 'scope_1', null, 'activity', 'litre', 'Fixture'),
+         ('11111111-1111-4111-8111-111111111111', 'fixture_spend', 'Fixture spend', 'scope_3', 1, 'spend', null, 'Fixture');
 -- WP-21: a REC and a PCAF position for tenant A (test values).
 insert into carbon.energy_instruments (org_id, instrument_type, energy_source, mwh, reporting_period_start, reporting_period_end, supplier)
   values ('a0000000-0000-4000-8000-00000000000a', 'rec', 'solar', 10, '2026-01-01', '2026-03-31', 'Fixture REC registry');

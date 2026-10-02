@@ -197,10 +197,19 @@ public final class GapAnalysisEngine {
     private static String recommendation(Status s, String basis, List<String> missingMetrics, String satisfiedBy,
                                          Map<String, String> names) {
         if ("data".equals(basis)) {
-            String list = String.join(", ", missingMetrics.stream().map(m -> names.getOrDefault(m, m)).toList());
-            return s == Status.missing
-                    ? "Enter " + list + " for the year in the Data Hub and have it approved"
-                    : "Get " + list + " approved in the Data Hub";
+            // Data Hub metrics, and other platform data ("source:…", F7) that is set up where it lives.
+            List<String> metrics = missingMetrics.stream().filter(m -> !m.startsWith("source:")).map(m -> names.getOrDefault(m, m)).toList();
+            List<String> sources = missingMetrics.stream().filter(m -> m.startsWith("source:")).map(m -> names.getOrDefault(m, m)).toList();
+            List<String> steps = new java.util.ArrayList<>();
+            if (!metrics.isEmpty()) {
+                steps.add(s == Status.missing
+                        ? "Enter " + String.join(", ", metrics) + " for the year in the Data Hub and have it approved"
+                        : "Get " + String.join(", ", metrics) + " approved in the Data Hub");
+            }
+            if (!sources.isEmpty()) {
+                steps.add("Set up " + String.join(", ", sources));
+            }
+            return String.join("; ", steps);
         }
         if ("mapped".equals(basis)) {
             return "Partly covered by " + satisfiedBy + ": check what this requirement asks for beyond it, then attest";

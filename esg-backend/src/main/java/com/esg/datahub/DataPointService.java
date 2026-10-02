@@ -319,6 +319,7 @@ public class DataPointService {
         dp.setSubCategory(dto.getSubCategory() == null || dto.getSubCategory().isBlank() ? metric.category() : dto.getSubCategory().trim());
         dp.setMetricKey(metric.metricKey());
         dp.setTextValue(dto.getTextValue() == null || dto.getTextValue().isBlank() ? null : dto.getTextValue().trim());
+        dp.setNotes(dto.getNotes() == null || dto.getNotes().isBlank() ? null : dto.getNotes().trim());
         dp.setReportingPeriodStart(dto.getReportingPeriodStart());
         dp.setReportingPeriodEnd(dto.getReportingPeriodEnd());
         dp.setMetadata(dto.getMetadata());
@@ -518,7 +519,7 @@ public class DataPointService {
                 dp.getSubmittedAt(), dp.getValidatedBy(), dp.getValidatedAt(), dp.getApprovedBy(), dp.getApprovedAt(),
                 dp.getEvidenceFileIds() == null ? List.of() : List.of(dp.getEvidenceFileIds()), dp.getImportJobId(),
                 dp.getCreatedBy(), l.users().get(dp.getCreatedBy()), dp.getCreatedAt(), dp.getUpdatedAt(), dp.getVersion(),
-                actions(dp));
+                actions(dp), dp.getNotes());
     }
 
     private HistoryEntry historyEntry(Timestamp at, UUID userId, String userName, String action, String oldJson, String newJson) {

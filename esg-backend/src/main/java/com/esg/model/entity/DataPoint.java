@@ -46,6 +46,10 @@ public class DataPoint {
     @Column(name = "sub_category", nullable = false)
     private String subCategory;
 
+    /** Free-text note, e.g. a meter remark or an import comment (F3). */
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
     @Column(name = "metric_key", nullable = false)
     private String metricKey;
 
@@ -163,6 +167,8 @@ public class DataPoint {
     public void setSourceId(UUID sourceId) { this.sourceId = sourceId; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
     public String getSubCategory() { return subCategory; }
     public void setSubCategory(String subCategory) { this.subCategory = subCategory; }
     public String getMetricKey() { return metricKey; }

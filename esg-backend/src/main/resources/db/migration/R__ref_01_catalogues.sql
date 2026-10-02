@@ -16,24 +16,27 @@ INSERT INTO reference.currencies (code, name, symbol, minor_unit, source) VALUES
   ('EGP', 'Egyptian Pound', 'E£', 2, 'ISO 4217 (currency codes and minor units)')
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol, minor_unit = EXCLUDED.minor_unit, source = EXCLUDED.source;
 
-INSERT INTO reference.countries (code, name, region, currency, source) VALUES
-  ('NG', 'Nigeria', 'WEST_AFRICA', 'NGN', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('GH', 'Ghana', 'WEST_AFRICA', 'GHS', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('CI', 'Côte d''Ivoire', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('SN', 'Senegal', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('BJ', 'Benin', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('TG', 'Togo', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('KE', 'Kenya', 'EAST_AFRICA', 'KES', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('TZ', 'Tanzania', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('UG', 'Uganda', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('RW', 'Rwanda', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('ET', 'Ethiopia', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('ZA', 'South Africa', 'SOUTHERN_AFRICA', 'ZAR', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('BW', 'Botswana', 'SOUTHERN_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('NA', 'Namibia', 'SOUTHERN_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('EG', 'Egypt', 'NORTH_AFRICA', 'EGP', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)'),
-  ('MA', 'Morocco', 'NORTH_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)')
-ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, region = EXCLUDED.region, currency = EXCLUDED.currency, source = EXCLUDED.source;
+-- default_timezone: the IANA zone of the capital/main business centre (IANA tz database), the tenant's default
+-- reporting time zone (F10).
+INSERT INTO reference.countries (code, name, region, currency, source, default_timezone) VALUES
+  ('NG', 'Nigeria', 'WEST_AFRICA', 'NGN', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Lagos'),
+  ('GH', 'Ghana', 'WEST_AFRICA', 'GHS', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Accra'),
+  ('CI', 'Côte d''Ivoire', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Abidjan'),
+  ('SN', 'Senegal', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Dakar'),
+  ('BJ', 'Benin', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Porto-Novo'),
+  ('TG', 'Togo', 'WEST_AFRICA', 'XOF', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Lome'),
+  ('KE', 'Kenya', 'EAST_AFRICA', 'KES', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Nairobi'),
+  ('TZ', 'Tanzania', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Dar_es_Salaam'),
+  ('UG', 'Uganda', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Kampala'),
+  ('RW', 'Rwanda', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Kigali'),
+  ('ET', 'Ethiopia', 'EAST_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Addis_Ababa'),
+  ('ZA', 'South Africa', 'SOUTHERN_AFRICA', 'ZAR', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Johannesburg'),
+  ('BW', 'Botswana', 'SOUTHERN_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Gaborone'),
+  ('NA', 'Namibia', 'SOUTHERN_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Windhoek'),
+  ('EG', 'Egypt', 'NORTH_AFRICA', 'EGP', 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Cairo'),
+  ('MA', 'Morocco', 'NORTH_AFRICA', NULL, 'ISO 3166-1 alpha-2; region = UN M49 sub-region (Africa)', 'Africa/Casablanca')
+ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, region = EXCLUDED.region, currency = EXCLUDED.currency, source = EXCLUDED.source,
+  default_timezone = EXCLUDED.default_timezone;
 
 INSERT INTO reference.sdgs (goal, title, source) VALUES
   (1, 'No poverty', 'United Nations, Transforming our world: the 2030 Agenda (A/RES/70/1), goal short titles'),

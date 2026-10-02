@@ -61,15 +61,17 @@ public class ImportService {
     private static final List<DateTimeFormatter> DATE_FORMATS = List.of(DateTimeFormatter.ISO_LOCAL_DATE,
             DateTimeFormatter.ofPattern("d/M/yyyy"), DateTimeFormatter.ofPattern("d-M-yyyy"),
             DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH));
-    // no-mock-gate: config — header synonyms used to suggest a column mapping
+    // no-mock-gate: config — header synonyms used to suggest a column mapping. Headers are compared case-insensitively
+    // with '_', '-' and repeated spaces read as one space (F3), so "metric_code", "Metric-Code" and "METRIC CODE" match.
     private static final Map<String, List<String>> SYNONYMS = Map.of(
-            "organisation", List.of("organisation", "organization", "org", "site", "facility", "entity"),
-            "metric", List.of("metric", "metric key", "metric_key", "indicator", "kpi"),
+            "organisation", List.of("organisation", "organization", "org", "site", "facility", "entity", "organisation name"),
+            "metric", List.of("metric", "metric key", "metric code", "metric id", "metric name", "indicator", "kpi", "kpi code"),
             "value", List.of("value", "amount", "quantity", "reading"),
-            "currency", List.of("currency", "ccy"),
-            "periodStart", List.of("period start", "period_start", "start", "from", "start date"),
-            "periodEnd", List.of("period end", "period_end", "end", "to", "end date"),
-            "subCategory", List.of("sub category", "sub_category", "subcategory", "description"));
+            "currency", List.of("currency", "ccy", "currency code"),
+            "periodStart", List.of("period start", "start", "from", "start date", "date from"),
+            "periodEnd", List.of("period end", "end", "to", "end date", "date to"),
+            "subCategory", List.of("sub category", "subcategory", "description"),
+            "notes", List.of("notes", "note", "comment", "comments", "remark", "remarks"));
 
     private final JdbcTemplate jdbc;
     private final FileService files;
@@ -79,10 +81,14 @@ public class ImportService {
     private final ObjectMapper json;
     private final Executor executor;
     private final TransactionTemplate rowTransaction;
+    private final com.esg.security.OrgScopeService orgScope;
+    private final java.time.Clock clock;
 
     public ImportService(JdbcTemplate jdbc, FileService files, DataPointService points, ReferenceService reference,
                          AccessService access, ObjectMapper json, @Qualifier("importExecutor") Executor executor,
-                         PlatformTransactionManager transactions) {
+                         PlatformTransactionManager transactions, com.esg.security.OrgScopeService orgScope, java.time.Clock clock) {
+        this.orgScope = orgScope;
+        this.clock = clock;
         this.jdbc = jdbc;
         this.files = files;
         this.points = points;
@@ -312,6 +318,7 @@ public class ImportService {
 
         dto.setCurrency(upper(cell(row, column, "currency")));
         dto.setSubCategory(cell(row, column, "subCategory"));
+        dto.setNotes(cell(row, column, "notes"));
         dto.setReportingPeriodStart(date(row, column, mapping, "periodStart", r.defaultPeriodStart(), rowNumber, errors));
         dto.setReportingPeriodEnd(date(row, column, mapping, "periodEnd", r.defaultPeriodEnd(), rowNumber, errors));
         dto.setSourceId(r.sourceId());
@@ -361,6 +368,7 @@ public class ImportService {
             case "reportingPeriodStart" -> mapping.get("periodStart");
             case "reportingPeriodEnd" -> mapping.get("periodEnd");
             case "subCategory" -> mapping.get("subCategory");
+            case "notes" -> mapping.get("notes");
             default -> null;
         };
     }
@@ -403,19 +411,73 @@ public class ImportService {
         Map<String, String> suggestion = new LinkedHashMap<>();
         for (String field : ImportDtos.FIELDS) {
             Optional<String> match = columns.stream()
-                    .filter(c -> SYNONYMS.get(field).contains(c.trim().toLowerCase(Locale.ROOT).replace('-', ' ')))
+                    .filter(c -> SYNONYMS.get(field).contains(normalise(c)))
                     .findFirst();
             match.ifPresent(c -> suggestion.put(field, c));
         }
         return suggestion;
     }
 
-    /** CSV template: the columns the importer understands and one example row per pillar. */
+    static String normalise(String header) {
+        return header.trim().toLowerCase(Locale.ROOT).replaceAll("[_\\-\\s]+", " ");
+    }
+
+    /**
+     * CSV template (F1): the columns the importer understands, with example rows that import as they are for the user
+     * downloading it — an organisation they can enter data for, the current quarter, metrics from the catalogue and
+     * the tenant's base currency (no exchange rate needed). Headers match the automatic column mapping.
+     */
     public String template() {
-        return "organisation,metric,value,currency,period_start,period_end,sub_category\n"
-                + "Lagos HQ,diesel_litres,1250.5,,2026-01-01,2026-03-31,Generators\n"
-                + "Lagos HQ,employees_total,120,,2026-01-01,2026-03-31,\n"
-                + "Lagos HQ,community_investment,5000,USD,2026-01-01,2026-03-31,School project\n";
+        String org = jdbc.queryForList("select id, name from auth.organisations where is_active order by parent_org_id nulls first, name")
+                .stream().filter(o -> orgScope.canAccess((UUID) o.get("id"))).map(o -> (String) o.get("name"))
+                .findFirst().orElse("Your organisation");
+        LocalDate today = LocalDate.now(clock);
+        LocalDate start = today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+        LocalDate end = start.plusMonths(3).minusDays(1);
+        String period = start + "," + end;
+        String name = csv(org);
+        return "organisation,metric,value,currency,period_start,period_end,sub_category,notes\n"
+                + name + ",diesel_litres,1250.5,," + period + ",Generators,Example row: replace with your data\n"
+                + name + ",electricity_kwh,48000,," + period + ",,From the utility bill\n"
+                + name + ",employees_total,120,," + period + ",,Headcount at the end of the quarter\n";
+    }
+
+    /** Failed rows as CSV: the original columns plus why each row failed, to fix and import again (F3). */
+    public String failedRows(UUID id) {
+        ImportJobResponse job = get(id);
+        if (job.rowErrors() == null || job.rowErrors().isEmpty()) {
+            throw ApiException.conflict("ESG-409-STATE", "This import has no failed rows");
+        }
+        Map<Integer, List<String>> reasons = new java.util.TreeMap<>();
+        job.rowErrors().forEach(e -> reasons.computeIfAbsent(e.path("row").asInt(), k -> new ArrayList<>())
+                .add((e.path("column").isMissingNode() || e.path("column").isNull() ? "" : e.path("column").asText() + ": ")
+                        + e.path("message").asText()));
+        List<List<String>> rows;
+        try (InputStream in = files.open(fileId(id), null).stream()) {
+            rows = TabularReader.read(in, job.fileFormat());
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read the import file", e);
+        }
+        StringBuilder out = new StringBuilder();
+        List<String> header = new ArrayList<>(rows.get(0));
+        header.add("error");
+        out.append(String.join(",", header.stream().map(ImportService::csv).toList())).append('\n');
+        reasons.forEach((row, why) -> {
+            List<String> cells = new ArrayList<>(row - 1 < rows.size() ? rows.get(row - 1) : List.of());
+            while (cells.size() < rows.get(0).size()) {
+                cells.add("");
+            }
+            cells.add(String.join("; ", why));
+            out.append(String.join(",", cells.stream().map(ImportService::csv).toList())).append('\n');
+        });
+        return out.toString();
+    }
+
+    private static String csv(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.contains(",") || value.contains("\"") || value.contains("\n") ? "\"" + value.replace("\"", "\"\"") + "\"" : value;
     }
 
     private ImportJobResponse response(ResultSet rs) throws SQLException {

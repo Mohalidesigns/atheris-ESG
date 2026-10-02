@@ -7,6 +7,7 @@ import com.esg.model.dto.TenancyDtos.SettingsResponse;
 import java.sql.Array;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,8 +38,19 @@ public class TenantSettingsService {
         return rows.get(0);
     }
 
+    /** IANA time-zone ids (Region/City), sorted: what Settings › Reporting time zone may hold (F10). */
+    public static List<String> timeZones() {
+        return java.time.ZoneId.getAvailableZoneIds().stream()
+                .filter(z -> z.contains("/") && !z.startsWith("Etc/") && !z.startsWith("SystemV/") && Character.isUpperCase(z.charAt(0)))
+                .sorted().toList();
+    }
+
     @Transactional
     public SettingsResponse update(SettingsRequest r) {
+        if (!timeZones().contains(r.reportingTimezone().trim())) {
+            throw new FieldValidationException("ESG-400-TIMEZONE",
+                    Map.of("reportingTimezone", "Choose a time zone from the list, e.g. Africa/Lagos"));
+        }
         List<String> codes = r.defaultFrameworkCodes().stream().map(String::trim).distinct().toList();
         if (!codes.isEmpty()) {
             List<String> known = jdbc.query(con -> {

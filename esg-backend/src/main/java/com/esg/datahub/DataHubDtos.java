@@ -31,7 +31,7 @@ public final class DataHubDtos {
                                     String statusReason, UUID submittedBy, Instant submittedAt, UUID validatedBy,
                                     Instant validatedAt, UUID approvedBy, Instant approvedAt, List<UUID> evidenceFileIds,
                                     UUID importJobId, UUID createdBy, String createdByName, Instant createdAt,
-                                    Instant updatedAt, Long version, List<String> actions) {}
+                                    Instant updatedAt, Long version, List<String> actions, String notes) {}
 
     /** Body of a workflow step. A reason is required to reject or reopen. */
     public record TransitionRequest(Long version, @Size(max = 1000) String reason) {}

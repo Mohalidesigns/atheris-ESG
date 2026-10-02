@@ -24,6 +24,7 @@ public class DataPointDto {
     @NotBlank @Size(max = 100) private String metricKey;
     @Digits(integer = 14, fraction = 6) private BigDecimal numericValue;
     @Size(max = 2000) private String textValue;
+    @Size(max = 1000) private String notes;
     /** Optional: the metric's unit; if sent it must match. */
     @Size(max = 50) private String unit;
     @NotNull private LocalDate reportingPeriodStart;
@@ -45,6 +46,8 @@ public class DataPointDto {
     public void setOrgId(UUID orgId) { this.orgId = orgId; }
     public String getCategory() { return this.category; }
     public void setCategory(String category) { this.category = category; }
+    public String getNotes() { return this.notes; }
+    public void setNotes(String notes) { this.notes = notes; }
     public String getSubCategory() { return this.subCategory; }
     public void setSubCategory(String subCategory) { this.subCategory = subCategory; }
     public String getMetricKey() { return this.metricKey; }

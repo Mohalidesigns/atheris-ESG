@@ -198,6 +198,15 @@ class TenancyApiTest extends ApiTestSupport {
     send(put("/v1/settings"), admin(), "{\"baseCurrency\":\"NGN\",\"fiscalYearStartMonth\":1,\"reportingTimezone\":\"Africa/Lagos\","
         + "\"defaultFrameworkCodes\":[\"MADE_UP\"],\"version\":" + next + "}")
         .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.defaultFrameworkCodes").exists());
+    // F10: only IANA time zones.
+    send(put("/v1/settings"), admin(), "{\"baseCurrency\":\"NGN\",\"fiscalYearStartMonth\":1,\"reportingTimezone\":\"Not/A_Zone\","
+        + "\"defaultFrameworkCodes\":[],\"version\":" + next + "}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value("ESG-400-TIMEZONE"))
+        .andExpect(jsonPath("$.errors.reportingTimezone").value("Choose a time zone from the list, e.g. Africa/Lagos"));
+    mvc.perform(get("/v1/reference/timezones").header("Authorization", admin()))
+        .andExpect(jsonPath("$.data", hasItem("Africa/Lagos")))
+        .andExpect(jsonPath("$.data", org.hamcrest.Matchers.not(hasItem("Not/A_Zone"))));
 
     // Directors can read but not change settings.
     send(put("/v1/settings"), bearerForRole("ESG_DIRECTOR"), body).andExpect(status().isForbidden());
@@ -227,6 +236,18 @@ class TenancyApiTest extends ApiTestSupport {
         .andExpect(status().isOk()).andExpect(jsonPath("$.data.subscriptionTier").value("enterprise"));
     send(put("/v1/platform/tenants/" + tenant.path("id").asText()), bearerForRole("SUPER_ADMIN"), update)
         .andExpect(status().isConflict());
+
+    // F10: a tenant's reporting time zone follows its country.
+    String ghSlug = "gh-" + UUID.randomUUID().toString().substring(0, 6);
+    JsonNode ghana = data(send(post("/v1/platform/tenants"), bearerForRole("SUPER_ADMIN"), body.replace(slug, ghSlug)
+        .replace(email, ghSlug + "@fixture.test").replace("\"countryCode\":\"NG\"", "\"countryCode\":\"GH\""))
+        .andExpect(status().isCreated()));
+    try (Connection owner = PostgresTestDatabase.ownerConnection(); Statement st = owner.createStatement()) {
+      st.execute("select set_config('app.current_tenant', '" + ghana.path("id").asText() + "', false)");
+      var rs = st.executeQuery("select reporting_timezone from auth.tenant_settings");
+      assertThat(rs.next()).isTrue();
+      assertThat(rs.getString(1)).isEqualTo("Africa/Accra");
+    }
 
     // Duplicate slug and weak admin password are rejected without creating anything.
     send(post("/v1/platform/tenants"), bearerForRole("SUPER_ADMIN"), body.replace(email, "other." + email))
