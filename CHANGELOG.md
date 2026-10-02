@@ -3,6 +3,23 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-52b Phase 1: functional fixes (D26)
+
+- **F1** The import template is made for the downloading user (their organisation, this quarter, base currency) and imports with no failures.
+- **F2** Import history refreshes when a job finishes and polls while any job is running.
+- **F3** Common header names (metric_code, KPI, comment…) auto-map; data points have a Notes field (also an import target); failed rows download as CSV with reasons.
+- **F4** Spend-based US EPA EEIO factors (v1.3) for Scope 3 categories 1, 2, 4–8; where none exist the calculator says so and links to the factor library.
+- **F5** Every activity has a GHG scope; the calculator lists only the chosen scope's activities and the server refuses mismatches.
+- **F6** Reduction-target actuals use the Overview's totals and include the base year; the Actual line shows single years.
+- **F7** A reduction target evidences IFRS S2-33 and GRI 305-5 in the gap analysis.
+- **F8** Frameworks show assessable requirements and section headings separately, matching the gap analysis.
+- **F9** PCAF sector is picked from the sector taxonomy (ISIC Rev. 4) and validated.
+- **F10** Reporting time zone is picked from the IANA list (`ESG-400-TIMEZONE`); new tenants default to their country's zone.
+- **F11** Custom factors pick a known activity (its unit fills in) or declare a new one with its scope; countries come from the ISO list.
+- **F13** Deleting a draft closes the drawer without refetching it (no 404).
+- **F14** The dashboard's review card shows "to validate · to approve" and opens the Review tab.
+- **F15** Monthly emissions split multi-month records by days.
+
 ## Unreleased — WP-52a Phase 0: security and integrity (D25)
 
 - **S1** MFA is enforced in every profile, including local: tokens carry `mfa`, sessions remember it, and users with an MFA-required role are refused everywhere (`ESG-401-MFA-REQUIRED`) without a verified session; `MFA_DEV_BYPASS` (off by default, warns at startup, refused in staging/prod).

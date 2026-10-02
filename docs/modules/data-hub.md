@@ -31,6 +31,14 @@ sub-scores, rule warnings, evidence, history, and exactly the actions the server
 - Import: ≤ 5,000 rows, first sheet of XLSX or CSV; each row is saved exactly as the form would save it, as the
   importing user; rows become drafts.
 
+## Import (WP-52b)
+
+- The template (`GET /data/import/template`) is made for the user downloading it: an organisation they can enter data
+  for, the current quarter and the base currency, so it imports as it is.
+- Headers map automatically (case, `_`, `-` and spacing ignored; e.g. `metric_code`, `KPI`, `Comment` → notes).
+- Failed rows download as CSV with an `error` column (`GET /data/import/{id}/failed-rows`); the history refreshes by itself.
+- Data points have **Notes** (up to 1,000 characters).
+
 ## Tests
 
 Backend: `DataPointWorkflowTest`, `DataPointApiTest`, `ImportApiTest`, `QualityScoreCalculatorTest`,

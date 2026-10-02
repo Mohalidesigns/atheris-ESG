@@ -28,6 +28,18 @@ same code as saving, so what is shown is what is stored.
 | Data Hub | Approving `electricity_kwh`, `diesel_litres`, `petrol_litres`, `lpg_kg` or `natural_gas_m3` (`reference.metric_activities`); reopening the point deletes the record | No: change the data point |
 | Flaring | One Scope 1 record per flaring record | No: edit the flaring record |
 
+## Activities and factors (WP-52b, D26)
+
+- Every factor category is an **activity** with a GHG scope (and Scope 3 category), a method and the unit its data is
+  measured in (`GET /carbon/factors/activities`). The calculator lists only the chosen scope's activities; the server
+  refuses a mismatch. Tenants add activities with a custom factor (name + scope); countries come from ISO 3166.
+- **Spend-based Scope 3**: US EPA EEIO v1.3 factors (kgCO2e per 2022 USD, NAICS proxies) for categories 1, 2, 4–8,
+  pending ESG SME review. Other categories need a custom factor; the calculator links to the library.
+- **Provisional factors** (WP-52a S7): figures using a factor still pending review are marked "Provisional factor";
+  Settings can block such factors.
+- **Monthly chart**: multi-month records are split across months by days. **Targets** use the Overview's totals and
+  include the base year.
+
 ## Formulas (golden-tested)
 
 - CO2e (t) = activity × (EF_CO2 + EF_CH4 × GWP_CH4 + EF_N2O × GWP_N2O) ÷ 1000; CO2e-only factors are applied as

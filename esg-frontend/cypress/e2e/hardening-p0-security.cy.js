@@ -93,7 +93,7 @@ describe('Hardening Phase 0: security and integrity', () => {
     cy.uniqueDay().then((day) => {
       cy.login(roles.ESG_DIRECTOR.email);
       cy.carbonTab('Emission records', 2026);
-      cy.calculateEmission({ activity: 'Diesel generator', org: 'Lagos HQ', day, amount: 10 });
+      cy.calculateEmission({ activity: 'Diesel (AGO) in generators', org: 'Lagos HQ', day, amount: 10 });
       cy.get('[aria-label="Calculation result"]').should('contain', 'Provisional factor');
     });
   });

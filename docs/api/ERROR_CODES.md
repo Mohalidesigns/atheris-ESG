@@ -13,6 +13,7 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-400-RANGE` | 400 | A database CHECK refused a value (outside the allowed range) | |
 | `ESG-400-REFERENCE` | 400 | A referenced record doesn't exist or is still in use | |
 | `ESG-400-SELF` | 400 | You can't do this to your own account (deactivate yourself, remove your own role-assignment right) | ✅ |
+| `ESG-400-TIMEZONE` | 400 | Not an IANA time zone (Settings › Reporting time zone; `errors.reportingTimezone`, F10) | |
 | `ESG-400-MFA` | 400 | MFA verification without MFA set up | |
 | `ESG-401` | 401 | Not signed in, or invalid/expired credentials or refresh token | |
 | `ESG-401-MFA-REQUIRED` | 401 | Your role requires two-factor authentication and this session wasn't verified with a code; sign in again (S1) | |

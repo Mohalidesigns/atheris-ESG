@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (branch `feature/wp-52a-security-integrity`, stacked on #11) |
-| Next | **Hardening Phase 1** (functional bugs F1–F15), then Phase 2 (UX), Phase 3 (capability), Phase 4 (WP-24 onwards). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (branch `feature/wp-52b-functional-fixes`, stacked on #12) |
+| Next | **Hardening Phase 2** (UX and consistency), then Phase 3 (capability), Phase 4 (WP-24 onwards). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -17,8 +17,8 @@
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (22 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 57 at L4**, 20 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **32 / 58** implemented (31 at L4), 26 missing. All code endpoints: **128 / 128 tested** (116 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 spec (5 tests). **31 Cypress tests** in 15 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
-| Test coverage | **Backend 88.8% lines** (656 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 330 tests** (Vitest + RTL) + **31 Cypress** | JaCoCo, Vitest |
+| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 (5 tests) and Phase 1 (5 tests) specs. **36 Cypress tests** in 16 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
+| Test coverage | **Backend 89.0% lines** (674 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 339 tests** (Vitest + RTL) + **36 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,34 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-52b — Hardening Phase 1: functional fixes
+
+Branch `feature/wp-52b-functional-fixes` (stacked on WP-52a, PR #12). Design: D26.
+
+| # | Root cause (confirmed) | Fix | Tests |
+|---|---|---|---|
+| F1 | Template hard-coded "Lagos HQ", Q1 2026 and a USD row: refused for scoped users, duplicates on re-import, needs an FX rate | Built per user: their organisation, this quarter, base currency, notes column | `ImportApiTest.theDownloadedTemplateImportsWithoutFailures`, Cypress |
+| F2 | The wizard polled the job but nothing refreshed the Recent imports list | List polls while a job runs; finishing invalidates list and data | Cypress |
+| F3 | Synonyms compared raw text (`metric_code` ≠ `metric code`); no notes target | Normalised matching, more synonyms, `data_points.notes`, failed-rows CSV | `ImportApiTest.commonHeaderNames…`, round-trip `data-point` (notes) |
+| F4 | No platform spend-based factors (EEIO deferred in WP-17) | US EPA v1.3 factors for categories 1, 2, 4–8; "no factors" message with link | `CarbonApiTest.spendBasedScope3UsesTheEpaEeioFactors`, `CarbonPage.test.jsx`, Cypress |
+| F5 | Factors had no scope; the calculator listed every category | `carbon.emission_activities` (scope, Scope 3 category, unit); UI filter; server check | `CarbonApiTest.theActivityMustBelongToTheChosenScope`, UI test, Cypress |
+| F6 | Progress ignored the base year (`y > baseYear`); one point drew no line | Same totals as the Overview, base year included; dots on the Actual line | `CarbonApiTest.targetActualsIncludeTheBaseYear…`, Cypress |
+| F7 | Only Data Hub metrics could evidence a requirement | `reference.requirement_data_sources`: reduction targets → S2-33, GRI 305-5 | `ComplianceApiTest.aReductionTargetEvidences…` |
+| F8 | Frameworks counted headings; gap analysis only leaves | `assessableCount` + `headingCount`, labelled | `ComplianceApiTest.frameworkCountsMatchTheGapAnalysis` |
+| F9 | The PCAF Sector field was free text (the endpoint returns 21 sectors) | Picker from `/reference/sectors`, code validated | `CarbonApiTest.financedSectorComesFromTheTaxonomy`, `ReferenceDataTest.referenceEndpointsAreNeverEmpty` |
+| F10 | No time-zone validation | IANA list (`/reference/timezones`), `ESG-400-TIMEZONE`, country default | `TenancyApiTest`, Cypress |
+| F11 | Category/country free text | Activity and ISO-country pickers, units per activity, new activities with scope | `CarbonApiTest.customFactorsUse…`, `ReferenceDataTest`, UI tests, round-trip specs |
+| F12 | (done in Phase 0) | | |
+| F13 | Delete invalidated every DataPoint tag, so the open drawer refetched the deleted draft | Delete invalidates the lists only | Cypress |
+| F14 | The card counted only `submitted` | Both queues, links to `?tab=review` | `DashboardPage.test.jsx`, Cypress |
+| F15 | Grouped by start month | Pro rata by days (SQL `generate_series`) | `CarbonApiTest.monthlyEmissionsSplit…` |
+
+Results: backend `mvn verify` 674 tests, 0 failures (1 S3 skip), 89.0% lines, 0 Checkstyle; frontend 339 tests, lint, build, no-mock gate 0 findings; Cypress 16 specs / 36 tests, retries off.
+
+Open: ESG SME review of the EEIO proxies, activity scopes and units, and the sector taxonomy mapping (D26 (2), (5), (9)).
 
 ---
 
