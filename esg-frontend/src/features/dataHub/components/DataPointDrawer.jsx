@@ -29,8 +29,8 @@ const ACTION_LABELS = { submit: 'Submit', validate: 'Validate', approve: 'Approv
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '');
 const pct = (n) => Math.round(Number(n ?? 0) * 100);
 
-/** Reject / reopen need a reason, mirrored from the server (required, ≤1000). */
-function ReasonDialog({ action, onCancel, onConfirm }) {
+/** Reject / reopen need a reason, mirrored from the server (required, ≤1000). `count`: a bulk reject of that many points. */
+export function ReasonDialog({ action, onCancel, onConfirm, count }) {
   const { control, handleSubmit, setError } = useForm({ defaultValues: { reason: '' }, resolver: zodResolver(reasonSchema) });
   const [error, setFormError] = useState('');
   const submit = handleSubmit(async ({ reason }) => {
@@ -44,7 +44,9 @@ function ReasonDialog({ action, onCancel, onConfirm }) {
   return (
     <Dialog open onClose={onCancel} maxWidth="xs" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{action === 'reject' ? 'Reject data point' : 'Reopen approved data point'}</DialogTitle>
+        <DialogTitle>
+          {action === 'reject' ? (count ? `Reject ${count} data point${count === 1 ? '' : 's'}` : 'Reject data point') : 'Reopen approved data point'}
+        </DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -130,7 +132,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
                 {dp.subCategory ? ` · ${dp.subCategory}` : ''}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Source: {dp.sourceName ?? 'not recorded'} · Entered by {dp.createdByName ?? '—'} on {when(dp.createdAt)}
+                Source system: {dp.sourceName ?? 'not recorded'} · Responsible: {dp.ownerName ?? '—'} · Entered by {dp.createdByName ?? '—'} on {when(dp.createdAt)}
               </Typography>
             </Box>
 

@@ -1,4 +1,8 @@
-import { Box, Card, CardContent, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import {
+  Box, Button, Card, CardContent, Grid, List, ListItem, ListItemText, Table, TableBody, TableCell, TableHead, TableRow, Typography,
+} from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import Can from '../../../components/rbac/Can';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { useEmissionsSummaryQuery } from '../carbonApi';
@@ -29,6 +33,39 @@ function ChartCard({ title, children, empty, note }) {
         {empty ? <Typography variant="body2" color="text.secondary">Nothing recorded.</Typography> : <Box sx={{ height: 260 }}>{children}</Box>}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Phase 3 (4): for each intensity denominator without an approved value this year, the next step — add the figure
+ * (Data Hub form with that metric and the year preselected) or, when points are already waiting, review them.
+ */
+function IntensityGaps({ gaps, year }) {
+  if (!gaps?.length) return null;
+  return (
+    <List dense disablePadding aria-label="Missing intensity data">
+      {gaps.map((g) => (
+        <ListItem key={g.denominator} disableGutters sx={{ gap: 1, flexWrap: 'wrap' }}
+          secondaryAction={g.awaitingApproval > 0 ? (
+            <Can anyOf={['data_points:validate', 'data_points:approve']}>
+              <Button size="small" component={RouterLink} to="/data-hub?tab=review">Review {g.awaitingApproval} waiting</Button>
+            </Can>
+          ) : (
+            <Can permission="data_points:create">
+              <Button size="small" variant="outlined" component={RouterLink}
+                to={`/data-hub?add=${encodeURIComponent(g.metricKey)}&from=${year}-01-01&to=${year}-12-31`}>
+                Add {g.metricName.toLowerCase()}
+              </Button>
+            </Can>
+          )}>
+          <ListItemText sx={{ pr: 22 }}
+            primary={`${g.metricName} for ${year}`}
+            secondary={g.awaitingApproval > 0
+              ? `${g.awaitingApproval} entered and waiting for approval: approve to see intensity per ${g.denominator === 'revenue' ? 'revenue' : g.denominator === 'employees' ? 'employee' : 'unit produced'}`
+              : `Not entered yet (${g.unit})`} />
+        </ListItem>
+      ))}
+    </List>
   );
 }
 
@@ -114,8 +151,8 @@ export default function CarbonOverview({ year }) {
             <CardContent>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Emission intensity</Typography>
               {data.intensity.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  Approve revenue, employees or production output for {year} in the Data Hub to see intensity.
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Intensity needs approved revenue, headcount or production output for {year}.
                 </Typography>
               ) : (
                 <Table size="small" aria-label="Emission intensity">
@@ -131,6 +168,7 @@ export default function CarbonOverview({ year }) {
                   </TableBody>
                 </Table>
               )}
+              <IntensityGaps gaps={data.intensityGaps} year={year} />
             </CardContent>
           </Card>
         </Grid>

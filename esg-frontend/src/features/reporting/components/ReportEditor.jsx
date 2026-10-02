@@ -14,7 +14,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useFrameworksQuery, useMetricsQuery } from '../../reference/referenceApi';
 import {
-  useDeleteReportMutation, useGenerateReportMutation, useLazyReportVersionQuery, useRefreshReportMutation, useReopenReportMutation, useReportQuery,
+  useDeleteReportMutation, useGenerateReportMutation, useReportPreviewMutation, useLazyReportVersionQuery, useRefreshReportMutation, useReopenReportMutation, useReportQuery,
   useSaveSectionsMutation, useSubmitReportMutation,
 } from '../reportingApi';
 import {
@@ -335,6 +335,7 @@ export default function ReportEditor({ id, onBack }) {
   const [reopen, ro] = useReopenReportMutation();
   const [remove] = useDeleteReportMutation();
   const [generate, gen] = useGenerateReportMutation();
+  const [preview, pv] = useReportPreviewMutation();
   const [tab, setTab] = useState(0);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(null);
@@ -388,6 +389,22 @@ export default function ReportEditor({ id, onBack }) {
             <Can permission="reports:update">
               <Button size="small" disabled={ro.isLoading} onClick={() => act(() => reopen({ id, version: report.version }).unwrap(), 'Reopened as a new draft revision.')}>Reopen for revision</Button>
             </Can>
+          )}
+          {report.status !== 'approved' && (
+            <Tooltip describeChild title="The report as it stands now, watermarked DRAFT. The final PDF is available once it is approved.">
+              <Button size="small" variant="outlined" disabled={pv.isLoading} onClick={() => act(async () => {
+                // An authenticated PDF can't be a plain link: fetch it, then show it in a new tab (or save it).
+                const blob = await preview(id).unwrap();
+                const url = URL.createObjectURL(blob);
+                if (!window.open(url, '_blank', 'noopener')) {
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${report.title}-${report.versionLabel}-DRAFT.pdf`;
+                  a.click();
+                }
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+              }, 'Draft preview opened (watermarked DRAFT).')}>Preview draft PDF</Button>
+            </Tooltip>
           )}
           {!neverApproved && (
             <Can permission="reports:export">

@@ -11,8 +11,9 @@ import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { FormDateField, FormSelect } from '../../../components/form/FormFields';
 import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import {
-  dataHubApi, useDataSourcesQuery, useImportFailedRowsMutation, useImportJobQuery, useImportTemplateMutation, useImportsQuery,
+  dataHubApi, useBulkDataPointsMutation, useDataSourcesQuery, useImportFailedRowsMutation, useImportJobQuery, useImportTemplateMutation, useImportsQuery,
   useStartImportMutation, useUploadImportMutation,
 } from '../dataHubApi';
 import { IMPORT_FIELDS, importStartSchema, toImportStartBody } from '../schemas';
@@ -37,6 +38,9 @@ function Result({ jobId, onShowImported }) {
   const { data: job } = useImportJobQuery(jobId, { pollingInterval: running ? 1000 : 0 });
   const dispatch = useDispatch();
   const [getFailed] = useImportFailedRowsMutation();
+  const [bulk, { isLoading: submitting }] = useBulkDataPointsMutation();
+  const [submitted, setSubmitted] = useState(null);
+  const confirm = useConfirm();
   const finished = job && job.status !== 'processing';
   // F2: when the job finishes, the Recent imports list (and the Data tab) show the final counts at once.
   useEffect(() => {
@@ -65,6 +69,29 @@ function Result({ jobId, onShowImported }) {
       )}
       {done && job.succeededRows > 0 && (
         <Button size="small" onClick={() => onShowImported(job.id)} sx={{ mb: 2 }}>Show the imported drafts</Button>
+      )}
+      {done && job.succeededRows > 0 && !submitted && (
+        <Button size="small" variant="contained" sx={{ mb: 2, ml: 1 }} disabled={submitting} onClick={async () => {
+          const ok = await confirm({
+            title: `Submit the ${job.succeededRows} imported drafts?`,
+            message: 'They go to the review queue for validation. Each draft is checked again on its own; any that can\'t be submitted stay drafts and are listed.',
+            confirmLabel: 'Submit all',
+          });
+          if (!ok) return;
+          try {
+            setSubmitted(await bulk({ action: 'submit', importJobId: job.id }).unwrap());
+          } catch (err) {
+            setSubmitted({ error: toFormError(err).message });
+          }
+        }}>
+          Submit all imported drafts
+        </Button>
+      )}
+      {submitted && (
+        <Alert severity={submitted.error || submitted.failed ? 'warning' : 'success'} sx={{ mb: 2 }} aria-label="Bulk submit result">
+          {submitted.error ?? `${submitted.succeeded} of ${submitted.requested} drafts submitted for validation`
+            + (submitted.failed ? `; ${submitted.failed} not submitted: ${[...new Set(submitted.results.filter((r) => !r.ok).map((r) => r.message))].join('; ')}` : '.')}
+        </Alert>
       )}
       {done && errors.length > 0 && (
         <Button size="small" startIcon={<Download />} onClick={downloadFailed} sx={{ mb: 2, ml: 1 }}>

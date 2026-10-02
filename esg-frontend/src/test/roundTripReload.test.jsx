@@ -77,8 +77,12 @@ const FIXTURE_ORGS = [
   { id: ORG_HQ, name: 'A HQ', parentOrgId: null }, { id: ORG_SITE_1, name: 'A Site 1', parentOrgId: ORG_HQ },
   { id: ORG_SITE_2, name: 'A Site 2', parentOrgId: ORG_HQ },
 ];
+// People who can be named responsible (GET /data/owners, Phase 3).
+const OWNERS = [{ id: USER_DIRECTOR, name: 'Esg Director Fixture', email: 'esg_director@fixture.test' },
+  { id: USER_COMPLIANCE, name: 'Compliance Officer Fixture', email: 'compliance_officer@fixture.test' }];
 const dataPointApi = () => fakeApi({
   'GET /data/rules': () => ok([]),
+  'GET /data/owners': () => ok(OWNERS),
   'GET /data/sources': () => ok([{ id: SOURCE_A, name: 'Manual', sourceType: 'manual', active: true, dataPoints: 1, version: 0 }]),
   'GET /files': () => ok([{ id: FILE_A, originalName: 'evidence.pdf' }]),
   'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 1000, allowedExtensions: 'pdf', virusScanning: 'Not configured' }),
@@ -89,6 +93,7 @@ const openDataPoint = async (record) => {
     { preloadedState: authenticated(ALL) });
   const dialog = await screen.findByRole('dialog');
   await within(dialog).findByText('Manual', {}, { timeout: 2000 }).catch(() => null);
+  await within(dialog).findByText('Esg Director Fixture', {}, { timeout: 2000 }).catch(() => null);
   return dialog;
 };
 
@@ -189,6 +194,7 @@ const openers = {
   'data-point': openDataPoint,
   'data-point-currency': openDataPoint,
   'data-source': async (record) => {
+    fakeApi({ 'GET /data/owners': () => ok(OWNERS) });
     renderWithStore(<DataSourceDialog source={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },

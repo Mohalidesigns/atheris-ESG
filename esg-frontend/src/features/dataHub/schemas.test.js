@@ -68,7 +68,7 @@ describe('dataPointSchema mirrors DataPointDto + DataPointRules + metric error r
     expect(toDataPointBody({ ...base, value: '12.5', subCategory: ' Borehole ', evidenceFileIds: ['f1'], sourceId: 's1' }, metrics.electricity_kwh))
       .toEqual({
         orgId: 'org-1', metricKey: 'electricity_kwh', subCategory: 'Borehole', numericValue: 12.5, textValue: null, currency: null,
-        sourceId: 's1', evidenceFileIds: ['f1'], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
+        sourceId: 's1', ownerUserId: null, evidenceFileIds: ['f1'], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
       });
     expect(toDataPointBody({ ...base, metricKey: 'community_investment', value: '10', currency: 'USD' }, metrics.community_investment))
       .toMatchObject({ numericValue: 10, currency: 'USD', sourceId: null });
@@ -94,11 +94,15 @@ describe('other Data Hub forms mirror their DTOs', () => {
 
   it('data source (DataSourceRequest)', () => {
     const ok = { name: 'SAP', sourceType: 'erp', description: '', active: true };
-    expect(dataSourceSchema.safeParse(ok).success).toBe(true);
-    expect(fieldsOf(dataSourceSchema.safeParse({ ...ok, name: '' }))).toEqual(['name']);
-    expect(fieldsOf(dataSourceSchema.safeParse({ ...ok, name: 'x'.repeat(256) }))).toEqual(['name']);
-    expect(fieldsOf(dataSourceSchema.safeParse({ ...ok, sourceType: 'fax' }))).toEqual(['sourceType']);
-    expect(fieldsOf(dataSourceSchema.safeParse({ ...ok, description: 'x'.repeat(501) }))).toEqual(['description']);
+    expect(dataSourceSchema().safeParse(ok).success).toBe(true);
+    expect(fieldsOf(dataSourceSchema().safeParse({ ...ok, name: '' }))).toEqual(['name']);
+    expect(fieldsOf(dataSourceSchema().safeParse({ ...ok, name: 'x'.repeat(256) }))).toEqual(['name']);
+    expect(fieldsOf(dataSourceSchema().safeParse({ ...ok, sourceType: 'fax' }))).toEqual(['sourceType']);
+    expect(fieldsOf(dataSourceSchema().safeParse({ ...ok, description: 'x'.repeat(501) }))).toEqual(['description']);
+    // Phase 3: a colleague's name isn't a source system (the server refuses it too).
+    const people = [{ id: 'u1', name: 'Elkana Jeremiah' }];
+    expect(fieldsOf(dataSourceSchema(people).safeParse({ ...ok, name: 'elkana jeremiah' }))).toEqual(['name']);
+    expect(dataSourceSchema(people).safeParse({ ...ok, name: 'Generator meter #2', sourceType: 'meter', ownerUserId: 'u1' }).success).toBe(true);
   });
 
   it('exchange rate (FxRateRequest)', () => {

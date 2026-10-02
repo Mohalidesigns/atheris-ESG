@@ -19,6 +19,7 @@ import DataSourcesTab from './DataSourcesTab';
 import FxRatesTab from './FxRatesTab';
 import ImportWizard from './ImportWizard';
 import StatusChip from './StatusChip';
+import BulkActions from './BulkActions';
 
 const CATEGORY_COLOURS = { E: '#2D7D46', S: '#1A365D', G: '#B7791F' };
 const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
@@ -38,8 +39,10 @@ function Count({ label, status }) {
 }
 
 /** A server-paged list of data points with fixed and user filters; "Open" shows the detail drawer. */
-function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage }) {
+function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage, selectable = false }) {
   const table = useServerTable({ defaultSort: { field: 'createdAt', direction: 'desc' } });
+  // Phase 3 (2): selected rows (kept across pages) for the bulk bar.
+  const [selected, setSelected] = useState(() => new Map());
   const params = Object.fromEntries(Object.entries({ ...filters, ...fixed }).filter(([, v]) => v));
   const query = useDataPointsQuery({ ...table.params, ...params });
   const columns = [
@@ -94,7 +97,14 @@ function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, e
       ),
     },
   ];
-  return <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage} />;
+  return (
+    <>
+      {selectable && <BulkActions selected={selected} onDone={() => setSelected(new Map())} />}
+      <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage}
+        rowsPerPageOptions={[10, 20, 50, 100]}
+        selection={selectable ? { selected, onChange: setSelected, rowLabel: (dp) => `${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}` } : undefined} />
+    </>
+  );
 }
 
 function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
@@ -136,7 +146,7 @@ function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
           {filtered && <Button size="small" onClick={() => setFilters(emptyFilters)}>Clear filters</Button>}
         </CardContent>
       </Card>
-      <PointsList filters={filters} onOpen={onOpen} ariaLabel="Data points" emptyTitle="No data points yet"
+      <PointsList selectable filters={filters} onOpen={onOpen} ariaLabel="Data points" emptyTitle="No data points yet"
         emptyMessage={filtered ? 'No data points match these filters.' : 'Add the first data point or import a file.'} />
     </>
   );
@@ -147,12 +157,12 @@ function ReviewTab({ onOpen }) {
     <>
       <Can permission="data_points:validate">
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Awaiting validation</Typography>
-        <PointsList fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel="Awaiting validation"
+        <PointsList selectable fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel="Awaiting validation"
           emptyTitle="Nothing to validate" emptyMessage="Submitted data points appear here." />
       </Can>
       <Can permission="data_points:approve">
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 3, mb: 1 }}>Awaiting approval</Typography>
-        <PointsList fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel="Awaiting approval"
+        <PointsList selectable fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel="Awaiting approval"
           emptyTitle="Nothing to approve" emptyMessage="Validated data points appear here." />
       </Can>
     </>
@@ -173,10 +183,14 @@ export default function DataHubPage() {
   const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
   const tabs = TABS.filter((t) => t.anyOf.some((p) => permissions.includes(p)));
   // ?tab=review (e.g. from the Dashboard's review card, F14) opens that tab.
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [tab, setTab] = useState(params.get('tab') ?? 'data');
   const [filters, setFilters] = useState(emptyFilters);
-  const [editing, setEditing] = useState(undefined); // undefined closed, null new, object edit
+  // ?add=<metric>&from=&to= (Phase 3: the Carbon intensity prompt) opens the form with that metric and period.
+  const preset = params.get('add') && permissions.includes('data_points:create')
+    ? { metricKey: params.get('add'), reportingPeriodStart: params.get('from') ?? '', reportingPeriodEnd: params.get('to') ?? '' }
+    : null;
+  const [editing, setEditing] = useState(preset ? null : undefined); // undefined closed, null new, object edit
   const [openId, setOpenId] = useState(null);
   const { data: metrics = [] } = useMetricsQuery();
   const { data: orgs = [] } = useListOrganisationsQuery();
@@ -206,9 +220,13 @@ export default function DataHubPage() {
       {current === 'rates' && <FxRatesTab />}
 
       <DataPointDrawer id={openId} onClose={() => setOpenId(null)} onEdit={(dp) => setEditing(dp)} />
-      {editing !== undefined && (
-        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing}
-          onClose={(saved) => { setEditing(undefined); if (saved?.id) setOpenId(saved.id); }} />
+      {editing !== undefined && metrics.length > 0 && (
+        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing} preset={editing ? null : preset}
+          onClose={(saved) => {
+            setEditing(undefined);
+            if (preset) setParams({}, { replace: true });
+            if (saved?.id) setOpenId(saved.id);
+          }} />
       )}
     </Box>
   );

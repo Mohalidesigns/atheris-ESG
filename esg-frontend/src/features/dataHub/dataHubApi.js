@@ -41,8 +41,19 @@ export const dataHubApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       invalidatesTags: (_r, _e, { id }) => ['DataPoint', { type: 'DataPointHistory', id }],
     }),
+    /**
+     * Phase 3 bulk step: { action, items: [{id, version}] } or { action, importJobId }, reason for reject. Each point is
+     * checked like the single call; the response has a result per point.
+     */
+    bulkDataPoints: build.mutation({
+      query: (body) => ({ url: '/data/points/bulk', method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['DataPoint', 'DataPointHistory', 'Emission'],
+    }),
     dataRules: build.query({ query: () => '/data/rules', transformResponse: unwrap }),
 
+    /** Phase 3: people who can be named responsible for a data point or source. */
+    dataOwners: build.query({ query: () => '/data/owners', transformResponse: unwrap, providesTags: ['User'] }),
     dataSources: build.query({
       query: (params = {}) => ({ url: '/data/sources', params }),
       transformResponse: unwrap,
@@ -108,8 +119,8 @@ export const dataHubApi = apiSlice.injectEndpoints({
 
 export const {
   useDataPointsQuery, useDataPointQuery, useDataPointHistoryQuery, useCreateDataPointMutation, useUpdateDataPointMutation,
-  useDeleteDataPointMutation, useTransitionDataPointMutation, useDataRulesQuery,
-  useDataSourcesQuery, useCreateDataSourceMutation, useUpdateDataSourceMutation,
+  useDeleteDataPointMutation, useTransitionDataPointMutation, useBulkDataPointsMutation, useDataRulesQuery,
+  useDataSourcesQuery, useDataOwnersQuery, useCreateDataSourceMutation, useUpdateDataSourceMutation,
   useFxRatesQuery, useCreateFxRateMutation, useUpdateFxRateMutation, useDeleteFxRateMutation,
   useImportsQuery, useImportJobQuery, useUploadImportMutation, useStartImportMutation, useImportTemplateMutation,
   useImportFailedRowsMutation,

@@ -10,7 +10,7 @@ import Can from '../../../components/rbac/Can';
 import { applyProblem } from '../../../services/formErrors';
 import { CURRENCIES } from '../../admin/schemas';
 import {
-  useCreateDataPointMutation, useDataRulesQuery, useDataSourcesQuery, useTransitionDataPointMutation, useUpdateDataPointMutation,
+  useCreateDataPointMutation, useDataOwnersQuery, useDataRulesQuery, useDataSourcesQuery, useTransitionDataPointMutation, useUpdateDataPointMutation,
 } from '../dataHubApi';
 import {
   DATA_POINT_SERVER_FIELDS, NUMERIC_TYPES, dataPointSchema, emptyDataPoint, toDataPointBody, toDataPointForm,
@@ -21,22 +21,26 @@ const PILLARS = { E: 'Environmental', S: 'Social', G: 'Governance' };
 
 /**
  * Data Collection Form (TRD §7.4): the fields follow the chosen catalogue metric — number or text, its unit, and a
- * currency for money metrics. Saves a draft; "Save and submit" also sends it for validation. `point` = edit.
+ * currency for money metrics. Saves a draft; "Save and submit" also sends it for validation. `point` = edit;
+ * `preset` = starting values for a new point (e.g. the metric and year from the intensity prompt, Phase 3).
  */
-export default function DataPointDialog({ open, onClose, metrics, orgs, point = null }) {
+export default function DataPointDialog({ open, onClose, metrics, orgs, point = null, preset = null }) {
   const editing = Boolean(point);
   const metricsByKey = useMemo(() => Object.fromEntries(metrics.map((m) => [m.metricKey, m])), [metrics]);
   const { data: rules = [] } = useDataRulesQuery();
   const { data: sources = [] } = useDataSourcesQuery({ activeOnly: true });
+  const { data: people = [] } = useDataOwnersQuery();
   const [create, createState] = useCreateDataPointMutation();
   const [update, updateState] = useUpdateDataPointMutation();
   const [transition] = useTransitionDataPointMutation();
   const [formError, setFormError] = useState('');
   const { control, handleSubmit, setError } = useForm({
-    defaultValues: point ? toDataPointForm(point) : emptyDataPoint,
+    defaultValues: point ? toDataPointForm(point) : { ...emptyDataPoint, ...preset },
     resolver: zodResolver(dataPointSchema(metricsByKey, rules)),
   });
   const metric = metricsByKey[useWatch({ control, name: 'metricKey' })];
+  const sourceId = useWatch({ control, name: 'sourceId' });
+  const sourceOwner = sources.find((s) => s.id === sourceId)?.ownerName;
   const busy = createState.isLoading || updateState.isLoading;
 
   const save = (submit) => handleSubmit(async (values) => {
@@ -122,8 +126,15 @@ export default function DataPointDialog({ open, onClose, metrics, orgs, point = 
                 helperText="e.g. meter remark, estimate method or where the figure came from" />
             </Grid>
             <Grid size={12}>
-              <FormSelect control={control} name="sourceId" label="Data source (optional)"
+              <FormSelect control={control} name="sourceId" label="Source system (optional)"
+                helperText="Where the figure came from: meter, ERP, IoT feed, manual entry…"
                 options={[{ value: '', label: 'Not recorded' }, ...sources.map((s) => ({ value: s.id, label: s.name }))]} />
+            </Grid>
+            <Grid size={12}>
+              <FormSelect control={control} name="ownerUserId" label="Responsible person"
+                helperText="Who answers for this figure"
+                options={[{ value: '', label: point?.ownerName ? `Keep ${point.ownerName}` : sourceOwner ? `Source owner (${sourceOwner})` : 'Me' },
+                  ...people.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
             <Grid size={12}>
               <Controller name="evidenceFileIds" control={control} render={({ field, fieldState }) => (

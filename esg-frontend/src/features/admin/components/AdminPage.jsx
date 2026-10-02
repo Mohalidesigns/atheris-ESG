@@ -16,6 +16,7 @@ import AuditLogTab from '../../audit/components/AuditLogTab';
 import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
 import IntegrationsTab from './IntegrationsTab';
+import FrameworkContentTab from './FrameworkContentTab';
 import { useSearchParams } from 'react-router-dom';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
@@ -244,6 +245,7 @@ const TABS = [
   { value: 'integrations', label: 'Integrations', permission: 'tenant_settings:read', render: () => <IntegrationsTab /> },
   { value: 'subscription', label: 'Subscription', permission: 'subscription:read', render: () => <SubscriptionTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
+  { value: 'framework-content', label: 'Framework content', permission: 'framework_content:import', render: () => <FrameworkContentTab /> },
   { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
   { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
 ];

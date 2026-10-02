@@ -12,7 +12,7 @@ import { useComplianceStatusQuery, useSetActiveFrameworksMutation } from '../com
 const CONTENT_STATUS = {
   seeded: { label: 'Loaded, pending SME review', color: 'warning' },
   sme_verified: { label: 'SME verified', color: 'success' },
-  pending_sme: { label: 'Content pending SME', color: 'default' },
+  pending_sme: { label: 'Pending SME verification', color: 'default' },
 };
 
 function depthOf(req, byCode) {
@@ -113,7 +113,18 @@ export default function FrameworksTab({ year }) {
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{current.name}</Typography>
                 <Chip size="small" color={CONTENT_STATUS[current.contentStatus]?.color} label={CONTENT_STATUS[current.contentStatus]?.label ?? current.contentStatus} />
               </Box>
-              {current.source && <Typography variant="caption" color="text.secondary">Source: {current.source}</Typography>}
+              {current.source && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Source: {current.source}</Typography>}
+              {current.version && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  Version {current.version}{current.effectiveDate ? ` · effective ${current.effectiveDate}` : ''}
+                </Typography>
+              )}
+              {current.contentStatus !== 'sme_verified' && current.requirementCount > 0 && (
+                <Alert severity="info" sx={{ my: 1 }}>
+                  These requirements haven't been verified by an ESG subject-matter expert yet. Use them to plan; check the
+                  source before relying on them for a filing.
+                </Alert>
+              )}
               <Requirements framework={current} />
             </CardContent>
           </Card>
