@@ -431,6 +431,7 @@ class FieldRoundTripTest extends ApiTestSupport {
             .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2)
             .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A)
             .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR"))
+            .replace("{USER_MANAGER}", roleUserId("ESG_MANAGER")).replace("{PROJECT_A}", "a0000000-0000-4000-8000-000000000301")
             .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4"));
       }
       if (node.isObject() && node.has("$repeat")) {
@@ -493,6 +494,19 @@ class FieldRoundTripTest extends ApiTestSupport {
     if (expected.isArray() && actual.isArray()) {
       if (expected.size() != actual.size()) {
         return false;
+      }
+      if (expected.size() > 0 && expected.get(0).isObject()) {
+        // e.g. workforce lines: every expected row has an equal row in the response (order ignored)
+        List<JsonNode> left = new ArrayList<>();
+        actual.forEach(left::add);
+        for (JsonNode e : expected) {
+          JsonNode match = left.stream().filter(a -> same(e, a)).findFirst().orElse(null);
+          if (match == null) {
+            return false;
+          }
+          left.remove(match);
+        }
+        return true;
       }
       List<String> a = new ArrayList<>();
       List<String> b = new ArrayList<>();

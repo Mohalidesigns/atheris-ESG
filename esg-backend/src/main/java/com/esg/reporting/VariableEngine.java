@@ -4,6 +4,7 @@ import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
 import com.esg.reporting.ReportingDtos.VariableValue;
+import com.esg.social.SocialMetricsService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
@@ -33,6 +34,10 @@ import org.springframework.stereotype.Component;
  *   <li>{@code compliance:<FRAMEWORK>:completeness|met|total} — gap analysis for the period's end year;</li>
  *   <li>{@code governance:board_size|board_independent_pct|board_female_pct|policies_published|whistleblower_cases} — the board
  *       register at the period's end, policies published by then, whistleblower cases received in the period (WP-34);</li>
+ *   <li>{@code social:headcount|women_pct|women_management_pct|…|ltifr|trir|community_investment|grievances_open} — approved
+ *       workforce figures, the incident register, project expenditure and grievances (WP-33). A social catalogue metric
+ *       ({@code metric:employees_female} etc.) with no approved Data Hub value falls back to the Social module, so the
+ *       CBN NSBP Principle 4 section fills from approved workforce figures;</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -49,10 +54,12 @@ public class VariableEngine {
 
     private final JdbcTemplate jdbc;
     private final ComplianceService compliance;
+    private final SocialMetricsService social;
 
-    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance) {
+    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social) {
         this.jdbc = jdbc;
         this.compliance = compliance;
+        this.social = social;
     }
 
     /** Every distinct variable in the texts, in order of appearance. */
@@ -89,6 +96,7 @@ public class VariableEngine {
             case "report" -> REPORT.contains(p[1]);
             case "tenant" -> "name".equals(p[1]);
             case "governance" -> GOVERNANCE.contains(p[1]);
+            case "social" -> SocialMetricsService.VARIABLES.contains(p[1]);
             default -> false;
         };
     }
@@ -177,6 +185,9 @@ public class VariableEngine {
             case "governance" -> {
                 return governance(p[1], start, end);
             }
+            case "social" -> {
+                return social.variable(p[1], start, end).map(v -> value(v)).orElseGet(() -> missing(social.missingReason(p[1])));
+            }
             default -> {
                 return missing("unknown variable");
             }
@@ -195,7 +206,8 @@ public class VariableEngine {
         Object[] args = {key, Date.valueOf(start), Date.valueOf(end)};
         Integer n = jdbc.queryForObject("select count(*) " + where, Integer.class, args);
         if (n == null || n == 0) {
-            return missing("no approved data in the period");
+            // WP-33: social metrics fall back to the Social module's approved records.
+            return social.metric(key, start, end).map(v -> value(v)).orElseGet(() -> missing("no approved data in the period"));
         }
         BigDecimal value = latest
                 // Latest period end; several organisations reporting that period are added up (e.g. headcount per site).
@@ -244,6 +256,14 @@ public class VariableEngine {
         }
         m.appendTail(out);
         return out.toString();
+    }
+
+    private static VariableValue value(SocialMetricsService.Value v) {
+        String unit = v.unit();
+        // Injury rates keep their two decimals (2.50, not 2.5), as they are conventionally reported.
+        String number = unit != null && unit.startsWith("per ") ? v.value().setScale(2, RoundingMode.HALF_UP).toPlainString() : num(v.value());
+        String display = number + (unit == null || "count".equals(unit) ? "" : "%".equals(unit) ? "%" : " " + unit);
+        return new VariableValue(display, v.value(), unit, "ok", v.basis(), null);
     }
 
     private static VariableValue missing(String why) {

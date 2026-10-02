@@ -100,9 +100,20 @@ insert into risk.materiality_items (assessment_id, topic, category) values ('a00
 insert into supply_chain.suppliers (id, name) values ('a0000000-0000-4000-8000-000000000201', 'Supplier A');
 insert into supply_chain.questionnaires (supplier_id, title) values ('a0000000-0000-4000-8000-000000000201', 'ESG survey');
 
-insert into social.safety_incidents (org_id, incident_type, severity, occurred_at)
-  values ('a0000000-0000-4000-8000-00000000000a', 'slip', 'minor', now());
-insert into social.community_projects (name) values ('Borehole');
+insert into social.safety_incidents (org_id, title, incident_type, outcome, occurred_at)
+  values ('a0000000-0000-4000-8000-00000000000a', 'Slip in the yard', 'injury', 'first_aid', now());
+insert into social.community_projects (id, org_id, name, category)
+  values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-00000000000a', 'Borehole', 'water_sanitation');
+insert into social.workforce_snapshots (id, org_id, reporting_period_start, reporting_period_end)
+  values ('a0000000-0000-4000-8000-000000000302', 'a0000000-0000-4000-8000-00000000000a', '2026-01-01', '2026-12-31');
+insert into social.workforce_lines (snapshot_id, employee_level, gender, age_band, headcount)
+  values ('a0000000-0000-4000-8000-000000000302', 'non_management', 'female', '30_50', 10);
+insert into social.grievances (id, org_id, reference, channel, category, severity, title, description, received_on, due_on)
+  values ('a0000000-0000-4000-8000-000000000303', 'a0000000-0000-4000-8000-00000000000a', 'GRV-2026-0001', 'in_person',
+          'environment', 'medium', 'Dust from trucks', 'Dust on the access road', '2026-01-05', '2026-02-04');
+insert into social.grievance_updates (grievance_id, action) values ('a0000000-0000-4000-8000-000000000303', 'received');
+insert into social.project_expenditures (project_id, spent_on, description, amount, currency, amount_base, base_currency)
+  values ('a0000000-0000-4000-8000-000000000301', '2026-03-01', 'Drilling', 1000, 'NGN', 1000, 'NGN');
 
 insert into governance.board_members (name) values ('Board Member A');
 insert into governance.governance_policies (id, name, policy_version) values ('a0000000-0000-4000-8000-0000000006a1', 'Anti-bribery', '1.0');
@@ -120,6 +131,9 @@ insert into files.file_metadata (id, original_name, content_type, size_bytes, sh
 insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256)
   values ('a0000000-0000-4000-8000-0000000004f1', 1, 'fixture/evidence-v1.pdf', 'application/pdf', 4, repeat('0', 64));
 insert into files.file_access_log (file_id, version_no, action) values ('a0000000-0000-4000-8000-0000000004f1', 1, 'upload');
+-- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
+insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
+  values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');
 -- WP-20: an exchange rate (test value only) and a finished import job for tenant A.
 insert into data_hub.fx_rates (id, from_currency, to_currency, rate, rate_date, source)
   values ('a0000000-0000-4000-8000-0000000000f7', 'USD', 'NGN', 1500, '2026-01-01', 'Test fixture rate (not a real quote)');

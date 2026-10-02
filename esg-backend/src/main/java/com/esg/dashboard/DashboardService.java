@@ -55,10 +55,13 @@ public class DashboardService {
     private final com.esg.governance.BoardService board;
     private final com.esg.governance.PolicyService policies;
     private final com.esg.governance.WhistleblowerService cases;
+    private final com.esg.social.SocialMetricsService social;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
                             OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
-                            com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases) {
+                            com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases,
+                            com.esg.social.SocialMetricsService social) {
+        this.social = social;
         this.board = board;
         this.policies = policies;
         this.cases = cases;
@@ -80,7 +83,17 @@ public class DashboardService {
                 CurrentUser.hasPermission("data_points:read") ? sdg(year) : null,
                 activity(),
                 CurrentUser.hasPermission("compliance:read") ? filings(today) : null,
-                CurrentUser.hasPermission("governance:read") ? governance(today) : null);
+                CurrentUser.hasPermission("governance:read") ? governance(today) : null,
+                CurrentUser.hasPermission("social:read") ? social(year) : null);
+    }
+
+    DashboardDtos.Social social(int year) {
+        var o = social.overview(year, true);
+        var w = o.workforce().metrics();
+        return new DashboardDtos.Social(w == null ? null : w.headcount(), w == null ? null : w.femalePct(),
+                w == null ? null : w.womenInManagementPct(), o.safety().ltifr(), o.safety().trir(), o.safety().lostTimeInjuries(),
+                o.safety().hoursWorked(), o.grievances().open(), o.grievances().overdue(), o.community().investmentBase(),
+                o.community().baseCurrency(), o.community().activeProjects());
     }
 
     DashboardDtos.Governance governance(LocalDate today) {
@@ -187,7 +200,10 @@ public class DashboardService {
             new Source("compliance.filing_deadlines", "status", "compliance:read", "filing"),
             new Source("compliance.regulatory_changes", "status", "compliance:read", "regulatory_change"),
             new Source("auth.reporting_periods", "status", "reporting_periods:read", "period"),
-            new Source("governance.governance_policies", "status", "governance:read", "policy"));
+            new Source("governance.governance_policies", "status", "governance:read", "policy"),
+            new Source("social.workforce_snapshots", "status", "social:read", "workforce"),
+            new Source("social.safety_incidents", "status", "social:read", "incident"),
+            new Source("social.grievances", "status", "social:read", "grievance"));
 
     /** Recent workflow steps (status changes from the audit trail) the caller may see, newest first. */
     List<Activity> activity() {
@@ -273,6 +289,25 @@ public class DashboardService {
                 case "retired" -> "retired";
                 default -> null;
             };
+            case "workforce" -> switch (to) {
+                case "submitted" -> "submitted for approval";
+                case "approved" -> "approved";
+                case "draft" -> "approved".equals(from) ? "reopened" : "submitted".equals(from) ? "sent back" : null;
+                default -> null;
+            };
+            case "incident" -> switch (to) {
+                case "investigating" -> "closed".equals(from) ? "reopened" : "started the investigation of";
+                case "actions_open" -> "recorded findings for";
+                case "closed" -> "closed";
+                default -> null;
+            };
+            case "grievance" -> switch (to) {
+                case "acknowledged" -> "acknowledged";
+                case "investigating" -> "resolved".equals(from) || "closed".equals(from) ? "reopened" : "started investigating";
+                case "resolved" -> "resolved";
+                case "closed" -> "closed";
+                default -> null;
+            };
             default -> switch (to) {
                 case "locked" -> "locked";
                 case "open" -> "locked".equals(from) ? "unlocked" : null;
@@ -293,13 +328,19 @@ public class DashboardService {
                     + "and deleted_at is null", id);
             case "policy" -> jdbc.queryForList("select name || ' ' || policy_version as title from governance.governance_policies where id = ? "
                     + "and deleted_at is null", id);
+            case "workforce" -> jdbc.queryForList("select 'Workforce figures · ' || o.name || ' · ' || s.reporting_period_end as title, s.org_id "
+                    + "from social.workforce_snapshots s join auth.organisations o on o.id = s.org_id where s.id = ? and s.deleted_at is null", id);
+            case "incident" -> jdbc.queryForList("select i.title || ' · ' || o.name as title, i.org_id from social.safety_incidents i "
+                    + "join auth.organisations o on o.id = i.org_id where i.id = ? and i.deleted_at is null", id);
+            case "grievance" -> jdbc.queryForList("select reference || ' · ' || title as title, org_id from social.grievances where id = ? "
+                    + "and deleted_at is null", id);
             default -> jdbc.queryForList("select name as title from auth.reporting_periods where id = ?", id);
         };
         if (rows.isEmpty()) {
             return null;
         }
         Map<String, Object> row = new LinkedHashMap<>(rows.get(0));
-        if ("data_point".equals(kind) && !orgScope.canAccess((UUID) row.get("org_id"))) {
+        if (row.get("org_id") != null && !orgScope.canAccess((UUID) row.remove("org_id"))) {
             return null;
         }
         row.put("link", switch (kind) {
@@ -308,6 +349,9 @@ public class DashboardService {
             case "filing" -> "/compliance?tab=deadlines";
             case "regulatory_change" -> "/compliance?tab=changes";
             case "policy" -> "/governance?tab=policies&policy=" + id;
+            case "workforce" -> "/social?tab=workforce&snapshot=" + id;
+            case "incident" -> "/social?tab=safety&incident=" + id;
+            case "grievance" -> "/social?tab=grievances&grievance=" + id;
             default -> "/admin?tab=periods";
         });
         return row;

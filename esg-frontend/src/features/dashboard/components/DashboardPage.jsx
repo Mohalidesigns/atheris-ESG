@@ -223,6 +223,39 @@ function GovernanceCard({ governance }) {
   );
 }
 
+function SocialCard({ social }) {
+  const pct = (v) => (v == null ? '—' : `${fmt(v)}%`);
+  const rate = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Social</Typography>
+        <Table size="small" aria-label="Social summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=workforce" underline="hover">Headcount (approved)</Link></TableCell>
+              <TableCell align="right">{social.headcount ?? '—'}</TableCell>
+            </TableRow>
+            <TableRow><TableCell>Women · in management</TableCell><TableCell align="right">{pct(social.womenPct)} · {pct(social.womenInManagementPct)}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=safety" underline="hover">LTIFR · TRIR</Link></TableCell>
+              <TableCell align="right">{rate(social.ltifr)} · {rate(social.trir)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=grievances" underline="hover">Open grievances</Link></TableCell>
+              <TableCell align="right">{social.openGrievances}{social.overdueGrievances ? ` · ${social.overdueGrievances} overdue` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=community" underline="hover">Community investment</Link></TableCell>
+              <TableCell align="right">{social.baseCurrency} {fmt(social.communityInvestment)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -267,6 +300,7 @@ export default function DashboardPage() {
             {data.activity && <Grid size={{ xs: 12, md: 7 }}><RecentActivity activity={data.activity} /></Grid>}
             {data.filings && <Grid size={{ xs: 12, md: 5 }}><UpcomingFilings filings={data.filings} /></Grid>}
             {data.governance && <Grid size={{ xs: 12, md: 5 }}><GovernanceCard governance={data.governance} /></Grid>}
+            {data.social && <Grid size={{ xs: 12, md: 5 }}><SocialCard social={data.social} /></Grid>}
           </Grid>
         </>
       )}

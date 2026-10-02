@@ -32,12 +32,19 @@ class DeniedActionAuditTest extends ApiTestSupport {
 
   @Test
   void segregationOfDutiesRefusalIsAuditedAgainstTheDataPoint() throws Exception {
-    String day = java.time.LocalDate.of(2026, 1, 1).plusDays((int) (Math.random() * 180)).toString();
-    String created = mvc.perform(post("/v1/data/points").header("Authorization", bearerForRole("ESG_ANALYST"))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"orgId\":\"" + ORG_SITE_1 + "\",\"metricKey\":\"water_withdrawal_m3\",\"numericValue\":7,"
-                + "\"reportingPeriodStart\":\"" + day + "\",\"reportingPeriodEnd\":\"" + day + "\"}"))
-        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+    // A random day in an open period; a day already holding an approved value (an earlier run against the same database)
+    // is skipped rather than failing the test.
+    org.springframework.mock.web.MockHttpServletResponse response = null;
+    for (int attempt = 0; attempt < 10 && (response == null || response.getStatus() != 201); attempt++) {
+      String day = java.time.LocalDate.of(2026, 1, 1).plusDays((int) (Math.random() * 180)).toString();
+      response = mvc.perform(post("/v1/data/points").header("Authorization", bearerForRole("ESG_ANALYST"))
+              .contentType(MediaType.APPLICATION_JSON)
+              .content("{\"orgId\":\"" + ORG_SITE_1 + "\",\"metricKey\":\"water_withdrawal_m3\",\"numericValue\":7,"
+                  + "\"reportingPeriodStart\":\"" + day + "\",\"reportingPeriodEnd\":\"" + day + "\"}"))
+          .andReturn().getResponse();
+    }
+    assertThat(response.getStatus()).as(response.getContentAsString()).isEqualTo(201);
+    String created = response.getContentAsString();
     JsonNode point = json.readTree(created).path("data");
     String id = point.path("id").asText();
     String submitted = mvc.perform(put("/v1/data/points/" + id + "/submit").header("Authorization", bearerForRole("ESG_ANALYST"))

@@ -15,6 +15,9 @@ esg:
     scanner: sandbox
     rescan:
       enabled: false   # tests drive VirusScanService.runOnce() directly
+  social:
+    escalation:
+      enabled: false   # tests drive GrievanceService.runAll(clock) with a shifted clock
   reporting:
     sla:
       enabled: false   # tests drive ApprovalSlaService.runAll() with a fixed clock

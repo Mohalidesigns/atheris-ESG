@@ -87,5 +87,20 @@
   ],
   "Policy lifecycle reason": [
     "com.esg.governance.GovernanceApiTest#aPolicyIsApprovedBySomeoneElsePublishedAndAcknowledgedPerVersion"
+  ],
+  "Project expenditure": [
+    "com.esg.social.SocialApiTest#journey17CommunityProjectWithGeoTaggedEvidence"
+  ],
+  "Project evidence (geo-tagged)": [
+    "com.esg.social.SocialApiTest#journey17CommunityProjectWithGeoTaggedEvidence"
+  ],
+  "Incident investigation": [
+    "com.esg.social.SocialApiTest#journey16SafetyIncidentRecalculatesLtifrAndTrir"
+  ],
+  "Grievance action": [
+    "com.esg.social.SocialApiTest#journey18GrievanceRaisedEscalatedResolved"
+  ],
+  "Workforce approval": [
+    "com.esg.social.SocialApiTest#workforceFiguresNeedASecondPersonToApproveAndThenFeedCbnPrinciple4"
   ]
 }

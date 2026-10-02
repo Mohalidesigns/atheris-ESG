@@ -1,0 +1,216 @@
+{
+  "id": "grievance",
+  "forms": [
+    "Grievance"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/social/grievances"
+  },
+  "read": {
+    "path": "/v1/social/grievances/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/social/grievances/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Social Impact"
+  },
+  "values": {
+    "orgId": "{ORG_HQ}",
+    "projectId": "{PROJECT_A}",
+    "community": "Ogoni",
+    "anonymous": false,
+    "complainantName": "RT complainant {u}",
+    "complainantContact": "+2348000000000",
+    "channel": "phone",
+    "category": "land_compensation",
+    "severity": "medium",
+    "title": "RT grievance {u}",
+    "description": "Crop compensation not paid",
+    "receivedOn": "2025-06-01",
+    "assignedTo": "{USER_DIRECTOR}"
+  },
+  "changes": {
+    "orgId": "{ORG_SITE_1}",
+    "projectId": null,
+    "community": "Eleme",
+    "complainantName": "RT complainant {u} renamed",
+    "complainantContact": "amadi@example.test",
+    "channel": "sms",
+    "category": "employment",
+    "severity": "high",
+    "title": "RT grievance {u} revised",
+    "description": "Local hiring quota not met",
+    "receivedOn": "2025-06-02",
+    "assignedTo": "{USER_MANAGER}"
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "community",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "anonymous",
+      "value": true,
+      "rule": "anonymous has no name or contact"
+    },
+    {
+      "field": "complainantName",
+      "value": "",
+      "rule": "required unless anonymous"
+    },
+    {
+      "field": "complainantName",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "complainantContact",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "channel",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "category",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "severity",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "description",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    },
+    {
+      "field": "receivedOn",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "receivedOn",
+      "value": "2999-01-01",
+      "rule": "not in the future"
+    },
+    {
+      "field": "assignedTo",
+      "value": "{USER_COMPLIANCE}",
+      "rule": "must hold social:update"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A HQ"
+      },
+      "projectId": {
+        "label": "Community project (optional)",
+        "kind": "select",
+        "display": "Borehole"
+      },
+      "community": {
+        "label": "Community (optional)"
+      },
+      "anonymous": {
+        "label": "Anonymous",
+        "kind": "switch"
+      },
+      "complainantName": {
+        "label": "Complainant name"
+      },
+      "complainantContact": {
+        "label": "Complainant contact (optional)"
+      },
+      "channel": {
+        "label": "Channel",
+        "kind": "select",
+        "display": "Phone"
+      },
+      "category": {
+        "label": "Category",
+        "kind": "select",
+        "display": "Land and compensation"
+      },
+      "severity": {
+        "label": "Severity",
+        "kind": "select",
+        "display": "Medium"
+      },
+      "title": {
+        "label": "Title"
+      },
+      "description": {
+        "label": "Description"
+      },
+      "receivedOn": {
+        "label": "Received on"
+      },
+      "assignedTo": {
+        "label": "Assigned to (optional)",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      }
+    }
+  }
+}

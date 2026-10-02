@@ -241,8 +241,8 @@ class RlsIsolationTest {
       setTenant(app, TENANT_B);
       // Tenant A's organisation id, used from tenant B: blocked by the composite (tenant_id, org_id) FK
       // even though PostgreSQL FK checks ignore RLS.
-      assertThatThrownBy(() -> update(app, "insert into social.safety_incidents (org_id, incident_type, severity, occurred_at) "
-          + "values ('a0000000-0000-4000-8000-00000000000a', 'slip', 'minor', now())"))
+      assertThatThrownBy(() -> update(app, "insert into social.safety_incidents (org_id, title, incident_type, outcome, occurred_at) "
+          + "values ('a0000000-0000-4000-8000-00000000000a', 'Slip', 'injury', 'first_aid', now())"))
           .isInstanceOf(SQLException.class)
           .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("23503"));
     }

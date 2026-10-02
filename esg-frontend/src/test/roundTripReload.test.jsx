@@ -20,6 +20,10 @@ import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab'
 import { BoardMemberDialog } from '../features/governance/components/BoardTab';
 import { PolicyDialog } from '../features/governance/components/PoliciesTab';
 import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
+import { WorkforceDialog } from '../features/social/components/WorkforceTab';
+import { IncidentDialog } from '../features/social/components/SafetyTab';
+import { ProjectDialog } from '../features/social/components/CommunityTab';
+import { GrievanceDialog } from '../features/social/components/GrievancesTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -42,6 +46,8 @@ const FILE_A = 'a0000000-0000-4000-8000-0000000004f1';
 const USER_COMPLIANCE = 'a1000000-0000-4000-8000-000000000011';
 const USER_DIRECTOR = 'a1000000-0000-4000-8000-000000000003';
 const TEMPLATE_A = 'a0000000-0000-4000-8000-0000000000f4';
+const USER_MANAGER = 'a1000000-0000-4000-8000-000000000004';
+const PROJECT_A = 'a0000000-0000-4000-8000-000000000301';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
@@ -49,9 +55,11 @@ const resolve = (v) => {
       .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
       .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
       .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
-      .replaceAll('{TEMPLATE_A}', TEMPLATE_A);
+      .replaceAll('{TEMPLATE_A}', TEMPLATE_A)
+      .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A);
   }
   if (Array.isArray(v)) return v.map(resolve);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
   return v;
 };
 
@@ -242,6 +250,30 @@ const openers = {
   },
   'filing-deadline': openCompliance((r) => <DeadlineDialog deadline={r} onClose={() => {}} />),
   'regulatory-change': openCompliance((r) => <ChangeDialog change={r} onClose={() => {}} />),
+  'workforce-snapshot': async (record) => {
+    fakeApi({ 'GET /organisations': () => ok(FIXTURE_ORGS) });
+    renderWithStore(<WorkforceDialog snapshot={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'safety-incident': async (record) => {
+    fakeApi({ 'GET /organisations': () => ok(FIXTURE_ORGS) });
+    renderWithStore(<IncidentDialog incident={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'community-project': async (record) => {
+    fakeApi({ 'GET /organisations': () => ok(FIXTURE_ORGS) });
+    renderWithStore(<ProjectDialog project={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  grievance: async (record) => {
+    fakeApi({
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /social/projects': () => ok([{ id: PROJECT_A, name: 'Borehole' }]),
+      'GET /social/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }, { id: USER_MANAGER, name: 'Esg Manager Fixture' }]),
+    });
+    renderWithStore(<GrievanceDialog grievance={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
   report: async (record) => {
     fakeApi({ 'GET /reports/templates': () => ok([{ id: TEMPLATE_A, name: 'A custom template', platform: false, sections: [] }]) });
     renderWithStore(<ReportDialog report={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
@@ -275,6 +307,15 @@ describe('UI reload generator: edit forms show every saved value', () => {
         // hidden: true — multi-step forms (the emission calculator) keep later steps in the DOM but hidden.
         // Options can arrive after the dialog opens (catalogues load asynchronously): wait for the saved value.
         await waitFor(() => expect(form.getByRole('combobox', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveTextContent(shown));
+      } else if (ui.kind === 'rows') {
+        // A row editor (workforce lines): each saved row's cells, labelled "<column>, line <n>".
+        for (const [i, row] of value.entries()) {
+          for (const [key, col] of Object.entries(ui.columns)) {
+            const name = `${col.label}, line ${i + 1}`;
+            if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[row[key]]);
+            else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : String(row[key]));
+          }
+        }
       } else if (ui.kind === 'toggle') {
         expect(form.getByRole('button', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveAttribute('aria-pressed', 'true');
       } else if (ui.kind === 'object') {

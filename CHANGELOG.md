@@ -3,6 +3,15 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-33 Social Impact (D31)
+
+- Workforce diversity from aggregate figures per site and period (level × gender × age band, disability, pay): women overall and in management, mean pay gap with small groups withheld, turnover; approved by someone other than the submitter, then feeding CBN NSBP Principle 4 and GRI 401/403/405 without double entry.
+- Health and safety: incidents with outcome classification and an investigation workflow (findings → close by another person); LTIFR and TRIR from approved hours worked, with a five-year trend and what the rates leave out.
+- Community projects: budget against dated spend (converted with a dated rate), beneficiaries, SDGs, PIA 2021 host-community flag, and geo-tagged site photos with a distance check.
+- Community grievances: reference, SLA due date by severity, manual and daily escalation (critical ones on receipt), resolution and closure by different people, encrypted complainant details.
+- Reports gain `social:*` variables; the dashboard a Social card; incident, grievance and workforce steps appear in Recent activity.
+- Fixed: a compliance test depended on test order (a filing created by the dashboard test), and an audit test could collide with data from an earlier run.
+
 ## Unreleased — WP-34 Governance & Ethics (D30)
 
 - Board register with composition (independence, women on the board, tenure, committees, skills matrix) and a governance code checker (CAMA 2020, NCCG 2018, King IV; pending SME verification).

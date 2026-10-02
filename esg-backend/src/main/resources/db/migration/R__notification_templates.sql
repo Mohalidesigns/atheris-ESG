@@ -41,5 +41,15 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || 'A new whistleblower report ({{category}}) was received as case {{reference}}. Sign in to Atheris ESG to review it.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('POLICY_PUBLISHED', 'in_app', 'en', 'Policy to acknowledge: {{name}}', 'Version {{version}} is published. Read it and acknowledge it under My policies.'),
   ('POLICY_PUBLISHED', 'email', 'en', 'Policy to acknowledge: {{name}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'The policy "{{name}}" (version {{version}}) is published. Please read and acknowledge it in Atheris ESG (My policies).' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The policy "{{name}}" (version {{version}}) is published. Please read and acknowledge it in Atheris ESG (My policies).' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-33: social impact. No complainant details go into a notification.
+  ('GRIEVANCE_ESCALATED', 'in_app', 'en', 'Grievance {{reference}} escalated (level {{level}})', '{{reason}} Open Social Impact → Grievances.'),
+  ('GRIEVANCE_ESCALATED', 'email', 'en', 'Grievance {{reference}} escalated (level {{level}})',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Grievance {{reference}} ({{severity}}) was escalated to level {{level}}: {{reason}} It is now due by {{dueOn}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('SAFETY_INCIDENT_SERIOUS', 'in_app', 'en', 'Serious safety incident: {{title}}', 'A {{outcome}} incident was recorded at {{site}} on {{date}}. Open Social Impact → Health & safety.'),
+  ('SAFETY_INCIDENT_SERIOUS', 'email', 'en', 'Serious safety incident: {{title}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'A {{outcome}} incident ("{{title}}") was recorded at {{site}} on {{date}}. Sign in to Atheris ESG to follow the investigation.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('WORKFORCE_SNAPSHOT_SUBMITTED', 'in_app', 'en', 'Workforce figures to approve: {{site}}', 'Figures for {{period}} were submitted. Open Social Impact → Workforce.'),
+  ('WORKFORCE_SNAPSHOT_SUBMITTED', 'email', 'en', 'Workforce figures to approve: {{site}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Workforce figures for {{site}} ({{period}}) were submitted for approval. Sign in to Atheris ESG to review them.' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

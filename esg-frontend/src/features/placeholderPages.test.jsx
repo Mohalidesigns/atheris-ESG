@@ -4,7 +4,6 @@ import AnalyticsPage from './analytics/components/AnalyticsPage';
 import CarbonMarketPage from './carbonMarket/components/CarbonMarketPage';
 import InvestorPage from './investor/components/InvestorPage';
 import RiskPage from './risk/components/RiskPage';
-import SocialPage from './social/components/SocialPage';
 import SupplyChainPage from './supplyChain/components/SupplyChainPage';
 import TrainingPage from './training/components/TrainingPage';
 
@@ -12,7 +11,7 @@ import TrainingPage from './training/components/TrainingPage';
 describe.each([
   ['Analytics', AnalyticsPage, 'WP-35'], ['Carbon Market', CarbonMarketPage, 'WP-41'],
   ['Investor Portal', InvestorPage, 'WP-40'], ['Risk & Materiality', RiskPage, 'WP-32'],
-  ['Social Impact', SocialPage, 'WP-33'], ['Supply Chain ESG', SupplyChainPage, 'WP-31'], ['Training & Capacity Building', TrainingPage, 'WP-42'],
+  ['Supply Chain ESG', SupplyChainPage, 'WP-31'], ['Training & Capacity Building', TrainingPage, 'WP-42'],
 ])('%s page', (title, Page, wp) => {
   it('is an honest placeholder', () => {
     render(<Page />);

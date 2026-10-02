@@ -90,6 +90,12 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  social:
+    escalation:
+      # Daily escalation of community grievances past their resolution due date (WP-33, TRD §8.7).
+      enabled: true
+      cron: "0 45 6 * * *"
+      zone: Africa/Lagos
   reporting:
     sla:
       # Daily reminder for report approval steps past their 5-day SLA (TRD §8.4).
