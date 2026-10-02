@@ -75,12 +75,33 @@ public class ExportService {
         return reports.get(reportId).exports().stream().filter(e -> e.id().equals(job)).findFirst().orElseThrow();
     }
 
+    /**
+     * Phase 3 (3): the report as it stands now (working sections and data snapshot), watermarked DRAFT on every page.
+     * Never stored and never an export job: the final export stays gated on approval ({@link #generate}).
+     */
+    public byte[] draftPreview(UUID reportId) {
+        ReportDetail report = reports.get(reportId);
+        String meta = tenant() + " · " + period(report) + " · Working version " + report.versionLabel() + " · Not approved — "
+                + "preview generated " + DAY.format(java.time.Instant.now());
+        return render(report.title(), meta, report.sections(), report.snapshot(), true);
+    }
+
+    static String draftFileName(String title, String version) {
+        return fileName(title, version + "-DRAFT", "pdf");
+    }
+
     byte[] pdf(ReportDetail report, VersionDetail v) {
+        return render(report.title(), tenant() + " · " + period(report) + " · Version " + v.label() + " · Approved " + DAY.format(v.createdAt()),
+                v.sections(), v.snapshot(), false);
+    }
+
+    private byte[] render(String title, String meta, List<Section> sections, Map<String, VariableValue> snapshot, boolean draft) {
         Context ctx = new Context(Locale.UK);
-        ctx.setVariable("title", report.title());
-        ctx.setVariable("meta", tenant() + " · " + period(report) + " · Version " + v.label() + " · Approved " + DAY.format(v.createdAt()));
-        ctx.setVariable("sections", v.sections().stream().map(s -> Map.of("title", s.title(), "paragraphs", paragraphs(s.rendered()))).toList());
-        ctx.setVariable("data", dataRows(v.snapshot()));
+        ctx.setVariable("title", title);
+        ctx.setVariable("meta", meta);
+        ctx.setVariable("draft", draft);
+        ctx.setVariable("sections", sections.stream().map(s -> Map.of("title", s.title(), "paragraphs", paragraphs(s.rendered()))).toList());
+        ctx.setVariable("data", dataRows(snapshot == null ? Map.of() : snapshot));
         String html = xhtml.process("report", ctx);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             ITextRenderer renderer = new ITextRenderer();

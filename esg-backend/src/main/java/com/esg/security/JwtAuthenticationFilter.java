@@ -30,11 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final AccessService accessService;
     private final MfaPolicy mfaPolicy;
+    private final TestDataPolicy testData;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, AccessService accessService, MfaPolicy mfaPolicy) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, AccessService accessService, MfaPolicy mfaPolicy,
+                                   TestDataPolicy testData) {
         this.tokenProvider = tokenProvider;
         this.accessService = accessService;
         this.mfaPolicy = mfaPolicy;
+        this.testData = testData;
     }
 
     @Override
@@ -43,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // Recorded for every request (including login) so database-level audit rows carry the client (V014).
             TenantContext.setClient(request.getRemoteAddr(), request.getHeader("User-Agent"));
+            TenantContext.setTestRun(testData.runOf(request));
             Optional<Claims> claims = Optional.ofNullable(extractToken(request)).flatMap(tokenProvider::parseAccessToken);
             if (claims.isPresent() && !authenticate(claims.get(), request)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

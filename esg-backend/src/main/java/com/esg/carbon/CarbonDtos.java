@@ -166,8 +166,14 @@ public final class CarbonDtos {
 
     public record Intensity(String denominator, BigDecimal denominatorValue, String unit, BigDecimal tonnesPerUnit, String per) {}
 
+    /**
+     * Phase 3 (4): an intensity denominator with no approved value for the year — the metric to add, and how many of its
+     * points are entered but not yet approved (the next step is then the review queue, not a new entry).
+     */
+    public record IntensityGap(String denominator, String metricKey, String metricName, String unit, int awaitingApproval) {}
+
     public record Summary(int year, BigDecimal scope1, BigDecimal scope2Location, BigDecimal scope2Market, BigDecimal scope3,
                           BigDecimal totalLocation, BigDecimal totalMarket, BigDecimal flaring, List<Bucket> byMonth,
                           List<Bucket> bySource, List<Bucket> byOrganisation, List<Bucket> byScope3Category,
-                          List<Intensity> intensity, int records) {}
+                          List<Intensity> intensity, int records, List<IntensityGap> intensityGaps) {}
 }

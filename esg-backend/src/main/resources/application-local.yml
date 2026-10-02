@@ -11,6 +11,9 @@ esg:
     data-encryption-key: ${DATA_ENCRYPTION_KEY:YS0bCdEHVNXWPBZwaz5BaQrw7vGZoHjF+yTlWjZMnFw=}
     cookie-secure: false   # plain http://localhost
     # MFA is enforced locally too (S1). Seeded admin/director accounts have known dev-only TOTP secrets (db/seed/README.md).
+  testing:
+    # Phase 3 (7): requests with X-ESG-Test-Run mark what they create as test data (E2E cleans up after itself).
+    test-data-marking: true
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
 

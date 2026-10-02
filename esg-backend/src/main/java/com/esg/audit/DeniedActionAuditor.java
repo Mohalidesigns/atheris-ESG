@@ -68,22 +68,42 @@ public class DeniedActionAuditor {
                 target = UUID.fromString(m.group());
             }
             String resource = (request.getMethod() + " " + UUID_IN_PATH.matcher(path).replaceAll("{id}"));
-            Map<String, Object> details = new LinkedHashMap<>();
-            details.put("method", request.getMethod());
-            details.put("path", path);
-            details.put("status", status.value());
-            details.put("errorCode", code);
-            details.put("detail", detail);
-            String body = json.writeValueAsString(details);
-            UUID resourceId = target;
-            tx.executeWithoutResult(s -> jdbc.update(
-                    "insert into audit.audit_logs (action, resource, resource_id, new_value, ip_address, user_agent) "
-                            + "values ('denied', ?, ?, ?::jsonb, ?::inet, ?)",
-                    resource.length() > 100 ? resource.substring(0, 100) : resource, resourceId, body,
-                    blankToNull(TenantContext.getClientIp()), truncate(TenantContext.getUserAgent())));
+            write(resource, target, request.getMethod(), path, status, code, detail);
         } catch (RuntimeException | com.fasterxml.jackson.core.JsonProcessingException e) {
             log.warn("Could not record a denied action on {}", request.getRequestURI(), e);
         }
+    }
+
+    /**
+     * Phase 3 (2): a refusal inside a request that otherwise succeeds — one row of a bulk action. {@code method} and
+     * {@code path} describe the single-item call the row stands for, e.g. PUT /v1/data/points/{id}/approve.
+     */
+    public void recordAction(String method, String pathTemplate, UUID resourceId, HttpStatus status, String code, String detail) {
+        if (!isDenial(status, code) || TenantContext.getTenantId() == null) {
+            return;
+        }
+        try {
+            write(method + " " + pathTemplate, resourceId, method,
+                    resourceId == null ? pathTemplate : pathTemplate.replace("{id}", resourceId.toString()), status, code, detail);
+        } catch (RuntimeException | com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.warn("Could not record a denied action on {}", pathTemplate, e);
+        }
+    }
+
+    private void write(String resource, UUID resourceId, String method, String path, HttpStatus status, String code, String detail)
+            throws com.fasterxml.jackson.core.JsonProcessingException {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("method", method);
+        details.put("path", path);
+        details.put("status", status.value());
+        details.put("errorCode", code);
+        details.put("detail", detail);
+        String body = json.writeValueAsString(details);
+        tx.executeWithoutResult(s -> jdbc.update(
+                "insert into audit.audit_logs (action, resource, resource_id, new_value, ip_address, user_agent) "
+                        + "values ('denied', ?, ?, ?::jsonb, ?::inet, ?)",
+                resource.length() > 100 ? resource.substring(0, 100) : resource, resourceId, body,
+                blankToNull(TenantContext.getClientIp()), truncate(TenantContext.getUserAgent())));
     }
 
     private static String blankToNull(String value) {

@@ -159,6 +159,13 @@ public class DataPointService {
 
     @Transactional
     public DataPointResponse submit(UUID id, Long version) {
+        submitPoint(id, version);
+        return get(id);
+    }
+
+    /** The submit step without building the response (bulk actions). */
+    @Transactional
+    public void submitPoint(UUID id, Long version) {
         DataPoint dp = load(id);
         requireStatus(dp, "submitted", DRAFT, REJECTED);
         requireVersion(dp, version);
@@ -178,11 +185,17 @@ public class DataPointService {
         dp.setValidatedAt(null);
         repository.saveAndFlush(dp);
         startWorkflow(dp, user);
-        return get(id);
     }
 
     @Transactional
     public DataPointResponse validate(UUID id, Long version) {
+        validatePoint(id, version);
+        return get(id);
+    }
+
+    /** The validate step without building the response (bulk actions). */
+    @Transactional
+    public void validatePoint(UUID id, Long version) {
         DataPoint dp = load(id);
         requireStatus(dp, "validated", SUBMITTED);
         requireVersion(dp, version);
@@ -193,11 +206,17 @@ public class DataPointService {
         dp.setValidatedAt(Instant.now());
         repository.saveAndFlush(dp);
         recordStep(dp, 1, user, "approved", null);
-        return get(id);
     }
 
     @Transactional
     public DataPointResponse approve(UUID id, Long version) {
+        approvePoint(id, version);
+        return get(id);
+    }
+
+    /** The approve step without building the response (bulk actions). */
+    @Transactional
+    public void approvePoint(UUID id, Long version) {
         DataPoint dp = load(id);
         requireStatus(dp, "approved", VALIDATED);
         requireVersion(dp, version);
@@ -212,12 +231,18 @@ public class DataPointService {
         repository.saveAndFlush(dp);
         recordStep(dp, 2, user, "approved", null);
         events.publishEvent(new DataPointEvents.Approved(id));
-        return get(id);
     }
 
     /** Submitted points need data_points:validate to reject; validated points need data_points:approve. */
     @Transactional
     public DataPointResponse reject(UUID id, Long version, String reason) {
+        rejectPoint(id, version, reason);
+        return get(id);
+    }
+
+    /** The reject step without building the response (bulk actions). */
+    @Transactional
+    public void rejectPoint(UUID id, Long version, String reason) {
         DataPoint dp = load(id);
         requireStatus(dp, "rejected", SUBMITTED, VALIDATED);
         requireVersion(dp, version);
@@ -233,7 +258,6 @@ public class DataPointService {
         dp.setStatusReason(why);
         repository.saveAndFlush(dp);
         recordStep(dp, step, user, "rejected", why);
-        return get(id);
     }
 
     /** Unlocks an approved point for correction (back to draft); the reason is kept and audited. */
@@ -281,6 +305,13 @@ public class DataPointService {
         if (dto.getSourceId() != null && !sources.isActive(dto.getSourceId())) {
             errors.put("sourceId", "is not an active data source");
         }
+        // Responsible person: as sent, else the source system's owner, else whoever already owns it, else the caller.
+        UUID owner = dto.getOwnerUserId() != null ? dto.getOwnerUserId()
+                : dto.getSourceId() != null && sources.ownerOf(dto.getSourceId()) != null ? sources.ownerOf(dto.getSourceId())
+                : dp.getOwnerUserId() != null ? dp.getOwnerUserId() : CurrentUser.access().userId();
+        if (dto.getOwnerUserId() != null && !sources.isAssignableOwner(owner)) {
+            errors.put("ownerUserId", "is not an active user in your organisation");
+        }
         List<UUID> evidence = dto.getEvidenceFileIds() == null ? List.of() : dto.getEvidenceFileIds().stream().distinct().toList();
         if (!evidence.isEmpty()) {
             List<UUID> found = jdbc.query(con -> {
@@ -315,6 +346,7 @@ public class DataPointService {
         periods.requireOpen(dto.getReportingPeriodStart(), dto.getReportingPeriodEnd());
         dp.setOrgId(dto.getOrgId());
         dp.setSourceId(dto.getSourceId());
+        dp.setOwnerUserId(owner);
         dp.setCategory(metric.pillar());
         dp.setSubCategory(dto.getSubCategory() == null || dto.getSubCategory().isBlank() ? metric.category() : dto.getSubCategory().trim());
         dp.setMetricKey(metric.metricKey());
@@ -517,7 +549,8 @@ public class DataPointService {
         });
         Map<String, String> metrics = reference.metrics(null, null).stream()
                 .collect(Collectors.toMap(m -> m.metricKey(), m -> m.name(), (a, b) -> a));
-        Set<UUID> userIds = points.stream().map(DataPoint::getCreatedBy).collect(Collectors.toSet());
+        Set<UUID> userIds = points.stream().flatMap(p -> java.util.stream.Stream.of(p.getCreatedBy(), p.getOwnerUserId()))
+                .filter(java.util.Objects::nonNull).collect(Collectors.toSet());
         Map<UUID, String> users = new HashMap<>();
         if (!userIds.isEmpty()) {
             jdbc.query(con -> {
@@ -541,7 +574,8 @@ public class DataPointService {
                 dp.getSubmittedAt(), dp.getValidatedBy(), dp.getValidatedAt(), dp.getApprovedBy(), dp.getApprovedAt(),
                 dp.getEvidenceFileIds() == null ? List.of() : List.of(dp.getEvidenceFileIds()), dp.getImportJobId(),
                 dp.getCreatedBy(), l.users().get(dp.getCreatedBy()), dp.getCreatedAt(), dp.getUpdatedAt(), dp.getVersion(),
-                actions(dp), dp.getNotes(), blockedActions(dp));
+                actions(dp), dp.getNotes(), blockedActions(dp), dp.getOwnerUserId(),
+                dp.getOwnerUserId() == null ? null : l.users().get(dp.getOwnerUserId()));
     }
 
     private HistoryEntry historyEntry(Timestamp at, UUID userId, String userName, String action, String oldJson, String newJson) {

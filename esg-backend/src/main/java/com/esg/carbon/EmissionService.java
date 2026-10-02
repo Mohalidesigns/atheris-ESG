@@ -287,6 +287,10 @@ public class EmissionService {
         }
         BigDecimal amount = (BigDecimal) p.get("numeric_value");
         EmissionEngine.Result result = EmissionEngine.calculate(amount, resolved.factor(), gwp());
+        // Phase 3 (1): a corrected point (reopened, edited, approved again) gets a new record; the one it replaces is
+        // kept (soft-deleted) and linked to it, so the record's history is traceable.
+        List<UUID> previous = jdbc.queryForList("select id from carbon.emission_records where data_point_id = ? "
+                + "order by created_at desc limit 1", UUID.class, dataPointId);
         removeForDataPoint(dataPointId);
         UUID id = UUID.randomUUID();
         jdbc.update("insert into carbon.emission_records (id, org_id, scope, scope3_category, source_activity, activity_data, activity_unit, "
@@ -301,6 +305,10 @@ public class EmissionService {
         lineage.record("data_point", dataPointId, "emission_record", id, "calculated_from", Map.of("activityData", amount));
         lineage.record("emission_factor", resolved.factor().id(), "emission_record", id, "calculated_from",
                 Map.of("factorVersion", resolved.factor().factorVersion(), "co2eTonnes", result.co2eTonnes()));
+        if (!previous.isEmpty()) {
+            lineage.record("emission_record", previous.get(0), "emission_record", id, "superseded_by",
+                    Map.of("dataPointId", dataPointId, "activityData", amount));
+        }
     }
 
     /** A reopened data point no longer backs an emission record. */
@@ -350,7 +358,7 @@ public class EmissionService {
                 (rs, i) -> new Bucket(rs.getString(1), rs.getString(2), scale(rs.getBigDecimal(3))), args.toArray());
         BigDecimal total = s1.add(s2).add(s3);
         return new Summary(year, scale(s1), scale(s2), scale(s2Market), scale(s3), scale(total), scale(s1.add(s2Market).add(s3)),
-                scale(flaring), byMonth, bySource, byOrg, byCat, intensity(year, total), count == null ? 0 : count);
+                scale(flaring), byMonth, bySource, byOrg, byCat, intensity(year, total), count == null ? 0 : count, intensityGaps(year));
     }
 
     /**
@@ -391,6 +399,32 @@ public class EmissionService {
             out.add(new Intensity("production", production, "units", tonnes.divide(production, 6, RoundingMode.HALF_UP), "per unit produced"));
         }
         return out;
+    }
+
+    // no-mock-gate: config — the Data Hub metric behind each intensity denominator (as in denominators())
+    private static final Map<String, String> DENOMINATOR_METRICS = new LinkedHashMap<>(Map.of(
+            "revenue", "revenue", "employees", "employees_total", "production", "production_output"));
+
+    /** Phase 3 (4): denominators without an approved value this year, with the points still awaiting approval. */
+    List<CarbonDtos.IntensityGap> intensityGaps(int year) {
+        Map<String, BigDecimal> have = denominators(year);
+        List<CarbonDtos.IntensityGap> gaps = new ArrayList<>();
+        for (String denominator : List.of("revenue", "employees", "production")) {
+            BigDecimal v = have.get(denominator);
+            if (v != null && v.signum() > 0) {
+                continue;
+            }
+            String key = DENOMINATOR_METRICS.get(denominator);
+            StringBuilder where = new StringBuilder("where p.metric_key = ? and p.deleted_at is null "
+                    + "and p.validation_status in ('submitted', 'validated') and extract(year from p.reporting_period_start) = ?");
+            List<Object> args = new ArrayList<>(List.of(key, year));
+            appendOrgScope(where, args, "p.org_id");
+            Integer waiting = jdbc.queryForObject("select count(*) from data_hub.data_points p " + where, Integer.class, args.toArray());
+            Map<String, Object> m = jdbc.queryForMap("select name, unit from reference.metrics where metric_key = ?", key);
+            gaps.add(new CarbonDtos.IntensityGap(denominator, key, (String) m.get("name"), (String) m.get("unit"),
+                    waiting == null ? 0 : waiting));
+        }
+        return gaps;
     }
 
     /** Revenue and production summed over the year; headcount = average of the year's values. Approved points only. */

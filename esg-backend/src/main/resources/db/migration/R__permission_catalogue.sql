@@ -54,7 +54,8 @@ FROM (VALUES
   ('audit_logs:read', 'View audit logs'),
   ('notifications:read', 'View own notifications'),
   ('reference_data:read', 'View reference data: metrics, factors, frameworks, catalogues'),
-  ('emission_factors:manage', 'Add and update the tenant''s custom emission factors')
+  ('emission_factors:manage', 'Add and update the tenant''s custom emission factors'),
+  ('framework_content:import', 'Import framework requirement content (platform)')
 ) AS v(p, d)
 ON CONFLICT (resource, action) DO UPDATE SET description = EXCLUDED.description;
 
@@ -82,7 +83,7 @@ INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT 'SUPER_ADMIN', resource, action FROM auth.permissions;
 INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT 'TENANT_ADMIN', resource, action FROM auth.permissions
-WHERE resource NOT IN ('tenants', 'whistleblower');
+WHERE resource NOT IN ('tenants', 'whistleblower', 'framework_content');
 
 INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT r, split_part(p, ':', 1), split_part(p, ':', 2)

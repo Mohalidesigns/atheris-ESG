@@ -40,6 +40,13 @@ public class DataHubSetupController {
         return ResponseEntity.ok(ApiResponse.ok(sources.list(activeOnly)));
     }
 
+    /** Phase 3 (8): who can be named as the responsible person on a data point or source. */
+    @GetMapping("/owners")
+    @PreAuthorize("hasAnyAuthority('data_points:read', 'data_sources:read')")
+    public ResponseEntity<ApiResponse<List<DataSourceService.Person>>> owners() {
+        return ResponseEntity.ok(ApiResponse.ok(sources.people()));
+    }
+
     @GetMapping("/sources/{id}")
     @PreAuthorize("hasAuthority('data_sources:read')")
     public ResponseEntity<ApiResponse<DataSourceResponse>> source(@PathVariable UUID id) {
