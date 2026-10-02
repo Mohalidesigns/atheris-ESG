@@ -191,7 +191,8 @@ export default function DataHubPage() {
     ? { metricKey: params.get('add'), reportingPeriodStart: params.get('from') ?? '', reportingPeriodEnd: params.get('to') ?? '' }
     : null;
   const [editing, setEditing] = useState(preset ? null : undefined); // undefined closed, null new, object edit
-  const [openId, setOpenId] = useState(null);
+  // ?point=<id> (e.g. from the dashboard's activity feed) opens that point's details.
+  const [openId, setOpenId] = useState(params.get('point'));
   const { data: metrics = [] } = useMetricsQuery();
   const { data: orgs = [] } = useListOrganisationsQuery();
   const current = tabs.some((t) => t.value === tab) ? tab : tabs[0]?.value;

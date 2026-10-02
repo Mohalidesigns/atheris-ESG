@@ -3,6 +3,10 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-24 Executive dashboard (D29)
+
+- The dashboard is fully live: emissions this year vs last, emissions trend by year or quarter, compliance per framework, SDG evidence coverage, recent workflow activity with links, and filings overdue or due within 90 days — all from live data, in the user's organisation scope, each card shown only to roles that can read its module.
+
 ## Unreleased — WP-52d Phase 3: missing capability (D28)
 
 - **1** End-to-end multi-user lifecycle: approved diesel, petrol, LPG, natural gas and electricity become exactly one Scope 1/2 record; a corrected point's new record supersedes the old one in lineage; report Director → Compliance → Board → PDF and Excel; regulatory change assess → close by another user. Seed README lists every demo user and role.

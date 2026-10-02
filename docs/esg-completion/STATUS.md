@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (branch `feature/wp-52d-capability`, stacked on #14) |
-| Next | **Hardening Phase 4** (WP-24, 34, 33, 32, 31, 35, 40, 41, 42). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (branch `feature/wp-24-executive-dashboard`, stacked on #15) |
+| Next | **Phase 4 modules**: WP-34 Governance next, then 33, 32, 31, 35, 40, 41, 42. **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,28 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-24 — Executive dashboard
+
+Branch `feature/wp-24-executive-dashboard` (stacked on WP-52d, PR #15). Design: D29. Migration V026, seed `R__ref_13_metric_sdgs`.
+
+| Widget | Source | Tests |
+|---|---|---|
+| Emissions this year vs last (KPI) | `EmissionService.scopeTotals`, org-scoped | `DashboardApiTest`, `DashboardPage.test.jsx`, Cypress |
+| Emissions trend (5 years / 8 quarters, by scope) | `EmissionService.trend` (pro rata by days) | `DashboardApiTest.everyFigure…`, `…OrganisationScope`, UI, Cypress |
+| Compliance per framework + active average | `ComplianceService.status` (gap analysis) | `DashboardApiTest`, UI, Cypress |
+| SDG alignment (17 goals) | `reference.metric_sdgs` × approved points this year | `DashboardApiTest`, UI, Cypress |
+| Recent activity (links to records) | audit trail status changes, permission + org filtered | `DashboardApiTest`, UI, Cypress (link opens the point) |
+| Upcoming filings | `DeadlineService.list` (overdue + 90 days) | `DashboardApiTest.upcomingFilings…`, UI |
+| Review queue (KPI) | Data Hub counts (F14) | UI |
+
+Every section is omitted for roles without the module permission (`DashboardApiTest.sectionsFollow…`, Cypress board member).
+
+Results: backend `mvn verify` 700 tests, 0 failures (1 S3 skip), 89.1% lines, 0 Checkstyle; frontend 373 tests, lint; Cypress 19 specs / 51 tests (the full suite on a fresh database: 50 passed first time; the one failure, a fragile `{esc}` sent to a disabled option in the P0 spec, is fixed and that spec re-run green). `scripts/e2e.sh` now also stops the preview server it starts.
+
+Open (D29): ESG SME review of the metric → SDG links.
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import OrganisationsTab from '../features/admin/components/OrganisationsTab';
 import PeriodsTab from '../features/admin/components/PeriodsTab';
@@ -256,7 +256,8 @@ describe('UI reload generator: edit forms show every saved value', () => {
       const shown = ui.display ?? (value == null ? '' : String(value));
       if (ui.kind === 'select') {
         // hidden: true — multi-step forms (the emission calculator) keep later steps in the DOM but hidden.
-        expect(form.getByRole('combobox', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveTextContent(shown);
+        // Options can arrive after the dialog opens (catalogues load asynchronously): wait for the saved value.
+        await waitFor(() => expect(form.getByRole('combobox', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveTextContent(shown));
       } else if (ui.kind === 'toggle') {
         expect(form.getByRole('button', { name: ui.label, hidden: true }), `${spec.id}.${field}`).toHaveAttribute('aria-pressed', 'true');
       } else if (ui.kind === 'object') {

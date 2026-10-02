@@ -284,6 +284,13 @@ describe('DataHubPage guided entry and responsible person (Phase 3)', () => {
     expect(within(dialog).getByLabelText('Period end')).toHaveValue('2026-12-31');
   });
 
+  it('?point= opens that data point (links from the dashboard activity feed, WP-24)', async () => {
+    fakeApi(routes({ 'GET /data/points/p1': () => ok(point), 'GET /data/points/p1/history': () => ok([]), 'GET /files': () => ok([]) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?point=p1' });
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByText('Data quality 75%')).toBeInTheDocument();
+  });
+
   it('?add= does nothing for someone who cannot add data', async () => {
     fakeApi(routes());
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?add=employees_total' });

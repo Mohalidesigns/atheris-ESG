@@ -380,6 +380,47 @@ public class EmissionService {
         return scopes;
     }
 
+    /** One period of the executive trend (WP-24): tonnes by scope, location-based Scope 2. */
+    public record TrendPoint(String period, BigDecimal scope1, BigDecimal scope2Location, BigDecimal scope3, BigDecimal total) {}
+
+    /**
+     * WP-24: emissions per year or quarter between {@code from} and {@code to} (inclusive), in the caller's org scope.
+     * A record spanning several months is split pro rata by days, as on the Carbon Overview (F15), so periods add up.
+     */
+    public List<TrendPoint> trend(LocalDate from, LocalDate to, boolean quarterly) {
+        StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_end >= ? and r.reporting_period_start <= ?");
+        List<Object> args = new ArrayList<>(List.of(Date.valueOf(from), Date.valueOf(to)));
+        appendOrgScope(where, args, "r.org_id");
+        args.add(Date.valueOf(from.withDayOfMonth(1)));
+        args.add(Date.valueOf(to));
+        String bucket = quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
+        Map<String, Map<String, BigDecimal>> byPeriod = new java.util.TreeMap<>();
+        jdbc.query("select " + bucket + " as period, r.scope, sum(r.co2e_tonnes * "
+                + "((least(r.reporting_period_end, (m + interval '1 month' - interval '1 day')::date) - greatest(r.reporting_period_start, m::date) + 1)::numeric "
+                + "/ (r.reporting_period_end - r.reporting_period_start + 1))) from carbon.emission_records r "
+                + "cross join lateral generate_series(date_trunc('month', r.reporting_period_start), date_trunc('month', r.reporting_period_end), "
+                + "interval '1 month') m " + where + " and m >= ? and m <= ? group by period, r.scope", rs -> {
+                    byPeriod.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>()).put(rs.getString(2), rs.getBigDecimal(3));
+                }, args.toArray());
+        List<TrendPoint> out = new ArrayList<>();
+        for (String period : periods(from, to, quarterly)) {
+            Map<String, BigDecimal> s = byPeriod.getOrDefault(period, Map.of());
+            BigDecimal s1 = s.getOrDefault("scope_1", BigDecimal.ZERO);
+            BigDecimal s2 = s.getOrDefault("scope_2", BigDecimal.ZERO);
+            BigDecimal s3 = s.getOrDefault("scope_3", BigDecimal.ZERO);
+            out.add(new TrendPoint(period, scale(s1), scale(s2), scale(s3), scale(s1.add(s2).add(s3))));
+        }
+        return out;
+    }
+
+    private static List<String> periods(LocalDate from, LocalDate to, boolean quarterly) {
+        List<String> out = new ArrayList<>();
+        for (LocalDate d = from.withDayOfMonth(1); !d.isAfter(to); d = d.plusMonths(quarterly ? 3 : 12)) {
+            out.add(quarterly ? d.getYear() + "-Q" + ((d.getMonthValue() - 1) / 3 + 1) : String.valueOf(d.getYear()));
+        }
+        return out;
+    }
+
     /** BRD-5.2.2-07: carbon intensity by revenue, headcount and production, from approved Data Hub points of the year. */
     List<Intensity> intensity(int year, BigDecimal tonnes) {
         List<Intensity> out = new ArrayList<>();

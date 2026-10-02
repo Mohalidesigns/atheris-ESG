@@ -28,7 +28,12 @@ log "Building frontend"
 (cd "$ROOT/esg-frontend" && npm run -s build)
 
 PIDS=()
-cleanup() { log "Stopping"; for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null || true; done; }
+# The preview runs under npx in a subshell: kill the server process itself too, or it keeps the port after the run.
+cleanup() {
+  log "Stopping"
+  for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null || true; done
+  pkill -f "vite preview --port $FRONTEND_PORT" 2>/dev/null || true
+}
 trap cleanup EXIT INT TERM
 
 log "Starting backend on :$BACKEND_PORT (logs: cypress/logs/backend.log)"
