@@ -3,6 +3,13 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-34 Governance & Ethics (D30)
+
+- Board register with composition (independence, women on the board, tenure, committees, skills matrix) and a governance code checker (CAMA 2020, NCCG 2018, King IV; pending SME verification).
+- Policy register: draft → review → approval by someone else → publish → retire, review dates, documents, and per-version acknowledgements by every colleague (My policies).
+- Anonymous whistleblowing: a public link with no sign-in, nothing identifying recorded, encrypted content, a case reference and secret to follow progress; ethics officers (new role) manage cases; the board sees counts only.
+- Governance evidences GRI 2-9/2-10/2-11, 2-23 and 2-26; reports can quote board and case figures; the dashboard has a governance card.
+
 ## Unreleased — WP-24 Executive dashboard (D29)
 
 - The dashboard is fully live: emissions this year vs last, emissions trend by year or quarter, compliance per framework, SDG evidence coverage, recent workflow activity with links, and filings overdue or due within 90 days — all from live data, in the user's organisation scope, each card shown only to roles that can read its module.

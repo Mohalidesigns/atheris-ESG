@@ -308,14 +308,15 @@ class AdminUserApiTest extends ApiTestSupport {
   }
 
   @Test
-  void rolesEndpointListsTheElevenTenantRolesWithPermissions() throws Exception {
+  void rolesEndpointListsTheTwelveTenantRolesWithPermissions() throws Exception {
+    // WP-34 added ETHICS_OFFICER (designated whistleblower investigators).
     mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data", hasSize(11)))
+        .andExpect(jsonPath("$.data", hasSize(12)))
         .andExpect(jsonPath("$.data[0].name").value("TENANT_ADMIN"))
         .andExpect(jsonPath("$.data[0].mfaRequired").value(true));
     mvc.perform(get("/v1/admin/roles").header("Authorization", bearerForRole("SUPER_ADMIN")))
-        .andExpect(jsonPath("$.data", hasSize(12)));
+        .andExpect(jsonPath("$.data", hasSize(13)));
   }
 
   private String superAdminRoleId() throws Exception {

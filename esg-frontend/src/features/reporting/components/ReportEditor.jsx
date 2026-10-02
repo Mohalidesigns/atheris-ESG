@@ -18,7 +18,7 @@ import {
   useSaveSectionsMutation, useSubmitReportMutation,
 } from '../reportingApi';
 import {
-  CARBON_VARIABLES, COMPLIANCE_MEASURES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
+  CARBON_VARIABLES, COMPLIANCE_MEASURES, GOVERNANCE_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
 } from '../schemas';
 import ApprovalPanel from './ApprovalPanel';
 import ReportDialog from './ReportDialog';
@@ -90,6 +90,8 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
                   <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { maxHeight: 360 } } }}>
                     <MenuItem disabled>Emissions (Carbon)</MenuItem>
                     {Object.entries(CARBON_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{carbon:${k}}}`)}>{l}</MenuItem>)}
+                    <MenuItem disabled>Governance</MenuItem>
+                    {Object.entries(GOVERNANCE_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{governance:${k}}}`)}>{l}</MenuItem>)}
                     <MenuItem disabled>Compliance</MenuItem>
                     {frameworks.map((f) => (
                       <MenuItem key={f} onClick={() => insert(`{{compliance:${f}:completeness}}`)}>{f} {COMPLIANCE_MEASURES.completeness}</MenuItem>

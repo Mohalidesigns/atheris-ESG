@@ -30,6 +30,10 @@ public final class DashboardDtos {
     public record Filing(UUID id, String framework, String description, LocalDate deadlineDate, long daysLeft, String status,
                          String owner) {}
 
+    /** WP-34: board and policy health; open whistleblower cases only for whistleblower:read_summary / read (counts, no content). */
+    public record Governance(int directors, BigDecimal independentPct, BigDecimal femalePct, int codeChecksPassed, int codeChecksFailed,
+                             int codeChecksInsufficient, int policiesPublished, int policiesDueForReview, Integer openCases) {}
+
     public record Executive(int year, Emissions emissions, Compliance compliance, SdgAlignment sdg, List<Activity> activity,
-                            List<Filing> filings) {}
+                            List<Filing> filings, Governance governance) {}
 }

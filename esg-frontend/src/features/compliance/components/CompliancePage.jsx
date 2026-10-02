@@ -11,7 +11,7 @@ import OverviewTab from './OverviewTab';
 
 // no-mock-gate: config — tab labels
 const TABS = ['Overview', 'Gap analysis', 'Frameworks', 'Cross-framework mapping', 'Filing deadlines', 'Regulatory changes'];
-// ?tab= deep links (e.g. from the executive dashboard)
+// no-mock-gate: config — ?tab= deep links (e.g. from the executive dashboard)
 const TAB_KEYS = ['overview', 'gaps', 'frameworks', 'mapping', 'deadlines', 'changes'];
 const thisYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => thisYear + 1 - i);

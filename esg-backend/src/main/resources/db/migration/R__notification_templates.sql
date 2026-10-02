@@ -34,5 +34,12 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || '{{step}} for the report "{{title}}" is past its target date.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('REGULATORY_CHANGE_ASSIGNED', 'in_app', 'en', 'Regulatory change to assess', '{{regulator}}: {{title}}. Assess its impact by {{dueDate}}.'),
   ('REGULATORY_CHANGE_ASSIGNED', 'email', 'en', 'Regulatory change to assess: {{title}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been asked to assess the impact of a regulatory change from {{regulator}}: {{title}}.' || chr(10) || 'Please complete the assessment by {{dueDate}}.' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been asked to assess the impact of a regulatory change from {{regulator}}: {{title}}.' || chr(10) || 'Please complete the assessment by {{dueDate}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-34: no case content ever goes into a notification (TRD §6.5.5).
+  ('WHISTLEBLOWER_CASE_RECEIVED', 'in_app', 'en', 'New whistleblower case {{reference}}', 'A {{category}} report was received. Open Governance → Whistleblower cases.'),
+  ('WHISTLEBLOWER_CASE_RECEIVED', 'email', 'en', 'New whistleblower case {{reference}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'A new whistleblower report ({{category}}) was received as case {{reference}}. Sign in to Atheris ESG to review it.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('POLICY_PUBLISHED', 'in_app', 'en', 'Policy to acknowledge: {{name}}', 'Version {{version}} is published. Read it and acknowledge it under My policies.'),
+  ('POLICY_PUBLISHED', 'email', 'en', 'Policy to acknowledge: {{name}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The policy "{{name}}" (version {{version}}) is published. Please read and acknowledge it in Atheris ESG (My policies).' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

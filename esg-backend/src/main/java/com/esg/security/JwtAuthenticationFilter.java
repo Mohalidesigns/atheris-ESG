@@ -27,6 +27,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    /** Public whistleblower endpoints (WP-34): no session, no client details. */
+    public static final String PUBLIC_WHISTLEBLOWER = "/v1/public/whistleblower/";
+
     private final JwtTokenProvider tokenProvider;
     private final AccessService accessService;
     private final MfaPolicy mfaPolicy;
@@ -45,7 +48,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             // Recorded for every request (including login) so database-level audit rows carry the client (V014).
-            TenantContext.setClient(request.getRemoteAddr(), request.getHeader("User-Agent"));
+            // The anonymous whistleblower channel records no client details at all (TRD §6.5.5: IP not logged).
+            String path = request.getRequestURI().substring(request.getContextPath() == null ? 0 : request.getContextPath().length());
+            if (path.startsWith(PUBLIC_WHISTLEBLOWER)) {
+                TenantContext.setClient(null, null);
+            } else {
+                TenantContext.setClient(request.getRemoteAddr(), request.getHeader("User-Agent"));
+            }
             TenantContext.setTestRun(testData.runOf(request));
             Optional<Claims> claims = Optional.ofNullable(extractToken(request)).flatMap(tokenProvider::parseAccessToken);
             if (claims.isPresent() && !authenticate(claims.get(), request)) {

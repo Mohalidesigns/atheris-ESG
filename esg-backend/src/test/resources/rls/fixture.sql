@@ -105,8 +105,11 @@ insert into social.safety_incidents (org_id, incident_type, severity, occurred_a
 insert into social.community_projects (name) values ('Borehole');
 
 insert into governance.board_members (name) values ('Board Member A');
-insert into governance.governance_policies (name) values ('Anti-bribery');
-insert into governance.whistleblower_reports (case_reference, description) values ('WB-A-0001', 'Concern');
+insert into governance.governance_policies (id, name, policy_version) values ('a0000000-0000-4000-8000-0000000006a1', 'Anti-bribery', '1.0');
+-- Whistleblower rows are restricted to investigators even inside the tenant (V027); the fixture runs as the owner.
+insert into governance.whistleblower_reports (id, case_reference, category, description)
+  values ('a0000000-0000-4000-8000-0000000006b1', 'WB-A-0001', 'other', 'fixture: not encrypted, never opened by tests');
+insert into governance.whistleblower_case_notes (case_id, note) values ('a0000000-0000-4000-8000-0000000006b1', 'fixture note');
 
 insert into audit.audit_logs (action, resource) values ('create', 'fixture');
 insert into auth.tenant_settings (base_currency, default_framework_codes) values ('NGN', '{SEC_NG}');
@@ -145,11 +148,15 @@ insert into auth.users (id, email, password_hash, first_name, last_name) values
   ('a1000000-0000-4000-8000-000000000009', 'consultant@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Consultant', 'Fixture'),
   ('a1000000-0000-4000-8000-000000000010', 'board_member@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Board Member', 'Fixture'),
   ('a1000000-0000-4000-8000-000000000011', 'compliance_officer@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Compliance Officer', 'Fixture'),
-  ('a1000000-0000-4000-8000-000000000012', 'training_admin@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Training Admin', 'Fixture');
+  ('a1000000-0000-4000-8000-000000000012', 'training_admin@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Training Admin', 'Fixture'),
+  ('a1000000-0000-4000-8000-000000000013', 'ethics_officer@fixture.test', '$2a$04$gWLbV/oDBp3rgukheWzZEu2nI4Emhzj.zXZ4.2B1gad10PnolJg52', 'Ethics Officer', 'Fixture');
 insert into auth.user_roles (user_id, role_id, org_scope_id)
 select u.id, r.id, case when r.name in ('ESG_MANAGER','ESG_ANALYST','DATA_COLLECTOR') then 'a0000000-0000-4000-8000-0000000001a1'::uuid end
 from auth.users u join auth.roles r on lower(r.name) || '@fixture.test' = u.email
 where u.email like '%@fixture.test' and u.id::text like 'a1000000-%';
+
+insert into governance.policy_acknowledgements (policy_id, policy_version, user_id)
+  values ('a0000000-0000-4000-8000-0000000006a1', '1.0', 'a1000000-0000-4000-8000-000000000006');
 
 -- WP-19: one module override for tenant A (RLS suite needs a row per tenant table). carbon_market is already in the
 -- Enterprise plan, so this add-on changes nothing; SubscriptionEntitlementTest uses other modules.

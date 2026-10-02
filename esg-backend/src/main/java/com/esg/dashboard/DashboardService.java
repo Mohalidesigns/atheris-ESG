@@ -52,9 +52,16 @@ public class DashboardService {
     private final DeadlineService deadlines;
     private final OrgScopeService orgScope;
     private final Clock clock;
+    private final com.esg.governance.BoardService board;
+    private final com.esg.governance.PolicyService policies;
+    private final com.esg.governance.WhistleblowerService cases;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
-                            OrgScopeService orgScope, Clock clock) {
+                            OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
+                            com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases) {
+        this.board = board;
+        this.policies = policies;
+        this.cases = cases;
         this.jdbc = jdbc;
         this.emissions = emissions;
         this.compliance = compliance;
@@ -72,7 +79,19 @@ public class DashboardService {
                 CurrentUser.hasPermission("compliance:read") ? compliance(year) : null,
                 CurrentUser.hasPermission("data_points:read") ? sdg(year) : null,
                 activity(),
-                CurrentUser.hasPermission("compliance:read") ? filings(today) : null);
+                CurrentUser.hasPermission("compliance:read") ? filings(today) : null,
+                CurrentUser.hasPermission("governance:read") ? governance(today) : null);
+    }
+
+    DashboardDtos.Governance governance(LocalDate today) {
+        var c = board.composition(today);
+        var check = board.check(today, null);
+        var published = policies.list("published");
+        Integer open = CurrentUser.hasPermission("whistleblower:read_summary") || CurrentUser.hasPermission("whistleblower:read")
+                ? cases.statistics(today.minusYears(10)).open() : null;
+        return new DashboardDtos.Governance(c.directors(), c.independentPct(), c.femalePct(), check.passed(), check.failed(),
+                check.insufficientData(), published.size(), (int) published.stream().filter(com.esg.governance.GovernanceDtos.Policy::reviewDue).count(),
+                open);
     }
 
     // ---------------------------------------------------------------- emissions
@@ -167,7 +186,8 @@ public class DashboardService {
             new Source("reporting.reports", "status", "reports:read", "report"),
             new Source("compliance.filing_deadlines", "status", "compliance:read", "filing"),
             new Source("compliance.regulatory_changes", "status", "compliance:read", "regulatory_change"),
-            new Source("auth.reporting_periods", "status", "reporting_periods:read", "period"));
+            new Source("auth.reporting_periods", "status", "reporting_periods:read", "period"),
+            new Source("governance.governance_policies", "status", "governance:read", "policy"));
 
     /** Recent workflow steps (status changes from the audit trail) the caller may see, newest first. */
     List<Activity> activity() {
@@ -246,6 +266,13 @@ public class DashboardService {
                 case "closed" -> "closed";
                 default -> null;
             };
+            case "policy" -> switch (to) {
+                case "in_review" -> "submitted for approval";
+                case "approved" -> "approved";
+                case "published" -> "published";
+                case "retired" -> "retired";
+                default -> null;
+            };
             default -> switch (to) {
                 case "locked" -> "locked";
                 case "open" -> "locked".equals(from) ? "unlocked" : null;
@@ -264,6 +291,8 @@ public class DashboardService {
                     + "and deleted_at is null", id);
             case "regulatory_change" -> jdbc.queryForList("select title from compliance.regulatory_changes where id = ? "
                     + "and deleted_at is null", id);
+            case "policy" -> jdbc.queryForList("select name || ' ' || policy_version as title from governance.governance_policies where id = ? "
+                    + "and deleted_at is null", id);
             default -> jdbc.queryForList("select name as title from auth.reporting_periods where id = ?", id);
         };
         if (rows.isEmpty()) {
@@ -278,6 +307,7 @@ public class DashboardService {
             case "report" -> "/reporting?report=" + id;
             case "filing" -> "/compliance?tab=deadlines";
             case "regulatory_change" -> "/compliance?tab=changes";
+            case "policy" -> "/governance?tab=policies&policy=" + id;
             default -> "/admin?tab=periods";
         });
         return row;

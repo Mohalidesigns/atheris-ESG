@@ -57,8 +57,18 @@ class RlsIsolationTest {
     return tables.stream().map(table -> dynamicTest(table, () -> assertIsolated(table)));
   }
 
+  /** Tables restricted beyond the tenant (V027): readable only by investigators, so the check reads them as one. */
+  private static final java.util.Set<String> INVESTIGATOR_ONLY = java.util.Set.of("governance.whistleblower_reports",
+      "governance.whistleblower_case_notes");
+
   private void assertIsolated(String table) throws SQLException {
     try (Connection app = PostgresTestDatabase.appConnection()) {
+      if (INVESTIGATOR_ONLY.contains(table)) {
+        try (PreparedStatement ps = app.prepareStatement("select set_config('app.current_user', ?, false)")) {
+          ps.setString(1, com.esg.support.ApiTestSupport.roleUserId("ETHICS_OFFICER"));
+          ps.execute();
+        }
+      }
       setTenant(app, TENANT_A);
       assertThat(count(app, "select count(*) from " + table + " where tenant_id = '" + TENANT_A + "'"))
           .as("%s needs a tenant A row in src/test/resources/rls/fixture.sql", table)

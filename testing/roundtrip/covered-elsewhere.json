@@ -75,5 +75,17 @@
   "Framework content import": [
     "com.esg.crosscutting.CapabilityTest#aPlatformAdminImportsFrameworkContentAsAVersionWithDryRunRetirementAndAudit",
     "com.esg.compliance.FrameworkContentTest#everyRowProblemIsReportedWithItsLine"
+  ],
+  "Whistleblower report (public)": [
+    "com.esg.governance.GovernanceApiTest#anAnonymousReportIsReceivedEncryptedInvestigatedAndFollowedByTheReporter"
+  ],
+  "Whistleblower status check (public)": [
+    "com.esg.governance.GovernanceApiTest#anAnonymousReportIsReceivedEncryptedInvestigatedAndFollowedByTheReporter"
+  ],
+  "Whistleblower case": [
+    "com.esg.governance.GovernanceApiTest#anAnonymousReportIsReceivedEncryptedInvestigatedAndFollowedByTheReporter"
+  ],
+  "Policy lifecycle reason": [
+    "com.esg.governance.GovernanceApiTest#aPolicyIsApprovedBySomeoneElsePublishedAndAcknowledgedPerVersion"
   ]
 }

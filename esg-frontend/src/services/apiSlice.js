@@ -43,7 +43,7 @@ export async function refreshSession(api, extraOptions) {
 const AUTH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/mfa/setup', '/auth/mfa/verify'];
 
 // Writes that are calculations or housekeeping, not something the user saved: no success toast.
-const SILENT = [/^\/auth\//, /\/preview$/, /\/read(-all)?$/, /\/satellite-check$/, /^\/carbon\/calculate$/, /^\/compliance\/map$/,
+const SILENT = [/^\/auth\//, /^\/public\//, /\/preview$/, /\/read(-all)?$/, /\/satellite-check$/, /^\/carbon\/calculate$/, /^\/compliance\/map$/,
   /\/reminders\/run$/, /^\/files$/, /\/versions$/];
 
 /**
@@ -106,6 +106,6 @@ export function toFormError(error) {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate'],
+  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate', 'Board', 'Policy', 'MyPolicy', 'Case'],
   endpoints: () => ({}),
 });

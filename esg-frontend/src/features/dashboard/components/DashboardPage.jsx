@@ -194,6 +194,35 @@ function UpcomingFilings({ filings }) {
   );
 }
 
+function GovernanceCard({ governance }) {
+  const pct = (v) => (v == null ? '—' : `${fmt(v)}%`);
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Governance</Typography>
+        <Table size="small" aria-label="Governance summary">
+          <TableBody>
+            <TableRow><TableCell>Directors</TableCell><TableCell align="right">{governance.directors}</TableCell></TableRow>
+            <TableRow><TableCell>Independent</TableCell><TableCell align="right">{pct(governance.independentPct)}</TableCell></TableRow>
+            <TableRow><TableCell>Women on the board</TableCell><TableCell align="right">{pct(governance.femalePct)}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/governance?tab=code-check" underline="hover">Governance code checks</Link></TableCell>
+              <TableCell align="right">{governance.codeChecksPassed} met · {governance.codeChecksFailed} not met</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/governance?tab=policies" underline="hover">Published policies</Link></TableCell>
+              <TableCell align="right">{governance.policiesPublished}{governance.policiesDueForReview ? ` · ${governance.policiesDueForReview} due for review` : ''}</TableCell>
+            </TableRow>
+            {governance.openCases != null && (
+              <TableRow><TableCell>Open whistleblower cases</TableCell><TableCell align="right">{governance.openCases}</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -237,6 +266,7 @@ export default function DashboardPage() {
             {data.sdg && <Grid size={12}><SdgAlignment sdg={data.sdg} /></Grid>}
             {data.activity && <Grid size={{ xs: 12, md: 7 }}><RecentActivity activity={data.activity} /></Grid>}
             {data.filings && <Grid size={{ xs: 12, md: 5 }}><UpcomingFilings filings={data.filings} /></Grid>}
+            {data.governance && <Grid size={{ xs: 12, md: 5 }}><GovernanceCard governance={data.governance} /></Grid>}
           </Grid>
         </>
       )}

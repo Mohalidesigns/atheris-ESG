@@ -1,0 +1,166 @@
+{
+  "id": "board-member",
+  "forms": [
+    "Board member"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/governance/board-members"
+  },
+  "read": {
+    "path": "/v1/governance/board-members/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/governance/board-members/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Governance, so the module refuses before the record is looked up"
+  },
+  "values": {
+    "name": "RT member {u}",
+    "boardRole": "chair",
+    "independent": false,
+    "executive": false,
+    "gender": "female",
+    "ageBand": "50_59",
+    "appointedOn": "2020-01-15",
+    "leftOn": "2099-12-31",
+    "committees": [
+      "audit"
+    ],
+    "skills": [
+      "Finance"
+    ],
+    "notes": "Chair since 2020"
+  },
+  "changes": {
+    "name": "RT member {u} renamed",
+    "boardRole": "vice_chair",
+    "independent": true,
+    "gender": "male",
+    "ageBand": "60_plus",
+    "appointedOn": "2020-02-01",
+    "leftOn": "2098-06-30",
+    "committees": [
+      "audit",
+      "risk"
+    ],
+    "skills": [
+      "Finance",
+      "ESG"
+    ],
+    "notes": "Vice-chair from 2020"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "boardRole",
+      "value": "emperor",
+      "rule": "enum"
+    },
+    {
+      "field": "gender",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "ageBand",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "appointedOn",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "leftOn",
+      "value": "2019-01-01",
+      "rule": "on or after appointment"
+    },
+    {
+      "field": "committees",
+      "value": [
+        "golf"
+      ],
+      "rule": "enum",
+      "errorField": "committees[0]"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Name"
+      },
+      "boardRole": {
+        "label": "Board role",
+        "kind": "select",
+        "display": "Chair"
+      },
+      "independent": {
+        "label": "Independent",
+        "kind": "switch"
+      },
+      "executive": {
+        "label": "Executive",
+        "kind": "switch"
+      },
+      "gender": {
+        "label": "Gender",
+        "kind": "select",
+        "display": "Female"
+      },
+      "ageBand": {
+        "label": "Age band",
+        "kind": "select",
+        "display": "50–59"
+      },
+      "appointedOn": {
+        "label": "Appointed on"
+      },
+      "leftOn": {
+        "label": "Left on (optional)"
+      },
+      "committees": {
+        "label": "Committees",
+        "kind": "select",
+        "display": "Audit"
+      },
+      "skills": {
+        "label": "Skills"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
+  }
+}

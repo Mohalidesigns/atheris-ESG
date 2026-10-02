@@ -24,6 +24,11 @@ export const CARBON_VARIABLES = {
   scope1: 'Scope 1 emissions', scope2_location: 'Scope 2 emissions (location-based)', scope3: 'Scope 3 emissions',
   total_location: 'Total emissions (location-based)', flaring: 'Gas flaring emissions',
 };
+// no-mock-gate: config — governance variables (VariableEngine, WP-34)
+export const GOVERNANCE_VARIABLES = {
+  board_size: 'Board size', board_independent_pct: 'Independent directors %', board_female_pct: 'Women on the board %',
+  policies_published: 'Published policies', whistleblower_cases: 'Whistleblower cases received',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
@@ -35,6 +40,7 @@ export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}
   for (const [, source, key] of (text ?? '').matchAll(VAR)) {
     const ok = (source === 'metric' && metricKeys.includes(key))
       || (source === 'carbon' && key in CARBON_VARIABLES)
+      || (source === 'governance' && key in GOVERNANCE_VARIABLES)
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)
       || (source === 'report' && ['title', 'period'].includes(key))
       || (source === 'tenant' && key === 'name');

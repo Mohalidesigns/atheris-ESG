@@ -10,6 +10,7 @@
   "INVESTOR_VIEWER": { "email": "investor@esgpro.ng", "menu": ["Investor Portal"] },
   "CONSULTANT": { "email": "consultant@esgpro.ng", "menu": ["Dashboard", "Data Hub", "Carbon Accounting", "Compliance", "Reporting", "Risk & Materiality", "Supply Chain", "Social Impact", "Analytics & AI"] },
   "BOARD_MEMBER": { "email": "board@esgpro.ng", "menu": ["Dashboard", "Reporting", "Governance"] },
-  "COMPLIANCE_OFFICER": { "email": "compliance@esgpro.ng", "menu": ["Dashboard", "Data Hub", "Carbon Accounting", "Compliance", "Reporting"] },
-  "TRAINING_ADMIN": { "email": "training@esgpro.ng", "menu": ["Training", "Administration"] }
+  "COMPLIANCE_OFFICER": { "email": "compliance@esgpro.ng", "menu": ["Dashboard", "Data Hub", "Carbon Accounting", "Compliance", "Reporting", "Governance"] },
+  "TRAINING_ADMIN": { "email": "training@esgpro.ng", "menu": ["Training", "Administration"] },
+  "ETHICS_OFFICER": { "email": "ethics@esgpro.ng", "menu": ["Dashboard", "Governance"] }
 }

@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import { useState } from 'react';
 import {
   AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Typography, Divider, IconButton,
@@ -39,7 +40,9 @@ export default function TopBar({ onMenu = () => {} }) {
 
         {/* User */}
         <Box
+          role="button" tabIndex={0} aria-label="Account menu" aria-haspopup="menu"
           onClick={(e) => setAnchorEl(e.currentTarget)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAnchorEl(e.currentTarget); } }}
           sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1 }}
         >
           <Avatar sx={{ width: 32, height: 32, bgcolor: '#1A365D', fontSize: '0.75rem' }}>
@@ -58,6 +61,8 @@ export default function TopBar({ onMenu = () => {} }) {
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           <MenuItem disabled sx={{ fontSize: '0.75rem' }}>{user?.tenantName}</MenuItem>
           <Divider />
+          {/* WP-34: every user acknowledges published policies there. */}
+          <MenuItem component={RouterLink} to="/my-policies" onClick={() => setAnchorEl(null)}>My policies</MenuItem>
           <MenuItem onClick={() => { setAnchorEl(null); logout(); }}>Sign Out</MenuItem>
         </Menu>
       </Toolbar>

@@ -31,6 +31,8 @@ import org.springframework.stereotype.Component;
  *       latest value for stock metrics (reference.metrics.aggregation);</li>
  *   <li>{@code carbon:scope1|scope2_location|scope3|total_location|flaring} — tCO2e from Carbon records ending in the period;</li>
  *   <li>{@code compliance:<FRAMEWORK>:completeness|met|total} — gap analysis for the period's end year;</li>
+ *   <li>{@code governance:board_size|board_independent_pct|board_female_pct|policies_published|whistleblower_cases} — the board
+ *       register at the period's end, policies published by then, whistleblower cases received in the period (WP-34);</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -42,6 +44,8 @@ public class VariableEngine {
     private static final Set<String> CARBON = Set.of("scope1", "scope2_location", "scope3", "total_location", "flaring");
     private static final Set<String> COMPLIANCE = Set.of("completeness", "met", "total");
     private static final Set<String> REPORT = Set.of("title", "period");
+    private static final Set<String> GOVERNANCE = Set.of("board_size", "board_independent_pct", "board_female_pct", "policies_published",
+            "whistleblower_cases");
 
     private final JdbcTemplate jdbc;
     private final ComplianceService compliance;
@@ -84,8 +88,46 @@ public class VariableEngine {
             }
             case "report" -> REPORT.contains(p[1]);
             case "tenant" -> "name".equals(p[1]);
+            case "governance" -> GOVERNANCE.contains(p[1]);
             default -> false;
         };
+    }
+
+    /** WP-34: board composition at the period's end; policies published by then; cases received in the period (counts only). */
+    private VariableValue governance(String key, LocalDate start, LocalDate end) {
+        java.sql.Date e = java.sql.Date.valueOf(end);
+        String board = "from governance.board_members where deleted_at is null and board_role <> 'company_secretary' "
+                + "and appointed_on <= ? and (left_on is null or left_on >= ?)";
+        String basis = "board register at " + DAY.format(end);
+        switch (key) {
+            case "board_size" -> {
+                Integer n = jdbc.queryForObject("select count(*) " + board, Integer.class, e, e);
+                return n == null || n == 0 ? missing("no board members recorded") : new VariableValue(String.valueOf(n), BigDecimal.valueOf(n), null, "ok", basis, null);
+            }
+            case "board_independent_pct", "board_female_pct" -> {
+                String flag = "board_independent_pct".equals(key)
+                        ? "(is_independent or board_role = 'independent_non_executive_director')" : "gender = 'female'";
+                Map<String, Object> r = jdbc.queryForMap("select count(*) as total, count(*) filter (where " + flag + ") as n " + board, e, e);
+                long total = ((Number) r.get("total")).longValue();
+                if (total == 0) {
+                    return missing("no board members recorded");
+                }
+                BigDecimal pct = BigDecimal.valueOf(100L * ((Number) r.get("n")).longValue()).divide(BigDecimal.valueOf(total), 1, java.math.RoundingMode.HALF_UP);
+                return new VariableValue(num(pct) + "%", pct, "%", "ok", basis, null);
+            }
+            case "policies_published" -> {
+                Integer n = jdbc.queryForObject("select count(*) from governance.governance_policies where deleted_at is null and published_at <= ? "
+                        + "and (retired_at is null or retired_at > ?)", Integer.class, java.sql.Timestamp.valueOf(end.plusDays(1).atStartOfDay()),
+                        java.sql.Timestamp.valueOf(end.plusDays(1).atStartOfDay()));
+                return new VariableValue(String.valueOf(n), BigDecimal.valueOf(n == null ? 0 : n), null, "ok", "policy register at " + DAY.format(end), null);
+            }
+            default -> {
+                // A count only, through a definer function (case rows are visible to investigators alone).
+                Long n = jdbc.queryForObject("select governance.whistleblower_case_count(?, ?)", Long.class, java.sql.Date.valueOf(start), e);
+                return new VariableValue(String.valueOf(n), BigDecimal.valueOf(n == null ? 0 : n), null, "ok",
+                        "whistleblower cases received in the period", null);
+            }
+        }
     }
 
     /** Resolves every variable for the period. */
@@ -131,6 +173,9 @@ public class VariableEngine {
             case "tenant" -> {
                 String name = jdbc.queryForObject("select name from auth.tenants where id = auth.current_tenant_id()", String.class);
                 return new VariableValue(name, null, null, "ok", "tenant", null);
+            }
+            case "governance" -> {
+                return governance(p[1], start, end);
             }
             default -> {
                 return missing("unknown variable");

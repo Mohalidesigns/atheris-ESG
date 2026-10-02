@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (branch `feature/wp-24-executive-dashboard`, stacked on #15) |
-| Next | **Phase 4 modules**: WP-34 Governance next, then 33, 32, 31, 35, 40, 41, 42. **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (branch `feature/wp-34-governance`, stacked on #16) |
+| Next | **Phase 4 modules**: WP-33 Social next, then 32, 31, 35, 40, 41, 42. **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,26 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-34 — Governance & Ethics
+
+Branch `feature/wp-34-governance` (stacked on WP-24, PR #16). Design: D30. Migration V027; seeds `R__ref_14_governance_rules`, governance compliance links in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Board composition (CAMA 2020: independence, gender, tenure) | Register, composition as at a date, skills matrix | `GovernanceApiTest.boardComposition…`, round-trip `board-member`, UI, journey 21 |
+| Governance code checker | 16 rules (CAMA / NCCG / King IV) with evidence, pending SME | `GovernanceApiTest`, UI, journey 21 |
+| Policy register with review dates | Lifecycle with SoD, documents, review dates, per-version acknowledgements, My policies | `GovernanceApiTest.aPolicyIsApproved…`, round-trip `policy`, UI, journey 20 |
+| Whistleblowing (anonymous, case workflow) | Public link, encryption, no IP, throttling, investigator-only RLS, audited views, board counts | `GovernanceApiTest.anAnonymousReport…`, `…Throttled`, UI, journey 19 |
+| Links | GRI 2-9/2-10/2-11/2-23/2-26 evidence, `governance:*` report variables, dashboard card | `GovernanceApiTest`, `DashboardPage.test.jsx` |
+
+Results: backend `mvn verify` 745 tests, 0 failures (1 S3 skip), 88.9% lines, 0 Checkstyle; frontend 383 tests, lint, no-mock gate 0 findings; Cypress 22 specs / 55 tests on a fresh database, all on the first attempt (journeys 19, 20, 21 new; journey 2 covers the new ETHICS_OFFICER menu).
+
+Found and fixed while testing: the anonymous channel's request path check missed some servlet setups, so the client IP was still recorded — caught by `GovernanceApiTest` and fixed before commit; the account menu opener had no button role or label (now "Account menu").
+
+Open (D30): related-party/AML, compensation benchmarking, board minutes; CAPTCHA; reporter evidence uploads; per-tenant whistleblower key; ETHICS_OFFICER role confirmation; SME review of the governance code rules.
 
 ---
 

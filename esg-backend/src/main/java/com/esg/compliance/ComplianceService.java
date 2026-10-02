@@ -319,6 +319,22 @@ public class ComplianceService {
                 + "and base_year <= ? and target_year >= ?)", Boolean.class, year, year))) {
             states.put(SOURCE + "carbon.reduction_targets", new MetricState(true, false));
         }
+        // WP-34 (D30): the board register (someone on the board during the year), published policies, and a published
+        // whistleblowing policy.
+        java.sql.Date yearStart = java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1));
+        java.sql.Date yearEnd = java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31));
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.board_members where deleted_at is null "
+                + "and appointed_on <= ? and (left_on is null or left_on >= ?))", Boolean.class, yearEnd, yearStart))) {
+            states.put(SOURCE + "governance.board_members", new MetricState(true, false));
+        }
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.governance_policies where deleted_at is null "
+                + "and status = 'published')", Boolean.class))) {
+            states.put(SOURCE + "governance.governance_policies", new MetricState(true, false));
+        }
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.governance_policies where deleted_at is null "
+                + "and status = 'published' and category = 'whistleblowing')", Boolean.class))) {
+            states.put(SOURCE + "governance.whistleblowing_policy", new MetricState(true, false));
+        }
         Map<UUID, Attestation> attestations = new HashMap<>();
         jdbc.query("select requirement_id, status from compliance.tenant_compliance_status where reporting_year = ?",
                 rs -> { attestations.put(rs.getObject(1, UUID.class), new Attestation(rs.getString(2))); }, year);
@@ -332,6 +348,9 @@ public class ComplianceService {
         Map<String, String> names = new HashMap<>();
         jdbc.query("select metric_key, name from reference.metrics", rs -> { names.put(rs.getString(1), rs.getString(2)); });
         names.put(SOURCE + "carbon.reduction_targets", "a GHG reduction target (Carbon → Reduction targets)");
+        names.put(SOURCE + "governance.board_members", "the board register (Governance → Board)");
+        names.put(SOURCE + "governance.governance_policies", "a published policy (Governance → Policies)");
+        names.put(SOURCE + "governance.whistleblowing_policy", "a published whistleblowing policy (Governance → Policies)");
         return new Context(year, metrics, states, attestations, edges, names);
     }
 

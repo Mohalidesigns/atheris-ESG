@@ -16,7 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /**
- * RBAC matrix (WP-13, TRD §5.2, §11.2.1): each of the 12 built-in roles × representative endpoints.
+ * RBAC matrix (WP-13, TRD §5.2, §11.2.1): each of the 13 built-in roles × representative endpoints.
  * The expected access is written out here as the specification; the permissions themselves come from
  * R__permission_catalogue.sql, so a catalogue change that breaks this table fails the build.
  */
@@ -65,7 +65,8 @@ class RbacMatrixTest extends ApiTestSupport {
       Map.entry("CONSULTANT", Set.of("reference:read", "data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
       Map.entry("BOARD_MEMBER", Set.of("reference:read", "me")),
       Map.entry("COMPLIANCE_OFFICER", Set.of("reference:read", "data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("TRAINING_ADMIN", Set.of("reference:read", "users:read", "me")));
+      Map.entry("TRAINING_ADMIN", Set.of("reference:read", "users:read", "me")),
+      Map.entry("ETHICS_OFFICER", Set.of("reference:read", "me")));
 
   static Stream<Arguments> matrix() {
     return ROLES.stream().flatMap(role -> ALL.stream().sorted()

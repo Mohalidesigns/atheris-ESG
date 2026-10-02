@@ -7,6 +7,9 @@ import { useRestoreSessionMutation } from '../features/auth/authApi';
 import { allNavItems, firstAllowedPath, moduleEnabled } from './navigation';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
+// WP-34: the public whistleblower portal (no session) and everyone's policy acknowledgements.
+const WhistleblowerPortal = lazy(() => import('../features/governance/components/WhistleblowerPortal'));
+const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPoliciesPage'));
 const pages = {
   '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
   '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
@@ -80,8 +83,10 @@ export default function AppRoutes() {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
+        <Route path="/whistleblower/:tenant" element={<WhistleblowerPortal />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route index element={<Landing />} />
+          <Route path="my-policies" element={<MyPoliciesPage />} />
           {allNavItems.map(({ path, anyOf, module }) => {
             const Page = pages[path];
             return (

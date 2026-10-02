@@ -47,6 +47,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/logout",
                         "/v1/auth/mfa/setup", "/v1/auth/mfa/verify").permitAll()
                 .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui.html", "/v1/swagger-ui/**").permitAll()
+                // WP-34: the anonymous whistleblower channel (submit, status) needs no sign-in (TRD §6.5.5).
+                .requestMatchers(HttpMethod.POST, "/v1/public/whistleblower/*", "/v1/public/whistleblower/*/status").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()

@@ -38,6 +38,7 @@ export default defineConfig({
         'adaeze.usman@esgpro.ng': 'ATHERISLOCALDEVDIRECTORTOTPAAAAA',
         'tenant.admin@esgpro.ng': 'ATHERISLOCALDEVTENANTADMINTOTPAA',
         'super.admin@esgpro.ng': 'ATHERISLOCALDEVSUPERADMINTOTPAAA',
+        'ethics@esgpro.ng': 'ATHERISLOCALDEVETHICSOFFICERTOTP',
       },
     },
     setupNodeEvents(on) {

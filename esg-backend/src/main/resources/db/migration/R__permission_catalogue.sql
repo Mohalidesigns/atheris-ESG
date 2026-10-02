@@ -73,7 +73,10 @@ INSERT INTO auth.system_roles (name, description, scope_type, mfa_required, sort
   ('CONSULTANT', 'Manage client ESG work (multi-tenant access arrives with the consultant portal)', 'tenant', FALSE, 9),
   ('BOARD_MEMBER', 'Governance reports, board composition, ESG performance, whistleblower summaries', 'module', FALSE, 10),
   ('COMPLIANCE_OFFICER', 'Full compliance module: gap analysis, filings, regulatory change', 'tenant', FALSE, 11),
-  ('TRAINING_ADMIN', 'Courses, enrolments, certifications, learning paths, competencies', 'module', FALSE, 12)
+  ('TRAINING_ADMIN', 'Courses, enrolments, certifications, learning paths, competencies', 'module', FALSE, 12),
+  -- WP-34 (D30): designated investigators of whistleblower cases (TRD §6.5.5 "ethics officers"); the only tenant role
+  -- that can read case content.
+  ('ETHICS_OFFICER', 'Whistleblower case management (restricted), governance read access', 'module', TRUE, 13)
 ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, scope_type = EXCLUDED.scope_type,
   mfa_required = EXCLUDED.mfa_required, sort_order = EXCLUDED.sort_order;
 
@@ -100,7 +103,8 @@ FROM (VALUES
     'risk:create', 'risk:read', 'risk:update', 'risk:approve',
     'supply_chain:create', 'supply_chain:read', 'supply_chain:update', 'supply_chain:delete', 'supply_chain:approve',
     'social:create', 'social:read', 'social:update', 'social:approve',
-    'governance:read', 'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
+    'governance:create', 'governance:read', 'governance:update', 'governance:approve',
+    'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
   ('ESG_MANAGER', ARRAY[
     'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
     'reference_data:read',
@@ -148,7 +152,9 @@ FROM (VALUES
     'reference_data:read',
     'files:read',
     -- WP-23: reports:approve for the board sign-off step of report approval (TRD §6.5.3 'CFO/CEO sign-off', D24).
-    'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'reports:approve', 'whistleblower:read_summary']),
+    -- WP-34: governance:approve so the board approves governance policies (D30).
+    'dashboard:read', 'notifications:read', 'governance:read', 'governance:approve', 'reports:read', 'reports:approve',
+    'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
     'data_sources:read', 'fx_rates:read',
     'reference_data:read',
@@ -156,10 +162,15 @@ FROM (VALUES
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'compliance:create', 'compliance:read', 'compliance:update', 'compliance:configure', 'compliance:approve',
     -- WP-23: reports:approve for the compliance review step of report approval (TRD §6.5.3, D24).
-    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'reports:approve', 'data_points:read', 'carbon_data:read']),
+    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'reports:approve', 'data_points:read', 'carbon_data:read',
+    -- WP-34: governance register and policies (D30).
+    'governance:create', 'governance:read', 'governance:update']),
   ('TRAINING_ADMIN', ARRAY[
     'reference_data:read',
-    'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure'])
+    'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure']),
+  ('ETHICS_OFFICER', ARRAY[
+    'reference_data:read', 'files:read', 'dashboard:read', 'notifications:read', 'governance:read',
+    'whistleblower:read', 'whistleblower:update', 'whistleblower:read_summary'])
 ) AS v(r, perms), unnest(perms) AS p;
 
 -- Re-sync every existing tenant.

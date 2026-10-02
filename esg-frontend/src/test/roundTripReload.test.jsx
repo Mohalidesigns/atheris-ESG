@@ -17,6 +17,8 @@ import { DeadlineDialog } from '../features/compliance/components/DeadlinesTab';
 import ReportDialog from '../features/reporting/components/ReportDialog';
 import DataPointDialog from '../features/dataHub/components/DataPointDialog';
 import { DataSourceDialog } from '../features/dataHub/components/DataSourcesTab';
+import { BoardMemberDialog } from '../features/governance/components/BoardTab';
+import { PolicyDialog } from '../features/governance/components/PoliciesTab';
 import { FxRateDialog } from '../features/dataHub/components/FxRatesTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
@@ -190,6 +192,21 @@ const openers = {
     renderWithStore(<TenantsTab />, { preloadedState: authenticated(ALL) });
     await userEvent.click(await screen.findByLabelText(`Edit ${record.name}`));
     return screen.findByRole('dialog');
+  },
+  'board-member': async (record) => {
+    renderWithStore(<BoardMemberDialog member={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  policy: async (record) => {
+    fakeApi({
+      'GET /data/owners': () => ok(OWNERS),
+      'GET /files': () => ok([{ id: FILE_A, originalName: 'evidence.pdf' }]),
+      'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 1000, allowedExtensions: 'pdf', virusScanning: 'Not configured' }),
+    });
+    renderWithStore(<PolicyDialog policy={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByText('evidence.pdf', {}, { timeout: 2000 }).catch(() => null);
+    return dialog;
   },
   'data-point': openDataPoint,
   'data-point-currency': openDataPoint,
