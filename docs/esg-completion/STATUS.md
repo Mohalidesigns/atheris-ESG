@@ -315,7 +315,7 @@ Branch `feature/wp-33-social` (stacked on WP-34, PR #17). Design: D31. Migration
 | Grievances with escalation | SLA due dates, manual / daily / on-receipt escalation, SoD close, encrypted complainant details, history | `SocialApiTest.journey18…` (time-travel escalation), round-trip `grievance`, UI, journey 18 |
 | Links | Catalogue metrics from the module (CBN P4, GRI 401-1/403-9/405-1), `social:*` report variables, dashboard card and activity | `SocialApiTest`, `ComplianceApiTest`, `DashboardApiTest` |
 
-Results: backend `mvn verify` 840 tests, 0 failures (1 S3 skip), 88.2% lines (social package 84.6%), 0 Checkstyle; frontend 392 tests, lint, no-mock gate 0 findings; Cypress 25 specs / 58 tests on a fresh database, all on the first attempt (journeys 16, 17, 18 new).
+Results: backend `mvn verify` 840 tests, 0 failures (1 S3 skip), 88.7% lines (social package 87.6%), 0 Checkstyle; frontend 392 tests, lint, no-mock gate 0 findings; Cypress 25 specs / 58 tests on a fresh database, all on the first attempt (journeys 16, 17, 18 new).
 
 Found and fixed: a compliance test failed in CI depending on test order (the dashboard test's filing added the deadline bonus; fixed on WP-24 and merged up); an audit test could pick a day already holding an approved value from an earlier run (now retries another day).
 
