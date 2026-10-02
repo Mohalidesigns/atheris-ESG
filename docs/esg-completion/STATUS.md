@@ -4,7 +4,7 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (branch `feature/wp-33-social`, stacked on #17) |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (branch `feature/wp-32-risk`, stacked on #18) |
 | Next | **Phase 4 modules**: WP-33 Social next, then 32, 31, 35, 40, 41, 42. **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
@@ -300,6 +300,25 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-32 — Risk & Materiality
+
+Branch `feature/wp-32-risk` (stacked on WP-33, PR #18). Design: D32. Migration V029; seed `R__ref_15_climate_scenarios`; risk compliance links in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Double materiality (impact × financial) | Stakeholder weights and ratings, thresholds, blend; positions computed from stored scores; SoD approval; GRI 3-1/3-2 evidence | `RiskMathTest` (golden), `RiskApiTest.journey14…`, round-trip `risk-assessment`, UI, journey 14 |
+| ESG risk register and heatmap | Inherent and residual scores, owners, review dates, topic links; 5×5 heatmaps at portfolio, entity (drill-down) and sector level | `RiskApiTest.riskRegisterFeedsHeatmaps…`, round-trip `risk`, UI |
+| Climate scenario analysis (feeds IFRS S2 strategy) | NGFS families; sourced carbon price paths; transition cost with and without the reduction target; physical risk per site under RCP 4.5/8.5; Sandbox climate data adapter | `RiskMathTest.transitionExposure…`, `RiskApiTest.scenarioAnalysis…`, round-trip `physical-risk`, UI |
+| Links | GRI 3-1/3-2, IFRS S2 10/22/25, TCFD STR-a/STR-c/RM-a evidence; `risk:*` report variables; dashboard card and activity | `RiskApiTest` |
+
+Results: backend `mvn verify` 902 tests, 0 failures (1 S3 skip), 88.9% lines (risk package 93.4%), 0 Checkstyle; frontend 398 tests, lint, no-mock gate 0 findings; Cypress 26 specs / 59 tests on a fresh database, all on the first attempt (journey 14 new).
+
+Found and fixed: a stakeholder group left unrated blocked saving a materiality topic (caught by journey 14); grievance, incident and workforce views failed outside a signed-in request (`CurrentUser.userIdOrNull`).
+
+Open (D32): ERM integration; a regional climate data provider (Sandbox today); a financed-portfolio heatmap; SME review of the scoring scales, thresholds, blend cap and risk bands.
 
 ---
 

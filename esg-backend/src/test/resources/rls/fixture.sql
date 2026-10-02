@@ -94,8 +94,15 @@ insert into data_hub.approval_steps (id, workflow_id, step_number, role_name, la
   values ('a0000000-0000-4000-8000-0000000000f3', 'a0000000-0000-4000-8000-0000000000f2', 1, 'ESG_DIRECTOR', 'Fixture step');
 insert into reporting.approval_reminders (step_id, sent_on) values ('a0000000-0000-4000-8000-0000000000f3', '2026-01-10');
 
-insert into risk.risk_assessments (id, name, assessment_type) values ('a0000000-0000-4000-8000-000000000101', 'Materiality 2026', 'double_materiality');
-insert into risk.materiality_items (assessment_id, topic, category) values ('a0000000-0000-4000-8000-000000000101', 'Climate', 'E');
+insert into risk.risk_assessments (id, name, assessment_type, reporting_year) values ('a0000000-0000-4000-8000-000000000101', 'Materiality 2026', 'double_materiality', 2026);
+insert into risk.materiality_items (id, assessment_id, topic, category) values ('a0000000-0000-4000-8000-000000000102', 'a0000000-0000-4000-8000-000000000101', 'Climate', 'E');
+insert into risk.assessment_stakeholders (assessment_id, stakeholder_group, weight) values ('a0000000-0000-4000-8000-000000000101', 'investors', 50);
+insert into risk.topic_ratings (item_id, stakeholder_group, rating) values ('a0000000-0000-4000-8000-000000000102', 'investors', 4);
+insert into risk.risk_register (org_id, title, category, time_horizon, likelihood, impact)
+  values ('a0000000-0000-4000-8000-00000000000a', 'Coastal flooding', 'climate_physical', 'long', 3, 4);
+insert into risk.scenario_carbon_prices (scenario_code, price_year, price_usd, source) values ('NGFS_NZ2050', 2030, 100, 'Fixture value');
+insert into risk.physical_assessments (org_id, hazard, pathway, horizon_year, exposure, vulnerability, source, assessed_on)
+  values ('a0000000-0000-4000-8000-00000000000a', 'flooding', 'RCP4.5', 2050, 3, 3, 'Fixture source', '2026-01-15');
 
 insert into supply_chain.suppliers (id, name) values ('a0000000-0000-4000-8000-000000000201', 'Supplier A');
 insert into supply_chain.questionnaires (supplier_id, title) values ('a0000000-0000-4000-8000-000000000201', 'ESG survey');

@@ -37,6 +37,12 @@ export const SOCIAL_VARIABLES = {
   fatalities: 'Fatalities', community_investment: 'Community investment', beneficiaries: 'Community project beneficiaries',
   grievances_received: 'Grievances received', grievances_resolved: 'Grievances resolved', grievances_open: 'Grievances open at period end',
 };
+// no-mock-gate: config — risk variables (VariableEngine / RiskInsights.VARIABLES, WP-32)
+export const RISK_VARIABLES = {
+  material_topics: 'Number of material topics', material_topic_list: 'List of material topics', open_risks: 'Open risks',
+  high_risks: 'High and very high risks', climate_risks: 'Open climate risks', physical_high_risks: 'Sites at high physical risk',
+  scenarios_analysed: 'Climate scenarios analysed',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
@@ -50,6 +56,7 @@ export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}
       || (source === 'carbon' && key in CARBON_VARIABLES)
       || (source === 'governance' && key in GOVERNANCE_VARIABLES)
       || (source === 'social' && key in SOCIAL_VARIABLES)
+      || (source === 'risk' && key in RISK_VARIABLES)
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)
       || (source === 'report' && ['title', 'period'].includes(key))
       || (source === 'tenant' && key === 'name');

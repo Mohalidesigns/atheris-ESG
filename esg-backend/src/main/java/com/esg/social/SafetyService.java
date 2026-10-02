@@ -354,7 +354,7 @@ public class SafetyService {
         String status = rs.getString("status");
         String outcome = rs.getString("outcome");
         UUID findingsBy = rs.getObject("findings_by", UUID.class);
-        UUID me = CurrentUser.access() == null ? null : CurrentUser.access().userId();
+        UUID me = CurrentUser.userIdOrNull();
         List<String> actions = new ArrayList<>();
         Map<String, String> blocked = new LinkedHashMap<>();
         for (String action : ACTIONS.get(status)) {

@@ -23,6 +23,7 @@ import com.esg.exception.FieldValidationException;
 import com.esg.reference.FrameworkCatalogService;
 import com.esg.reference.ReferenceDtos.Framework;
 import com.esg.security.TenantContext;
+import com.esg.risk.RiskInsights;
 import com.esg.social.SocialMetricsService;
 import java.sql.Array;
 import java.sql.SQLException;
@@ -65,8 +66,10 @@ public class ComplianceService {
     private final FrameworkCatalogService catalog;
     private final Clock clock;
     private final SocialMetricsService social;
+    private final RiskInsights risk;
 
-    public ComplianceService(JdbcTemplate jdbc, FrameworkCatalogService catalog, Clock clock, SocialMetricsService social) {
+    public ComplianceService(JdbcTemplate jdbc, FrameworkCatalogService catalog, Clock clock, SocialMetricsService social, RiskInsights risk) {
+        this.risk = risk;
         this.jdbc = jdbc;
         this.catalog = catalog;
         this.clock = clock;
@@ -319,6 +322,10 @@ public class ComplianceService {
         for (String metric : social.available(year)) {
             states.merge(metric, new MetricState(true, false), (x, y) -> new MetricState(true, x.pending()));
         }
+        // WP-32 (D32): an approved materiality assessment, climate risks in the register, scenario analysis.
+        for (String source : risk.evidence(year)) {
+            states.put(SOURCE + source, new MetricState(true, false));
+        }
         // F7: requirements evidenced by platform data other than metrics, e.g. an active reduction target for the year.
         jdbc.query("select data_source, requirement_id from reference.requirement_data_sources", rs -> {
             metrics.computeIfAbsent(rs.getObject(2, UUID.class), k -> new ArrayList<>()).add(SOURCE + rs.getString(1));
@@ -358,6 +365,9 @@ public class ComplianceService {
         names.put(SOURCE + "carbon.reduction_targets", "a GHG reduction target (Carbon → Reduction targets)");
         names.put(SOURCE + "governance.board_members", "the board register (Governance → Board)");
         names.put(SOURCE + "governance.governance_policies", "a published policy (Governance → Policies)");
+        names.put(SOURCE + "risk.materiality_assessment", "an approved double materiality assessment (Risk → Materiality)");
+        names.put(SOURCE + "risk.risk_register", "climate-related risks in the risk register (Risk → Risk register)");
+        names.put(SOURCE + "risk.climate_scenarios", "climate scenario analysis (Risk → Climate scenarios)");
         names.put(SOURCE + "governance.whistleblowing_policy", "a published whistleblowing policy (Governance → Policies)");
         return new Context(year, metrics, states, attestations, edges, names);
     }

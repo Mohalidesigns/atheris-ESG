@@ -24,6 +24,9 @@ import { WorkforceDialog } from '../features/social/components/WorkforceTab';
 import { IncidentDialog } from '../features/social/components/SafetyTab';
 import { ProjectDialog } from '../features/social/components/CommunityTab';
 import { GrievanceDialog } from '../features/social/components/GrievancesTab';
+import { AssessmentDialog } from '../features/risk/components/MaterialityTab';
+import { RiskDialog } from '../features/risk/components/RiskRegisterTab';
+import { PhysicalDialog } from '../features/risk/components/ClimateTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -48,6 +51,7 @@ const USER_DIRECTOR = 'a1000000-0000-4000-8000-000000000003';
 const TEMPLATE_A = 'a0000000-0000-4000-8000-0000000000f4';
 const USER_MANAGER = 'a1000000-0000-4000-8000-000000000004';
 const PROJECT_A = 'a0000000-0000-4000-8000-000000000301';
+const TOPIC_A = 'a0000000-0000-4000-8000-000000000102';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
@@ -56,7 +60,8 @@ const resolve = (v) => {
       .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
       .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
       .replaceAll('{TEMPLATE_A}', TEMPLATE_A)
-      .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A);
+      .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
+      .replaceAll('{TOPIC_A}', TOPIC_A);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -272,6 +277,25 @@ const openers = {
       'GET /social/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }, { id: USER_MANAGER, name: 'Esg Manager Fixture' }]),
     });
     renderWithStore(<GrievanceDialog grievance={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'risk-assessment': async (record) => {
+    renderWithStore(<AssessmentDialog assessment={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  risk: async (record) => {
+    fakeApi({
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /reference/sectors': () => ok([{ code: 'D', name: 'Electricity, gas, steam and air conditioning supply', classification: 'ISIC_REV4' }]),
+      'GET /risk/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }]),
+      'GET /risk/topics': () => ok([{ id: TOPIC_A, name: 'Climate (2026)' }]),
+    });
+    renderWithStore(<RiskDialog risk={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'physical-risk': async (record) => {
+    fakeApi({ 'GET /organisations': () => ok(FIXTURE_ORGS) });
+    renderWithStore(<PhysicalDialog assessment={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   report: async (record) => {

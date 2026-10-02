@@ -432,6 +432,7 @@ class FieldRoundTripTest extends ApiTestSupport {
             .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A)
             .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR"))
             .replace("{USER_MANAGER}", roleUserId("ESG_MANAGER")).replace("{PROJECT_A}", "a0000000-0000-4000-8000-000000000301")
+            .replace("{TOPIC_A}", "a0000000-0000-4000-8000-000000000102")
             .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4"));
       }
       if (node.isObject() && node.has("$repeat")) {

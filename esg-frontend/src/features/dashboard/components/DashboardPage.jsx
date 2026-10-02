@@ -256,6 +256,33 @@ function SocialCard({ social }) {
   );
 }
 
+function RiskCard({ risk }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Risk & materiality</Typography>
+        <Table size="small" aria-label="Risk summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=materiality" underline="hover">Material topics</Link></TableCell>
+              <TableCell align="right">{risk.materialityYear ? `${risk.materialTopics} (${risk.materialityYear})` : 'no approved assessment'}</TableCell>
+            </TableRow>
+            {risk.topMaterial.length > 0 && <TableRow><TableCell colSpan={2}>{risk.topMaterial.join(' · ')}</TableCell></TableRow>}
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=register" underline="hover">Open risks</Link></TableCell>
+              <TableCell align="right">{risk.openRisks} · {risk.risksByBand.very_high} very high · {risk.risksByBand.high} high</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=climate" underline="hover">Sites at high physical risk</Link></TableCell>
+              <TableCell align="right">{risk.physicalHighOrAbove}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -301,6 +328,7 @@ export default function DashboardPage() {
             {data.filings && <Grid size={{ xs: 12, md: 5 }}><UpcomingFilings filings={data.filings} /></Grid>}
             {data.governance && <Grid size={{ xs: 12, md: 5 }}><GovernanceCard governance={data.governance} /></Grid>}
             {data.social && <Grid size={{ xs: 12, md: 5 }}><SocialCard social={data.social} /></Grid>}
+            {data.risk && <Grid size={{ xs: 12, md: 5 }}><RiskCard risk={data.risk} /></Grid>}
           </Grid>
         </>
       )}

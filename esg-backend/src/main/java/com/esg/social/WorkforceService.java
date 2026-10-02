@@ -285,7 +285,7 @@ public class WorkforceService {
         UUID submittedBy = rs.getObject("submitted_by", UUID.class);
         List<String> actions = new ArrayList<>();
         Map<String, String> blocked = new LinkedHashMap<>();
-        UUID me = CurrentUser.access() == null ? null : CurrentUser.access().userId();
+        UUID me = CurrentUser.userIdOrNull();
         for (String action : ACTIONS.get(status)) {
             String perm = "submit".equals(action) ? "social:update" : "social:approve";
             if (!CurrentUser.hasPermission(perm)) {

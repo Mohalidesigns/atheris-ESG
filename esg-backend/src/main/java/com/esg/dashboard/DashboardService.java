@@ -56,12 +56,14 @@ public class DashboardService {
     private final com.esg.governance.PolicyService policies;
     private final com.esg.governance.WhistleblowerService cases;
     private final com.esg.social.SocialMetricsService social;
+    private final com.esg.risk.RiskInsights risk;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
                             OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
                             com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases,
-                            com.esg.social.SocialMetricsService social) {
+                            com.esg.social.SocialMetricsService social, com.esg.risk.RiskInsights risk) {
         this.social = social;
+        this.risk = risk;
         this.board = board;
         this.policies = policies;
         this.cases = cases;
@@ -84,7 +86,8 @@ public class DashboardService {
                 activity(),
                 CurrentUser.hasPermission("compliance:read") ? filings(today) : null,
                 CurrentUser.hasPermission("governance:read") ? governance(today) : null,
-                CurrentUser.hasPermission("social:read") ? social(year) : null);
+                CurrentUser.hasPermission("social:read") ? social(year) : null,
+                CurrentUser.hasPermission("risk:read") ? risk.overview() : null);
     }
 
     DashboardDtos.Social social(int year) {
@@ -203,7 +206,8 @@ public class DashboardService {
             new Source("governance.governance_policies", "status", "governance:read", "policy"),
             new Source("social.workforce_snapshots", "status", "social:read", "workforce"),
             new Source("social.safety_incidents", "status", "social:read", "incident"),
-            new Source("social.grievances", "status", "social:read", "grievance"));
+            new Source("social.grievances", "status", "social:read", "grievance"),
+            new Source("risk.risk_assessments", "status", "risk:read", "materiality"));
 
     /** Recent workflow steps (status changes from the audit trail) the caller may see, newest first. */
     List<Activity> activity() {
@@ -301,6 +305,12 @@ public class DashboardService {
                 case "closed" -> "closed";
                 default -> null;
             };
+            case "materiality" -> switch (to) {
+                case "in_review" -> "submitted for approval";
+                case "approved" -> "approved";
+                case "draft" -> "approved".equals(from) ? "reopened" : "in_review".equals(from) ? "sent back" : null;
+                default -> null;
+            };
             case "grievance" -> switch (to) {
                 case "acknowledged" -> "acknowledged";
                 case "investigating" -> "resolved".equals(from) || "closed".equals(from) ? "reopened" : "started investigating";
@@ -332,6 +342,8 @@ public class DashboardService {
                     + "from social.workforce_snapshots s join auth.organisations o on o.id = s.org_id where s.id = ? and s.deleted_at is null", id);
             case "incident" -> jdbc.queryForList("select i.title || ' · ' || o.name as title, i.org_id from social.safety_incidents i "
                     + "join auth.organisations o on o.id = i.org_id where i.id = ? and i.deleted_at is null", id);
+            case "materiality" -> jdbc.queryForList("select 'Materiality assessment · ' || name || ' (' || reporting_year || ')' as title "
+                    + "from risk.risk_assessments where id = ? and deleted_at is null", id);
             case "grievance" -> jdbc.queryForList("select reference || ' · ' || title as title, org_id from social.grievances where id = ? "
                     + "and deleted_at is null", id);
             default -> jdbc.queryForList("select name as title from auth.reporting_periods where id = ?", id);
@@ -352,6 +364,7 @@ public class DashboardService {
             case "workforce" -> "/social?tab=workforce&snapshot=" + id;
             case "incident" -> "/social?tab=safety&incident=" + id;
             case "grievance" -> "/social?tab=grievances&grievance=" + id;
+            case "materiality" -> "/risk?tab=materiality&assessment=" + id;
             default -> "/admin?tab=periods";
         });
         return row;

@@ -102,5 +102,14 @@
   ],
   "Workforce approval": [
     "com.esg.social.SocialApiTest#workforceFiguresNeedASecondPersonToApproveAndThenFeedCbnPrinciple4"
+  ],
+  "Materiality topic": [
+    "com.esg.risk.RiskApiTest#journey14MaterialityMatrixFromRealScoresApprovedBySomeoneElse"
+  ],
+  "Carbon price path": [
+    "com.esg.risk.RiskApiTest#scenarioAnalysisFromSourcedCarbonPricesAndSitePhysicalRisk"
+  ],
+  "Assessment approval": [
+    "com.esg.risk.RiskApiTest#journey14MaterialityMatrixFromRealScoresApprovedBySomeoneElse"
   ]
 }

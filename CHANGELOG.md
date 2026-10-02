@@ -3,6 +3,14 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-32 Risk & Materiality (D32)
+
+- Double materiality: stakeholder groups with weights, topics scored for impact (severity × likelihood) and financial effect, stakeholder ratings, thresholds; the matrix is computed from the stored scores and moves when weights change; approval by someone other than the submitter. Approved assessments evidence GRI 3-1/3-2 and fill report variables.
+- ESG risk register: likelihood × impact before and after controls, owners, review dates, links to material topics; 5×5 heatmaps for the whole register, per organisation (drill down the tree) and per sector.
+- Climate scenarios: NGFS scenario families with the tenant's own sourced carbon price paths; transition cost = price × Scope 1+2 with no action and on the reduction-target pathway; physical risk per site and hazard under RCP 4.5/8.5 with sources; the regional climate data adapter is a labelled Sandbox. Feeds IFRS S2 paragraphs 10, 22, 25 and TCFD Strategy / Risk Management.
+- Dashboard Risk card; `risk:*` report variables.
+- Fixed: grievance and incident views no longer fail outside a signed-in request (report rendering), and a rating left blank no longer blocks saving a materiality topic.
+
 ## Unreleased — WP-33 Social Impact (D31)
 
 - Workforce diversity from aggregate figures per site and period (level × gender × age band, disability, pay): women overall and in management, mean pay gap with small groups withheld, turnover; approved by someone other than the submitter, then feeding CBN NSBP Principle 4 and GRI 401/403/405 without double entry.

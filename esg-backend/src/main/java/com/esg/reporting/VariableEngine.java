@@ -4,6 +4,7 @@ import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
 import com.esg.reporting.ReportingDtos.VariableValue;
+import com.esg.risk.RiskInsights;
 import com.esg.social.SocialMetricsService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,6 +39,8 @@ import org.springframework.stereotype.Component;
  *       workforce figures, the incident register, project expenditure and grievances (WP-33). A social catalogue metric
  *       ({@code metric:employees_female} etc.) with no approved Data Hub value falls back to the Social module, so the
  *       CBN NSBP Principle 4 section fills from approved workforce figures;</li>
+ *   <li>{@code risk:material_topics|material_topic_list|open_risks|high_risks|climate_risks|physical_high_risks|scenarios_analysed}
+ *       — the approved materiality assessment of the period's end year, the risk register and scenario work (WP-32);</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -55,8 +58,10 @@ public class VariableEngine {
     private final JdbcTemplate jdbc;
     private final ComplianceService compliance;
     private final SocialMetricsService social;
+    private final RiskInsights risk;
 
-    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social) {
+    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk) {
+        this.risk = risk;
         this.jdbc = jdbc;
         this.compliance = compliance;
         this.social = social;
@@ -97,6 +102,7 @@ public class VariableEngine {
             case "tenant" -> "name".equals(p[1]);
             case "governance" -> GOVERNANCE.contains(p[1]);
             case "social" -> SocialMetricsService.VARIABLES.contains(p[1]);
+            case "risk" -> RiskInsights.VARIABLES.contains(p[1]);
             default -> false;
         };
     }
@@ -184,6 +190,12 @@ public class VariableEngine {
             }
             case "governance" -> {
                 return governance(p[1], start, end);
+            }
+            case "risk" -> {
+                return risk.variable(p[1], end).map(v -> v.number() == null
+                        ? new VariableValue(v.text(), null, null, "ok", v.basis(), null)
+                        : new VariableValue(num(v.number()), v.number(), null, "ok", v.basis(), null))
+                        .orElseGet(() -> missing("no approved materiality assessment for " + end.getYear()));
             }
             case "social" -> {
                 return social.variable(p[1], start, end).map(v -> value(v)).orElseGet(() -> missing(social.missingReason(p[1])));

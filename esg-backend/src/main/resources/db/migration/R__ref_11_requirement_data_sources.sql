@@ -21,9 +21,22 @@ FROM (VALUES ('governance.board_members', 'GRI', '2-9'), ('governance.board_memb
 JOIN compliance.regulatory_frameworks f ON f.code = s.framework
 JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
 
+-- WP-32 (D32): an approved double materiality assessment evidences the process and list of material topics (GRI 3-1,
+-- 3-2); climate risks in the register evidence the identified climate-related risks and the processes for them (IFRS S2
+-- paragraphs 10 and 25, TCFD Strategy a and Risk Management a); scenario analysis (price paths for a ≤2°C and a hot-house
+-- scenario, or physical risk assessed) evidences climate resilience (IFRS S2 paragraph 22, TCFD Strategy c).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT s.source, r.id
+FROM (VALUES ('risk.materiality_assessment', 'GRI', '3-1'), ('risk.materiality_assessment', 'GRI', '3-2'),
+             ('risk.risk_register', 'ISSB_S2', 'S2-10'), ('risk.risk_register', 'ISSB_S2', 'S2-25'),
+             ('risk.risk_register', 'TCFD', 'STR-a'), ('risk.risk_register', 'TCFD', 'RM-a'),
+             ('risk.climate_scenarios', 'ISSB_S2', 'S2-22'), ('risk.climate_scenarios', 'TCFD', 'STR-c')) AS s(source, framework, code)
+JOIN compliance.regulatory_frameworks f ON f.code = s.framework
+JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
+
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 7 THEN
-    RAISE EXCEPTION 'Expected 7 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
+  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 15 THEN
+    RAISE EXCEPTION 'Expected 15 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
   END IF;
 END $$;
