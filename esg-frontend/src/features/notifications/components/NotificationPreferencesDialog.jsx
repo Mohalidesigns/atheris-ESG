@@ -5,6 +5,8 @@ import {
 } from '@mui/material';
 import { useNotificationPreferencesQuery, useUpdateNotificationPreferencesMutation } from '../notificationsApi';
 import { toFormError } from '../../../services/apiSlice';
+import { humanize } from '../../../services/labels';
+import SandboxChip from '../../../components/feedback/SandboxChip';
 
 // no-mock-gate: config — channels allowed by NotificationDtos.PreferenceUpdate
 const CHANNELS = [
@@ -13,7 +15,7 @@ const CHANNELS = [
   { value: 'sms', label: 'SMS' },
 ];
 
-const typeLabel = (type) => type.charAt(0) + type.slice(1).toLowerCase().replace(/_/g, ' ');
+const typeLabel = (type) => humanize(type);
 const key = (p) => `${p.type}|${p.channel}`;
 
 /** Per notification type × channel toggles. Channels backed by a sandbox adapter are labelled "Sandbox". */
@@ -56,7 +58,7 @@ export default function NotificationPreferencesDialog({ open, onClose }) {
               {CHANNELS.map((c) => (
                 <TableCell key={c.value} align="center">
                   {c.label}
-                  {sandbox[c.value] && <Chip size="small" label="Sandbox" color="warning" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
+                  {sandbox[c.value] && <SandboxChip sx={{ ml: 0.5 }} />}
                 </TableCell>
               ))}
             </TableRow></TableHead>

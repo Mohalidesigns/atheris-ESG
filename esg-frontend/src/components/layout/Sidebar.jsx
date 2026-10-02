@@ -1,26 +1,32 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Divider, Collapse, Avatar,
+  Typography, Divider, Avatar, useMediaQuery, useTheme,
 } from '@mui/material';
 import { Shield, Logout } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { visibleSections } from '../../routes/navigation';
+import { roleLabel } from '../../services/labels';
 
-const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH = 260;
 
-
-export default function Sidebar() {
+/** Permanent from 900 px; below that a temporary drawer that closes when a page is chosen (Phase 2, item 9). */
+export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const sections = visibleSections(user?.permissions ?? [], user?.modules);
+  const theme = useTheme();
+  const narrow = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
     <Drawer
-      variant="permanent"
+      variant={narrow ? 'temporary' : 'permanent'}
+      open={narrow ? mobileOpen : true}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
       sx={{
-        width: DRAWER_WIDTH,
+        width: narrow ? 0 : DRAWER_WIDTH,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
@@ -106,7 +112,7 @@ export default function Sidebar() {
             {user?.firstName} {user?.lastName}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }} noWrap>
-            {(user?.roles ?? []).map((r) => r.replace(/_/g, ' ')).join(', ')}
+            {(user?.roles ?? []).map(roleLabel).join(', ')}
           </Typography>
         </Box>
         <Logout

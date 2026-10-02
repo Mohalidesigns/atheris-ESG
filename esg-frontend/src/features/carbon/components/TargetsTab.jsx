@@ -14,6 +14,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateTargetMutation, useDeleteTargetMutation, useTargetsQuery, useUpdateTargetMutation } from '../carbonApi';
 import { DENOMINATORS, TARGET_SCOPES, emptyTarget, targetSchema, toTargetBody, toTargetForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 // no-mock-gate: config — labels for TargetMath.status values
 const STATUS = {
@@ -146,6 +147,7 @@ function TargetCard({ target, onEdit, onDelete }) {
 
 /** Reduction targets (BRD-5.2.2-06, journey 9): pathway, progress from recorded emissions and SBTi checks. */
 export default function TargetsTab() {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useTargetsQuery();
   const [remove] = useDeleteTargetMutation();
   const [editing, setEditing] = useState(undefined);
@@ -153,7 +155,7 @@ export default function TargetsTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const del = async (t) => {
-    if (!window.confirm(`Delete the target "${t.targetName}"?`)) return;
+    if (!(await confirm({ title: 'Delete this target?', item: t.targetName }))) return;
     setActionError('');
     try {
       await remove({ id: t.id, version: t.version }).unwrap();

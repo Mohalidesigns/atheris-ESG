@@ -3,8 +3,12 @@ import { apiSlice, unwrap } from '../../services/apiSlice';
 /** Admin Console API (backend: AdminUserController, AdminController). */
 export const adminApi = apiSlice.injectEndpoints({
   endpoints: (build) => ({
+    /** Administration › Integrations: connection status of external services (Phase 2). */
+    integrations: build.query({ query: () => '/integrations', transformResponse: unwrap }),
     listUsers: build.query({
-      query: ({ search = '', page = 0, size = 20 } = {}) => ({ url: '/admin/users', params: { search, page, size } }),
+      query: ({ search = '', role = '', status = '', page = 0, size = 20 } = {}) => ({
+        url: '/admin/users', params: { search, page, size, ...(role ? { role } : {}), ...(status ? { status } : {}) },
+      }),
       transformResponse: unwrap,
       providesTags: (result) => [
         { type: 'User', id: 'LIST' },
@@ -114,7 +118,7 @@ export const adminApi = apiSlice.injectEndpoints({
 
 export const {
   useListUsersQuery, useGetUserQuery, useCreateUserMutation, useUpdateUserMutation, useDeactivateUserMutation,
-  useReplaceUserRolesMutation, useListRolesQuery, useResetUserMfaMutation, useSetUserPasswordMutation,
+  useReplaceUserRolesMutation, useListRolesQuery, useIntegrationsQuery, useResetUserMfaMutation, useSetUserPasswordMutation,
   useListOrganisationsQuery, useCreateOrganisationMutation, useUpdateOrganisationMutation, useDeleteOrganisationMutation,
   useListPeriodsQuery, useCreatePeriodMutation, useUpdatePeriodMutation, useSetPeriodLockMutation,
   useGetSettingsQuery, useUpdateSettingsMutation, useListFrameworksQuery,

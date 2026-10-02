@@ -12,12 +12,15 @@ import {
 } from './filesApi';
 
 import { scanStatus } from './scanStatus';
+import SandboxChip from '../feedback/SandboxChip';
+import { useConfirm } from '../feedback/ConfirmProvider';
 
 /**
  * Evidence files attached to one record (resourceType + resourceId): list, upload, new version, download, delete.
  * Type and size are checked here exactly as the server checks them (fileRules.js ↔ FileTypePolicy.java).
  */
 export default function FileUpload({ resourceType, resourceId, label = 'Evidence files' }) {
+  const confirm = useConfirm();
   const input = useRef(null);
   const [versionOf, setVersionOf] = useState(null);
   const [error, setError] = useState('');
@@ -71,7 +74,7 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
   };
 
   const onDelete = async (f) => {
-    if (!window.confirm(`Delete ${f.originalName}? Earlier versions are kept for the audit trail.`)) return;
+    if (!(await confirm({ title: 'Delete this file?', item: f.originalName, message: 'Earlier versions are kept for the audit trail.' }))) return;
     setError('');
     try {
       await remove({ id: f.id, resourceType, resourceId }).unwrap();
@@ -94,7 +97,7 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
       {info && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
           {info.allowedExtensions} · up to {formatBytes(info.maxBytes)} · Virus scanning: {info.virusScanning}
-          {info.virusScanningSandbox && <Chip size="small" label="Sandbox" color="warning" variant="outlined" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
+          {info.virusScanningSandbox && <SandboxChip sx={{ ml: 0.5 }} />}
         </Typography>
       )}
       {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}

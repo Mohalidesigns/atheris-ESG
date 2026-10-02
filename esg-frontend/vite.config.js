@@ -27,5 +27,7 @@ export default defineConfig({
     env: { VITE_API_BASE_URL: 'http://localhost/api/v1' },
     css: false,
     exclude: ['node_modules/**', 'cypress/**'],
+    // Multi-step UI tests (wizards, editors) run 1–2 s alone but several times longer when every file runs in parallel.
+    testTimeout: 15000,
   },
 })

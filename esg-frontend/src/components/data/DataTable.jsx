@@ -24,7 +24,8 @@ export default function DataTable({
       {!isLoading && !isError && content.length === 0 && <EmptyState title={emptyTitle}>{emptyMessage}</EmptyState>}
       {content.length > 0 && (
         <TableContainer sx={{ opacity: isFetching ? 0.6 : 1, transition: 'opacity .2s' }}>
-          <Table size="small" aria-label={ariaLabel} aria-busy={isFetching}>
+          <Table size="small" aria-label={ariaLabel} aria-busy={isFetching}
+            data-sticky-actions={['actions', 'open'].includes(columns.at(-1)?.field) ? '' : undefined}>
             <TableHead>
               <TableRow>
                 {columns.map((c) => (

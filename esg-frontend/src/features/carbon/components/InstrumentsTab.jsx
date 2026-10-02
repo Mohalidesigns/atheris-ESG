@@ -14,6 +14,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateInstrumentMutation, useDeleteInstrumentMutation, useInstrumentsQuery, useUpdateInstrumentMutation } from '../carbonApi';
 import { ENERGY_SOURCES, INSTRUMENT_TYPES, emptyInstrument, instrumentSchema, toInstrumentBody, toInstrumentForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const n = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
 
@@ -75,6 +76,7 @@ export function InstrumentDialog({ instrument, orgs, onClose }) {
 
 /** RECs, PPAs and green tariffs (BRD-5.2.2-05): what makes market-based Scope 2 lower than location-based. */
 export default function InstrumentsTab({ orgs }) {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useInstrumentsQuery();
   const [remove] = useDeleteInstrumentMutation();
   const [editing, setEditing] = useState(undefined);
@@ -95,7 +97,7 @@ export default function InstrumentsTab({ orgs }) {
       <Card>
         {data.length === 0 ? <EmptyState title="No RECs or PPAs yet">Without instruments, market-based Scope 2 equals location-based.</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Energy instruments">
+            <Table size="small" aria-label="Energy instruments" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Organisation</TableCell><TableCell>Type</TableCell><TableCell>Period</TableCell><TableCell align="right">MWh</TableCell>
                 <TableCell align="right">Matched MWh</TableCell><TableCell align="right">tCO2e avoided</TableCell><TableCell>Certificate</TableCell><TableCell />
@@ -116,7 +118,7 @@ export default function InstrumentsTab({ orgs }) {
                       </Can>
                       <Can permission="carbon_data:delete">
                         <IconButton size="small" aria-label={`Delete instrument ${i.certificateRef ?? i.supplier}`} onClick={async () => {
-                          if (!window.confirm('Delete this instrument?')) return;
+                          if (!(await confirm({ title: 'Delete this instrument?', item: i.certificateRef ?? i.supplier, message: 'Market-based Scope 2 is recalculated without it.' }))) return;
                           setActionError('');
                           try { await remove({ id: i.id, version: i.version }).unwrap(); } catch (err) { setActionError(toFormError(err).message); }
                         }}><DeleteOutline fontSize="small" /></IconButton>

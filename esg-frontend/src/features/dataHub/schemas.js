@@ -69,6 +69,8 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
     if (v.reportingPeriodStart && v.reportingPeriodEnd && v.reportingPeriodEnd < v.reportingPeriodStart) {
       issue('reportingPeriodEnd', 'Must be on or after the start date');
     }
+    // Phase 2: an empty value is flagged on the first submit, before a metric is chosen too.
+    if (v.value === '') issue('value', 'A value is required');
     const metric = metricsByKey[v.metricKey];
     if (v.metricKey && !metric) {
       issue('metricKey', 'Is not in the metric catalogue');
@@ -78,7 +80,7 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
     if (v.currency && metric.dataType !== 'currency') issue('currency', 'Only applies to currency metrics');
     if (v.currency && !CURRENCIES.includes(v.currency)) issue('currency', `Must be one of ${CURRENCIES.join(', ')}`);
     if (NUMERIC_TYPES.includes(metric.dataType)) {
-      if (v.value === '') return issue('value', 'A value is required');
+      if (v.value === '') return undefined;
       if (v.value.startsWith('-')) return issue('value', 'Must be zero or more');
       if (!DECIMAL.test(v.value)) return issue('value', 'Enter a number with up to 6 decimal places');
       const n = Number(v.value);
@@ -88,7 +90,7 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
         && ((r.minValue != null && n < Number(r.minValue)) || (r.maxValue != null && n > Number(r.maxValue))));
       if (broken) return issue('value', broken.message);
     } else if (metric.dataType === 'text') {
-      if (v.value === '') return issue('value', 'A value is required');
+      if (v.value === '') return undefined;
       if (v.value.length > 2000) return issue('value', 'At most 2000 characters');
     }
     return undefined;

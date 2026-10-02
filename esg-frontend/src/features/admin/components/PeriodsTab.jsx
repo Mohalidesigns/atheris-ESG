@@ -11,6 +11,7 @@ import { useCreatePeriodMutation, useListPeriodsQuery, useSetPeriodLockMutation,
 import { periodSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const empty = { name: '', periodType: 'quarterly', startDate: '', endDate: '' };
 
@@ -79,6 +80,7 @@ function PeriodDialog({ open, period, onClose }) {
 }
 
 export default function PeriodsTab() {
+  const confirm = useConfirm();
   const { data: periods = [], isLoading, isError, error } = useListPeriodsQuery();
   const [setLock] = useSetPeriodLockMutation();
   const [dialog, setDialog] = useState(undefined); // undefined closed, null create, object edit
@@ -86,7 +88,7 @@ export default function PeriodsTab() {
 
   const toggleLock = async (p) => {
     const locking = p.status === 'open';
-    if (locking && !window.confirm(`Lock ${p.name}? Data in this period can't be changed until it's unlocked.`)) return;
+    if (locking && !(await confirm({ title: 'Lock this reporting period?', item: p.name, message: 'Data in this period can\'t be changed until it\'s unlocked.', confirmLabel: 'Lock', destructive: false }))) return;
     setActionError('');
     try {
       await setLock({ id: p.id, locked: locking }).unwrap();
@@ -111,7 +113,7 @@ export default function PeriodsTab() {
           <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">No reporting periods yet.</Typography>
         ) : (
           <TableContainer>
-            <Table size="small">
+            <Table size="small" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Name</TableCell><TableCell>Type</TableCell><TableCell>From</TableCell><TableCell>To</TableCell>
                 <TableCell>Status</TableCell><TableCell align="right">Actions</TableCell>

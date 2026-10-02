@@ -60,6 +60,10 @@ describe('dataPointSchema mirrors DataPointDto + DataPointRules + metric error r
     expect(errorsFor(v)).toEqual({});
   });
 
+  it('flags an empty value on the first submit, even before a metric is chosen (Phase 2)', () => {
+    expect(errorsFor({ metricKey: '', value: '' })).toMatchObject({ value: 'A value is required', metricKey: 'Choose a metric' });
+  });
+
   it('sends numeric or text by metric type, the currency only for money metrics, and evidence and source', () => {
     expect(toDataPointBody({ ...base, value: '12.5', subCategory: ' Borehole ', evidenceFileIds: ['f1'], sourceId: 's1' }, metrics.electricity_kwh))
       .toEqual({

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, Tab, Table, TableBody,
+  Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, MenuItem, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
 import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '@mui/icons-material';
@@ -15,16 +15,20 @@ import SubscriptionTab from './SubscriptionTab';
 import AuditLogTab from '../../audit/components/AuditLogTab';
 import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
+import IntegrationsTab from './IntegrationsTab';
+import { useSearchParams } from 'react-router-dom';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
 import RoleAssignmentDialog from './RoleAssignmentDialog';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
-const roleLabel = (name) => name.replace(/_/g, ' ');
+import { roleLabel } from '../../../services/labels';
 
 /** Search waits until typing pauses: one request per pause instead of one per keystroke (found by E2E journey 1). */
 const SEARCH_DEBOUNCE_MS = 300;
 
 function UsersTab() {
+  const confirm = useConfirm();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -35,7 +39,23 @@ function UsersTab() {
   const [deactivate] = useDeactivateUserMutation();
   const [resetMfa] = useResetUserMfaMutation();
   const [actionError, setActionError] = useState('');
-  const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, page, size });
+  const [role, setRole] = useState('');
+  const [status, setStatus] = useState('');
+  const [highlight, setHighlight] = useState(null);
+  const { can } = useAuth();
+  const { data: roles = [] } = useListRolesQuery(undefined, { skip: !can('roles:read') });
+  const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, role, status, page, size });
+
+  // Phase 2: after creating a user, show their row (search by email) and highlight it for a few seconds.
+  const onUserSaved = (_saved, created) => {
+    setEditing(undefined);
+    if (!created) return;
+    setRole('');
+    setStatus('');
+    setSearchInput(created.email);
+    setHighlight(created.id);
+    setTimeout(() => setHighlight(null), 6000);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -46,7 +66,7 @@ function UsersTab() {
   }, [searchInput]);
 
   const onDeactivate = async (user) => {
-    if (!window.confirm(`Deactivate ${user.firstName} ${user.lastName}? They will be signed out everywhere.`)) return;
+    if (!(await confirm({ title: 'Deactivate this user?', item: `${user.firstName} ${user.lastName} (${user.email})`, message: 'They will be signed out everywhere and can\'t sign in until reactivated.', confirmLabel: 'Deactivate' }))) return;
     setActionError('');
     try {
       await deactivate(user.id).unwrap();
@@ -56,7 +76,7 @@ function UsersTab() {
   };
 
   const onResetMfa = async (user) => {
-    if (!window.confirm(`Reset MFA for ${user.firstName} ${user.lastName}? They will set it up again at next sign-in.`)) return;
+    if (!(await confirm({ title: 'Reset two-factor authentication?', item: `${user.firstName} ${user.lastName}`, message: 'They will set it up again at their next sign-in and are signed out now.', confirmLabel: 'Reset MFA' }))) return;
     setActionError('');
     try {
       await resetMfa(user.id).unwrap();
@@ -68,10 +88,21 @@ function UsersTab() {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
-        <TextField size="small" placeholder="Search name or email" value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
-          sx={{ width: 320 }} />
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <TextField size="small" placeholder="Search name or email" value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)} inputProps={{ 'aria-label': 'Search users' }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+            sx={{ width: { xs: '100%', sm: 280 } }} />
+          <TextField select size="small" label="Role" value={role} onChange={(e) => { setRole(e.target.value); setPage(0); }} sx={{ minWidth: 170 }}>
+            <MenuItem value="">Any role</MenuItem>
+            {roles.map((r) => <MenuItem key={r.id} value={r.name}>{roleLabel(r.name)}</MenuItem>)}
+          </TextField>
+          <TextField select size="small" label="Status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }} sx={{ minWidth: 140 }}>
+            <MenuItem value="">Any status</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="inactive">Deactivated</MenuItem>
+          </TextField>
+        </Box>
         <Can permission="users:create">
           <Button variant="contained" size="small" startIcon={<PersonAdd />} onClick={() => setEditing(null)}>New user</Button>
         </Can>
@@ -84,12 +115,12 @@ function UsersTab() {
         )}
         {data && data.content.length === 0 && (
           <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">
-            {search ? 'No users match your search.' : 'No users yet.'}
+            {search || role || status ? 'No users match these filters.' : 'No users yet.'}
           </Typography>
         )}
         {data && data.content.length > 0 && (
           <TableContainer>
-            <Table size="small">
+            <Table size="small" aria-label="Users" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>User</TableCell><TableCell>Email</TableCell><TableCell>Phone</TableCell>
                 <TableCell>Roles</TableCell><TableCell>Status</TableCell><TableCell>MFA</TableCell>
@@ -97,7 +128,8 @@ function UsersTab() {
               </TableRow></TableHead>
               <TableBody>
                 {data.content.map((u) => (
-                  <TableRow key={u.id} hover>
+                  <TableRow key={u.id} hover selected={u.id === highlight} aria-current={u.id === highlight ? 'true' : undefined}
+                    sx={u.id === highlight ? { '& td': { bgcolor: 'rgba(212,175,55,0.18)', transition: 'background-color 0.6s' } } : undefined}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: '#1A365D' }}>
@@ -113,7 +145,9 @@ function UsersTab() {
                       {u.roles.map((r) => (
                         <Tooltip key={r.id} title={[r.orgScopeName && `Scope: ${r.orgScopeName}`,
                           r.expiresAt && `Expires ${new Date(r.expiresAt).toLocaleString()}`].filter(Boolean).join(' · ')}>
-                          <Chip size="small" label={roleLabel(r.roleName)} sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem', fontWeight: 600 }} />
+                          {/* The same role at two organisations shows as two assignments, each named (not "ESG ANALYST ESG ANALYST"). */}
+                          <Chip size="small" label={r.orgScopeName ? `${roleLabel(r.roleName)} · ${r.orgScopeName}` : roleLabel(r.roleName)}
+                            sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem', fontWeight: 600 }} />
                         </Tooltip>
                       ))}
                     </TableCell>
@@ -159,7 +193,7 @@ function UsersTab() {
       </Card>
 
       <UserFormDialog key={`user-form-${editing === undefined ? 'closed' : editing?.id ?? 'new'}`}
-        open={editing !== undefined} user={editing ?? null} onClose={() => setEditing(undefined)} />
+        open={editing !== undefined} user={editing ?? null} onClose={onUserSaved} />
       <RoleAssignmentDialog key={`roles-${rolesFor?.id ?? 'closed'}`}
         open={Boolean(rolesFor)} user={rolesFor} onClose={() => setRolesFor(null)} />
       <SetPasswordDialog key={`password-${passwordFor?.id ?? 'closed'}`}
@@ -207,6 +241,7 @@ const TABS = [
   { value: 'organisations', label: 'Organisations', permission: 'org_structure:read', render: () => <OrganisationsTab /> },
   { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
   { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
+  { value: 'integrations', label: 'Integrations', permission: 'tenant_settings:read', render: () => <IntegrationsTab /> },
   { value: 'subscription', label: 'Subscription', permission: 'subscription:read', render: () => <SubscriptionTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
   { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
@@ -216,7 +251,9 @@ const TABS = [
 export default function AdminPage() {
   const { can } = useAuth();
   const tabs = TABS.filter((t) => can(t.permission));
-  const [selected, setSelected] = useState(null);
+  // ?tab=… opens a tab directly, e.g. from a "Sandbox" label (→ Integrations).
+  const [params] = useSearchParams();
+  const [selected, setSelected] = useState(params.get('tab'));
   const tab = tabs.find((t) => t.value === selected) ?? tabs[0];
 
   return (

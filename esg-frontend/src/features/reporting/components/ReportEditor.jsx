@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,6 +22,7 @@ import {
 } from '../schemas';
 import ApprovalPanel from './ApprovalPanel';
 import ReportDialog from './ReportDialog';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const when = (t) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
@@ -34,13 +35,31 @@ function Rendered({ text }) {
 /** Simple narrative editor: text with paragraphs and "- " bullets, plus an "Insert data" menu for {{variables}}. */
 function SectionEditor({ control, index, remove, move, count, metrics, frameworks }) {
   const [anchor, setAnchor] = useState(null);
+  // Phase 2: the caret is remembered as the user types or clicks, because opening the Insert menu takes the focus away.
+  const caret = useRef(null);
+  const textarea = useRef(null);
+  const remember = (e) => { caret.current = e.target.selectionStart; };
   return (
     <Controller name={`sections.${index}.content`} control={control} render={({ field, fieldState }) => {
-      const insert = (text) => {
-        const el = document.getElementById(`section-${index}-content`);
-        const at = el?.selectionStart ?? field.value.length;
-        field.onChange(`${field.value.slice(0, at)}${text}${field.value.slice(at)}`);
+      /** Inserts at the caret (end if the box was never focused); a variable gets a space on each side if needed. */
+      const insert = (text, spaced = true) => {
+        const value = field.value ?? '';
+        const at = Math.min(caret.current ?? value.length, value.length);
+        const before = value.slice(0, at);
+        const after = value.slice(at);
+        const lead = spaced && before && !/\s$/.test(before) ? ' ' : '';
+        const trail = spaced && after && !/^\s/.test(after) ? ' ' : '';
+        const piece = `${lead}${text}${trail}`;
+        field.onChange(`${before}${piece}${after}`);
+        caret.current = at + piece.length;
         setAnchor(null);
+        requestAnimationFrame(() => {
+          const el = textarea.current;
+          if (el) {
+            el.focus();
+            el.setSelectionRange(caret.current, caret.current);
+          }
+        });
       };
       return (
         <Card variant="outlined" aria-label={`Section ${index + 1}`}>
@@ -66,7 +85,7 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
               </Grid>
               <Grid size={12}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-                  <Button size="small" startIcon={<FormatListBulleted />} onClick={() => insert('\n- ')}>Bullet</Button>
+                  <Button size="small" startIcon={<FormatListBulleted />} onClick={() => insert('\n- ', false)}>Bullet</Button>
                   <Button size="small" startIcon={<DataObject />} onClick={(e) => setAnchor(e.currentTarget)}>Insert data</Button>
                   <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { maxHeight: 360 } } }}>
                     <MenuItem disabled>Emissions (Carbon)</MenuItem>
@@ -79,7 +98,8 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
                     {metrics.map((m) => <MenuItem key={m.metricKey} onClick={() => insert(`{{metric:${m.metricKey}}}`)}>{m.name}</MenuItem>)}
                   </Menu>
                 </Box>
-                <TextField {...field} id={`section-${index}-content`} fullWidth multiline minRows={4} label="Text"
+                <TextField {...field} id={`section-${index}-content`} inputRef={textarea} fullWidth multiline minRows={4} label="Text"
+                  inputProps={{ onSelect: remember, onKeyUp: remember, onClick: remember, onBlur: remember }}
                   error={!!fieldState.error} helperText={fieldState.error?.message ?? 'Blank line = new paragraph; {{…}} values are filled from approved data'} />
               </Grid>
             </Grid>
@@ -281,7 +301,7 @@ function ExportsTab({ report }) {
     <Card>
       {problem && <Alert severity="error" sx={{ m: 1 }}>{problem}</Alert>}
       {report.exports.length === 0 ? <CardContent><Typography color="text.secondary">No exports yet. An approved report can be exported to PDF or Excel.</Typography></CardContent> : (
-        <Table size="small" aria-label="Exports">
+        <Table size="small" aria-label="Exports" data-sticky-actions>
           <TableHead><TableRow><TableCell>Version</TableCell><TableCell>Format</TableCell><TableCell>Status</TableCell><TableCell>Who / when</TableCell><TableCell /></TableRow></TableHead>
           <TableBody>
             {report.exports.map((j) => (
@@ -308,6 +328,7 @@ function ExportsTab({ report }) {
 
 /** One report: content editor, data snapshot, approval, versions and exports (TRD Report Builder page). */
 export default function ReportEditor({ id, onBack }) {
+  const confirm = useConfirm();
   const { data: report, isLoading, isError, error, refetch } = useReportQuery(id);
   const [refresh, rf] = useRefreshReportMutation();
   const [submit, sb] = useSubmitReportMutation();
@@ -357,7 +378,7 @@ export default function ReportEditor({ id, onBack }) {
           )}
           {report.status === 'draft' && neverApproved && (
             <Can permission="reports:delete">
-              <Button size="small" color="error" onClick={() => window.confirm('Delete this draft report?') && act(async () => {
+              <Button size="small" color="error" onClick={async () => (await confirm({ title: 'Delete this draft report?', item: report.title, message: 'The draft and its versions are removed. This can\'t be undone.' })) && act(async () => {
                 await remove({ id, version: report.version }).unwrap();
                 onBack();
               })}>Delete</Button>

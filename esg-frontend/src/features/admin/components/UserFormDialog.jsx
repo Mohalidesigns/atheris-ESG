@@ -41,7 +41,11 @@ export default function UserFormDialog({ open, user, onClose }) {
     setServerError('');
     try {
       if (editing) await updateUser({ id: user.id, ...toUserBody(values), version: user.version }).unwrap();
-      else await createUser(toUserBody(values)).unwrap();
+      else {
+        const created = await createUser(toUserBody(values)).unwrap();
+        onClose(true, created);
+        return;
+      }
       onClose(true);
     } catch (err) {
       const { message, fieldErrors } = toFormError(err);

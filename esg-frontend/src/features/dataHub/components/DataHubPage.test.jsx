@@ -172,6 +172,17 @@ describe('DataHubPage review', () => {
     await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/validate')?.body).toEqual({ version: 1 }));
   });
 
+  it('an action segregation of duties forbids is shown disabled with the reason (Phase 2)', async () => {
+    fakeApi(drawerRoutes({
+      'GET /data/points/p1': () => ok({ ...point, actions: [], blockedActions: { validate: 'You entered or submitted this — another person must validate it' } }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByRole('button', { name: 'Validate' })).toBeDisabled();
+    expect(within(drawer).getByLabelText('Validate: You entered or submitted this — another person must validate it')).toBeInTheDocument();
+  });
+
   it('reject asks for a reason (required, like the server) and sends it', async () => {
     const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/reject': (body) => ok({ ...point, validationStatus: 'rejected', statusReason: body.reason }) }));
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });

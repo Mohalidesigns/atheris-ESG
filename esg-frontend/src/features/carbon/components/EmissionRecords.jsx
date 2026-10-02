@@ -9,6 +9,7 @@ import { useDeleteEmissionMutation, useEmissionActivitiesQuery, useEmissionsQuer
 import { FACTOR_LEVELS, activityLabel } from '../schemas';
 import EmissionCalculator from './EmissionCalculator';
 import ProvisionalBadge from './ProvisionalBadge';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 // no-mock-gate: config — labels for EmissionResponse.recordSource values
 const SOURCES = { manual: 'Calculator', data_hub: 'Data Hub', flaring: 'Flaring' };
@@ -16,6 +17,7 @@ const tonnes = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFraction
 
 /** Emission records for the year. Only calculator records are edited here; Data Hub and flaring records follow their source. */
 export default function EmissionRecords({ year, orgs, onAddFactor }) {
+  const confirm = useConfirm();
   const { data: catalogue = [] } = useEmissionActivitiesQuery();
   const labels = Object.fromEntries(catalogue.map((a) => [a.category, a.label]));
   const [scope, setScope] = useState('');
@@ -74,7 +76,7 @@ export default function EmissionRecords({ year, orgs, onAddFactor }) {
               </Can>
               <Can permission="carbon_data:delete">
                 <IconButton size="small" aria-label={`Delete ${r.sourceActivity} ${r.reportingPeriodStart}`}
-                  onClick={() => window.confirm('Delete this emission record?') && act(() => remove({ id: r.id, version: r.version }).unwrap())}>
+                  onClick={async () => (await confirm({ title: 'Delete this emission record?', item: `${labels[r.sourceActivity] ?? r.sourceActivity} · ${r.reportingPeriodStart} – ${r.reportingPeriodEnd} · ${r.co2eTonnes} tCO2e`, message: 'It no longer counts in totals, targets or reports. The audit trail keeps it.' })) && act(() => remove({ id: r.id, version: r.version }).unwrap())}>
                   <DeleteOutline fontSize="small" />
                 </IconButton>
               </Can>

@@ -77,7 +77,7 @@ export default function DataSourcesTab() {
       <Card>
         {sources.length === 0 ? <EmptyState title="No data sources yet">Record where your data comes from: a meter, an ERP export, a supplier report.</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Data sources">
+            <Table size="small" aria-label="Data sources" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Name</TableCell><TableCell>Type</TableCell><TableCell>Description</TableCell>
                 <TableCell align="right">Data points</TableCell><TableCell>Status</TableCell><TableCell />

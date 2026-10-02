@@ -91,6 +91,38 @@ const lightTheme = createTheme({
         root: { fontWeight: 500 },
       },
     },
+    // Phase 2 (item 8): tables scroll sideways inside their card rather than being cut off at 1024–1280 px, cells are a
+    // little tighter on narrower screens, and a table marked data-sticky-actions keeps its last (Actions) column pinned.
+    MuiTableContainer: {
+      styleOverrides: {
+        root: { overflowX: 'auto', maxWidth: '100%' },
+      },
+    },
+    MuiTable: {
+      styleOverrides: {
+        root: {
+          '&[data-sticky-actions] tr > *:last-child': {
+            position: 'sticky', right: 0, zIndex: 1, background: '#FFFFFF', boxShadow: '-6px 0 6px -6px rgba(0,0,0,0.15)',
+          },
+          '&[data-sticky-actions] thead tr > *:last-child': { background: '#F7FAFC', zIndex: 2 },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          '@media (max-width: 1280px)': { paddingLeft: 8, paddingRight: 8 },
+        },
+      },
+    },
+    // Phase 2 (item 9): below 600 px every dialog fills the screen.
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          '@media (max-width: 599.95px)': { margin: 0, width: '100%', maxWidth: '100%', height: '100%', maxHeight: '100%', borderRadius: 0 },
+        },
+      },
+    },
     MuiTableHead: {
       styleOverrides: {
         root: {

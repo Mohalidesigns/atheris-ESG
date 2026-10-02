@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import {
-  AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Typography, Divider,
+  AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Typography, Divider, IconButton,
 } from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { DRAWER_WIDTH } from './Sidebar';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Can from '../rbac/Can';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
+import { roleLabel } from '../../services/labels';
 
-export default function TopBar() {
+export default function TopBar({ onMenu = () => {} }) {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -15,13 +18,16 @@ export default function TopBar() {
       position="fixed"
       elevation={0}
       sx={{
-        left: 260,
-        width: 'calc(100% - 260px)',
+        left: { xs: 0, md: DRAWER_WIDTH },
+        width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
         bgcolor: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
       }}
     >
-      <Toolbar sx={{ minHeight: '56px !important', px: 3 }}>
+      <Toolbar sx={{ minHeight: '56px !important', px: { xs: 1.5, sm: 3 } }}>
+        <IconButton aria-label="Open menu" onClick={onMenu} sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}>
+          <MenuIcon />
+        </IconButton>
         {/* Global search isn't built yet (FIELD_INVENTORY "Global search" row); no non-working search box until it is. */}
         <Box sx={{ flex: 1 }} />
 
@@ -44,7 +50,7 @@ export default function TopBar() {
               {user?.firstName} {user?.lastName}
             </Typography>
             <Typography variant="caption" sx={{ color: '#718096', fontSize: '0.65rem' }}>
-              {(user?.roles ?? []).map((r) => r.replace(/_/g, ' ')).join(', ')}
+              {(user?.roles ?? []).map(roleLabel).join(', ')}
             </Typography>
           </Box>
         </Box>

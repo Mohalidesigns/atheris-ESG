@@ -17,6 +17,8 @@ import {
   useReopenChangeMutation, useStartChangeMutation, useUpdateChangeMutation,
 } from '../complianceApi';
 import { CHANGE_STATUS, IMPACT, assessSchema, changeSchema, emptyChange, toChangeBody, toChangeForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import BlockedAction from '../../../components/feedback/BlockedAction';
 
 // no-mock-gate: config — impact colours
 const IMPACT_COLOUR = { high: 'error', medium: 'warning', low: 'info', none: 'default' };
@@ -118,6 +120,7 @@ export function AssessDialog({ change, onClose }) {
  * by people (D23 (5)).
  */
 export default function ChangesTab() {
+  const confirm = useConfirm();
   const [status, setStatus] = useState('');
   const { data = [], isLoading, isError, error, refetch } = useChangesQuery(status || undefined);
   const [start] = useStartChangeMutation();
@@ -192,7 +195,9 @@ export default function ChangesTab() {
                     )}
                     {c.status === 'assessed' && (
                       <Can permission="compliance:approve">
-                        <Button size="small" variant="contained" onClick={() => act(() => closeChange({ id: c.id, version: c.version }).unwrap())}>Sign off &amp; close</Button>
+                        {c.closeBlockedReason ? <BlockedAction label="Sign off & close" reason={c.closeBlockedReason} /> : (
+                          <Button size="small" variant="contained" onClick={() => act(() => closeChange({ id: c.id, version: c.version }).unwrap())}>Sign off &amp; close</Button>
+                        )}
                       </Can>
                     )}
                     {(c.status === 'assessed' || c.status === 'closed') && (
@@ -203,7 +208,7 @@ export default function ChangesTab() {
                     {c.status === 'new' && (
                       <Can permission="compliance:update">
                         <IconButton size="small" aria-label={`Delete ${c.title}`}
-                          onClick={() => window.confirm('Delete this change?') && act(() => remove({ id: c.id, version: c.version }).unwrap())}>
+                          onClick={async () => (await confirm({ title: 'Delete this regulatory change?', item: c.title })) && act(() => remove({ id: c.id, version: c.version }).unwrap())}>
                           <DeleteOutline fontSize="small" />
                         </IconButton>
                       </Can>

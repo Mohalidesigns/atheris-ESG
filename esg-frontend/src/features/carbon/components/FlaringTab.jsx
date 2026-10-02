@@ -14,6 +14,8 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateFlaringMutation, useDeleteFlaringMutation, useFlaringQuery, useSatelliteCheckMutation, useUpdateFlaringMutation } from '../carbonApi';
 import { FLARING_REASONS, GAS_COMPONENTS, emptyFlaring, flaringSchema, toFlaringBody, toFlaringForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import SandboxChip from '../../../components/feedback/SandboxChip';
 
 const t = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
 
@@ -86,6 +88,7 @@ export function FlaringDialog({ record, orgs, onClose }) {
 
 /** Gas flaring (BRD-5.2.2-04, journey 7): CO2e from volume × composition × combustion efficiency. */
 export default function FlaringTab({ year, orgs }) {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useFlaringQuery({ year });
   const [remove] = useDeleteFlaringMutation();
   const [check] = useSatelliteCheckMutation();
@@ -112,7 +115,7 @@ export default function FlaringTab({ year, orgs }) {
       <Card>
         {data.length === 0 ? <EmptyState title={`No flaring recorded for ${year}`}>Record volumes flared with the gas analysis to calculate Scope 1 emissions.</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Flaring records">
+            <Table size="small" aria-label="Flaring records" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Facility</TableCell><TableCell>Period</TableCell><TableCell align="right">Mcf</TableCell>
                 <TableCell align="right">tCO2e</TableCell><TableCell>Reason</TableCell><TableCell>Satellite</TableCell><TableCell />
@@ -128,8 +131,10 @@ export default function FlaringTab({ year, orgs }) {
                     <TableCell>{f.flaringReason ?? '—'}</TableCell>
                     <TableCell>
                       {f.satelliteCheck
-                        ? <Chip size="small" color="warning" variant="outlined" label={`${f.satelliteCheck.provider}: ${f.satelliteCheck.status.replace('_', ' ')}`}
-                            title={f.satelliteCheck.message} />
+                        ? (f.satelliteCheck.provider === 'Sandbox'
+                          ? <SandboxChip label={`Sandbox: ${f.satelliteCheck.status.replace('_', ' ')}`} title={f.satelliteCheck.message} sx={{ height: 24, fontSize: '0.7rem' }} />
+                          : <Chip size="small" color="warning" variant="outlined" label={`${f.satelliteCheck.provider}: ${f.satelliteCheck.status.replace('_', ' ')}`}
+                            title={f.satelliteCheck.message} />)
                         : <Typography variant="caption" color="text.secondary">Not checked</Typography>}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
@@ -141,7 +146,7 @@ export default function FlaringTab({ year, orgs }) {
                       </Can>
                       <Can permission="carbon_data:delete">
                         <IconButton size="small" aria-label={`Delete flaring ${f.facilityName} ${f.reportingPeriodStart}`}
-                          onClick={() => window.confirm('Delete this flaring record and its emissions?') && act(() => remove({ id: f.id, version: f.version }).unwrap())}>
+                          onClick={async () => (await confirm({ title: 'Delete this flaring record?', item: `${f.facilityName} · ${f.reportingPeriodStart}`, message: 'Its emission record is deleted too.' })) && act(() => remove({ id: f.id, version: f.version }).unwrap())}>
                           <DeleteOutline fontSize="small" />
                         </IconButton>
                       </Can>

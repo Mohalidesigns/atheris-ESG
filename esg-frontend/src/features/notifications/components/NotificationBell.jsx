@@ -4,7 +4,7 @@ import {
   Typography,
 } from '@mui/material';
 import { NotificationsOutlined, Tune } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   useListNotificationsQuery, useMarkAllNotificationsReadMutation, useMarkNotificationReadMutation, useUnreadCountQuery,
 } from '../notificationsApi';
@@ -16,7 +16,12 @@ const POLL_MS = 60_000;
 /** Top-bar bell: unread count (polled), latest notifications, mark read, and channel preferences. */
 export default function NotificationBell() {
   const navigate = useNavigate();
-  const [anchor, setAnchor] = useState(null);
+  // Phase 2: the popover belongs to the page it was opened on, so it is closed after any page change (Escape and
+  // clicking away close it too: MUI Popover).
+  const { pathname } = useLocation();
+  const [opened, setOpened] = useState({ anchor: null, pathname });
+  const anchor = opened.pathname === pathname ? opened.anchor : null;
+  const setAnchor = (el) => setOpened({ anchor: el, pathname });
   const [prefsOpen, setPrefsOpen] = useState(false);
   const { data: unread = 0 } = useUnreadCountQuery(undefined, { pollingInterval: POLL_MS, skipPollingIfUnfocused: true });
   const list = useListNotificationsQuery({ size: 10 }, { skip: !anchor });

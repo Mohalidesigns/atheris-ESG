@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { humanize } from '../../services/labels';
 import { CURRENCIES } from '../admin/schemas';
 
 /**
@@ -125,7 +126,7 @@ export const toFactorForm = (f) => ({
 });
 
 /** "diesel_generator" → "Diesel generator". */
-export const activityLabel = (category) => (category ?? '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+export const activityLabel = (category) => humanize(category);
 
 /** "kgCO2e/litre" → "litre": the unit the activity data must be in. */
 export const factorActivityUnit = (unit) => (unit?.includes('/') ? unit.slice(unit.indexOf('/') + 1) : unit ?? '');

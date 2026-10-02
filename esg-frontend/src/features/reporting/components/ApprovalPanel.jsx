@@ -3,6 +3,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, Step, StepContent, StepLab
 import { applyProblem } from '../../../services/formErrors';
 import { useDecideStepMutation } from '../reportingApi';
 import { STEP_STATUS, decisionSchema } from '../schemas';
+import BlockedAction from '../../../components/feedback/BlockedAction';
 
 const when = (t) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
@@ -58,6 +59,9 @@ export default function ApprovalPanel({ report }) {
                   {s.approver ? `${s.approver} · ${when(s.actedAt)}` : s.dueAt ? `Due ${when(s.dueAt)}` : 'Not started'}
                 </Typography>
                 {s.comments && <Typography variant="body2" sx={{ mt: 0.5 }}>“{s.comments}”</Typography>}
+                {s.blockedReason && (
+                  <Box sx={{ mt: 1 }}><BlockedAction label="Approve" reason={s.blockedReason} /></Box>
+                )}
                 {s.canAct && (
                   <Box sx={{ mt: 1 }}>
                     <TextField fullWidth size="small" multiline minRows={2} label="Comments" value={comments} onChange={(e) => setComments(e.target.value)}

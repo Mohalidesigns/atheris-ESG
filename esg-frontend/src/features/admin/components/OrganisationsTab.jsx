@@ -15,6 +15,7 @@ import {
 import { organisationSchema, toOrganisationBody } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const typeLabel = Object.fromEntries(ORG_TYPES.map((t) => [t.value, t.label]));
 const empty = { name: '', parentOrgId: '', orgType: 'site', countryCode: 'NG', stateRegion: '', address: '', latitude: '', longitude: '' };
@@ -94,6 +95,7 @@ function OrganisationDialog({ open, org, parentId, orgs, onClose }) {
 }
 
 export default function OrganisationsTab() {
+  const confirm = useConfirm();
   const { data: orgs = [], isLoading, isError, error } = useListOrganisationsQuery();
   const [deleteOrg] = useDeleteOrganisationMutation();
   const [dialog, setDialog] = useState(null); // { org } edit | { parentId } create
@@ -101,7 +103,7 @@ export default function OrganisationsTab() {
   const rows = flattenTree(orgs);
 
   const onDelete = async (org) => {
-    if (!window.confirm(`Remove ${org.name}?`)) return;
+    if (!(await confirm({ title: 'Remove this organisation?', item: org.name, message: 'Only possible while nothing refers to it.', confirmLabel: 'Remove' }))) return;
     setActionError('');
     try {
       await deleteOrg(org.id).unwrap();

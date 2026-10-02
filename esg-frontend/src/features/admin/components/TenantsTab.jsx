@@ -118,7 +118,7 @@ export default function TenantsTab() {
       </Box>
       <Card>
         <TableContainer>
-          <Table size="small">
+          <Table size="small" data-sticky-actions>
             <TableHead><TableRow>
               <TableCell>Tenant</TableCell><TableCell>Country</TableCell><TableCell>Sector</TableCell><TableCell>Tier</TableCell>
               <TableCell>Users</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell>

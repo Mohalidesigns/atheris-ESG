@@ -14,6 +14,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { CURRENCIES } from '../../admin/schemas';
 import { useCreateFxRateMutation, useDeleteFxRateMutation, useFxRatesQuery, useUpdateFxRateMutation } from '../dataHubApi';
 import { emptyRate, fxRateSchema, toRateBody } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const currencyOptions = CURRENCIES.map((c) => ({ value: c, label: c }));
 
@@ -67,6 +68,7 @@ export function FxRateDialog({ rate, onClose }) {
  * converted with the latest rate dated on or before the period end; without one, saving is refused.
  */
 export default function FxRatesTab() {
+  const confirm = useConfirm();
   const { data: rates, isLoading, isError, error, refetch } = useFxRatesQuery();
   const [remove] = useDeleteFxRateMutation();
   const [editing, setEditing] = useState(undefined);
@@ -74,7 +76,7 @@ export default function FxRatesTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const onDelete = async (r) => {
-    if (!window.confirm(`Delete the ${r.fromCurrency}→${r.toCurrency} rate of ${r.rateDate}? Data already converted keeps its rate.`)) return;
+    if (!(await confirm({ title: 'Delete this exchange rate?', item: `${r.fromCurrency} → ${r.toCurrency} · ${r.rateDate}`, message: 'Data already converted keeps its rate.' }))) return;
     setActionError('');
     try {
       await remove(r.id).unwrap();
@@ -97,7 +99,7 @@ export default function FxRatesTab() {
           </EmptyState>
         ) : (
           <TableContainer>
-            <Table size="small" aria-label="Exchange rates">
+            <Table size="small" aria-label="Exchange rates" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Pair</TableCell><TableCell align="right">Rate</TableCell><TableCell>Date</TableCell><TableCell>Source</TableCell><TableCell />
               </TableRow></TableHead>

@@ -10,6 +10,7 @@ import { roleAssignmentsSchema, toAssignmentsBody, toLocalInput } from '../schem
 import { toFormError } from '../../../services/apiSlice';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { roleLabel } from '../../../services/labels';
 
 
 
@@ -78,10 +79,10 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
                       setServerError('');
                     }}
                     error={!!rowErrors.roleId} helperText={rowErrors.roleId?.message}>
-                    {roles.map((r) => <MenuItem key={r.id} value={r.id}>{r.name.replace(/_/g, ' ')}</MenuItem>)}
+                    {roles.map((r) => <MenuItem key={r.id} value={r.id}>{roleLabel(r.name)}</MenuItem>)}
                     {held.map((a) => (
                       <MenuItem key={a.roleId} value={a.roleId} disabled>
-                        {a.roleName.replace(/_/g, ' ')} (you can&apos;t assign this role)
+                        {roleLabel(a.roleName)} (you can&apos;t assign this role)
                       </MenuItem>
                     ))}
                   </TextField>

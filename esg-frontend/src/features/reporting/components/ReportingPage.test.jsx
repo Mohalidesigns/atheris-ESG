@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReportingPage from './ReportingPage';
 import { authenticated, renderWithStore } from '../../../test/renderWithStore';
@@ -102,6 +102,18 @@ describe('ReportingPage', () => {
     await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
     expect(text).toHaveValue('Water: {{metric:water_withdrawal_m3}}');
+    // Phase 2: inserted at the caret, not at the start, with a space on each side where needed.
+    await userEvent.clear(text);
+    await userEvent.type(text, 'Used:litres');
+    text.setSelectionRange(5, 5);
+    fireEvent.select(text);
+    await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
+    expect(text).toHaveValue('Used: {{metric:water_withdrawal_m3}} litres');
+    await userEvent.clear(text);
+    await userEvent.type(text, 'Water: ');
+    await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save sections' }));
     await waitFor(() => expect(saved).toEqual({
       version: 3, sections: [

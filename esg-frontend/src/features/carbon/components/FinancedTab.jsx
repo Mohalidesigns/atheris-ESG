@@ -17,6 +17,7 @@ import {
   useCreateFinancedMutation, useDeleteFinancedMutation, useFinancedQuery, useFinancedSummaryQuery, useUpdateFinancedMutation,
 } from '../carbonApi';
 import { ASSET_CLASSES, emptyFinanced, financedSchema, toFinancedBody, toFinancedForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 const n = (v, d = 2) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: d }));
 // no-mock-gate: config — PCAF data quality score descriptions (PCAF Standard Part A, table 5-1 summary)
@@ -92,6 +93,7 @@ export function FinancedDialog({ position, year, onClose }) {
 
 /** PCAF financed emissions (BRD-5.2.2-08): attribution = outstanding ÷ denominator; financed = attribution × counterparty emissions. */
 export default function FinancedTab({ year }) {
+  const confirm = useConfirm();
   const { data: sectors = [] } = useSectorsQuery();
   const sectorName = Object.fromEntries(sectors.map((x) => [x.code, x.name]));
   const { data = [], isLoading, isError, error, refetch } = useFinancedQuery({ year });
@@ -102,7 +104,7 @@ export default function FinancedTab({ year }) {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const del = async (p) => {
-    if (!window.confirm(`Delete the position in ${p.counterparty}?`)) return;
+    if (!(await confirm({ title: 'Delete this financed position?', item: p.counterparty, message: 'Its financed emissions no longer count in the portfolio.' }))) return;
     setActionError('');
     try {
       await remove({ id: p.id, version: p.version }).unwrap();
@@ -146,7 +148,7 @@ export default function FinancedTab({ year }) {
       <Card>
         {data.length === 0 ? <EmptyState title={`No financed positions for ${year}`}>Add loans and investments with their counterparty emissions.</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Financed positions">
+            <Table size="small" aria-label="Financed positions" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Counterparty</TableCell><TableCell>Asset class</TableCell><TableCell align="right">Outstanding</TableCell>
                 <TableCell align="right">Attribution</TableCell><TableCell align="right">Financed tCO2e</TableCell><TableCell align="right">DQ</TableCell><TableCell />

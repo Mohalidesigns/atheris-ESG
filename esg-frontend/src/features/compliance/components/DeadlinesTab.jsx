@@ -21,6 +21,7 @@ import {
   DEADLINE_STATUS, DEFAULT_REMINDERS, MAX_EVIDENCE, deadlineSchema, emptyDeadline, emptySubmission, submissionSchema, toDeadlineBody,
   toDeadlineForm, waiverSchema,
 } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
 // no-mock-gate: config — calendar labels
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -207,6 +208,7 @@ function Calendar({ deadlines, month, onMonth }) {
 
 /** Filing deadlines: calendar, tracker and reminders (TRD §4.5 filing_deadlines, §8.3 DeadlineScheduler; BRD-5.2.3-05). */
 export default function DeadlinesTab() {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useDeadlinesQuery({});
   const [remove] = useDeleteDeadlineMutation();
   const [reopen] = useReopenDeadlineMutation();
@@ -245,7 +247,7 @@ export default function DeadlinesTab() {
           <Card>
             {data.length === 0 ? <EmptyState title="No filing deadlines yet">Add the regulator filings you have to make; owners get reminders.</EmptyState> : (
               <TableContainer>
-                <Table size="small" aria-label="Filing tracker">
+                <Table size="small" aria-label="Filing tracker" data-sticky-actions>
                   <TableHead><TableRow>
                     <TableCell>Filing</TableCell><TableCell>Due</TableCell><TableCell>Status</TableCell><TableCell>Owner</TableCell><TableCell />
                   </TableRow></TableHead>
@@ -290,7 +292,7 @@ export default function DeadlinesTab() {
                           <Can permission="compliance:update">
                             <IconButton size="small" aria-label={`Edit ${d.description}`} onClick={() => setDialog({ kind: 'edit', deadline: d })}><Edit fontSize="small" /></IconButton>
                             <IconButton size="small" aria-label={`Delete ${d.description}`}
-                              onClick={() => window.confirm('Delete this filing deadline?') && act(() => remove({ id: d.id, version: d.version }).unwrap())}>
+                              onClick={async () => (await confirm({ title: 'Delete this filing deadline?', item: d.description })) && act(() => remove({ id: d.id, version: d.version }).unwrap())}>
                               <DeleteOutline fontSize="small" />
                             </IconButton>
                           </Can>

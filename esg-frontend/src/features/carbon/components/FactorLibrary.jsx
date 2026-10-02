@@ -44,7 +44,7 @@ export default function FactorLibrary() {
         {data && rows.length === 0 && <EmptyState title="No factors match" />}
         {rows.length > 0 && (
           <TableContainer>
-            <Table size="small" aria-label="Emission factors">
+            <Table size="small" aria-label="Emission factors" data-sticky-actions>
               <TableHead><TableRow>
                 <TableCell>Category</TableCell><TableCell>Place</TableCell><TableCell align="right">Factor</TableCell>
                 <TableCell>Source</TableCell><TableCell>Valid</TableCell><TableCell>Status</TableCell><TableCell />

@@ -16,6 +16,8 @@ import {
 } from '../dataHubApi';
 import { reasonSchema } from '../schemas';
 import StatusChip from './StatusChip';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import BlockedAction from '../../../components/feedback/BlockedAction';
 
 // no-mock-gate: config — labels for the quality sub-scores and workflow buttons
 const SUB_SCORES = [
@@ -64,6 +66,7 @@ function ReasonDialog({ action, onCancel, onConfirm }) {
 
 /** One data point: values, conversion, quality, warnings, evidence, history and the actions the server allows. */
 export default function DataPointDrawer({ id, onClose, onEdit }) {
+  const confirm = useConfirm();
   const { data: dp, isLoading, isError, error, refetch } = useDataPointQuery(id, { skip: !id });
   const { data: history = [] } = useDataPointHistoryQuery(id, { skip: !id });
   const [transition, { isLoading: moving }] = useTransitionDataPointMutation();
@@ -77,7 +80,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
     if (action === 'reject' || action === 'reopen') return setAsking(action);
     try {
       if (action === 'delete') {
-        if (!window.confirm('Delete this draft?')) return undefined;
+        if (!(await confirm({ title: 'Delete this draft?', item: `${dp.metricName ?? dp.metricKey} · ${dp.orgName} · ${dp.reportingPeriodStart}` }))) return undefined;
         await remove({ id: dp.id, version: dp.version }).unwrap();
         return onClose();
       }
@@ -132,7 +135,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
             </Box>
 
             {actionError && <Alert severity="error">{actionError}</Alert>}
-            {dp.actions.length > 0 && (
+            {(dp.actions.length > 0 || Object.keys(dp.blockedActions ?? {}).length > 0) && (
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {dp.actions.map((a) => (
                   <Button key={a} size="small" disabled={moving}
@@ -140,6 +143,9 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
                     color={a === 'reject' || a === 'delete' ? 'error' : 'primary'} onClick={() => act(a)}>
                     {ACTION_LABELS[a] ?? a}
                   </Button>
+                ))}
+                {Object.entries(dp.blockedActions ?? {}).map(([a, reason]) => (
+                  <BlockedAction key={a} label={ACTION_LABELS[a] ?? a} reason={reason} />
                 ))}
               </Box>
             )}
