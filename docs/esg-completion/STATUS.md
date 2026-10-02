@@ -319,7 +319,7 @@ Branch `feature/wp-24-executive-dashboard` (stacked on WP-52d, PR #15). Design: 
 
 Every section is omitted for roles without the module permission (`DashboardApiTest.sectionsFollow…`, Cypress board member).
 
-Results: backend `mvn verify` 700 tests, 0 failures (1 S3 skip), 89.1% lines, 0 Checkstyle; frontend 373 tests, lint; Cypress 19 specs / 51 tests (the full suite on a fresh database: 50 passed first time; the one failure, a fragile `{esc}` sent to a disabled option in the P0 spec, is fixed and that spec re-run green). `scripts/e2e.sh` now also stops the preview server it starts.
+Results: backend `mvn verify` 700 tests, 0 failures (1 S3 skip), 89.1% lines, 0 Checkstyle; frontend 372 tests, lint; Cypress 19 specs / 51 tests (the full suite on a fresh database: 50 passed first time; the one failure, a fragile `{esc}` sent to a disabled option in the P0 spec, is fixed and that spec re-run green). `scripts/e2e.sh` now also stops the preview server it starts.
 
 Open (D29): ESG SME review of the metric → SDG links.
 
