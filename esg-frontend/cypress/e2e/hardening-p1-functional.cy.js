@@ -106,6 +106,7 @@ describe('Hardening Phase 1: functional fixes', () => {
         let afterDelete = 0;
         cy.intercept('GET', `/api/v1/data/points/${draft.id}`, () => { afterDelete += 1; });
         cy.get('[role="region"][aria-label="Data point details"]').contains('button', 'Delete draft').click();
+        cy.get('[role="dialog"][aria-labelledby="confirm-title"]').contains('button', 'Delete').click(); // the app's dialog (Phase 2)
         cy.get('[role="region"][aria-label="Data point details"]').should('not.exist');
         cy.wait(500).then(() => expect(afterDelete, 'requests for the deleted draft').to.eq(0));
       }));

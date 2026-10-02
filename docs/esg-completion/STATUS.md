@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (branch `feature/wp-52b-functional-fixes`, stacked on #12) |
-| Next | **Hardening Phase 2** (UX and consistency), then Phase 3 (capability), Phase 4 (WP-24 onwards). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (branch `feature/wp-52c-ux-consistency`, stacked on #13) |
+| Next | **Hardening Phase 3** (missing capability), then Phase 4 (WP-24 onwards). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -17,8 +17,8 @@
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (22 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 57 at L4**, 20 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **32 / 58** implemented (31 at L4), 26 missing. All code endpoints: **128 / 128 tested** (116 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 (5 tests) and Phase 1 (5 tests) specs. **36 Cypress tests** in 16 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
-| Test coverage | **Backend 89.0% lines** (674 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 339 tests** (Vitest + RTL) + **36 Cypress** | JaCoCo, Vitest |
+| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 (5), Phase 1 (5) and Phase 2 (4) specs. **40 Cypress tests** in 17 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
+| Test coverage | **Backend 89.0% lines** (677 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 357 tests** (Vitest + RTL) + **40 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,30 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-52c — Hardening Phase 2: UX and consistency
+
+Branch `feature/wp-52c-ux-consistency` (stacked on WP-52b, PR #13). Design: D27.
+
+| # | What was wrong | Fix | Tests |
+|---|---|---|---|
+| 1 | 16 `window.confirm()` calls | `ConfirmProvider` / `useConfirm()`: one MUI dialog, destructive style, names the item | `TenancyTabs.test.jsx` (cancel/confirm, no native dialog), Cypress (fails on any native confirm) |
+| 2 | SoD-blocked actions hidden; reports/changes failed on click | Server reasons (`blockedActions`, `blockedReason`, `closeBlockedReason`); disabled buttons with tooltips | `DataPointWorkflowTest`, `ReportingApiTest`, `ComplianceApiTest`, `DataHubPage.test.jsx`, Cypress |
+| 3 | No confirmation after saves (e.g. Create user) | Toast from the API's message (or "Deleted") on every successful write | `TenancyTabs.test.jsx`, `AdminPage.test.jsx`, Cypress |
+| 4 | Unsorted list, no filters, new row lost, "ESG ANALYST ESG ANALYST" | Sorted by name; role/status filters (server); new user found and highlighted; chips name the organisation (two org scopes, not a duplicate) | `AdminUserApiTest.userListFilters…`, `AdminPage.test.jsx`, Cypress |
+| 5 | Ad-hoc humanising ("Lpg", "Iot") | `services/labels.js` | `labels.test.js` |
+| 6 | Value not flagged until a metric was picked; one file per pick | Value required on first submit; multiple files; types and limit shown | `schemas.test.js`, `EvidencePicker.test.jsx` |
+| 7 | Caret lost when the Insert menu opened | Caret remembered; spaces around the variable | `ReportingPage.test.jsx` |
+| 8 | Columns cut off at 1024–1280 px | Tables scroll; Actions/Open column pinned | (CSS; checked at 390 px in Cypress) |
+| 9 | Fixed sidebar, small dialogs on phones | Drawer + menu button below 900 px; full-screen dialogs below 600 px | `MainLayout.test.jsx`, Cypress at 390 px |
+| 10 | Popover survived navigation | State tied to the page; Escape closes | `MainLayout.test.jsx` |
+| 11 | Raw "Sandbox: not connected" text | Administration › Integrations (`GET /integrations`), Sandbox labels link to it | `AdminUserApiTest.integrationsReport…`, `AdminPage.test.jsx`, Cypress |
+
+Results: backend `mvn verify` 677 tests, 0 failures (1 S3 skip), 89.0% lines, 0 Checkstyle; frontend 357 tests, lint, no-mock gate 0 findings; Cypress 17 specs / 40 tests, all on the first attempt.
+
+Not verified by automation: the 1440/1280/1024/768 px layouts were checked by reasoning about the CSS, not by screenshots (Cypress runs at 1440 and the new spec at 390).
 
 ---
 

@@ -3,6 +3,20 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-52c Phase 2: UX and consistency (D27)
+
+- **1** One in-app confirmation dialog replaces every browser `confirm()`; it names what will be affected.
+- **2** Actions blocked by segregation of duties are shown disabled with the reason (data points, report approval, regulatory sign-off).
+- **3** Every successful create, update and delete shows a confirmation toast (incl. Create user).
+- **4** User list: sorted by name, role and status filters, a new user is found and highlighted; role chips name their organisation.
+- **5** Codes are labelled consistently from one label map (LPG, Petrol (PMS), IoT…).
+- **6** Data point form: Value required on the first submit; several evidence files per pick, with types and 50 MB limit shown.
+- **7** Report editor: Insert data goes in at the cursor with spaces around it.
+- **8** Tables scroll instead of being cut off; the Actions/Open column stays pinned on the right.
+- **9** Below 900 px the sidebar is a drawer with a menu button; below 600 px dialogs fill the screen.
+- **10** The notifications popover closes on page change and Escape.
+- **11** Administration › Integrations shows which external services are connected, sandboxes or not configured; Sandbox labels link to it.
+
 ## Unreleased — WP-52b Phase 1: functional fixes (D26)
 
 - **F1** The import template is made for the downloading user (their organisation, this quarter, base currency) and imports with no failures.

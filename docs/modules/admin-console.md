@@ -18,6 +18,14 @@ TRD §7.4 "Admin Console". Built in WP-12 – WP-19.
 
 Role assignment (`roles:assign`) supports org scope and expiry; an admin can't grant roles above their own or remove their own ability to assign roles.
 
+## Phase 2 additions (WP-52c)
+
+- **Users**: sorted by name; search, role and status filters; a new user is found and highlighted; role chips show the
+  organisation they are limited to.
+- **Integrations** tab (`?tab=integrations`): satellite flaring check, regulator feed, virus scanner, email, SMS —
+  connected, sandbox or not configured, as the adapters report it. Every "Sandbox" label in the app links here.
+- Confirmations (deactivate, reset MFA, lock period, remove organisation) use the app's dialog; saves confirm with a toast.
+
 ## Rules
 
 - Every permission is re-read from the database per request; deactivation and role expiry apply immediately.

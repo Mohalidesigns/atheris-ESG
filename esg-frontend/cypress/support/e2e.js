@@ -33,7 +33,9 @@ Cypress.Commands.add('login', (email, password) => {
       cy.field('Verification code').type(code, { log: false });
       cy.contains('button', 'Verify').click();
     });
-    cy.get('nav[aria-label="Main"]', { timeout: 20000 }).should('be.visible');
+    // The app shell: the top bar (the sidebar is a hidden drawer below 900 px, Phase 2).
+    cy.get('header.MuiAppBar-root', { timeout: 20000 }).should('be.visible');
+    cy.get('nav[aria-label="Main"]').should('exist');
   };
   if (password) signIn(password);
   else cy.env(['password']).then(({ password: seeded }) => signIn(seeded));
