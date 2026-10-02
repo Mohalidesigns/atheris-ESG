@@ -36,6 +36,14 @@ Role assignment (`roles:assign`) supports org scope and expiry; an admin can't g
 
 Backend: `AdminUserApiTest`, `TenancyApiTest`, `AccessControlIntegrationTest`, `RbacMatrixTest`, `SubscriptionEntitlementTest`, `AuditTrailTest`, `FieldRoundTripTest` (generated for every Admin form). Frontend: `AdminPage.test.jsx`, `TenancyTabs.test.jsx`, `Subscription.test.jsx`, `roundTripReload.test.jsx`. E2E: journeys 1 and 2.
 
+## Phase 3 additions (WP-52d)
+
+- **Audit log**: Table, Action and User filters (`GET /audit/users`), Record ID and dates; every row summarises its change
+  (status fields first, "field: before → after"); **Export CSV** downloads the filtered trail (`GET /audit/logs/export`,
+  up to 50,000 rows; formula-like cells are neutralised).
+- **Framework content** tab (platform administrators, `framework_content:import`): see compliance.md.
+- **Test data**: `make reset-dev`, `make clean-test-data`; the E2E suite marks and purges what it creates (local profile).
+
 ## Known limits
 
 - No self-service plan change or invoicing (P4, D15).

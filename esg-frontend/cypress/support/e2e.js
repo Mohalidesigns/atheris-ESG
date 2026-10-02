@@ -1,5 +1,31 @@
 // Shared E2E commands (WP-18). Selectors go through visible labels and roles, as a user would.
 
+/**
+ * Phase 3 (7): every API request of this run carries X-ESG-Test-Run, so the backend (local profile only) marks what the
+ * suite creates as test data; after each spec the tenant admin purges it (DELETE /testing/test-data). A run against a
+ * development database therefore leaves nothing behind (rows in locked periods excepted, see make clean-test-data).
+ */
+export const TEST_RUN = `e2e-${Date.now().toString(36)}`;
+const TEST_HEADER = { 'X-ESG-Test-Run': TEST_RUN };
+
+beforeEach(() => {
+  const mark = (req) => { req.headers['x-esg-test-run'] = TEST_RUN; };
+  // Not multipart uploads: re-sending a modified binary body through the proxy corrupts it (an .xlsx stops being a zip).
+  // Uploaded files and import jobs aren't marked tables; the drafts an import creates are made by the server.
+  ['GET', 'PUT', 'PATCH', 'DELETE'].forEach((method) => cy.intercept({ method, url: '/api/**', middleware: true }, mark));
+  cy.intercept({ method: 'POST', url: '/api/**', headers: { 'content-type': /json/ }, middleware: true }, mark);
+});
+
+after(() => {
+  cy.apiToken('tenant.admin@esgpro.ng').then((token) => cy.request({
+    method: 'DELETE', url: '/api/v1/testing/test-data', headers: { Authorization: `Bearer ${token}`, ...TEST_HEADER },
+    failOnStatusCode: false,
+  })).then((res) => {
+    // A backend without test-data marking (not the local profile) has no such endpoint; nothing to clean then.
+    if (res.status !== 200 && res.status !== 404) throw new Error(`Test data purge failed: ${res.status}`);
+  });
+});
+
 /** The input a visible <label> points at (MUI TextField). */
 Cypress.Commands.add('field', (label, options = {}) =>
   cy.contains('label', new RegExp(`^${Cypress._.escapeRegExp(label)}( \\*)?$`), options)
@@ -58,15 +84,20 @@ Cypress.Commands.add('uniqueDay', () => {
 
 /** Signs in through the API (completing MFA where the role needs it) and yields a bearer token. */
 Cypress.Commands.add('apiToken', (email) => cy.env(['password']).then(({ password }) =>
-  cy.request('POST', '/api/v1/auth/login', { email, password }).its('body.data').then((data) => {
+  cy.request({ method: 'POST', url: '/api/v1/auth/login', body: { email, password }, headers: TEST_HEADER }).its('body.data').then((data) => {
     if (data.accessToken) return data.accessToken;
-    return cy.mfaCode(email).then((code) =>
-      cy.request('POST', '/api/v1/auth/mfa/verify', { mfaToken: data.mfaToken, code }).its('body.data.accessToken'));
+    return cy.mfaCode(email).then((code) => cy.request({
+      method: 'POST', url: '/api/v1/auth/mfa/verify', body: { mfaToken: data.mfaToken, code }, headers: TEST_HEADER,
+    }).its('body.data.accessToken'));
   })));
 
-/** Calls the API with a bearer token. */
+/** Calls the API with a bearer token (marked as this run's test data). */
 Cypress.Commands.add('api', (token, method, url, body) =>
-  cy.request({ method, url: `/api/v1${url}`, body, headers: { Authorization: `Bearer ${token}` } }).its('body.data'));
+  cy.request({ method, url: `/api/v1${url}`, body, headers: { Authorization: `Bearer ${token}`, ...TEST_HEADER } }).its('body.data'));
+
+/** Like cy.api, but yields the whole response and doesn't fail on an error status (for refusals). */
+Cypress.Commands.add('apiResponse', (token, method, url, body) =>
+  cy.request({ method, url: `/api/v1${url}`, body, failOnStatusCode: false, headers: { Authorization: `Bearer ${token}`, ...TEST_HEADER } }));
 
 /**
  * Runs the Emission Calculator (Carbon → Emission records → Calculate emissions) up to the server-calculated result.

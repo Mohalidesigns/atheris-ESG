@@ -63,11 +63,11 @@ class ImportApiTest extends ApiTestSupport {
     // F1: the template's organisation, period, metrics and currency are valid for the user who downloads it.
     String template = mvc.perform(get("/v1/data/import/template").header("Authorization", collector()))
         .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-    assertThat(template).startsWith("organisation,metric,value,currency,period_start,period_end,sub_category,notes")
+    assertThat(template).startsWith("organisation,metric,value,currency,period_start,period_end,sub_category,notes,owner")
         .contains("A Site 1").doesNotContain("Lagos HQ").doesNotContain("USD");
     JsonNode job = upload(collector(), new MockMultipartFile("file", "template.csv", "text/csv", template.getBytes(StandardCharsets.UTF_8)));
-    // Every column maps itself (F3: headers match the automatic mapping, notes included).
-    assertThat(job.path("suggestedMapping").size()).isEqualTo(8);
+    // Every column maps itself (F3: headers match the automatic mapping, notes and the responsible person included).
+    assertThat(job.path("suggestedMapping").size()).isEqualTo(9);
     JsonNode mapping = job.path("suggestedMapping");
     JsonNode done = await(collector(), start(collector(), job, "{\"version\":" + job.path("version").asLong() + ",\"mapping\":" + mapping + "}"));
     try {
@@ -76,6 +76,8 @@ class ImportApiTest extends ApiTestSupport {
       JsonNode drafts = json.readTree(mvc.perform(get("/v1/data/points?importJobId=" + job.path("id").asText()).header("Authorization", collector()))
           .andReturn().getResponse().getContentAsString()).path("data").path("content");
       assertThat(drafts.toString()).contains("From the utility bill"); // the notes column was imported
+      // Phase 3 (8): the owner column (the downloader's email) names the responsible person.
+      assertThat(drafts.get(0).path("ownerUserId").asText()).isEqualTo(roleUserId("DATA_COLLECTOR"));
     } finally {
       asOwnerInTenantA("update data_hub.data_points set deleted_at = now() where import_job_id = '" + job.path("id").asText() + "'");
     }

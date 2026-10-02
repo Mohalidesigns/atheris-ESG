@@ -3,6 +3,17 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-52d Phase 3: missing capability (D28)
+
+- **1** End-to-end multi-user lifecycle: approved diesel, petrol, LPG, natural gas and electricity become exactly one Scope 1/2 record; a corrected point's new record supersedes the old one in lineage; report Director → Compliance → Board → PDF and Excel; regulatory change assess → close by another user. Seed README lists every demo user and role.
+- **2** Data Hub bulk submit / validate / approve / reject on selected rows (and "Submit all imported drafts"), each point checked on its own with a result per point; refusals are audited.
+- **3** "Preview draft PDF": the working version, watermarked DRAFT, before approval; the final export stays approval-gated.
+- **4** The emission-intensity card names the missing revenue / headcount / production figures and links to the form with the metric and year preselected, or to the review queue when they await approval.
+- **5** Framework requirement import pipeline (CSV/JSON, versions with effective dates, SME-verified flag, dry run, retirements); NGX, SEC Nigeria, PenCom, CDP, GHG Protocol and SASB (E&P) loaded pending SME verification. NAICOM: no instrument found yet.
+- **6** Audit log: User filter, CSV export of the filtered trail, and a before → after summary on every row.
+- **7** Test-data hygiene: E2E-created records are marked and purged after each spec; `make reset-dev`, `make clean-test-data`; leftover "E2E Region/Site" organisations and `e2e.*` users are marked for clean-up.
+- **8** Data sources are systems (incl. meters) with an owner; every data point records its responsible person separately; a person's name is refused as a source.
+
 ## Unreleased — WP-52c Phase 2: UX and consistency (D27)
 
 - **1** One in-app confirmation dialog replaces every browser `confirm()`; it names what will be affected.

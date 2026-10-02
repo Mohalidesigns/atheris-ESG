@@ -114,9 +114,13 @@ class ComplianceApiTest extends ApiTestSupport {
     assertThat(cbn.path("totalRequirements").asInt()).isEqualTo(9);
     assertThat(requirement(cbn, "P1").path("priorityScore").asInt()).isEqualTo(70);
     assertThat(cbn.path("highPriority").asInt()).isEqualTo(9);
-    // A framework whose content the SME hasn't supplied yet has nothing to analyse — and says so.
+    // A framework without content (no NAICOM instrument found, D28) has nothing to analyse — and says so.
+    JsonNode naicom = gaps("NAICOM", 2041);
+    assertThat(naicom.path("totalRequirements").asInt()).isZero();
+    assertThat(naicom.path("contentStatus").asText()).isEqualTo("pending_sme");
+    // Phase 3 (5): bundled packs give the local frameworks content, still pending SME verification.
     JsonNode sec = gaps("SEC_NG", 2041);
-    assertThat(sec.path("totalRequirements").asInt()).isZero();
+    assertThat(sec.path("totalRequirements").asInt()).isPositive();
     assertThat(sec.path("contentStatus").asText()).isEqualTo("pending_sme");
     mvc.perform(get("/v1/compliance/gaps?framework=NOPE&year=2041").header("Authorization", officer())).andExpect(status().isNotFound());
     mvc.perform(get("/v1/compliance/gaps?framework=GRI&year=1999").header("Authorization", officer()))
@@ -292,9 +296,9 @@ class ComplianceApiTest extends ApiTestSupport {
     List<String> previous = new ArrayList<>();
     settings.path("defaultFrameworkCodes").forEach(c -> previous.add(c.asText()));
     try {
-      send("PUT", "/v1/compliance/frameworks/active", officer(), "{\"codes\":[\"CBN_NSBP\",\"SEC_NG\"]}").andExpect(status().isOk());
+      send("PUT", "/v1/compliance/frameworks/active", officer(), "{\"codes\":[\"CBN_NSBP\",\"NAICOM\"]}").andExpect(status().isOk());
       JsonNode list = data(mvc.perform(get("/v1/compliance/status?year=2045").header("Authorization", officer())).andExpect(status().isOk()));
-      // Active first (incl. SEC NG, shown though it has no content yet), then the other frameworks with content.
+      // Active first (incl. NAICOM, shown though it has no content yet), then the other frameworks with content.
       assertThat(list.get(0).path("active").asBoolean()).isTrue();
       List<String> active = new ArrayList<>();
       List<String> all = new ArrayList<>();
@@ -304,8 +308,9 @@ class ComplianceApiTest extends ApiTestSupport {
           active.add(f.path("code").asText());
         }
       });
-      assertThat(active).containsExactlyInAnyOrder("CBN_NSBP", "SEC_NG");
-      assertThat(all).contains("GRI", "ISSB_S2", "TCFD").doesNotContain("NGX");
+      assertThat(active).containsExactlyInAnyOrder("CBN_NSBP", "NAICOM");
+      // Phase 3 (5): NGX, SEC NG and the other bundled packs now have content, so they're listed too.
+      assertThat(all).contains("GRI", "ISSB_S2", "TCFD", "NGX", "SEC_NG", "PENCOM", "CDP", "GHG_PROTOCOL", "SASB");
     } finally {
       send("PUT", "/v1/compliance/frameworks/active", officer(), json.writeValueAsString(java.util.Map.of("codes", previous)));
     }

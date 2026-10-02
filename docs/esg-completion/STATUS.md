@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (branch `feature/wp-52c-ux-consistency`, stacked on #13) |
-| Next | **Hardening Phase 3** (missing capability), then Phase 4 (WP-24 onwards). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (branch `feature/wp-52d-capability`, stacked on #14) |
+| Next | **Hardening Phase 4** (WP-24, 34, 33, 32, 31, 35, 40, 41, 42). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,27 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-52d — Hardening Phase 3: missing capability
+
+Branch `feature/wp-52d-capability` (stacked on WP-52c, PR #14). Design: D28. Migration V025; Flyway `R__ref_12` (content packs).
+
+| # | What was missing | Built | Tests |
+|---|---|---|---|
+| 1 | No automated multi-user chains; seed users undocumented | Seed README lists all 12 users/roles; a corrected point's emission record supersedes the old one (lineage); E2E chains for data → emissions (5 fuels), report → 3 approvals → PDF + Excel, regulatory change assess → close | `CapabilityTest.approvedFuelAndElectricityPoints…`, Cypress `hardening-p3-capability` (1) |
+| 2 | One-by-one review only | `POST /data/points/bulk` (selection or a whole import), per-point results, refusals audited; selection + bulk bar; "Submit all imported drafts" | `CapabilityTest.bulkSteps…`, `DataHubPage.test.jsx` (3), Cypress (2) |
+| 3 | No preview before approval | `GET /reports/{id}/preview`: DRAFT watermark on every page, not stored | `CapabilityTest.aDraftReportPreviews…` (PDFBox), `ReportingPage.test.jsx`, Cypress |
+| 4 | Intensity card only said "approve revenue…" | `intensityGaps` in the summary; links to the form (metric + year preselected) or to the review queue | `CapabilityTest.theCarbonSummaryNames…`, `CarbonPage.test.jsx` (2), `DataHubPage.test.jsx`, Cypress (4) |
+| 5 | 7 of 12 frameworks empty | Versioned import pipeline (CSV/JSON, dry run, effective dates, SME flag, retirements, audited; write via definer function); 6 packs loaded pending SME (273 requirements); NAICOM: no instrument found | `CapabilityTest.aPlatformAdminImports…`, `FrameworkContentTest`, `ReferenceDataTest`, `ComplianceApiTest`, `FrameworkContentTab.test.jsx`, Cypress (5) |
+| 6 | Table free text (fixed in P0), no user/action filter, no export | User filter (`/audit/users`), CSV export, before → after summary per row | `CapabilityTest.theAuditLogFilters…`, `AuditCsvTest`, `AuditLogTab.test.jsx`, Cypress (6) |
+| 7 | E2E leftovers in dev DBs, no reset | `is_test` marking via `X-ESG-Test-Run` (local/test only), `auth.purge_test_data()`, purge after every Cypress spec, `make reset-dev` / `make clean-test-data`; V025 marks the 36 + 19 leftovers | `CapabilityTest.requestsMarkedAsATestRun…`, `TestDataPolicyTest`, Cypress (7) |
+| 8 | "Data source" held a person's name | Source = system (+ `meter`) with an owner; data points record the responsible person; a person's name is refused | `CapabilityTest.aDataSourceIsASystem…`, round-trip `data-point` / `data-source`, `ImportApiTest`, UI tests, Cypress (8) |
+
+Results: backend `mvn verify` 696 tests, 0 failures (1 S3 skip), 88.9% lines, 0 Checkstyle; frontend 370 tests, lint, no-mock gate 0 findings; Cypress 18 specs / 49 tests on a fresh database, all on the first attempt, each spec purging its own test data. On `esg_dev`, V025 + `make clean-test-data` removed the 36 "E2E Region/Site" organisations and 19 `e2e.*` users.
+
+Open (D28): ESG SME verification of the six packs and the SEC NG instrument choice; NAICOM has no issued instrument yet; Cypress kept instead of Playwright (D3).
 
 ---
 

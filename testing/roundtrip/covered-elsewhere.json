@@ -71,5 +71,9 @@
   ],
   "Report export": [
     "com.esg.reporting.ReportingApiTest#journey13TemplateAutoPopulatedVersionedApprovedExported"
+  ],
+  "Framework content import": [
+    "com.esg.crosscutting.CapabilityTest#aPlatformAdminImportsFrameworkContentAsAVersionWithDryRunRetirementAndAudit",
+    "com.esg.compliance.FrameworkContentTest#everyRowProblemIsReportedWithItsLine"
   ]
 }

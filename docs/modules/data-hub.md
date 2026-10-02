@@ -46,6 +46,19 @@ Backend: `DataPointWorkflowTest`, `DataPointApiTest`, `ImportApiTest`, `QualityS
 `AccessControlIntegrationTest`, `RlsIsolationTest`. Frontend: `DataHubPage.test.jsx`, `schemas.test.js`,
 `roundTripReload.test.jsx`. E2E: journeys 3, 4 and 29.
 
+## Phase 3 additions (WP-52d, D28)
+
+- **Bulk steps**: select rows on the Data and Review tables (selection survives paging) and Submit / Validate / Approve /
+  Reject them at once, or "Submit all imported drafts" after an import. `POST /data/points/bulk` runs the single-item step
+  per point in its own transaction and returns a result per point; refusals (SoD, locked period, stale version) are listed
+  in the result dialog and written to the audit trail.
+- **Source system vs responsible person**: a data source is a system (manual, CSV, Excel, API, ERP, mobile, IoT, SMS,
+  meter) with an optional owner. Every data point has a responsible person (`ownerUserId`): as chosen, else the source's
+  owner, else whoever enters it. Imports take it from an `owner` column (email or full name). `GET /data/owners` lists
+  who can be named.
+- **Guided entry**: `/data-hub?add=<metric>&from=&to=` opens the form with that metric and period (used by the Carbon
+  intensity card).
+
 ## Known limits
 
 - Rule thresholds and quality sub-score definitions await ESG SME sign-off (D21).

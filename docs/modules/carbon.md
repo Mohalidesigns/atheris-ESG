@@ -76,6 +76,13 @@ same code as saving, so what is shown is what is stored.
   `roundTripReload.test.jsx`.
 - UI: `CarbonPage.test.jsx`. E2E: `cypress/e2e/journey-05` … `journey-09`.
 
+## Intensity onboarding (Phase 3)
+
+When a year has no approved revenue, headcount or production output, the summary's `intensityGaps` lists each missing
+metric and how many of its points await approval. The Overview's intensity card links to the Data Hub form with that
+metric and the year preselected, or to the review queue. Corrected Data Hub points (reopened, edited, approved again) get a
+new emission record linked to the one it replaces (lineage `superseded_by`).
+
 ## Not built yet
 
 EEIO spend factors and the hybrid Scope 3 method; residual-mix factors and detection of double-claimed instruments;
