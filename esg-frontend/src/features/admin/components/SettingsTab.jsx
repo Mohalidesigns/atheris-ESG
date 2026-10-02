@@ -21,14 +21,14 @@ export default function SettingsTab() {
   const [message, setMessage] = useState(null);
   const { register, control, handleSubmit, reset, setError, formState: { errors } } = useForm({
     resolver: zodResolver(settingsSchema),
-    defaultValues: { baseCurrency: 'NGN', fiscalYearStartMonth: 1, reportingTimezone: '', defaultFrameworkCodes: [], gwpSet: 'AR6' },
+    defaultValues: { baseCurrency: 'NGN', fiscalYearStartMonth: 1, reportingTimezone: '', defaultFrameworkCodes: [], gwpSet: 'AR6', provisionalFactorPolicy: 'allow_flagged' },
   });
 
   useEffect(() => {
     if (settings) {
       reset({ baseCurrency: settings.baseCurrency, fiscalYearStartMonth: settings.fiscalYearStartMonth,
         reportingTimezone: settings.reportingTimezone, defaultFrameworkCodes: settings.defaultFrameworkCodes,
-        gwpSet: settings.gwpSet ?? 'AR6' });
+        gwpSet: settings.gwpSet ?? 'AR6', provisionalFactorPolicy: settings.provisionalFactorPolicy ?? 'allow_flagged' });
     }
   }, [settings, reset]);
 
@@ -78,6 +78,16 @@ export default function SettingsTab() {
                 error={!!errors.gwpSet} helperText={errors.gwpSet?.message ?? 'Converts CH4 and N2O to CO2e. New calculations use it; run Recalculate for past ones.'}>
                 <MenuItem value="AR6">IPCC AR6 (CH4 29.8, N2O 273)</MenuItem>
                 <MenuItem value="AR5">IPCC AR5 (CH4 28, N2O 265)</MenuItem>
+              </TextField>
+            )} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Controller name="provisionalFactorPolicy" control={control} render={({ field }) => (
+              <TextField select fullWidth size="small" label="Emission factors pending expert review" disabled={!canEdit} {...field}
+                error={!!errors.provisionalFactorPolicy}
+                helperText={errors.provisionalFactorPolicy?.message ?? 'Library factors not yet verified by an ESG expert. If allowed, results using them are marked provisional in Carbon and in reports.'}>
+                <MenuItem value="allow_flagged">Allow, marked provisional</MenuItem>
+                <MenuItem value="block">Block: use only verified or your own factors</MenuItem>
               </TextField>
             )} />
           </Grid>

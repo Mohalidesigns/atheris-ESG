@@ -16,6 +16,7 @@ function LoginStep() {
   const [login, { isLoading }] = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+  const notice = useSelector((s) => s.auth.notice);
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -33,6 +34,7 @@ function LoginStep() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
+      {!serverError && notice && <Alert severity="warning" sx={{ mb: 2 }}>{notice}</Alert>}
       <TextField
         fullWidth label="Email Address" type="email" autoComplete="username" sx={{ mb: 2 }}
         {...register('email')} error={!!errors.email} helperText={errors.email?.message}

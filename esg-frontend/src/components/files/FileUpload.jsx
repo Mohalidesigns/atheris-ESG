@@ -11,7 +11,7 @@ import {
   useUploadFileMutation, useUploadFileVersionMutation,
 } from './filesApi';
 
-const SCAN_LABELS = { not_scanned: 'Not scanned', clean: 'Scanned clean' };
+import { scanStatus } from './scanStatus';
 
 /**
  * Evidence files attached to one record (resourceType + resourceId): list, upload, new version, download, delete.
@@ -94,6 +94,7 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
       {info && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
           {info.allowedExtensions} · up to {formatBytes(info.maxBytes)} · Virus scanning: {info.virusScanning}
+          {info.virusScanningSandbox && <Chip size="small" label="Sandbox" color="warning" variant="outlined" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
         </Typography>
       )}
       {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
@@ -102,11 +103,17 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
       {files && files.length > 0 && (
         <List dense disablePadding>
           {files.map((f) => {
-            const scan = f.versions?.[0]?.scanStatus;
+            // S6: only files a scanner called clean (or the platform generated) can be downloaded.
+            const scan = scanStatus(f.scanStatus ?? f.versions?.[0]?.scanStatus);
             return (
               <ListItem key={f.id} disableGutters secondaryAction={
                 <>
-                  <Tooltip title="Download"><IconButton size="small" aria-label={`Download ${f.originalName}`} onClick={() => onDownload(f)}><Download fontSize="small" /></IconButton></Tooltip>
+                  <Tooltip title={scan.downloadable ? 'Download' : `${scan.label}: can't be downloaded yet`}>
+                    <span>
+                      <IconButton size="small" aria-label={`Download ${f.originalName}`} disabled={!scan.downloadable}
+                        onClick={() => onDownload(f)}><Download fontSize="small" /></IconButton>
+                    </span>
+                  </Tooltip>
                   <Can permission="files:create">
                     <Tooltip title="Upload new version"><IconButton size="small" aria-label={`New version of ${f.originalName}`} disabled={busy} onClick={() => pick(f.id)}><UploadFile fontSize="small" /></IconButton></Tooltip>
                   </Can>
@@ -116,8 +123,9 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
                 </>
               }>
                 <ListItemText
-                  primary={<>{f.originalName} <Chip size="small" label={`v${f.currentVersion}`} sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} /></>}
-                  secondary={`${formatBytes(f.sizeBytes)} · ${new Date(f.createdAt).toLocaleString()}${scan ? ` · ${SCAN_LABELS[scan] ?? scan}` : ''}`} />
+                  primary={<>{f.originalName} <Chip size="small" label={`v${f.currentVersion}`} sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} />
+                    <Chip size="small" label={scan.label} color={scan.color} variant="outlined" sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} /></>}
+                  secondary={`${formatBytes(f.sizeBytes)} · ${new Date(f.createdAt).toLocaleString()}`} />
               </ListItem>
             );
           })}

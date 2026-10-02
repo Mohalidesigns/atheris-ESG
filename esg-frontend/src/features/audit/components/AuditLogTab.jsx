@@ -4,12 +4,17 @@ import {
   TableContainer, TableHead, TablePagination, TableRow, TextField, Typography,
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
-import { useListAuditLogsQuery } from '../auditApi';
+import { useAuditResourcesQuery, useListAuditLogsQuery } from '../auditApi';
 import { toFormError } from '../../../services/apiSlice';
 
-// no-mock-gate: config — audit actions written by audit.log_change()
-const ACTIONS = ['', 'insert', 'update', 'delete'];
-const ACTION_COLOURS = { insert: '#2D7D46', update: '#B7791F', delete: '#C53030' };
+// Audit actions: audit.log_change() (insert/update/delete), refused requests (denied, S3), failed virus scans (quarantined, S6).
+// no-mock-gate: config — audit action names written by the backend
+const ACTIONS = [
+  { value: '', label: 'Any' }, { value: 'insert', label: 'Created' }, { value: 'update', label: 'Changed' },
+  { value: 'delete', label: 'Deleted' }, { value: 'denied', label: 'Refused' }, { value: 'quarantined', label: 'Quarantined' },
+];
+const ACTION_LABELS = Object.fromEntries(ACTIONS.filter((a) => a.value).map((a) => [a.value, a.label]));
+const ACTION_COLOURS = { insert: '#2D7D46', update: '#B7791F', delete: '#C53030', denied: '#9B2C2C', quarantined: '#6B46C1' };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** datetime-local value → ISO instant (or '' when empty). */
@@ -47,13 +52,21 @@ export default function AuditLogTab() {
     from: toInstant(filters.from), to: toInstant(filters.to), page, size,
   });
   const set = (name) => (e) => { setFilters((f) => ({ ...f, [name]: e.target.value })); setPage(0); };
+  const { data: resources = [] } = useAuditResourcesQuery();
+  const labels = Object.fromEntries(resources.map((r) => [r.value, r.label]));
+  // Refused requests are recorded against the API call ("PUT /v1/…"), changes against their table.
+  const what = (e) => labels[e.resource] ?? labels[e.resource.replace(/_\d{4}$|_default$/, '')] ?? e.resource;
 
   return (
     <>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-        <TextField size="small" label="Table" placeholder="e.g. auth.users" value={filters.resource} onChange={set('resource')} />
-        <TextField size="small" select label="Action" value={filters.action} onChange={set('action')} sx={{ minWidth: 130 }}>
-          {ACTIONS.map((a) => <MenuItem key={a || 'any'} value={a}>{a || 'Any'}</MenuItem>)}
+        <TextField size="small" select label="Table" value={filters.resource} onChange={set('resource')} sx={{ minWidth: 240 }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 360 } } } }}>
+          <MenuItem value="">All tables</MenuItem>
+          {resources.map((r) => <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>)}
+        </TextField>
+        <TextField size="small" select label="Action" value={filters.action} onChange={set('action')} sx={{ minWidth: 150 }}>
+          {ACTIONS.map((a) => <MenuItem key={a.value || 'any'} value={a.value}>{a.label}</MenuItem>)}
         </TextField>
         <TextField size="small" label="Record ID" value={filters.resourceId} onChange={set('resourceId')}
           error={idInvalid} helperText={idInvalid ? 'Must be a UUID' : ' '} sx={{ width: 320 }} />
@@ -90,9 +103,16 @@ export default function AuditLogTab() {
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.8rem' }}>{e.userName ?? (e.userId ? e.userId : 'System')}</TableCell>
                       <TableCell>
-                        <Chip size="small" label={e.action} sx={{ color: ACTION_COLOURS[e.action] ?? 'inherit', fontWeight: 700, fontSize: '0.65rem' }} />
+                        <Chip size="small" label={ACTION_LABELS[e.action] ?? e.action} sx={{ color: ACTION_COLOURS[e.action] ?? 'inherit', fontWeight: 700, fontSize: '0.65rem' }} />
                       </TableCell>
-                      <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{e.resource}</TableCell>
+                      <TableCell sx={{ fontSize: '0.75rem' }}>
+                        {what(e)}
+                        {e.action === 'denied' && e.newValue?.errorCode && (
+                          <Typography component="span" sx={{ display: 'block', fontFamily: 'Roboto Mono', fontSize: '0.65rem', color: 'text.secondary' }}>
+                            {e.newValue.errorCode}
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.65rem' }}>{e.resourceId ?? '—'}</TableCell>
                       <TableCell sx={{ fontSize: '0.7rem' }}>{e.ipAddress ?? '—'}</TableCell>
                     </TableRow>

@@ -12,6 +12,7 @@ import { CURRENCIES } from '../../admin/schemas';
 import { useScope3CategoriesQuery } from '../../reference/referenceApi';
 import { useCreateEmissionMutation, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation } from '../carbonApi';
 import { FACTOR_LEVELS, SCOPES, activityLabel, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
+import ProvisionalBadge from './ProvisionalBadge';
 
 // no-mock-gate: config — wizard step labels (TRD §7.4: scope → activity → factor → calculate → save)
 const STEPS = ['Scope', 'Activity', 'Amount', 'Factor & result'];
@@ -183,7 +184,8 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
                       <TableCell>{t(preview.activityData)} {preview.activityUnit}{preview.fxRate ? ` (converted at ${t(preview.fxRate)})` : ''}</TableCell></TableRow>
                     <TableRow><TableCell>Emission factor</TableCell>
                       <TableCell>{t(preview.factor.value)} {preview.factor.unit} · {preview.factor.region} · version {preview.factor.version}
-                        {' '}({FACTOR_LEVELS[preview.factor.level] ?? preview.factor.level})</TableCell></TableRow>
+                        {' '}({FACTOR_LEVELS[preview.factor.level] ?? preview.factor.level})
+                        <ProvisionalBadge reviewStatus={preview.factor.reviewStatus} sx={{ ml: 0.5 }} /></TableCell></TableRow>
                     <TableRow><TableCell>Source</TableCell><TableCell>{preview.factor.source}</TableCell></TableRow>
                     <TableRow><TableCell>GWP</TableCell>
                       <TableCell>{preview.perGas ? `${preview.gwpSet} (CO2 ${t(preview.co2Tonnes)} t, CH4 ${t(preview.ch4Tonnes)} t, N2O ${t(preview.n2oTonnes)} t)`

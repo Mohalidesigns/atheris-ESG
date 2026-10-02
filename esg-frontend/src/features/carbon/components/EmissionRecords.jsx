@@ -8,6 +8,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { useDeleteEmissionMutation, useEmissionsQuery, useVerifyEmissionMutation } from '../carbonApi';
 import { FACTOR_LEVELS, activityLabel } from '../schemas';
 import EmissionCalculator from './EmissionCalculator';
+import ProvisionalBadge from './ProvisionalBadge';
 
 // no-mock-gate: config — labels for EmissionResponse.recordSource values
 const SOURCES = { manual: 'Calculator', data_hub: 'Data Hub', flaring: 'Flaring' };
@@ -45,7 +46,10 @@ export default function EmissionRecords({ year, orgs }) {
     { field: 'factor', header: 'Factor',
       render: (r) => (!r.factor ? `Gas composition${r.gwpSet ? ` · ${r.gwpSet}` : ''}` : (
         <Tooltip title={`${r.factor.source} · ${FACTOR_LEVELS[r.factor.level] ?? r.factor.level}${r.gwpSet ? ` · ${r.gwpSet}` : ''}`}>
-          <span>{Number(r.factor.value).toLocaleString(undefined, { maximumFractionDigits: 6 })} {r.factor.unit} · v{r.factor.version}</span>
+          <span>
+            {Number(r.factor.value).toLocaleString(undefined, { maximumFractionDigits: 6 })} {r.factor.unit} · v{r.factor.version}
+            <ProvisionalBadge reviewStatus={r.factor.reviewStatus} sx={{ ml: 0.5 }} />
+          </span>
         </Tooltip>
       )) },
     { field: 'orgName', header: 'Organisation' },

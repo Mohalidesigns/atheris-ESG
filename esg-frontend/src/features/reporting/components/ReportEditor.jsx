@@ -155,20 +155,33 @@ function ContentTab({ report }) {
 
 function DataTab({ report }) {
   const rows = Object.entries(report.snapshot ?? {}).sort(([a], [b]) => a.localeCompare(b));
+  const provisional = rows.filter(([, v]) => v.provisional);
   return (
     <Card>
       <CardContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           Values captured {when(report.snapshotAt)} for {report.reportingPeriodStart} – {report.reportingPeriodEnd}. They change only when you refresh the draft.
         </Typography>
+        {provisional.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 1 }} aria-label="Provisional values">
+            {provisional.length} value{provisional.length === 1 ? '' : 's'} use{provisional.length === 1 ? 's' : ''} emission factors still pending expert review:
+            {' '}{provisional.map(([k]) => k).join(', ')}. The PDF and Excel exports mark them provisional.
+          </Alert>
+        )}
         <Table size="small" aria-label="Data snapshot">
           <TableHead><TableRow><TableCell>Value</TableCell><TableCell>Reported</TableCell><TableCell>Basis</TableCell></TableRow></TableHead>
           <TableBody>
             {rows.map(([k, v]) => (
               <TableRow key={k}>
                 <TableCell sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem' }}>{k}</TableCell>
-                <TableCell>{v.status === 'ok' ? <strong>{v.display}</strong> : <Chip size="small" color="warning" variant="outlined" label="Not reported" />}</TableCell>
-                <TableCell><Typography variant="caption">{v.basis}</Typography></TableCell>
+                <TableCell>
+                  {v.status === 'ok' ? <strong>{v.display}</strong> : <Chip size="small" color="warning" variant="outlined" label="Not reported" />}
+                  {v.provisional && <Chip size="small" color="warning" variant="outlined" label="Provisional" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
+                </TableCell>
+                <TableCell>
+                  <Typography variant="caption">{v.basis}</Typography>
+                  {v.provisional && <Typography variant="caption" color="warning.main" sx={{ display: 'block' }}>{v.provisional}</Typography>}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

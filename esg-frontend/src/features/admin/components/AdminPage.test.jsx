@@ -33,6 +33,33 @@ describe('AdminPage', () => {
     expect(calls.at(-1).query.page).toBe('0');
   });
 
+  it('role picker offers only assignable roles and clears a refusal when the choice changes (S4, F12)', async () => {
+    const roles = [
+      { id: 'r-analyst', name: 'ESG_ANALYST', scopeType: 'org', assignable: true, permissions: [] },
+      { id: 'r-auditor', name: 'AUDITOR', scopeType: 'tenant', assignable: true, permissions: [] },
+    ];
+    const calls = fakeApi({
+      'GET /admin/users': () => page([user]),
+      'GET /admin/roles': () => ok(roles),
+      'GET /organisations': () => ok([{ id: 'o-1', name: 'Site 1', parentOrgId: null, orgType: 'site' }]),
+      'PUT /admin/users/u-9/roles': () => [403, { status: 403, errorCode: 'ESG-403-ROLE', detail: "You can't assign AUDITOR: it has permissions you don't hold" }],
+    });
+    renderWithStore(<AdminPage />, { preloadedState: authenticated(ADMIN) });
+    await userEvent.click(await screen.findByLabelText(`Roles for ${user.email}`));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(calls.find((c) => c.key === 'GET /admin/roles')?.query).toEqual({ assignable: 'true' }));
+
+    await userEvent.click(within(dialog).getAllByLabelText('Role')[0]);
+    expect(screen.queryByRole('option', { name: 'SUPER ADMIN' })).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('option', { name: 'AUDITOR' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save roles' }));
+    expect(await within(dialog).findByText(/can't assign AUDITOR/)).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getAllByLabelText('Role')[0]);
+    await userEvent.click(await screen.findByRole('option', { name: 'ESG ANALYST' }));
+    expect(within(dialog).queryByText(/can't assign AUDITOR/)).not.toBeInTheDocument();
+  });
+
   it('hides write actions without the permissions', async () => {
     fakeApi({ 'GET /admin/users': () => page([user]) });
     renderWithStore(<AdminPage />, { preloadedState: authenticated(['users:read']) });

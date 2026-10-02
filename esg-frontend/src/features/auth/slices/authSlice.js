@@ -4,8 +4,9 @@ import { createSlice } from '@reduxjs/toolkit';
  * Session state. status: 'unknown' until the startup refresh attempt finishes, then 'authenticated' or 'anonymous'.
  * The access token lives only in memory; the refresh token is an HttpOnly cookie the browser manages.
  * mfa holds a pending MFA challenge after a correct password ({ token, setupRequired }).
+ * notice: why the user was signed out, shown on the login page (e.g. their role now requires MFA).
  */
-const initialState = { status: 'unknown', user: null, accessToken: null, mfa: null };
+const initialState = { status: 'unknown', user: null, accessToken: null, mfa: null, notice: null };
 
 const authSlice = createSlice({
   name: 'auth',
@@ -23,8 +24,8 @@ const authSlice = createSlice({
     mfaCancelled(state) {
       state.mfa = null;
     },
-    loggedOut() {
-      return { ...initialState, status: 'anonymous' };
+    loggedOut(state, action) {
+      return { ...initialState, status: 'anonymous', notice: action?.payload?.notice ?? null };
     },
   },
 });

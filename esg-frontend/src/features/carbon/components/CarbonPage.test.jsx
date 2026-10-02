@@ -10,7 +10,7 @@ const YEAR = new Date().getFullYear();
 const platform = { id: 'f1', region: 'NG', category: 'electricity_grid', subCategory: 'National Grid', factorValue: 0.43, unit: 'kgCO2e/kWh', source: 'FMPWH Nigeria 2024', derivation: 'Legacy seed value', factorVersion: '1', validFrom: '2024-01-01', validTo: null, verificationStatus: 'pending_sme', custom: false, factorMethod: 'activity', version: 0 };
 const diesel = { ...platform, id: 'f0', region: 'GLOBAL', category: 'diesel_generator', subCategory: null, factorValue: 2.68, unit: 'kgCO2e/litre', source: 'IPCC 2006', co2Factor: 2.676492, ch4Factor: 0.00010836, n2oFactor: 0.000021672 };
 const mine = { ...platform, id: 'f2', category: 'captive_gas', subCategory: null, factorValue: 0.5, source: 'Plant certificate', derivation: null, verificationStatus: 'tenant_provided', custom: true, version: 3 };
-const factorUsed = { id: 'f0', version: '1', value: 2.68, unit: 'kgCO2e/litre', level: 'global', source: 'IPCC 2006', category: 'diesel_generator', region: 'GLOBAL' };
+const factorUsed = { id: 'f0', version: '1', value: 2.68, unit: 'kgCO2e/litre', level: 'global', source: 'IPCC 2006', category: 'diesel_generator', region: 'GLOBAL', reviewStatus: 'pending_sme' };
 const record = (over) => ({
   id: 'e1', orgId: 'hq', orgName: 'Lagos HQ', scope: 'scope_1', scope3Category: null, sourceActivity: 'diesel_generator', activityData: 1000,
   activityUnit: 'litre', calculationMethod: 'activity_based', factor: factorUsed, gwpSet: 'AR6', co2eTonnes: 2.68, recordSource: 'manual',
@@ -72,6 +72,7 @@ describe('CarbonPage overview and records', () => {
     expect(within(table).queryByLabelText(`Edit electricity_grid ${YEAR}-01-01`)).not.toBeInTheDocument();
     // Flaring records carry no emission factor: they are calculated from the gas composition.
     expect(within(table).getByText('Gas composition · AR6')).toBeInTheDocument();
+    expect(within(table).getAllByText('Provisional factor').length).toBeGreaterThan(0); // S7
     expect(within(table).queryByLabelText(`Edit gas_flaring ${YEAR}-01-01`)).not.toBeInTheDocument();
     expect(calls.find((c) => c.key === 'GET /carbon/emissions').query).toMatchObject({ from: `${YEAR}-01-01`, to: `${YEAR}-12-31` });
   });
@@ -105,6 +106,7 @@ describe('CarbonPage overview and records', () => {
     expect(result).toHaveTextContent('2.68645');
     expect(result).toHaveTextContent('AR6 (CO2 2.676492 t, CH4 0.00010836 t, N2O 0.000021672 t)');
     expect(result).toHaveTextContent('IPCC 2006');
+    expect(result).toHaveTextContent('Provisional factor'); // S7: library factor pending expert review
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save record' }));
     const expected = {
       orgId: 'hq', scope: 'scope_1', scope3Category: null, calculationMethod: 'activity_based', sourceActivity: 'diesel_generator',

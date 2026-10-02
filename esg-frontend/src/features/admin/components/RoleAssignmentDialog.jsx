@@ -18,13 +18,14 @@ import { applyServerFieldErrors } from '../../../services/formErrors';
  * Rendered with a per-user `key`, so each open starts with fresh error state.
  */
 export default function RoleAssignmentDialog({ open, user, onClose }) {
-  const { data: roles = [] } = useListRolesQuery(undefined, { skip: !open });
+  // S4: the picker offers only roles the caller may grant; the server enforces the same rule.
+  const { data: roles = [] } = useListRolesQuery({ assignable: true }, { skip: !open });
   const { data: orgs = [] } = useListOrganisationsQuery(undefined, { skip: !open });
   const [replaceRoles, { isLoading }] = useReplaceUserRolesMutation();
   const [serverError, setServerError] = useState('');
   const scopeById = useMemo(() => Object.fromEntries(roles.map((r) => [r.id, r.scopeType])), [roles]);
 
-  const { control, handleSubmit, reset, setError, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, setError, clearErrors, formState: { errors } } = useForm({
     resolver: zodResolver(roleAssignmentsSchema(scopeById)),
     defaultValues: { assignments: [] },
   });
@@ -51,6 +52,8 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
   };
 
   const values = useWatch({ control, name: 'assignments' });
+  // A role the user already holds but the caller can't grant stays visible (disabled) instead of a blank select.
+  const held = (user?.roles ?? []).filter((a) => !roles.some((r) => r.id === a.roleId));
 
   return (
     <Dialog open={open} onClose={() => onClose(false)} maxWidth="md" fullWidth>
@@ -68,8 +71,19 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
               <Box key={f.id} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', mt: 2 }}>
                 <Controller name={`assignments.${index}.roleId`} control={control} render={({ field }) => (
                   <TextField select size="small" label="Role" sx={{ flex: 2 }} {...field}
+                    onChange={(e) => {
+                      // F12: a new choice clears the previous refusal for this row.
+                      field.onChange(e);
+                      clearErrors(`assignments.${index}`);
+                      setServerError('');
+                    }}
                     error={!!rowErrors.roleId} helperText={rowErrors.roleId?.message}>
                     {roles.map((r) => <MenuItem key={r.id} value={r.id}>{r.name.replace(/_/g, ' ')}</MenuItem>)}
+                    {held.map((a) => (
+                      <MenuItem key={a.roleId} value={a.roleId} disabled>
+                        {a.roleName.replace(/_/g, ' ')} (you can&apos;t assign this role)
+                      </MenuItem>
+                    ))}
                   </TextField>
                 )} />
                 <Controller name={`assignments.${index}.orgScopeId`} control={control} render={({ field }) => (

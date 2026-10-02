@@ -36,7 +36,12 @@ export const adminApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       invalidatesTags: (_r, _e, { id }) => [{ type: 'User', id }, { type: 'User', id: 'LIST' }],
     }),
-    listRoles: build.query({ query: () => '/admin/roles', transformResponse: unwrap, providesTags: ['Role'] }),
+    /** { assignable: true }: only roles the caller may grant (the role picker; S4). */
+    listRoles: build.query({
+      query: (arg) => (arg?.assignable ? { url: '/admin/roles', params: { assignable: true } } : '/admin/roles'),
+      transformResponse: unwrap,
+      providesTags: ['Role'],
+    }),
     resetUserMfa: build.mutation({
       query: (id) => ({ url: `/admin/users/${id}/reset-mfa`, method: 'POST' }),
       transformResponse: unwrap,

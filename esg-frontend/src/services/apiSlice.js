@@ -41,10 +41,21 @@ export async function refreshSession(api, extraOptions) {
 
 const AUTH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/mfa/setup', '/auth/mfa/verify'];
 
-/** On 401 from a normal endpoint: refresh the session once and retry; if that fails, sign out. */
+export const MFA_REQUIRED_NOTICE = 'Your role requires two-factor authentication. Sign in again to set it up.';
+
+/**
+ * On 401 from a normal endpoint: refresh the session once and retry; if that fails, sign out. A session without
+ * MFA for a role that needs it (ESG-401-MFA-REQUIRED, e.g. the role was just granted) can't be refreshed into one:
+ * sign out and say why.
+ */
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
   const url = typeof args === 'string' ? args : args.url;
+  if (result.error?.data?.errorCode === 'ESG-401-MFA-REQUIRED') {
+    await rawBaseQuery({ url: '/auth/logout', method: 'POST' }, api, extraOptions);
+    api.dispatch(loggedOut({ notice: MFA_REQUIRED_NOTICE }));
+    return result;
+  }
   if (result.error?.status === 401 && !AUTH_PATHS.includes(url)) {
     if (await refreshSession(api, extraOptions)) {
       result = await rawBaseQuery(args, api, extraOptions);

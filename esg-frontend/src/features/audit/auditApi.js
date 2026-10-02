@@ -11,6 +11,11 @@ export const auditApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       providesTags: ['Audit'],
     }),
+    /** Audited tables with friendly names, for the Table filter (S2). */
+    auditResources: build.query({
+      query: () => '/audit/resources',
+      transformResponse: unwrap,
+    }),
     lineage: build.query({
       query: ({ type, id }) => ({ url: '/audit/lineage', params: { type, id } }),
       transformResponse: unwrap,
@@ -18,4 +23,4 @@ export const auditApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useListAuditLogsQuery, useLineageQuery } = auditApi;
+export const { useListAuditLogsQuery, useAuditResourcesQuery, useLineageQuery } = auditApi;

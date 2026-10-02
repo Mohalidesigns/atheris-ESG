@@ -13,6 +13,8 @@ const template = {
 const snapshot = {
   'metric:electricity_kwh': { display: '1,750 kWh', value: 1750, unit: 'kWh', status: 'ok', basis: '3 approved data points' },
   'metric:water_withdrawal_m3': { display: '[not reported]', status: 'missing', basis: 'no approved data in the period' },
+  'carbon:scope1': { display: '2.68 tCO2e', value: 2.68, unit: 'tCO2e', status: 'ok', basis: '1 emission record',
+    provisional: '1 of 1 record (2.68 tCO2e) use emission factors pending expert review' },
 };
 const report = (over = {}) => ({
   id: 'r1', title: 'Sustainability report 2026', description: null, frameworkCode: 'GRI', templateId: 't-gri', templateName: 'GRI sustainability report',
@@ -121,6 +123,10 @@ describe('ReportingPage', () => {
     const table = screen.getByRole('table', { name: 'Data snapshot' });
     expect(within(table).getByText('1,750 kWh')).toBeInTheDocument();
     expect(within(table).getByText('Not reported')).toBeInTheDocument();
+    // S7: values resting on factors pending expert review are listed and marked.
+    expect(screen.getByLabelText('Provisional values')).toHaveTextContent('carbon:scope1');
+    expect(within(table).getByText('Provisional')).toBeInTheDocument();
+    expect(within(table).getByText(/use emission factors pending expert review/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Refresh data' }));
     await waitFor(() => expect(refreshed).toEqual({ version: 3 }));
     await userEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
