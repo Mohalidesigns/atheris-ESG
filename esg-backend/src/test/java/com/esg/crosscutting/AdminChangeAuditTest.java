@@ -109,6 +109,12 @@ class AdminChangeAuditTest extends ApiTestSupport {
           + "where resource = 'auth.tenant_module_overrides' order by created_at desc limit 1");
       assertThat(rs.next()).isTrue();
       assertThat(rs.getString(1)).isEqualTo(roleUserId("SUPER_ADMIN"));
+    } finally {
+      // Leave tenant B as it was: other tests (SubscriptionEntitlementTest) expect it to have no overrides.
+      try (Connection owner = PostgresTestDatabase.ownerConnection(); Statement st = owner.createStatement()) {
+        st.execute("select set_config('app.current_tenant', '" + PostgresTestDatabase.TENANT_B + "', false)");
+        st.execute("delete from auth.tenant_module_overrides where tenant_id = '" + PostgresTestDatabase.TENANT_B + "'");
+      }
     }
   }
 
