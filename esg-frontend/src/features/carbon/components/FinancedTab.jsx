@@ -7,7 +7,8 @@ import {
 } from '@mui/material';
 import { Add, DeleteOutline, Edit } from '@mui/icons-material';
 import Can from '../../../components/rbac/Can';
-import { FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
+import { FormAutocomplete, FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
+import { useSectorsQuery } from '../../reference/referenceApi';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
@@ -25,6 +26,7 @@ const QUALITY = {
 };
 
 export function FinancedDialog({ position, year, onClose }) {
+  const { data: sectors = [] } = useSectorsQuery();
   const editing = Boolean(position?.id);
   const [create, c] = useCreateFinancedMutation();
   const [update, u] = useUpdateFinancedMutation();
@@ -57,7 +59,11 @@ export function FinancedDialog({ position, year, onClose }) {
                 options={Object.entries(ASSET_CLASSES).map(([value, a]) => ({ value, label: a.label }))} />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }}><FormTextField control={control} name="counterparty" label="Counterparty" /></Grid>
-            <Grid size={{ xs: 12, sm: 5 }}><FormTextField control={control} name="sector" label="Sector (optional)" /></Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {/* F9: from the sector taxonomy (ISIC Rev. 4 sections), so positions can be grouped and mapped. */}
+              <FormAutocomplete control={control} name="sector" label="Sector (optional)"
+                options={sectors.map((x) => ({ value: x.code, label: `${x.name} (ISIC ${x.code})` }))} />
+            </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <FormSelect control={control} name="currency" label="Currency" options={CURRENCIES.map((x) => ({ value: x, label: x }))} />
             </Grid>
@@ -86,6 +92,8 @@ export function FinancedDialog({ position, year, onClose }) {
 
 /** PCAF financed emissions (BRD-5.2.2-08): attribution = outstanding ÷ denominator; financed = attribution × counterparty emissions. */
 export default function FinancedTab({ year }) {
+  const { data: sectors = [] } = useSectorsQuery();
+  const sectorName = Object.fromEntries(sectors.map((x) => [x.code, x.name]));
   const { data = [], isLoading, isError, error, refetch } = useFinancedQuery({ year });
   const summary = useFinancedSummaryQuery(year);
   const [remove] = useDeleteFinancedMutation();
@@ -146,7 +154,7 @@ export default function FinancedTab({ year }) {
               <TableBody>
                 {data.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{p.counterparty}<Typography variant="caption" display="block" color="text.secondary">{p.sector}</Typography></TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{p.counterparty}<Typography variant="caption" display="block" color="text.secondary">{sectorName[p.sector] ?? p.sector}</Typography></TableCell>
                     <TableCell>{ASSET_CLASSES[p.assetClass]?.label}</TableCell>
                     <TableCell align="right">{p.currency} {n(p.outstandingAmount)}</TableCell>
                     <TableCell align="right">{n(Number(p.attributionFactor) * 100, 2)}%</TableCell>

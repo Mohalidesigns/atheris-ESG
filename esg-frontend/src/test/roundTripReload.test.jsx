@@ -97,8 +97,20 @@ const FACTORS = [
   { id: 'ef-diesel', region: 'GLOBAL', category: 'diesel_generator', factorValue: 2.68, unit: 'kgCO2e/litre', source: 'IPCC 2006', factorVersion: '1', factorMethod: 'activity' },
   { id: 'ef-spend', region: 'GLOBAL', category: 'fixture_spend', factorValue: 0.5, unit: 'kgCO2e/USD', source: 'Fixture', factorVersion: '1', factorMethod: 'spend', spendCurrency: 'USD' },
 ];
+// Activities (GET /carbon/factors/activities) and regions the factor and calculator forms offer (F5/F11).
+const ACTIVITIES = [
+  { category: 'diesel_generator', label: 'Diesel generator', scope: 'scope_1', scope3Category: null, factorMethod: 'activity', activityUnit: 'litre', custom: false },
+  { category: 'fixture_spend', label: 'Fixture spend', scope: 'scope_3', scope3Category: 1, factorMethod: 'spend', activityUnit: null, custom: true },
+];
+const REGIONS = [{ code: 'GLOBAL', name: 'Global', kind: 'region' }, { code: 'NG', name: 'Nigeria', kind: 'country' }];
+const factorApi = () => fakeApi({
+  'GET /carbon/factors/activities': () => ok(ACTIVITIES),
+  'GET /carbon/factors/regions': () => ok(REGIONS),
+  'GET /reference/scope3-categories': () => ok([{ category: 1, name: 'Purchased goods and services', direction: 'upstream' }]),
+});
 const openEmission = async (record) => {
   fakeApi({
+    'GET /carbon/factors/activities': () => ok(ACTIVITIES),
     'GET /carbon/factors': () => ok(FACTORS),
     'GET /reference/scope3-categories': () => ok([{ category: 1, name: 'Purchased goods and services', direction: 'upstream' }]),
   });
@@ -185,11 +197,13 @@ const openers = {
     return screen.findByRole('dialog');
   },
   'custom-emission-factor': async (record) => {
+    factorApi();
     renderWithStore(<CustomFactorDialog open factor={{ ...record, custom: true }} onClose={() => {}} />,
       { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   'custom-spend-factor': async (record) => {
+    factorApi();
     renderWithStore(<CustomFactorDialog open factor={{ ...record, custom: true }} onClose={() => {}} />,
       { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
@@ -199,7 +213,10 @@ const openers = {
   'gas-flaring': dialogOf((r) => <FlaringDialog record={r} orgs={FIXTURE_ORGS} onClose={() => {}} />),
   'energy-instrument': dialogOf((r) => <InstrumentDialog instrument={r} orgs={FIXTURE_ORGS} onClose={() => {}} />),
   'reduction-target': dialogOf((r) => <TargetDialog target={r} onClose={() => {}} />),
-  'financed-position': dialogOf((r) => <FinancedDialog position={r} year={2026} onClose={() => {}} />),
+  'financed-position': async (record) => {
+    fakeApi({ 'GET /reference/sectors': () => ok([{ code: 'D', name: 'Electricity, gas, steam and air conditioning supply', classification: 'ISIC_REV4' }]) });
+    return dialogOf((r) => <FinancedDialog position={r} year={2026} onClose={() => {}} />)(record);
+  },
   'filing-deadline': openCompliance((r) => <DeadlineDialog deadline={r} onClose={() => {}} />),
   'regulatory-change': openCompliance((r) => <ChangeDialog change={r} onClose={() => {}} />),
   report: async (record) => {

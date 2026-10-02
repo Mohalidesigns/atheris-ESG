@@ -96,7 +96,7 @@ describe('DataHubPage data entry', () => {
     await waitFor(() => expect(calls.some((c) => c.key === 'POST /data/points')).toBe(true));
     expect(calls.find((c) => c.key === 'POST /data/points').body).toEqual({
       orgId: 'hq', metricKey: 'electricity_kwh', subCategory: null, numericValue: 1250.5, textValue: null, currency: null,
-      sourceId: 's1', evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30',
+      sourceId: 's1', evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
     });
     expect(calls.some((c) => c.key === 'PUT /data/points/p2/submit')).toBe(false);
     // The saved point opens in the drawer with the actions the server allows.

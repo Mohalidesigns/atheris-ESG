@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Box, Button, Card, CardContent, Checkbox, CircularProgress, FormControlLabel, FormGroup, FormHelperText,
   Grid, MenuItem, TextField, Typography } from '@mui/material';
 import { useGetSettingsQuery, useListFrameworksQuery, useUpdateSettingsMutation } from '../adminApi';
+import { FormAutocomplete } from '../../../components/form/FormFields';
+import { useTimeZonesQuery } from '../../reference/referenceApi';
 import { CURRENCIES, settingsSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
@@ -18,8 +20,9 @@ export default function SettingsTab() {
   const { data: settings, isLoading, isError, error } = useGetSettingsQuery();
   const { data: frameworks = [] } = useListFrameworksQuery(undefined, { skip: !can('compliance:read') });
   const [updateSettings, { isLoading: saving }] = useUpdateSettingsMutation();
+  const { data: timeZones = [] } = useTimeZonesQuery();
   const [message, setMessage] = useState(null);
-  const { register, control, handleSubmit, reset, setError, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, setError, formState: { errors } } = useForm({
     resolver: zodResolver(settingsSchema),
     defaultValues: { baseCurrency: 'NGN', fiscalYearStartMonth: 1, reportingTimezone: '', defaultFrameworkCodes: [], gwpSet: 'AR6', provisionalFactorPolicy: 'allow_flagged' },
   });
@@ -69,8 +72,9 @@ export default function SettingsTab() {
             )} />
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
-            <TextField fullWidth size="small" label="Reporting time zone" disabled={!canEdit} {...register('reportingTimezone')}
-              error={!!errors.reportingTimezone} helperText={errors.reportingTimezone?.message} />
+            {/* F10: IANA zones only (the server refuses anything else with ESG-400-TIMEZONE). */}
+            <FormAutocomplete control={control} name="reportingTimezone" label="Reporting time zone" disabled={!canEdit}
+              options={timeZones.map((z) => ({ value: z, label: z }))} />
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
             <Controller name="gwpSet" control={control} render={({ field }) => (

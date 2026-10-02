@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -11,9 +12,20 @@ import { FormDateField, FormSelect } from '../../../components/form/FormFields';
 import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import {
-  dataHubApi, useDataSourcesQuery, useImportJobQuery, useImportTemplateMutation, useImportsQuery, useStartImportMutation, useUploadImportMutation,
+  dataHubApi, useDataSourcesQuery, useImportFailedRowsMutation, useImportJobQuery, useImportTemplateMutation, useImportsQuery,
+  useStartImportMutation, useUploadImportMutation,
 } from '../dataHubApi';
 import { IMPORT_FIELDS, importStartSchema, toImportStartBody } from '../schemas';
+
+/** Saves text as a CSV download (authenticated responses can't be plain links). */
+function saveCsv(csv, fileName) {
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // no-mock-gate: config — wizard step labels
 const STEPS = ['Upload a file', 'Map the columns', 'Import'];
@@ -23,9 +35,20 @@ function Result({ jobId, onShowImported }) {
   const cached = dataHubApi.endpoints.importJob.useQueryState(jobId);
   const running = !cached.data || cached.data.status === 'processing';
   const { data: job } = useImportJobQuery(jobId, { pollingInterval: running ? 1000 : 0 });
+  const dispatch = useDispatch();
+  const [getFailed] = useImportFailedRowsMutation();
+  const finished = job && job.status !== 'processing';
+  // F2: when the job finishes, the Recent imports list (and the Data tab) show the final counts at once.
+  useEffect(() => {
+    if (finished) dispatch(dataHubApi.util.invalidateTags([{ type: 'Import', id: 'LIST' }, { type: 'DataPoint', id: 'LIST' }]));
+  }, [finished, dispatch]);
   if (!job) return <LinearProgress />;
   const done = job.status !== 'processing';
   const errors = job.rowErrors ?? [];
+  const downloadFailed = async () => {
+    const csv = await getFailed(job.id).unwrap();
+    saveCsv(csv, `${job.fileName.replace(/\.[^.]+$/, '')}-failed-rows.csv`);
+  };
   return (
     <Box aria-label="Import result">
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{job.fileName}</Typography>
@@ -42,6 +65,11 @@ function Result({ jobId, onShowImported }) {
       )}
       {done && job.succeededRows > 0 && (
         <Button size="small" onClick={() => onShowImported(job.id)} sx={{ mb: 2 }}>Show the imported drafts</Button>
+      )}
+      {done && errors.length > 0 && (
+        <Button size="small" startIcon={<Download />} onClick={downloadFailed} sx={{ mb: 2, ml: 1 }}>
+          Download failed rows with reasons
+        </Button>
       )}
       {errors.length > 0 && (
         <TableContainer component={Card} variant="outlined">
@@ -147,7 +175,10 @@ export default function ImportWizard({ orgs, onShowImported }) {
   const [problem, setProblem] = useState('');
   const [upload, { isLoading }] = useUploadImportMutation();
   const [getTemplate] = useImportTemplateMutation();
-  const { data: recent = [] } = useImportsQuery();
+  // F2: keep the list current while any import is still running.
+  const cachedList = dataHubApi.endpoints.imports.useQueryState(undefined);
+  const anyRunning = (cachedList.data ?? []).some((j) => j.status === 'processing');
+  const { data: recent = [] } = useImportsQuery(undefined, { pollingInterval: anyRunning ? 2000 : 0 });
 
   const onChosen = async (e) => {
     const file = e.target.files?.[0];
@@ -167,15 +198,7 @@ export default function ImportWizard({ orgs, onShowImported }) {
     }
   };
 
-  const onTemplate = async () => {
-    const csv = await getTemplate().unwrap();
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'esg-data-import-template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const onTemplate = async () => saveCsv(await getTemplate().unwrap(), 'esg-data-import-template.csv');
 
   return (
     <Box>

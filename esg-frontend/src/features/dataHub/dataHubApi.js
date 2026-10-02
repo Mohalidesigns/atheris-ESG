@@ -6,7 +6,7 @@ export const dataHubApi = apiSlice.injectEndpoints({
     dataPoints: build.query({
       query: (params) => ({ url: '/data/points', params }),
       transformResponse: unwrap,
-      providesTags: ['DataPoint'],
+      providesTags: ['DataPoint', { type: 'DataPoint', id: 'LIST' }],
     }),
     dataPoint: build.query({
       query: (id) => `/data/points/${id}`,
@@ -30,7 +30,8 @@ export const dataHubApi = apiSlice.injectEndpoints({
     }),
     deleteDataPoint: build.mutation({
       query: ({ id, version }) => ({ url: `/data/points/${id}`, method: 'DELETE', params: { version } }),
-      invalidatesTags: ['DataPoint'],
+      // F13: only the lists; the deleted point itself must not be refetched (it no longer exists: 404).
+      invalidatesTags: [{ type: 'DataPoint', id: 'LIST' }],
     }),
     /** action: submit | validate | approve | reject | reopen. */
     transitionDataPoint: build.mutation({
@@ -74,7 +75,7 @@ export const dataHubApi = apiSlice.injectEndpoints({
       invalidatesTags: ['FxRate'],
     }),
 
-    imports: build.query({ query: () => '/data/import', transformResponse: unwrap, providesTags: ['Import'] }),
+    imports: build.query({ query: () => '/data/import', transformResponse: unwrap, providesTags: ['Import', { type: 'Import', id: 'LIST' }] }),
     importJob: build.query({
       query: (id) => `/data/import/${id}`,
       transformResponse: unwrap,
@@ -90,6 +91,10 @@ export const dataHubApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Import'],
     }),
     // Authenticated download: fetched as text, saved by the browser (no bearer token in a plain link).
+    /** Failed rows with the reason for each, as CSV (F3). */
+    importFailedRows: build.mutation({
+      query: (id) => ({ url: `/data/import/${id}/failed-rows`, responseHandler: (r) => r.text(), cache: 'no-store' }),
+    }),
     importTemplate: build.mutation({
       query: () => ({ url: '/data/import/template', responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
@@ -107,4 +112,5 @@ export const {
   useDataSourcesQuery, useCreateDataSourceMutation, useUpdateDataSourceMutation,
   useFxRatesQuery, useCreateFxRateMutation, useUpdateFxRateMutation, useDeleteFxRateMutation,
   useImportsQuery, useImportJobQuery, useUploadImportMutation, useStartImportMutation, useImportTemplateMutation,
+  useImportFailedRowsMutation,
 } = dataHubApi;

@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { Add, Warning as WarningIcon } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import Can from '../../../components/rbac/Can';
 import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';
@@ -171,7 +172,9 @@ const TABS = [
 export default function DataHubPage() {
   const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
   const tabs = TABS.filter((t) => t.anyOf.some((p) => permissions.includes(p)));
-  const [tab, setTab] = useState('data');
+  // ?tab=review (e.g. from the Dashboard's review card, F14) opens that tab.
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') ?? 'data');
   const [filters, setFilters] = useState(emptyFilters);
   const [editing, setEditing] = useState(undefined); // undefined closed, null new, object edit
   const [openId, setOpenId] = useState(null);

@@ -55,6 +55,15 @@ function Requirements({ framework }) {
 }
 
 /** Framework library, and the frameworks this tenant reports against (compliance:configure). */
+/**
+ * F8: the same count as the gap analysis (assessable requirements), with section headings named separately, e.g.
+ * "18 requirements (+5 section headings)".
+ */
+const requirementsText = (f) => {
+  const assessable = f.assessableCount ?? f.requirementCount;
+  return `${assessable} requirement${assessable === 1 ? '' : 's'}${f.headingCount ? ` (+${f.headingCount} section heading${f.headingCount === 1 ? '' : 's'})` : ''}`;
+};
+
 export default function FrameworksTab({ year }) {
   const { can } = useAuth();
   const { data, isLoading, isError, error, refetch } = useFrameworksQuery();
@@ -89,7 +98,7 @@ export default function FrameworksTab({ year }) {
                   )} />
                 )}>
                 <ListItemButton selected={f.code === current?.code} onClick={() => setSelected(f.code)} sx={{ pr: 12 }}>
-                  <ListItemText primary={f.name} secondary={`${f.jurisdiction} · ${f.frameworkType} · ${f.requirementCount} requirements`} />
+                  <ListItemText primary={f.name} secondary={`${f.jurisdiction} · ${f.frameworkType} · ${requirementsText(f)}`} />
                 </ListItemButton>
               </ListItem>
             ))}

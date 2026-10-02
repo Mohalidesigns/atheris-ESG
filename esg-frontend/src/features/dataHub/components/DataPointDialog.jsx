@@ -118,6 +118,10 @@ export default function DataPointDialog({ open, onClose, metrics, orgs, point = 
               <FormDateField control={control} name="reportingPeriodEnd" label="Period end" />
             </Grid>
             <Grid size={12}>
+              <FormTextField control={control} name="notes" label="Notes (optional)" multiline minRows={2}
+                helperText="e.g. meter remark, estimate method or where the figure came from" />
+            </Grid>
+            <Grid size={12}>
               <FormSelect control={control} name="sourceId" label="Data source (optional)"
                 options={[{ value: '', label: 'Not recorded' }, ...sources.map((s) => ({ value: s.id, label: s.name }))]} />
             </Grid>

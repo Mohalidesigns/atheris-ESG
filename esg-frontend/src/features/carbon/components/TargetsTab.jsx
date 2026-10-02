@@ -133,7 +133,8 @@ function TargetCard({ target, onEdit, onDelete }) {
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="expected" name="Pathway" stroke="#2D7D46" strokeDasharray="5 5" dot={false} />
-              <Line type="monotone" dataKey="actual" name="Actual" stroke="#1A365D" connectNulls={false} />
+              {/* F6: dots, so a single year of actuals (e.g. the base year) is visible. */}
+              <Line type="monotone" dataKey="actual" name="Actual" stroke="#1A365D" connectNulls={false} dot={{ r: 4 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </Box>

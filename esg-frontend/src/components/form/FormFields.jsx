@@ -1,4 +1,4 @@
-import { InputAdornment, MenuItem, TextField } from '@mui/material';
+import { Autocomplete, InputAdornment, MenuItem, TextField } from '@mui/material';
 import { Controller } from 'react-hook-form';
 
 /**
@@ -65,5 +65,26 @@ export function FormSelect({ control, name, options, helperText, ...props }) {
         {options.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
       </TextField>
     )} />
+  );
+}
+
+/**
+ * Searchable pick-list (MUI Autocomplete) storing the option's value. A saved value missing from the options is still
+ * shown as itself, so an edit form never hides what was stored. {@code onChosen(option)} runs after a pick.
+ */
+export function FormAutocomplete({ control, name, options, label, helperText, onChosen, disabled, ...props }) {
+  return (
+    <Field control={control} name={name} render={(field, fs) => {
+      const selected = options.find((o) => o.value === field.value) ?? (field.value ? { value: field.value, label: field.value } : null);
+      return (
+        <Autocomplete options={options} value={selected} disabled={disabled} autoHighlight
+          isOptionEqualToValue={(o, v) => o.value === v.value} getOptionLabel={(o) => o.label}
+          onChange={(_, o) => { field.onChange(o?.value ?? ''); onChosen?.(o); }} onBlur={field.onBlur}
+          renderInput={(params) => (
+            <TextField {...params} name={field.name} inputRef={field.ref} label={label} size="small" fullWidth
+              error={Boolean(fs.error)} helperText={fs.error?.message ?? helperText} {...props} />
+          )} />
+      );
+    }} />
   );
 }

@@ -1,4 +1,5 @@
-import { Box, Card, CardContent, Grid, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Grid, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import Can from '../../../components/rbac/Can';
 import { EmptyState, ErrorState, LoadingState, NotYetAvailable, PageHeader } from '../../../components/states/States';
@@ -28,9 +29,20 @@ function EmissionsKpi() {
   return <Kpi title="Total emissions" value={fmt(data?.totalLocation)} unit={`tCO2e in ${data?.year ?? 'this year'} (location-based)`} loading={isLoading} error={isError} />;
 }
 
+/** F14: both review queues (validation and approval), linking to the Data Hub's Review tab. */
 function PendingReviewKpi() {
-  const { data, isLoading, isError } = useDataPointsQuery({ status: 'submitted', page: 0, size: 1 });
-  return <Kpi title="Data points awaiting review" value={fmt(data?.totalElements ?? data?.page?.totalElements)} loading={isLoading} error={isError} />;
+  const toValidate = useDataPointsQuery({ status: 'submitted', page: 0, size: 1 });
+  const toApprove = useDataPointsQuery({ status: 'validated', page: 0, size: 1 });
+  const count = (q) => q.data?.totalElements ?? q.data?.page?.totalElements ?? 0;
+  const loading = toValidate.isLoading || toApprove.isLoading;
+  return (
+    <CardActionArea component={RouterLink} to="/data-hub?tab=review" sx={{ height: '100%', borderRadius: 1 }}
+      aria-label="Data points awaiting review: open the review queue">
+      <Kpi title="Data points awaiting review" value={fmt(count(toValidate) + count(toApprove))}
+        unit={`${fmt(count(toValidate))} to validate · ${fmt(count(toApprove))} to approve`}
+        loading={loading} error={toValidate.isError || toApprove.isError} />
+    </CardActionArea>
+  );
 }
 
 function FrameworksKpi() {
@@ -38,7 +50,7 @@ function FrameworksKpi() {
   const loaded = (data ?? []).filter((f) => f.requirementCount > 0);
   return (
     <Kpi title="Frameworks with requirements loaded" value={`${loaded.length} / ${(data ?? []).length}`}
-      unit={`${loaded.reduce((n, f) => n + f.requirementCount, 0)} requirements`} loading={isLoading} error={isError} />
+      unit={`${loaded.reduce((n, f) => n + (f.assessableCount ?? f.requirementCount), 0)} requirements`} loading={isLoading} error={isError} />
   );
 }
 

@@ -5,7 +5,7 @@ import Can from '../../../components/rbac/Can';
 import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';
 import { toFormError } from '../../../services/apiSlice';
-import { useDeleteEmissionMutation, useEmissionsQuery, useVerifyEmissionMutation } from '../carbonApi';
+import { useDeleteEmissionMutation, useEmissionActivitiesQuery, useEmissionsQuery, useVerifyEmissionMutation } from '../carbonApi';
 import { FACTOR_LEVELS, activityLabel } from '../schemas';
 import EmissionCalculator from './EmissionCalculator';
 import ProvisionalBadge from './ProvisionalBadge';
@@ -15,7 +15,9 @@ const SOURCES = { manual: 'Calculator', data_hub: 'Data Hub', flaring: 'Flaring'
 const tonnes = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
 
 /** Emission records for the year. Only calculator records are edited here; Data Hub and flaring records follow their source. */
-export default function EmissionRecords({ year, orgs }) {
+export default function EmissionRecords({ year, orgs, onAddFactor }) {
+  const { data: catalogue = [] } = useEmissionActivitiesQuery();
+  const labels = Object.fromEntries(catalogue.map((a) => [a.category, a.label]));
   const [scope, setScope] = useState('');
   const [source, setSource] = useState('');
   const [editing, setEditing] = useState(undefined);
@@ -37,7 +39,7 @@ export default function EmissionRecords({ year, orgs }) {
   const columns = [
     { field: 'scope', header: 'Scope', sortable: true,
       render: (r) => <Chip size="small" label={`${r.scope.replace('_', ' ')}${r.scope3Category ? ` · cat ${r.scope3Category}` : ''}`} /> },
-    { field: 'sourceActivity', header: 'Activity', sortable: true, render: (r) => activityLabel(r.sourceActivity) },
+    { field: 'sourceActivity', header: 'Activity', sortable: true, render: (r) => labels[r.sourceActivity] ?? activityLabel(r.sourceActivity) },
     { field: 'activityData', header: 'Activity data', align: 'right',
       render: (r) => (r.calculationMethod === 'spend_based'
         ? `${r.spendCurrency} ${Number(r.spendAmount).toLocaleString()}`
@@ -105,7 +107,7 @@ export default function EmissionRecords({ year, orgs }) {
       <DataTable columns={columns} query={query} table={table} ariaLabel="Emission records"
         emptyTitle={`No emission records for ${year}`} emptyMessage="Use the calculator, or approve energy data in the Data Hub." />
       {editing !== undefined && (
-        <EmissionCalculator open orgs={orgs} record={editing} onClose={() => setEditing(undefined)} />
+        <EmissionCalculator open orgs={orgs} record={editing} onClose={() => setEditing(undefined)} onAddFactor={onAddFactor} />
       )}
     </>
   );

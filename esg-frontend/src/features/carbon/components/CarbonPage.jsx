@@ -33,7 +33,7 @@ export default function CarbonPage() {
         {TABS.map((l) => <Tab key={l} label={l} />)}
       </Tabs>
       {tab === 0 && <CarbonOverview year={year} />}
-      {tab === 1 && <EmissionRecords year={year} orgs={orgs} />}
+      {tab === 1 && <EmissionRecords year={year} orgs={orgs} onAddFactor={() => setTab(6)} />}
       {tab === 2 && <FlaringTab year={year} orgs={orgs} />}
       {tab === 3 && <TargetsTab />}
       {tab === 4 && <InstrumentsTab orgs={orgs} />}

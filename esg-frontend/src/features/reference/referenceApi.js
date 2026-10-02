@@ -13,6 +13,8 @@ export const referenceApi = apiSlice.injectEndpoints({
     sdgs: build.query({ query: () => '/reference/sdgs', transformResponse: unwrap, providesTags: ['Reference'] }),
     scope3Categories: build.query({ query: () => '/reference/scope3-categories', transformResponse: unwrap, providesTags: ['Reference'] }),
     sectors: build.query({ query: () => '/reference/sectors', transformResponse: unwrap, providesTags: ['Reference'] }),
+    /** IANA time zones the server accepts for the reporting time zone (F10). */
+    timeZones: build.query({ query: () => '/reference/timezones', transformResponse: unwrap, providesTags: ['Reference'] }),
     frameworks: build.query({ query: () => '/compliance/frameworks', transformResponse: unwrap, providesTags: ['Framework'] }),
     requirements: build.query({
       query: (code) => `/compliance/frameworks/${encodeURIComponent(code)}/requirements`,
@@ -28,6 +30,6 @@ export const referenceApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useMetricsQuery, useCurrenciesQuery, useCountriesQuery, useSdgsQuery, useScope3CategoriesQuery, useSectorsQuery,
+  useMetricsQuery, useCurrenciesQuery, useCountriesQuery, useSdgsQuery, useScope3CategoriesQuery, useSectorsQuery, useTimeZonesQuery,
   useFrameworksQuery, useRequirementsQuery, useMappingsQuery,
 } = referenceApi;

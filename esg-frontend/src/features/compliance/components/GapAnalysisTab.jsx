@@ -17,6 +17,9 @@ const PRIORITY = { high: 'error', medium: 'warning', low: 'default' };
  * Requirement checklist and gap analysis for one framework and year (TRD §6.5.4, Compliance Dashboard "requirement
  * checklist, gap analysis"). Status comes from approved data, attestations and mappings (D23).
  */
+// no-mock-gate: config — evidence that isn't a Data Hub metric (reference.requirement_data_sources, F7)
+const SOURCES = { 'source:carbon.reduction_targets': 'Reduction target (Carbon)' };
+
 export default function GapAnalysisTab({ year, initialFramework }) {
   const { data: frameworks = [] } = useFrameworksQuery();
   const withContent = frameworks.filter((f) => f.requirementCount > 0);
@@ -50,7 +53,7 @@ export default function GapAnalysisTab({ year, initialFramework }) {
       {!code && frameworks.length > 0 && <EmptyState title="No framework content loaded yet" />}
       {data && (
         <Grid container spacing={2}>
-          {[['Requirements', data.totalRequirements], ['Met', data.met], ['Partial', data.partial], ['Missing', data.missing],
+          {[['Requirements (excl. section headings)', data.totalRequirements], ['Met', data.met], ['Partial', data.partial], ['Missing', data.missing],
             ['High priority', data.highPriority]].map(([label, value]) => (
             <Grid size={{ xs: 6, md: 'grow' }} key={label}>
               <Card><CardContent sx={{ p: 2 }}>
@@ -88,7 +91,7 @@ export default function GapAnalysisTab({ year, initialFramework }) {
                             {r.metricKeys.length > 0 && (
                               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                                 {r.metricKeys.map((m) => (
-                                  <Chip key={m} size="small" label={m} sx={{ height: 20, fontSize: '0.65rem' }}
+                                  <Chip key={m} size="small" label={SOURCES[m] ?? m} sx={{ height: 20, fontSize: '0.65rem' }}
                                     color={r.missingMetrics.includes(m) ? 'default' : 'success'} variant={r.missingMetrics.includes(m) ? 'outlined' : 'filled'} />
                                 ))}
                               </Box>

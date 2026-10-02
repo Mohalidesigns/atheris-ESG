@@ -10,8 +10,10 @@ import { FormDateField, FormNumberField, FormSelect, FormTextField } from '../..
 import { applyProblem } from '../../../services/formErrors';
 import { CURRENCIES } from '../../admin/schemas';
 import { useScope3CategoriesQuery } from '../../reference/referenceApi';
-import { useCreateEmissionMutation, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation } from '../carbonApi';
-import { FACTOR_LEVELS, SCOPES, activityLabel, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
+import {
+  useCreateEmissionMutation, useEmissionActivitiesQuery, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation,
+} from '../carbonApi';
+import { FACTOR_LEVELS, SCOPES, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
 import ProvisionalBadge from './ProvisionalBadge';
 
 // no-mock-gate: config — wizard step labels (TRD §7.4: scope → activity → factor → calculate → save)
@@ -31,12 +33,13 @@ const t = (v) => (v == null ? '—'
  * amount → factor and result, then save. The result comes from the server (POST /carbon/emissions/preview), so it is
  * exactly what saving stores. `record` = edit an existing manual record.
  */
-export default function EmissionCalculator({ open, onClose, orgs, record = null }) {
+export default function EmissionCalculator({ open, onClose, orgs, record = null, onAddFactor }) {
   const editing = Boolean(record);
   const [step, setStep] = useState(0);
   const [preview, setPreview] = useState(null);
   const [formError, setFormError] = useState('');
   const { data: factors = [] } = useFactorsQuery();
+  const { data: catalogue = [] } = useEmissionActivitiesQuery();
   const { data: categories = [] } = useScope3CategoriesQuery();
   const [runPreview, previewState] = usePreviewEmissionMutation();
   const [create, createState] = useCreateEmissionMutation();
@@ -45,17 +48,22 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
     defaultValues: record ? toEmissionForm(record) : emptyEmission,
     resolver: zodResolver(emissionSchema),
   });
-  const [scope, method, activity] = useWatch({ control, name: ['scope', 'calculationMethod', 'sourceActivity'] });
+  const [scope, method, activity, scope3Category] = useWatch({ control, name: ['scope', 'calculationMethod', 'sourceActivity', 'scope3Category'] });
   const spend = method === 'spend_based';
 
-  // Activities: one per factor category the tenant can use, for the chosen method.
+  // F5: activities of the chosen scope (and Scope 3 category) and method that have at least one factor; the unit
+  // comes from the factor. Server-side, a mismatching scope is refused too.
   const activities = useMemo(() => {
-    const byCategory = new Map();
+    const factorFor = new Map();
     factors.filter((f) => (f.factorMethod ?? 'activity') === (spend ? 'spend' : 'activity')).forEach((f) => {
-      if (!byCategory.has(f.category)) byCategory.set(f.category, f);
+      if (!factorFor.has(f.category)) factorFor.set(f.category, f);
     });
-    return [...byCategory.values()].sort((a, b) => a.category.localeCompare(b.category));
-  }, [factors, spend]);
+    return catalogue
+      .filter((a) => a.scope === scope && (scope !== 'scope_3' || String(a.scope3Category) === String(scope3Category)))
+      .filter((a) => factorFor.has(a.category))
+      .map((a) => ({ category: a.category, label: a.label, unit: factorFor.get(a.category).unit }));
+  }, [factors, catalogue, spend, scope, scope3Category]);
+  const noActivities = catalogue.length > 0 && activities.length === 0 && (scope !== 'scope_3' || scope3Category);
   const categoryFactors = factors.filter((f) => f.category === activity);
   const unit = factorActivityUnit(activities.find((a) => a.category === activity)?.unit);
 
@@ -143,9 +151,17 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
           <Box hidden={step !== 1}>
             <Grid container spacing={2}>
               <Grid size={12}>
-                <FormSelect control={control} name="sourceActivity" label="Activity"
-                  helperText={spend && activities.length === 0 ? 'No spend-based factors yet: add one in Emission factors (kgCO2e per currency unit)' : undefined}
-                  options={activities.map((a) => ({ value: a.category, label: `${activityLabel(a.category)} (${a.unit})` }))} />
+                {noActivities ? (
+                  <Alert severity="info" aria-label="No factors"
+                    action={onAddFactor && <Button color="inherit" size="small" onClick={() => { onClose(false); onAddFactor(); }}>Add a custom factor</Button>}>
+                    No {spend ? 'spend-based' : 'activity-based'} factors for {scope === 'scope_3'
+                      ? `Scope 3 category ${scope3Category}` : SCOPES.find((s) => s.value === scope)?.label ?? scope} — add a custom factor
+                    {spend ? ' (kgCO2e per currency unit)' : ''} in Emission factors.
+                  </Alert>
+                ) : (
+                  <FormSelect control={control} name="sourceActivity" label="Activity"
+                    options={activities.map((a) => ({ value: a.category, label: `${a.label} (${a.unit})` }))} />
+                )}
               </Grid>
               <Grid size={12}>
                 <Controller name="orgId" control={control} render={({ field, fieldState }) => (

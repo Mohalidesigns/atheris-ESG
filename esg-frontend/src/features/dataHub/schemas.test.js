@@ -64,7 +64,7 @@ describe('dataPointSchema mirrors DataPointDto + DataPointRules + metric error r
     expect(toDataPointBody({ ...base, value: '12.5', subCategory: ' Borehole ', evidenceFileIds: ['f1'], sourceId: 's1' }, metrics.electricity_kwh))
       .toEqual({
         orgId: 'org-1', metricKey: 'electricity_kwh', subCategory: 'Borehole', numericValue: 12.5, textValue: null, currency: null,
-        sourceId: 's1', evidenceFileIds: ['f1'], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30',
+        sourceId: 's1', evidenceFileIds: ['f1'], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
       });
     expect(toDataPointBody({ ...base, metricKey: 'community_investment', value: '10', currency: 'USD' }, metrics.community_investment))
       .toMatchObject({ numericValue: 10, currency: 'USD', sourceId: null });

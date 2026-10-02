@@ -85,7 +85,7 @@ describe('ReportingPage', () => {
       templateId: 't-gri', title: 'Sustainability report 2026', description: null, reportingPeriodStart: '2026-01-01', reportingPeriodEnd: '2026-12-31',
     }));
     expect(await screen.findByLabelText('Report status')).toHaveTextContent('Draft');
-  });
+  }, 15000); // many steps (template preview, form, create, open): slow under the full parallel run
 
   it('draft editor: unknown variables are refused, data can be inserted, sections save with their ids', async () => {
     let saved;

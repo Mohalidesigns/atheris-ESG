@@ -28,7 +28,7 @@ export const SOURCE_TYPES = {
 
 export const emptyDataPoint = {
   orgId: '', metricKey: '', subCategory: '', value: '', currency: '', sourceId: '', evidenceFileIds: [],
-  reportingPeriodStart: '', reportingPeriodEnd: '',
+  reportingPeriodStart: '', reportingPeriodEnd: '', notes: '',
 };
 
 /** Server field → form field. */
@@ -47,6 +47,7 @@ export const toDataPointForm = (dp) => ({
   evidenceFileIds: dp.evidenceFileIds ?? [],
   reportingPeriodStart: dp.reportingPeriodStart ?? '',
   reportingPeriodEnd: dp.reportingPeriodEnd ?? '',
+  notes: dp.notes ?? '',
 });
 
 /** @param rules GET /data/rules — only severity "error" range rules block saving (warnings are server-side). */
@@ -61,6 +62,7 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
     evidenceFileIds: z.array(z.string()).max(MAX_EVIDENCE, `At most ${MAX_EVIDENCE} evidence files`),
     reportingPeriodStart: z.string().min(1, 'Start date is required'),
     reportingPeriodEnd: z.string().min(1, 'End date is required'),
+    notes: z.string().trim().max(1000, 'At most 1000 characters').optional(),
   })
   .superRefine((v, ctx) => {
     const issue = (path, message) => ctx.addIssue({ code: 'custom', path: [path], message });
@@ -105,6 +107,7 @@ export function toDataPointBody(v, metric) {
     evidenceFileIds: v.evidenceFileIds,
     reportingPeriodStart: v.reportingPeriodStart,
     reportingPeriodEnd: v.reportingPeriodEnd,
+    notes: (v.notes ?? '').trim() || null,
   };
 }
 
@@ -160,6 +163,7 @@ export const IMPORT_FIELDS = [
   { key: 'periodStart', label: 'Period start' },
   { key: 'periodEnd', label: 'Period end' },
   { key: 'subCategory', label: 'Sub-category' },
+  { key: 'notes', label: 'Notes', hint: 'comment or remark' },
 ];
 
 export const importStartSchema = z

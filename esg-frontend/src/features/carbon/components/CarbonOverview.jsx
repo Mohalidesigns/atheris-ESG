@@ -20,11 +20,12 @@ function Kpi({ label, value, caption, colour }) {
   );
 }
 
-function ChartCard({ title, children, empty }) {
+function ChartCard({ title, children, empty, note }) {
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>{title}</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: note ? 0 : 1 }}>{title}</Typography>
+        {note && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{note}</Typography>}
         {empty ? <Typography variant="body2" color="text.secondary">Nothing recorded.</Typography> : <Box sx={{ height: 260 }}>{children}</Box>}
       </CardContent>
     </Card>
@@ -54,13 +55,14 @@ export default function CarbonOverview({ year }) {
       </Grid>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <ChartCard title={`Monthly emissions ${year}`} empty={months.every((m) => m.value === 0)}>
+          <ChartCard title={`Monthly emissions ${year}`} empty={months.every((m) => m.value === 0)}
+            note="Records covering several months (e.g. a quarter) are split across them in proportion to their days.">
             <ResponsiveContainer>
               <BarChart data={months}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(v) => `${t(v)} tCO2e`} />
+                <Tooltip formatter={(v) => [`${t(v)} tCO2e`, 'Emissions (multi-month records split by days)']} />
                 <Bar dataKey="value" name="tCO2e" fill="#1A365D" />
               </BarChart>
             </ResponsiveContainer>
