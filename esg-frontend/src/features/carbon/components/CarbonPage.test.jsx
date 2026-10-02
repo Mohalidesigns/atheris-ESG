@@ -373,6 +373,7 @@ describe('CarbonPage flaring, targets, instruments, PCAF', () => {
       targetValue: 580, pathway: 'linear', sbtiAligned: true, intensityDenominator: null, progressYear: YEAR, currentValue: 990,
       expectedValue: 958, progressPct: 2.38, status: 'off_track', annualReductionPct: 4.2,
       sbtiFindings: ['Target year must be 5 to 10 years after submission'], pathwayPoints: [{ year: 2025, expected: 1000, actual: 1000 }, { year: 2035, expected: 580, actual: null }], version: 0,
+      baselineWarning: 'Emissions measured for 2025 (1917.0) differ from the base value entered (1000) by more than 10%. Check the base value and scope.',
     };
     fakeApi(routes({
       'GET /carbon/targets': () => ok([target]),
@@ -383,6 +384,7 @@ describe('CarbonPage flaring, targets, instruments, PCAF', () => {
     const card = await screen.findByLabelText('Target Net zero ops');
     expect(within(card).getByText('Off track')).toBeInTheDocument();
     expect(within(card).getByText('Target year must be 5 to 10 years after submission')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Baseline check')).toHaveTextContent('differ from the base value entered (1000)');
     await userEvent.click(screen.getByRole('button', { name: 'Set target' }));
     const dialog = await screen.findByRole('dialog');
     await userEvent.type(within(dialog).getByLabelText('Name'), 'Halve Scope 1+2');

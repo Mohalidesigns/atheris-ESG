@@ -10,7 +10,7 @@ One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs
 - **F3** Common header names (metric_code, KPI, comment…) auto-map; data points have a Notes field (also an import target); failed rows download as CSV with reasons.
 - **F4** Spend-based US EPA EEIO factors (v1.3) for Scope 3 categories 1, 2, 4–8; where none exist the calculator says so and links to the factor library.
 - **F5** Every activity has a GHG scope; the calculator lists only the chosen scope's activities and the server refuses mismatches.
-- **F6** Reduction-target actuals use the Overview's totals and include the base year; the Actual line shows single years.
+- **F6** Reduction-target actuals use the Overview's totals and include the base year; the Actual line shows single years; a base value far from the measured emissions is flagged (and no longer overflows progress).
 - **F7** A reduction target evidences IFRS S2-33 and GRI 305-5 in the gap analysis.
 - **F8** Frameworks show assessable requirements and section headings separately, matching the gap analysis.
 - **F9** PCAF sector is picked from the sector taxonomy (ISIC Rev. 4) and validated.

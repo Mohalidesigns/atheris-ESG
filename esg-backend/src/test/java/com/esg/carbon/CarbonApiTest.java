@@ -143,6 +143,17 @@ class CarbonApiTest extends ApiTestSupport {
     assertThat(target.path("status").asText()).isNotEqualTo("no_data");
     JsonNode basePoint = target.path("pathwayPoints").get(0);
     assertThat(basePoint.path("actual").decimalValue()).isEqualByComparingTo(overview);
+    assertThat(target.path("baselineWarning").isMissingNode() || target.path("baselineWarning").isNull()).isFalse(); // 90 vs ~7 t
+
+    // A base value far below what was measured (the tester's 90 t vs 1,917 t) gave −4,060% and a 500 (numeric overflow):
+    // progress is held to ±999.99% and the target says the base value looks wrong.
+    JsonNode tiny = data(postJson("/v1/carbon/targets", "{\"targetName\":\"Tiny baseline " + DAY.incrementAndGet() + "\","
+        + "\"targetType\":\"absolute\",\"scope\":\"scope_1_2\",\"baseYear\":" + year + ",\"baseValue\":0.01,\"targetYear\":" + (year + 4)
+        + ",\"targetValue\":0.005,\"pathway\":\"linear\"}").andExpect(status().isCreated()));
+    assertThat(tiny.path("progressPct").decimalValue()).isEqualByComparingTo("-999.99");
+    assertThat(tiny.path("status").asText()).isEqualTo("off_track");
+    assertThat(tiny.path("baselineWarning").asText()).contains("differ from the base value entered (0.01)");
+    mvc.perform(get("/v1/carbon/targets").header("Authorization", director())).andExpect(status().isOk());
   }
 
   @Test

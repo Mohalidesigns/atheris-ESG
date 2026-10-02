@@ -131,7 +131,7 @@ public final class CarbonDtos {
                                  int targetYear, BigDecimal targetValue, String pathway, boolean sbtiAligned,
                                  String intensityDenominator, Integer progressYear, BigDecimal currentValue, BigDecimal expectedValue,
                                  BigDecimal progressPct, String status, BigDecimal annualReductionPct, List<String> sbtiFindings,
-                                 List<PathwayPoint> pathwayPoints, Long version) {}
+                                 List<PathwayPoint> pathwayPoints, Long version, String baselineWarning) {}
 
     // ---------------------------------------------------------------- PCAF financed emissions
 

@@ -119,6 +119,7 @@ function TargetCard({ target, onEdit, onDelete }) {
             <LinearProgress variant="determinate" value={Math.max(0, Math.min(100, Number(target.progressPct ?? 0)))} sx={{ mt: 0.5, height: 6, borderRadius: 3 }} />
           </Box>
         )}
+        {target.baselineWarning && <Alert severity="warning" sx={{ my: 1 }} aria-label="Baseline check">{target.baselineWarning}</Alert>}
         {target.sbtiAligned && (
           target.sbtiFindings.length === 0
             ? <Alert severity="success" sx={{ my: 1 }}>Meets the SBTi near-term criteria checked here.</Alert>

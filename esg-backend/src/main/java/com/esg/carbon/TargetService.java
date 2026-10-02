@@ -26,6 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TargetService {
 
+    private static final BigDecimal PCT_MIN = new BigDecimal("-999.99");
+    private static final BigDecimal PCT_MAX = new BigDecimal("999.99");
+    private static final BigDecimal BASELINE_TOLERANCE = new BigDecimal("0.10");
+
     private final JdbcTemplate jdbc;
     private final EmissionService emissions;
 
@@ -136,7 +140,16 @@ public class TargetService {
             }
         }
         BigDecimal expected = progressYear == null ? null : TargetMath.expected(pathway, base, target, baseYear, targetYear, progressYear);
-        BigDecimal progress = current == null ? null : TargetMath.progressPct(base, target, current);
+        // progress_pct is NUMERIC(5,2): a baseline far from what was measured can give e.g. −4,060%; the formula stays
+        // as specified, the stored and shown figure is held to the column's range and the mismatch is reported below.
+        BigDecimal progress = current == null ? null
+                : TargetMath.progressPct(base, target, current).max(PCT_MIN).min(PCT_MAX);
+        BigDecimal baseActual = points.isEmpty() ? null : points.get(0).actual();
+        String baselineWarning = baseActual == null || base.signum() == 0
+                || baseActual.subtract(base).abs().compareTo(base.multiply(BASELINE_TOLERANCE)) <= 0 ? null
+                : "Emissions measured for " + baseYear + " (" + baseActual.setScale(1, RoundingMode.HALF_UP).toPlainString()
+                        + ") differ from the base value entered (" + base.stripTrailingZeros().toPlainString()
+                        + ") by more than 10%. Check the base value and scope.";
         String status = TargetMath.status(target, expected, current);
         jdbc.update("update carbon.reduction_targets set current_value = ?, progress_pct = ?, status = ?, progress_year = ? where id = ? "
                 + "and (current_value is distinct from ? or progress_pct is distinct from ? or status <> ? or progress_year is distinct from ?)",
@@ -146,7 +159,7 @@ public class TargetService {
                 TargetMath.annualRate(base, target, baseYear, targetYear).movePointRight(2).setScale(2, RoundingMode.HALF_UP),
                 Boolean.TRUE.equals(t.get("sbti_aligned"))
                         ? TargetMath.sbtiFindings(type, scope, base, target, baseYear, targetYear, thisYear) : List.of(),
-                points, ((Number) t.get("version")).longValue());
+                points, ((Number) t.get("version")).longValue(), baselineWarning);
     }
 
     private static void check(TargetRequest r) {
