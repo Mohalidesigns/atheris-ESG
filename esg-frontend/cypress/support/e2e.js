@@ -13,7 +13,14 @@ Cypress.Commands.add('pick', (label, option, { within } = {}) => {
   cy.get('[role="listbox"]').contains('[role="option"]', option).click();
 });
 
-/** Signs in through the login page and waits for the app shell. Default password: the seeded one (config env). */
+/** The current TOTP code for a seeded MFA user (dev-only secrets in cypress.config.js env), or null. */
+Cypress.Commands.add('mfaCode', (email) => cy.env(['mfaSecrets']).then(({ mfaSecrets }) =>
+  (mfaSecrets?.[email] ? cy.task('totp', mfaSecrets[email], { log: false }) : cy.wrap(null))));
+
+/**
+ * Signs in through the login page and waits for the app shell. Default password: the seeded one (config env).
+ * Users with an MFA-required role (S1) get the verification step; the code comes from their seeded dev secret.
+ */
 Cypress.Commands.add('login', (email, password) => {
   const signIn = (secret) => {
     cy.clearCookies(); // an API login (cy.apiToken) leaves a refresh cookie that would restore another session
@@ -21,6 +28,11 @@ Cypress.Commands.add('login', (email, password) => {
     cy.field('Email Address').clear().type(email);
     cy.field('Password').clear().type(secret, { log: false });
     cy.contains('button', 'Sign In').click();
+    cy.mfaCode(email).then((code) => {
+      if (!code) return;
+      cy.field('Verification code').type(code, { log: false });
+      cy.contains('button', 'Verify').click();
+    });
     cy.get('nav[aria-label="Main"]', { timeout: 20000 }).should('be.visible');
   };
   if (password) signIn(password);
@@ -42,9 +54,13 @@ Cypress.Commands.add('uniqueDay', () => {
   return cy.wrap(day.toISOString().slice(0, 10));
 });
 
-/** Signs in through the API and yields a bearer token (for setting up data a journey only needs to look at). */
+/** Signs in through the API (completing MFA where the role needs it) and yields a bearer token. */
 Cypress.Commands.add('apiToken', (email) => cy.env(['password']).then(({ password }) =>
-  cy.request('POST', '/api/v1/auth/login', { email, password }).its('body.data.accessToken')));
+  cy.request('POST', '/api/v1/auth/login', { email, password }).its('body.data').then((data) => {
+    if (data.accessToken) return data.accessToken;
+    return cy.mfaCode(email).then((code) =>
+      cy.request('POST', '/api/v1/auth/mfa/verify', { mfaToken: data.mfaToken, code }).its('body.data.accessToken'));
+  })));
 
 /** Calls the API with a bearer token. */
 Cypress.Commands.add('api', (token, method, url, body) =>

@@ -36,11 +36,11 @@ describe('Journey 29: who changed what on an approved data point', () => {
               cy.visit('/admin');
               cy.contains('[role="tab"]', 'Audit log').click();
               cy.field('Record ID').type(draft.id);
-              cy.contains('td', 'data_hub.data_points').should('exist');
-              cy.contains('tr', 'Adaeze Usman').should('contain', 'update');
-              cy.contains('tr', 'Chidi Okafor').should('contain', 'update');
+              cy.contains('td', 'Data points').should('exist'); // friendly table name (S2)
+              cy.contains('tr', 'Adaeze Usman').should('contain', 'Changed');
+              cy.contains('tr', 'Chidi Okafor').should('contain', 'Changed');
               cy.contains('tr', 'Emeka Nwosu').should('exist');
-              cy.contains('tr', 'insert').find('[aria-label^="Details for insert"]').click();
+              cy.contains('tr', 'Created').find('[aria-label^="Details for insert"]').click();
               cy.get('table[aria-label="Changed fields"]').should('contain', 'numeric_value');
             });
         });

@@ -3,9 +3,9 @@
 | Item | Value |
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
-| Updated | 1 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (branch `feature/wp-23-reporting`, stacked on #10) |
-| Next | **Gate G1 review**; **WP-24** (Executive Dashboard). **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| Updated | 2 October 2026 |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (branch `feature/wp-52a-security-integrity`, stacked on #11) |
+| Next | **Hardening Phase 1** (functional bugs F1–F15), then Phase 2 (UX), Phase 3 (capability), Phase 4 (WP-24 onwards). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -17,8 +17,8 @@
 | BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (22 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 57 at L4**, 20 at L3 | `RTM.csv` |
 | Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **32 / 58** implemented (31 at L4), 26 missing. All code endpoints: **128 / 128 tested** (116 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); 26 Cypress tests on a fresh seeded DB, no retries | `esg-frontend/cypress/` |
-| Test coverage | **Backend 88.5% lines** (633 tests incl. 254 generated round-trip tests; `com.esg.reporting` 91.9%; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 324 tests** (Vitest + RTL) + **26 Cypress** | JaCoCo, Vitest |
+| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 spec (5 tests). **31 Cypress tests** in 15 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
+| Test coverage | **Backend 88.8% lines** (656 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 330 tests** (Vitest + RTL) + **31 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
@@ -300,6 +300,27 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-52a — Hardening Phase 0: security and integrity
+
+Branch `feature/wp-52a-security-integrity` (stacked on WP-23, PR #11). Design: D25. Error codes: `docs/api/ERROR_CODES.md`. Changelog: `CHANGELOG.md`.
+
+| # | Root cause (confirmed in code) | Fix | Tests |
+|---|---|---|---|
+| S1 MFA not enforced | Enforcement existed but `application-local.yml` set `mfa.enforce: false`; tokens didn't say whether the session was MFA-verified | Enforced in every profile; `mfa` token claim + `user_sessions.mfa_verified`; the JWT filter refuses MFA roles without it on every endpoint (`ESG-401-MFA-REQUIRED`); `MFA_DEV_BYPASS` (off, warns, refused in staging/prod); seeded dev TOTP secrets | `AuthFlowIntegrationTest` (2 new), `MfaPolicyTest`, `apiSlice.test.js`, `LoginForm.test.jsx`, Cypress |
+| S2 Settings changes not audited | They *were* audited (trigger, before/after); the Audit log needed the exact table name `auth.tenant_settings` | `GET /audit/resources` + Table dropdown with friendly names; action labels | `AdminChangeAuditTest` (settings, period lock/unlock, roles, modules, resources), `AuditLogTab.test.jsx`, Cypress |
+| S3 Denied actions not audited | The trigger only sees committed writes; refused requests roll back | `DeniedActionAuditor` writes `denied` rows in their own transaction from the exception handler; `ESG-403-SOD`, `ESG-403-ROLE` | `DeniedActionAuditTest` (SoD, locked period, missing permission, tenant isolation, anonymous), Cypress |
+| S4 SUPER ADMIN offered | `/admin/roles` returned every role | Platform roles hidden from non-platform callers; `assignable` flag and `?assignable=true` for the picker; server rule unchanged | `AdminUserApiTest` (picker offers only grantable roles, each one grantable; refusal audited), `AdminPage.test.jsx` |
+| S5 Super admin in tenant list | The platform user is a member of the demo tenant and nothing filtered by role scope | `auth.is_platform_user()`; excluded from lists, lookups (404) and seats | `AdminUserApiTest.platformUsersAreHiddenFromTenantAdmins` |
+| S6 Files stored unscanned | `VirusScanner.NotConfigured` was the only adapter | ClamAV (INSTREAM) adapter + labelled EICAR-only sandbox; quarantine + audit; downloads/imports only when clean; 2-minute rescan of pending files; status in the UI | `FileServiceTest` (4 new), `ClamAvScannerTest`, `FileUpload.test.jsx`, Cypress |
+| S7 Pending factors used silently | Records didn't keep the factor's review status; no tenant choice | `provisional_factor_policy` setting (default allow, flagged); trigger stamps `factor_review_status`; badges in calculator/records; provisional values in the report Data tab, PDF and Excel; `block` → `ESG-409-FACTOR-PENDING` | `CarbonApiTest.tenantCanBlockFactorsPendingReview`, `ReportingApiTest` (snapshot + PDF), `CarbonPage`/`ReportingPage` tests, round-trip spec, Cypress |
+| F12 (pulled in) | The role dialog kept the last refusal on screen | Clears on a new choice | `AdminPage.test.jsx` |
+
+Results: backend `mvn verify` 656 tests, 0 failures (1 S3 skip), 88.8% lines, 0 Checkstyle; frontend 330 tests, lint, build, no-mock gate 0 findings; Cypress 15 specs / 31 tests, retries off.
+
+Open: Playwright vs Cypress; ClamAV hosting in production; TOTP replay protection (D25 (9)).
 
 ---
 
