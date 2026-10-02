@@ -109,7 +109,10 @@ class ComplianceApiTest extends ApiTestSupport {
       assertThat(r.path("missing").asInt()).isEqualTo(leaves);
       assertThat(r.path("overallCompleteness").decimalValue()).isEqualByComparingTo("0");
     }
-    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high).
+    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high) — with no filing due inside 90 days (other
+    // tests, e.g. the dashboard's, may have created one; that would add the +10 deadline bonus).
+    asOwnerInTenantA("update compliance.filing_deadlines set deleted_at = now() where deleted_at is null and framework_id = "
+        + "(select id from compliance.regulatory_frameworks where code = 'CBN_NSBP') and deadline_date <= current_date + 90");
     JsonNode cbn = gaps("CBN_NSBP", 2041);
     assertThat(cbn.path("totalRequirements").asInt()).isEqualTo(9);
     assertThat(requirement(cbn, "P1").path("priorityScore").asInt()).isEqualTo(70);
