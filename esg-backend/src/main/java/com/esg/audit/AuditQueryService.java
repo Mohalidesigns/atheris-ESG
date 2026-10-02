@@ -29,6 +29,55 @@ public class AuditQueryService {
         this.json = json;
     }
 
+    /** Friendly names for the tables the Audit log screen offers (S2); others fall back to "Schema: table name". */
+    private static final java.util.Map<String, String> LABELS = java.util.Map.ofEntries(
+            java.util.Map.entry("auth.tenants", "Tenant"),
+            java.util.Map.entry("auth.tenant_settings", "Tenant settings"),
+            java.util.Map.entry("auth.tenant_module_overrides", "Subscription modules"),
+            java.util.Map.entry("auth.reporting_periods", "Reporting periods (lock/unlock)"),
+            java.util.Map.entry("auth.users", "Users"),
+            java.util.Map.entry("auth.user_roles", "Role assignments"),
+            java.util.Map.entry("auth.roles", "Roles"),
+            java.util.Map.entry("auth.organisations", "Organisations"),
+            java.util.Map.entry("data_hub.data_points", "Data points"),
+            java.util.Map.entry("data_hub.data_sources", "Data sources"),
+            java.util.Map.entry("data_hub.import_jobs", "Imports"),
+            java.util.Map.entry("data_hub.fx_rates", "Exchange rates"),
+            java.util.Map.entry("data_hub.approval_workflows", "Data approval workflows"),
+            java.util.Map.entry("data_hub.approval_steps", "Data approval steps"),
+            java.util.Map.entry("carbon.emission_records", "Emission records"),
+            java.util.Map.entry("carbon.emission_factors", "Custom emission factors"),
+            java.util.Map.entry("carbon.gas_flaring_records", "Gas flaring"),
+            java.util.Map.entry("carbon.reduction_targets", "Reduction targets"),
+            java.util.Map.entry("carbon.energy_instruments", "Energy instruments (REC/PPA)"),
+            java.util.Map.entry("carbon.financed_positions", "Financed emissions (PCAF)"),
+            java.util.Map.entry("compliance.tenant_compliance_status", "Compliance status"),
+            java.util.Map.entry("compliance.filing_deadlines", "Filing deadlines"),
+            java.util.Map.entry("compliance.regulatory_changes", "Regulatory changes"),
+            java.util.Map.entry("reporting.reports", "Reports"),
+            java.util.Map.entry("reporting.report_sections", "Report sections"),
+            java.util.Map.entry("reporting.report_versions", "Report versions"),
+            java.util.Map.entry("reporting.export_jobs", "Report exports"),
+            java.util.Map.entry("files.file_metadata", "Files"),
+            java.util.Map.entry("notifications.user_preferences", "Notification preferences"));
+
+    /** Tables with the audit trigger (partitions folded into their parent), for the screen's filter list. */
+    @Transactional(readOnly = true)
+    public List<AuditDtos.AuditResource> resources() {
+        List<String> tables = jdbc.queryForList("select distinct n.nspname || '.' || c.relname from pg_trigger t "
+                + "join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace "
+                + "where t.tgname = 'audit_log' and not c.relispartition order by 1", String.class);
+        return tables.stream()
+                .map(t -> new AuditDtos.AuditResource(t, LABELS.getOrDefault(t, fallbackLabel(t)), t.substring(0, t.indexOf('.'))))
+                .sorted(java.util.Comparator.comparing(AuditDtos.AuditResource::label))
+                .toList();
+    }
+
+    private static String fallbackLabel(String table) {
+        String name = table.substring(table.indexOf('.') + 1).replace('_', ' ');
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
     /** Filters are optional; results newest first. */
     @Transactional(readOnly = true)
     public AuditPage search(String resource, String action, UUID userId, UUID resourceId, Instant from, Instant to,
@@ -37,7 +86,12 @@ public class AuditQueryService {
         int safePage = Math.max(page, 0);
         StringBuilder where = new StringBuilder(" where 1 = 1");
         List<Object> args = new ArrayList<>();
-        if (resource != null && !resource.isBlank()) { where.append(" and a.resource = ?"); args.add(resource); }
+        if (resource != null && !resource.isBlank()) {
+            // Rows written before V019 carry the partition name (data_hub.data_points_2026): same table for the reader.
+            where.append(" and (a.resource = ? or a.resource like ?)");
+            args.add(resource);
+            args.add(resource.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%") + "\\_%");
+        }
         if (action != null && !action.isBlank()) { where.append(" and a.action = ?"); args.add(action); }
         if (userId != null) { where.append(" and a.user_id = ?"); args.add(userId); }
         if (resourceId != null) { where.append(" and a.resource_id = ?"); args.add(resourceId); }

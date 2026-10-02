@@ -119,18 +119,18 @@ public class VariableEngine {
                 }
                 String basis = "gap analysis " + q[0] + " " + end.getYear();
                 return switch (q[1]) {
-                    case "completeness" -> new VariableValue(num(g.overallCompleteness()) + "%", g.overallCompleteness(), "%", "ok", basis);
-                    case "met" -> new VariableValue(String.valueOf(g.met()), BigDecimal.valueOf(g.met()), null, "ok", basis);
-                    default -> new VariableValue(String.valueOf(g.totalRequirements()), BigDecimal.valueOf(g.totalRequirements()), null, "ok", basis);
+                    case "completeness" -> new VariableValue(num(g.overallCompleteness()) + "%", g.overallCompleteness(), "%", "ok", basis, null);
+                    case "met" -> new VariableValue(String.valueOf(g.met()), BigDecimal.valueOf(g.met()), null, "ok", basis, null);
+                    default -> new VariableValue(String.valueOf(g.totalRequirements()), BigDecimal.valueOf(g.totalRequirements()), null, "ok", basis, null);
                 };
             }
             case "report" -> {
                 String text = "title".equals(p[1]) ? title : DAY.format(start) + " to " + DAY.format(end);
-                return new VariableValue(text, null, null, "ok", "report");
+                return new VariableValue(text, null, null, "ok", "report", null);
             }
             case "tenant" -> {
                 String name = jdbc.queryForObject("select name from auth.tenants where id = auth.current_tenant_id()", String.class);
-                return new VariableValue(name, null, null, "ok", "tenant");
+                return new VariableValue(name, null, null, "ok", "tenant", null);
             }
             default -> {
                 return missing("unknown variable");
@@ -158,7 +158,7 @@ public class VariableEngine {
                         + where + ")", BigDecimal.class, key, Date.valueOf(start), Date.valueOf(end), key, Date.valueOf(start), Date.valueOf(end))
                 : jdbc.queryForObject("select sum(numeric_value) " + where, BigDecimal.class, args);
         String display = num(value) + (unit == null || "count".equals(unit) ? "" : "%".equals(unit) ? "%" : " " + unit);
-        return new VariableValue(display, value, unit, "ok", n + " approved data point" + (n == 1 ? "" : "s") + (latest ? ", latest period" : ""));
+        return new VariableValue(display, value, unit, "ok", n + " approved data point" + (n == 1 ? "" : "s") + (latest ? ", latest period" : ""), null);
     }
 
     private VariableValue carbon(String key, LocalDate start, LocalDate end) {
@@ -169,14 +169,20 @@ public class VariableEngine {
             case "flaring" -> "record_source = 'flaring'";
             default -> "true";
         };
-        Map<String, Object> r = jdbc.queryForMap("select count(*) as n, coalesce(sum(co2e_tonnes), 0) as t from carbon.emission_records "
+        Map<String, Object> r = jdbc.queryForMap("select count(*) as n, coalesce(sum(co2e_tonnes), 0) as t, "
+                + "count(*) filter (where factor_review_status = 'pending_sme') as p, "
+                + "coalesce(sum(co2e_tonnes) filter (where factor_review_status = 'pending_sme'), 0) as pt from carbon.emission_records "
                 + "where deleted_at is null and reporting_period_end between ? and ? and " + filter, Date.valueOf(start), Date.valueOf(end));
         long n = ((Number) r.get("n")).longValue();
         if (n == 0) {
             return missing("no emission records in the period");
         }
         BigDecimal t = ((BigDecimal) r.get("t")).setScale(3, RoundingMode.HALF_UP);
-        return new VariableValue(num(t) + " tCO2e", t, "tCO2e", "ok", n + " emission record" + (n == 1 ? "" : "s"));
+        long p = ((Number) r.get("p")).longValue();
+        // S7: figures resting on factors still pending expert review are marked provisional.
+        String provisional = p == 0 ? null : p + " of " + n + " record" + (n == 1 ? "" : "s") + " ("
+                + num(((BigDecimal) r.get("pt")).setScale(3, RoundingMode.HALF_UP)) + " tCO2e) use emission factors pending expert review";
+        return new VariableValue(num(t) + " tCO2e", t, "tCO2e", "ok", n + " emission record" + (n == 1 ? "" : "s"), provisional);
     }
 
     /** Replaces each variable with its snapshot display value ("[not reported]" when missing). */
@@ -196,7 +202,7 @@ public class VariableEngine {
     }
 
     private static VariableValue missing(String why) {
-        return new VariableValue("[not reported]", null, null, "missing", why);
+        return new VariableValue("[not reported]", null, null, "missing", why, null);
     }
 
     /** 1234567.5 → "1,234,567.5" (up to 3 decimals; no trailing zeros). */

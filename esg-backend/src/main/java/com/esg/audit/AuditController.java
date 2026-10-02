@@ -36,6 +36,13 @@ public class AuditController {
         return ResponseEntity.ok(ApiResponse.ok(service.search(resource, action, userId, resourceId, from, to, page, size)));
     }
 
+    /** The audited tables, with friendly names, for the Audit log screen's Table filter (S2). */
+    @GetMapping("/resources")
+    @PreAuthorize("hasAuthority('audit_logs:read')")
+    public ResponseEntity<ApiResponse<java.util.List<AuditDtos.AuditResource>>> resources() {
+        return ResponseEntity.ok(ApiResponse.ok(service.resources()));
+    }
+
     @GetMapping("/lineage")
     @PreAuthorize("hasAuthority('audit_logs:read')")
     public ResponseEntity<ApiResponse<AuditDtos.Lineage>> lineage(@RequestParam String type, @RequestParam UUID id) {

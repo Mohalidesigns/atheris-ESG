@@ -55,7 +55,9 @@ public final class ReportingDtos {
     public record GenerateRequest(@NotBlank @Pattern(regexp = "^(pdf|xlsx)$", message = "must be pdf or xlsx") String format) {}
 
     /** One resolved template variable, frozen in the report's snapshot. */
-    public record VariableValue(String display, java.math.BigDecimal value, String unit, String status, String basis) {}
+    /** @param provisional set when the value rests on emission factors still pending expert review (S7) */
+    public record VariableValue(String display, java.math.BigDecimal value, String unit, String status, String basis,
+                                String provisional) {}
 
     public record Section(UUID id, String title, String type, String content, String rendered, int sortOrder) {}
 

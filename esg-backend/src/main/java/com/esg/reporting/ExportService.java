@@ -118,7 +118,7 @@ public class ExportService {
 
             Sheet data = wb.createSheet("Data");
             Row h = data.createRow(0);
-            String[] cols = {"Variable", "Reported", "Value", "Unit", "Status", "Basis"};
+            String[] cols = {"Variable", "Reported", "Value", "Unit", "Status", "Basis", "Provisional"};
             for (int i = 0; i < cols.length; i++) {
                 h.createCell(i).setCellValue(cols[i]);
                 h.getCell(i).setCellStyle(head);
@@ -135,6 +135,7 @@ public class ExportService {
                 row.createCell(3).setCellValue(val.unit() == null ? "" : val.unit());
                 row.createCell(4).setCellValue(val.status());
                 row.createCell(5).setCellValue(val.basis() == null ? "" : val.basis());
+                row.createCell(6).setCellValue(val.provisional() == null ? "" : val.provisional());
             }
             for (int c = 0; c < cols.length; c++) {
                 data.autoSizeColumn(c);
@@ -163,8 +164,10 @@ public class ExportService {
     }
 
     private static List<Map<String, String>> dataRows(Map<String, VariableValue> snapshot) {
+        // S7: a provisional value says so next to its basis.
         return snapshot.entrySet().stream().map(e -> Map.of("variable", e.getKey(), "display", e.getValue().display(),
-                "basis", e.getValue().basis() == null ? "" : e.getValue().basis())).toList();
+                "basis", (e.getValue().basis() == null ? "" : e.getValue().basis())
+                        + (e.getValue().provisional() == null ? "" : " — PROVISIONAL: " + e.getValue().provisional()))).toList();
     }
 
     private String tenant() {

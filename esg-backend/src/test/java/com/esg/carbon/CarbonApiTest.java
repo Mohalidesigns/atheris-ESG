@@ -70,6 +70,26 @@ class CarbonApiTest extends ApiTestSupport {
   }
 
   @Test
+  void tenantCanBlockFactorsPendingReview() throws Exception {
+    // S7: with "block", a factor pending SME review can't be used (calculator, preview); custom factors still can.
+    asOwnerInTenantA("update auth.tenant_settings set provisional_factor_policy = 'block'");
+    try {
+      String body = "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"heavy_fuel_oil\","
+          + "\"activityData\":10,\"reportingPeriodStart\":\"2026-08-16\",\"reportingPeriodEnd\":\"2026-08-16\"}";
+      postJson("/v1/carbon/emissions/preview", body)
+          .andExpect(status().isConflict())
+          .andExpect(jsonPath("$.errorCode").value("ESG-409-FACTOR-PENDING"))
+          .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("pending expert review")));
+      postJson("/v1/carbon/emissions", body).andExpect(status().isConflict());
+      // The refusal is audited (S3).
+      mvc.perform(get("/v1/audit/logs?action=denied&resource=POST /v1/carbon/emissions").header("Authorization", director()))
+          .andExpect(jsonPath("$.data.content[0].newValue.errorCode").value("ESG-409-FACTOR-PENDING"));
+    } finally {
+      asOwnerInTenantA("update auth.tenant_settings set provisional_factor_policy = 'allow_flagged'");
+    }
+  }
+
+  @Test
   void previewCalculatesWithoutSaving() throws Exception {
     String body = "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"heavy_fuel_oil\","
         + "\"activityData\":1000,\"reportingPeriodStart\":\"2026-08-15\",\"reportingPeriodEnd\":\"2026-08-15\"}";
@@ -78,6 +98,7 @@ class CarbonApiTest extends ApiTestSupport {
     assertThat(p.path("perGas").asBoolean()).isTrue();
     assertThat(p.path("activityUnit").asText()).isEqualTo("litre");
     assertThat(p.path("factor").path("source").asText()).startsWith("IPCC 2006");
+    assertThat(p.path("factor").path("reviewStatus").asText()).isEqualTo("pending_sme");
     JsonNode list = data(mvc.perform(get("/v1/carbon/emissions?from=2026-08-15&to=2026-08-15").header("Authorization", director())));
     for (JsonNode r : list.path("content")) {
       assertThat(r.path("sourceActivity").asText()).isNotEqualTo("heavy_fuel_oil");
@@ -155,6 +176,8 @@ class CarbonApiTest extends ApiTestSupport {
     JsonNode lpg = emission("{\"orgId\":\"" + ORG_SITE_2 + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"lpg\",\"activityData\":100," + p + "}");
     assertThat(lpg.path("factor").path("level").asText()).isEqualTo("global");
     assertThat(lpg.path("co2eTonnes").decimalValue()).isEqualByComparingTo("0.298733");
+    // S7: platform factors are still pending expert review, so the record is provisional.
+    assertThat(lpg.path("factor").path("reviewStatus").asText()).isEqualTo("pending_sme");
 
     // A tenant factor for LPG in Nigeria now applies: recalculation switches to it and says so.
     postJson("/v1/carbon/factors", "{\"region\":\"NG\",\"category\":\"lpg\",\"factorValue\":3.1,\"unit\":\"kgCO2e/kg\","
@@ -164,6 +187,7 @@ class CarbonApiTest extends ApiTestSupport {
     JsonNode after = data(mvc.perform(get("/v1/carbon/emissions/" + lpg.path("id").asText()).header("Authorization", director())));
     assertThat(after.path("factor").path("level").asText()).isEqualTo("custom");
     assertThat(after.path("co2eTonnes").decimalValue()).isEqualByComparingTo("0.31");
+    assertThat(after.path("factor").path("reviewStatus").asText()).isEqualTo("tenant_provided");
 
     // Verified records are left alone.
     mvc.perform(put("/v1/carbon/emissions/" + lpg.path("id").asText() + "/verify").header("Authorization", director())

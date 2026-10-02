@@ -62,8 +62,9 @@ esg:
     # Refresh-token cookie is Secure (HTTPS only) everywhere except local development.
     cookie-secure: true
     mfa:
-      # TOTP is mandatory for roles flagged mfa_required (SUPER_ADMIN, TENANT_ADMIN, ESG_DIRECTOR; TRD/WP-12).
-      enforce: true
+      # TOTP is mandatory for roles flagged mfa_required (SUPER_ADMIN, TENANT_ADMIN, ESG_DIRECTOR; TRD/WP-12, S1) in
+      # every profile. dev-bypass skips it for local experiments only: logs a startup warning; refused in staging/prod.
+      dev-bypass: ${MFA_DEV_BYPASS:false}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   files:
@@ -71,6 +72,16 @@ esg:
     local-dir: ${FILES_LOCAL_DIR:./var/files}
     max-bytes: 52428800                    # 50 MB (TRD §6.6.4)
     presign-ttl: PT10M
+    # Virus scanning (S6): clamav (clamd INSTREAM over TCP; required in staging/prod) | sandbox (local/test, EICAR only).
+    scanner: ${FILES_SCANNER:clamav}
+    clamav:
+      host: ${CLAMAV_HOST:localhost}
+      port: ${CLAMAV_PORT:3310}
+      timeout-ms: 30000
+    rescan:
+      # Files left pending (scanner unreachable at upload) are retried on this schedule.
+      enabled: true
+      interval-ms: 120000
     s3:
       endpoint: ${S3_ENDPOINT:}            # empty = AWS; http://localhost:9000 for MinIO
       region: ${S3_REGION:af-south-1}

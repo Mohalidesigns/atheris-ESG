@@ -50,8 +50,12 @@ public final class CarbonDtos {
         }
     }
 
+    /**
+     * @param reviewStatus the factor's review status when it was used (S7): pending_sme means the figure is
+     *                     provisional; sme_verified; tenant_provided (custom factors)
+     */
     public record FactorUsed(UUID id, String version, BigDecimal value, String unit, String level, String source,
-                             String category, String region) {}
+                             String category, String region, String reviewStatus) {}
 
     public record EmissionResponse(UUID id, UUID orgId, String orgName, String scope, Integer scope3Category, String sourceActivity,
                                    BigDecimal activityData, String activityUnit, String calculationMethod, BigDecimal spendAmount,

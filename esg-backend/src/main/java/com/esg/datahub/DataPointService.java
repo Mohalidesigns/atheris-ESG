@@ -204,7 +204,7 @@ public class DataPointService {
         UUID user = CurrentUser.access().userId();
         notOwnData(dp, user, "approve");
         if (user.equals(dp.getValidatedBy())) {
-            throw ApiException.forbidden("The approver must be someone other than the validator");
+            throw ApiException.forbidden("ESG-403-SOD", "The approver must be someone other than the validator");
         }
         dp.setValidationStatus(APPROVED);
         dp.setApprovedBy(user);
@@ -398,7 +398,7 @@ public class DataPointService {
 
     private static void notOwnData(DataPoint dp, UUID user, String verb) {
         if (user.equals(dp.getCreatedBy()) || user.equals(dp.getSubmittedBy())) {
-            throw ApiException.forbidden("You can't " + verb + " a data point you created or submitted");
+            throw ApiException.forbidden("ESG-403-SOD", "You can't " + verb + " a data point you created or submitted");
         }
     }
 

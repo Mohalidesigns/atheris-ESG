@@ -22,7 +22,8 @@
       "GRI",
       "TCFD"
     ],
-    "gwpSet": "AR5"
+    "gwpSet": "AR5",
+    "provisionalFactorPolicy": "block"
   },
   "changes": {
     "baseCurrency": "ZAR",
@@ -31,7 +32,8 @@
     "defaultFrameworkCodes": [
       "ISSB_S2"
     ],
-    "gwpSet": "AR6"
+    "gwpSet": "AR6",
+    "provisionalFactorPolicy": "allow_flagged"
   },
   "invalid": [
     {
@@ -65,6 +67,11 @@
       "field": "gwpSet",
       "value": "AR4",
       "rule": "AR5 or AR6"
+    },
+    {
+      "field": "provisionalFactorPolicy",
+      "value": "maybe",
+      "rule": "allow_flagged or block"
     }
   ],
   "ui": {
@@ -94,6 +101,11 @@
         "label": "Global warming potentials",
         "kind": "select",
         "display": "IPCC AR5 (CH4 28, N2O 265)"
+      },
+      "provisionalFactorPolicy": {
+        "label": "Emission factors pending expert review",
+        "kind": "select",
+        "display": "Block: use only verified or your own factors"
       }
     }
   }

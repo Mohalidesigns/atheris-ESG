@@ -141,7 +141,8 @@ public class EmissionService {
         Calculation c = calculate(r);
         EmissionFactor f = c.factor();
         return new CarbonDtos.Preview(c.activity(), c.unit(), c.spendAmount(), c.spendCurrency(), c.fxRate(),
-                new FactorUsed(f.id(), f.factorVersion(), f.factorValue(), f.unit(), c.level(), f.source(), f.category(), f.region()),
+                new FactorUsed(f.id(), f.factorVersion(), f.factorValue(), f.unit(), c.level(), f.source(), f.category(), f.region(),
+                        f.verificationStatus()),
                 c.result().gwpSet(), c.result().perGas(), c.result().co2eTonnes(), c.result().co2Tonnes(), c.result().ch4Tonnes(),
                 c.result().n2oTonnes());
     }
@@ -223,8 +224,9 @@ public class EmissionService {
             ResolvedFactor resolved;
             try {
                 resolved = factors.resolve((String) row.get("source_activity"), country(orgId), end, null);
+                requireUsable(resolved.factor());
             } catch (ApiException e) {
-                continue; // no factor applies any more: leave the record as calculated
+                continue; // no (usable) factor applies any more: leave the record as calculated
             }
             BigDecimal activity = (BigDecimal) row.get("activity_data");
             EmissionEngine.Result result = EmissionEngine.calculate(activity, resolved.factor(), gwp);
@@ -274,6 +276,11 @@ public class EmissionService {
             resolved = factors.resolve(activity, country(orgId), end, null);
         } catch (ApiException e) {
             return; // no factor for this activity here: the point stays in the Data Hub, nothing is invented
+        }
+        try {
+            requireUsable(resolved.factor());
+        } catch (ApiException e) {
+            return; // the tenant blocks provisional factors: no record until a reviewed or custom factor exists
         }
         BigDecimal amount = (BigDecimal) p.get("numeric_value");
         EmissionEngine.Result result = EmissionEngine.calculate(amount, resolved.factor(), gwp());
@@ -437,6 +444,7 @@ public class EmissionService {
             factor = resolved.factor();
             level = level(resolved.level());
         }
+        requireUsable(factor);
         if (spend != "spend".equals(factor.factorMethod())) {
             throw FieldValidationException.of(r.emissionFactorId() != null ? "emissionFactorId" : "sourceActivity",
                     spend ? "needs a spend-based factor (kgCO2e per currency unit)" : "has a spend-based factor; use the spend-based method");
@@ -525,6 +533,24 @@ public class EmissionService {
         };
     }
 
+    /**
+     * S7: a factor still pending SME review may be used (the record is flagged provisional) unless the tenant set
+     * provisional factors to "block".
+     */
+    private void requireUsable(EmissionFactor factor) {
+        if (!"pending_sme".equals(factor.verificationStatus())) {
+            return;
+        }
+        String policy = jdbc.query("select provisional_factor_policy from auth.tenant_settings", (rs, i) -> rs.getString(1))
+                .stream().findFirst().orElse("allow_flagged");
+        if ("block".equals(policy)) {
+            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "ESG-409-FACTOR-PENDING",
+                    "The " + factor.category() + " factor (" + factor.source() + ") is still pending expert review, and your "
+                            + "organisation blocks provisional factors (Administration → Settings). Add a custom factor or ask an "
+                            + "administrator.");
+        }
+    }
+
     private static BigDecimal scale(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v.setScale(6, RoundingMode.HALF_UP);
     }
@@ -538,7 +564,7 @@ public class EmissionService {
         FactorUsed factor = factorId == null ? null : new FactorUsed(factorId, rs.getString("factor_version"),
                 rs.getBigDecimal("factor_value") == null ? null : rs.getBigDecimal("factor_value").stripTrailingZeros(),
                 rs.getString("factor_unit"), rs.getString("factor_level"), rs.getString("factor_source"),
-                rs.getString("factor_category"), rs.getString("factor_region"));
+                rs.getString("factor_category"), rs.getString("factor_region"), rs.getString("factor_review_status"));
         Timestamp calculated = rs.getTimestamp("calculated_at");
         return new EmissionResponse(rs.getObject("id", UUID.class), rs.getObject("org_id", UUID.class), rs.getString("org_name"),
                 rs.getString("scope"), (Integer) rs.getObject("scope3_category"), rs.getString("source_activity"),

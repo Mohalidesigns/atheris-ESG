@@ -10,13 +10,14 @@ esg:
     jwt-secret: ${JWT_SECRET:local-dev-only-signing-key-not-for-any-shared-environment-0123456789abcdef}
     data-encryption-key: ${DATA_ENCRYPTION_KEY:YS0bCdEHVNXWPBZwaz5BaQrw7vGZoHjF+yTlWjZMnFw=}
     cookie-secure: false   # plain http://localhost
-    mfa:
-      enforce: false       # local convenience; users can still opt in. Enforced in every other profile.
+    # MFA is enforced locally too (S1). Seeded admin/director accounts have known dev-only TOTP secrets (db/seed/README.md).
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
 
   files:
     storage: ${FILES_STORAGE:filesystem}   # MinIO via docker compose: FILES_STORAGE=s3 S3_ENDPOINT=http://localhost:9000
+    # Sandbox scanner (EICAR only, labelled in the UI) unless you run ClamAV: FILES_SCANNER=clamav CLAMAV_HOST=localhost
+    scanner: ${FILES_SCANNER:sandbox}
     s3:
       create-bucket: true
 

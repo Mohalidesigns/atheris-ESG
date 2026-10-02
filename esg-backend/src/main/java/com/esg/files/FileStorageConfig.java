@@ -34,9 +34,23 @@ public class FileStorageConfig {
         return s3;
     }
 
+    /** {@code esg.files.scanner}: clamav (required in staging/prod) or sandbox (local/test only; S6). */
     @Bean
     @ConditionalOnMissingBean
-    VirusScanner virusScanner() {
-        return new VirusScanner.NotConfigured();
+    VirusScanner virusScanner(@Value("${esg.files.scanner}") String scanner,
+                              @Value("${esg.files.clamav.host:localhost}") String host,
+                              @Value("${esg.files.clamav.port:3310}") int port,
+                              @Value("${esg.files.clamav.timeout-ms:30000}") int timeoutMs,
+                              org.springframework.core.env.Environment env) {
+        return switch (scanner) {
+            case "clamav" -> new ClamAvScanner(host, port, timeoutMs);
+            case "sandbox" -> {
+                if (java.util.Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.equals("prod") || p.equals("staging"))) {
+                    throw new IllegalStateException("esg.files.scanner=sandbox is for local/test only; use clamav");
+                }
+                yield new SandboxVirusScanner();
+            }
+            default -> throw new IllegalStateException("esg.files.scanner must be 'clamav' or 'sandbox'");
+        };
     }
 }
