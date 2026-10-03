@@ -30,7 +30,7 @@ class RlsIsolationTest {
 
   private static final String BUSINESS_SCHEMAS =
       "'auth','data_hub','carbon','compliance','reporting','risk','supply_chain','social',"
-          + "'governance','analytics','investor','carbon_market','training','audit','files','notifications'";
+          + "'governance','analytics','investor','carbon_market','training','ai','audit','files','notifications'";
 
   /** Tables with a tenant_id column, excluding partitions (covered through their parent) and the login lookup. */
   private static List<String> tenantTables() throws SQLException {

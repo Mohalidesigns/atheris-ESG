@@ -33,6 +33,8 @@ export default defineConfig({
     env: {
       // Seeded local demo password (README "Run locally in 5 minutes"); a test value for the local seed only.
       password: process.env.E2E_PASSWORD || 'LocalDev!2026',
+      // WP-50: set by scripts/e2e.sh when Ollama serves the Granite model, so the extraction journey can run for real.
+      aiLlm: process.env.E2E_AI_LLM === 'true',
       // Dev-only TOTP secrets of the seeded MFA-required users (db/seed/README.md; S1). Local seed only.
       mfaSecrets: {
         'adaeze.usman@esgpro.ng': 'ATHERISLOCALDEVDIRECTORTOTPAAAAA',

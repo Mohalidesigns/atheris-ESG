@@ -184,5 +184,17 @@
   ],
   "Certificate revocation": [
     "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "AI forecast": [
+    "com.esg.ai.AiApiTest#forecastsComeFromTheTenantsHistoryAndAreRecordedLabelledAndDismissable"
+  ],
+  "AI forecast dismissal": [
+    "com.esg.ai.AiApiTest#forecastsComeFromTheTenantsHistoryAndAreRecordedLabelledAndDismissable"
+  ],
+  "ML anomaly scan": [
+    "com.esg.ai.AiApiTest#isolationForestFindingsJoinTheAnomalyWorkflowLabelledAsAi"
+  ],
+  "Extracted value acceptance": [
+    "com.esg.ai.AiApiTest#extractedValuesReachTheDataHubOnlyWhenAPersonAcceptsThem"
   ]
 }

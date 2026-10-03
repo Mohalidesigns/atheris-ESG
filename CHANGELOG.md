@@ -3,6 +3,14 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-50 Grounded AI (D38)
+
+- AI service (Python, FastAPI) behind an adapter; IBM Granite through Ollama reads reports. When it isn't running, AI features say so and nothing is estimated instead (ESG-503-AI-UNAVAILABLE).
+- Emission and metric forecasts: ARIMA or a linear trend on your own history, with an uncertainty band and a back-test of how well the method predicted recent periods; each forecast records the model and the exact history used and can be dismissed with a reason.
+- Machine-learning scan: an Isolation Forest flags values that stand out across sites and years; its flags are labelled AI-generated and are explained or dismissed like any other flag.
+- Report extraction: upload a sustainability report and get catalogue values with the page and exact quote they come from; values whose quote or number can't be found on the page are discarded; nothing enters the Data Hub until a person accepts a value (correcting it if needed), and it then starts as a draft.
+- Settings › Integrations shows the AI service's status. Every AI result is marked AI-generated with the engine that produced it.
+
 ## Unreleased — WP-42 Training & Capacity Building (D37)
 
 - Courses written by each organisation (nothing is shipped): modules as text, PDF or a video link, a multiple-choice quiz and a pass mark; drafts are published, retired or copied to revise them, and published content can't change.

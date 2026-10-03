@@ -6,7 +6,8 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, Link, MenuItem, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Close, ManageSearch, Tune } from '@mui/icons-material';
+import { AutoAwesome, Close, ManageSearch, Tune } from '@mui/icons-material';
+import AiChip from '../../../components/feedback/AiChip';
 import Can from '../../../components/rbac/Can';
 import FileUpload from '../../../components/files/FileUpload';
 import { FormTextField } from '../../../components/form/FormFields';
@@ -16,6 +17,8 @@ import { ActionBar, StepDialog } from '../../social/components/shared';
 import {
   useAnalyticsSettingsQuery, useAnomaliesQuery, useAnomalyActionMutation, useScanAnomaliesMutation, useUpdateAnalyticsSettingsMutation,
 } from '../analyticsApi';
+import { useMlScanMutation } from '../aiApi';
+import { scanSchema } from '../aiSchemas';
 import {
   ANOMALY_ACTIONS, ANOMALY_KINDS, ANOMALY_STATUS, METHODS, explainSchema, fmt, problemText, settingsSchema, toSettingsBody, toSettingsForm,
 } from '../schemas';
@@ -165,7 +168,43 @@ function AnomalyDrawer({ anomaly: a, onClose }) {
   );
 }
 
-/** Statistical anomaly flags and variance explanations (D34 (2)–(3)). */
+/** WP-50 (D38 (3)): an Isolation Forest pass over five years of values; what it isolates in the year becomes AI-labelled flags. */
+function MlScanDialog({ year, onClose }) {
+  const [scanMl, m] = useMlScanMutation();
+  const [formError, setFormError] = useState('');
+  const { control, handleSubmit, setError } = useForm({ defaultValues: { contaminationPct: '5' }, resolver: zodResolver(scanSchema) });
+  const submit = handleSubmit(async (v) => {
+    setFormError('');
+    try {
+      const r = await scanMl({ year, contaminationPct: Number(v.contaminationPct) }).unwrap();
+      onClose({ severity: 'success', text: `Isolation Forest: ${r.pointsScored} values of ${r.metricsScanned} metrics scored; ${r.flagged} isolated in ${year} `
+        + `(${r.newFlags} new). Metrics with fewer than 8 values were skipped.` });
+    } catch (err) {
+      setFormError(applyProblem(err, setError, { knownFields: ['contaminationPct'] }));
+    }
+  });
+  return (
+    <Dialog open onClose={() => onClose()} maxWidth="xs" fullWidth>
+      <form onSubmit={submit} noValidate>
+        <DialogTitle>Machine-learning scan of {year}</DialogTitle>
+        <DialogContent>
+          {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            An Isolation Forest model looks at every submitted and approved value of the last five years, per metric across sites. Values it isolates are
+            flagged as AI-generated, for someone to explain or dismiss like any other flag.
+          </Typography>
+          <FormTextField control={control} name="contaminationPct" label="Share of values expected to be unusual (%)" inputMode="numeric" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose()}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={m.isLoading}>{m.isLoading ? 'Scanning…' : 'Run scan'}</Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
+
+/** Statistical anomaly flags and variance explanations (D34 (2)–(3)), and AI flags from the Isolation Forest (D38 (3)). */
 export default function AnomaliesTab({ year }) {
   const [status, setStatus] = useState('');
   const [kind, setKind] = useState('');
@@ -176,6 +215,7 @@ export default function AnomaliesTab({ year }) {
   const [result, setResult] = useState(null);
   const [open, setOpen] = useState(null);
   const [tuning, setTuning] = useState(false);
+  const [ml, setMl] = useState(false);
   const runScan = async () => {
     try {
       const r = await scan(year).unwrap();
@@ -208,6 +248,7 @@ export default function AnomaliesTab({ year }) {
           <Button size="small" startIcon={<Tune />} onClick={() => setTuning(true)} disabled={!settings}>Sensitivity</Button>
         </Can>
         <Can permission="analytics:create">
+          <Button size="small" startIcon={<AutoAwesome />} onClick={() => setMl(true)}>ML scan (AI)</Button>
           <Button size="small" variant="contained" startIcon={<ManageSearch />} onClick={runScan} disabled={sc.isLoading}>Scan {year}</Button>
         </Can>
       </Box>
@@ -230,7 +271,8 @@ export default function AnomaliesTab({ year }) {
                 <TableBody>
                   {data.map((a) => (
                     <TableRow key={a.id} hover>
-                      <TableCell sx={{ fontWeight: 600 }}>{a.metricName}<Typography variant="caption" display="block" color="text.secondary">{ANOMALY_KINDS[a.kind]}</Typography></TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>{a.metricName}<Typography variant="caption" display="block" color="text.secondary">{ANOMALY_KINDS[a.kind]}</Typography>
+                        {a.aiGenerated && <AiChip engine="the Isolation Forest model" sx={{ mt: 0.5 }} />}</TableCell>
                       <TableCell>{a.orgName}</TableCell>
                       <TableCell>{a.periodStart} – {a.periodEnd}</TableCell>
                       <TableCell align="right">{fmt(a.value)} {a.unit}</TableCell>
@@ -249,6 +291,7 @@ export default function AnomaliesTab({ year }) {
       )}
       {open && <AnomalyDrawer anomaly={data?.find((x) => x.id === open.id) ?? open} onClose={() => setOpen(null)} />}
       {tuning && settings && <SensitivityDialog settings={settings} onClose={() => setTuning(false)} />}
+      {ml && <MlScanDialog year={year} onClose={(text) => { setMl(false); if (text) setResult(text); }} />}
     </>
   );
 }

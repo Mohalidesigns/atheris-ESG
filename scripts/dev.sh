@@ -138,6 +138,15 @@ PIDS=()
 cleanup() { log "Stopping"; for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null || true; done; }
 trap cleanup EXIT INT TERM
 
+# WP-50: the AI service, when its virtualenv exists (the backend's local profile points at :8090 with a dev-only token).
+if [[ -x "$ROOT/esg-ai/.venv/bin/uvicorn" ]]; then
+  log "Starting AI service on http://localhost:8090 (Ollama: ${OLLAMA_URL:-http://localhost:11434}, model ${OLLAMA_MODEL:-granite4:micro})"
+  (cd "$ROOT/esg-ai" && ESG_AI_TOKEN="${ESG_AI_TOKEN:-local-dev-ai-token}" .venv/bin/uvicorn app.main:app --port 8090) &
+  PIDS+=($!)
+else
+  log "AI service not started: create esg-ai/.venv (see esg-ai/README.md); AI features will say the service isn't running"
+fi
+
 log "Starting backend (profile: local) on http://localhost:8080/api"
 (cd "$ROOT/esg-backend" && ./mvnw -q spring-boot:run -Dspring-boot.run.profiles=local) &
 PIDS+=($!)

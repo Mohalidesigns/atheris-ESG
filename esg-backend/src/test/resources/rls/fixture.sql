@@ -205,6 +205,11 @@ insert into training.quiz_attempts (enrollment_id, answers, score, passed) value
 insert into training.certificates (enrollment_id, user_id, course_id, code, holder_name, course_title, score, issued_on)
   values ('a0000000-0000-4000-8000-000000000802', 'a0000000-0000-4000-8000-0000000000a1', 'a0000000-0000-4000-8000-000000000801', 'FXTRAAAAAA',
           'Fixture User', 'Fixture ESG basics', 100, '2026-03-01');
+-- WP-50 AI (one row per tenant table for the RLS suite): an extraction run over the fixture file and one proposed value.
+insert into ai.runs (id, kind, status, engine, parameters, input_summary, output, file_id, completed_at)
+  values ('a0000000-0000-4000-8000-000000000901', 'extraction', 'completed', 'fixture engine', '{}', '{}', '{}', 'a0000000-0000-4000-8000-0000000004f1', now());
+insert into ai.extracted_values (run_id, page, metric_key, value, unit, quote, confidence)
+  values ('a0000000-0000-4000-8000-000000000901', 1, 'electricity_kwh', 1000, 'kWh', 'Fixture electricity use was 1000 kWh.', 'high');
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');

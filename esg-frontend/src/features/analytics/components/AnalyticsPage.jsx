@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Alert, Box, Grid, MenuItem, Tab, Tabs, TextField } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../../components/states/States';
@@ -7,12 +8,15 @@ import { useAnalyticsOverviewQuery } from '../analyticsApi';
 import { lagosYear } from '../schemas';
 import AnomaliesTab from './AnomaliesTab';
 import BenchmarksTab from './BenchmarksTab';
+import ExtractionTab from './ExtractionTab';
+import ForecastsTab from './ForecastsTab';
 import KpisTab from './KpisTab';
 import MaturityTab from './MaturityTab';
 import SdgTab from './SdgTab';
 
 // no-mock-gate: config — tabs and their ?tab= keys
-const TABS = [['anomalies', 'Anomalies'], ['kpis', 'KPIs'], ['benchmarks', 'Benchmarks'], ['maturity', 'Maturity'], ['sdg', 'SDG alignment']];
+const TABS = [['anomalies', 'Anomalies'], ['kpis', 'KPIs'], ['benchmarks', 'Benchmarks'], ['maturity', 'Maturity'], ['sdg', 'SDG alignment'],
+  ['forecasts', 'Forecasts (AI)'], ['extraction', 'Report extraction (AI)', 'data_points:create']];
 
 function Overview({ year }) {
   const { data: o } = useAnalyticsOverviewQuery(year);
@@ -26,11 +30,14 @@ function Overview({ year }) {
   );
 }
 
-/** M9 Analytics (WP-35, D34): anomaly flags, KPIs, benchmarks, maturity, SDG alignment. Rules and statistics only. */
+/** M9 Analytics (WP-35, D34; WP-50, D38): rules and statistics first, then labelled AI forecasts, ML flags and report extraction. */
 export default function AnalyticsPage() {
   const [params] = useSearchParams();
   const thisYear = lagosYear();
-  const [tab, setTab] = useState(Math.max(0, TABS.findIndex(([k]) => k === params.get('tab'))));
+  const permissions = useSelector((st) => st.auth.user?.permissions) ?? [];
+  const tabs = TABS.filter(([, , needs]) => !needs || permissions.includes(needs));
+  const [tab, setTab] = useState(Math.max(0, tabs.findIndex(([k]) => k === params.get('tab'))));
+  const key = tabs[tab]?.[0];
   const [year, setYear] = useState(Number(params.get('year')) || thisYear);
   const years = Array.from({ length: 8 }, (_, i) => thisYear - i);
   return (
@@ -42,17 +49,20 @@ export default function AnalyticsPage() {
           </TextField>
         )} />
       <Alert severity="info" sx={{ mb: 2 }}>
-        Everything here is calculated from your own records with published statistical rules. Forecasts and machine-learning models are not part of this release.
+        Figures are calculated from your own records with published statistical rules. Forecasts, machine-learning flags and values read from reports are
+        marked AI-generated, show what produced them, and are only used once a person has checked them.
       </Alert>
       <Overview year={year} />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
-        {TABS.map(([k, l]) => <Tab key={k} label={l} />)}
+        {tabs.map(([k, l]) => <Tab key={k} label={l} />)}
       </Tabs>
-      {tab === 0 && <AnomaliesTab year={year} />}
-      {tab === 1 && <KpisTab />}
-      {tab === 2 && <BenchmarksTab year={year} />}
-      {tab === 3 && <MaturityTab year={year} />}
-      {tab === 4 && <SdgTab year={year} />}
+      {key === 'anomalies' && <AnomaliesTab year={year} />}
+      {key === 'kpis' && <KpisTab />}
+      {key === 'benchmarks' && <BenchmarksTab year={year} />}
+      {key === 'maturity' && <MaturityTab year={year} />}
+      {key === 'sdg' && <SdgTab year={year} />}
+      {key === 'forecasts' && <ForecastsTab />}
+      {key === 'extraction' && <ExtractionTab />}
     </Box>
   );
 }

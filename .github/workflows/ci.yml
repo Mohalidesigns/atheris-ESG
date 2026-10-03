@@ -94,6 +94,8 @@ jobs:
       DB_PASSWORD: esg_app_ci
       DB_OWNER_USERNAME: esg_owner
       DB_OWNER_PASSWORD: esg_owner_ci
+      ESG_AI_URL: http://localhost:8090
+      ESG_AI_TOKEN: ci-ai-token
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -106,6 +108,17 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: esg-frontend/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: esg-ai/requirements.txt
+      - name: Start AI service (WP-50; no language model in CI, so extraction journeys are skipped)
+        working-directory: esg-ai
+        run: |
+          python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+          ESG_AI_TOKEN=ci-ai-token .venv/bin/uvicorn app.main:app --port 8090 > ../ai.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:8090/v1/health && break; sleep 1; done
       - name: Create application role (no superuser, no BYPASSRLS)
         run: |
           PGPASSWORD=esg_owner_ci psql -h localhost -U esg_owner -d esg_e2e -v ON_ERROR_STOP=1 \
@@ -138,6 +151,24 @@ jobs:
             esg-frontend/cypress/screenshots/
             backend.log
             frontend.log
+            ai.log
+
+  ai:
+    name: AI service tests (pytest)
+    # WP-50 (D38): forecasting golden values, Isolation Forest, grounded extraction with a fake language model.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: esg-ai/requirements-dev.txt
+      - name: pytest
+        working-directory: esg-ai
+        run: |
+          python -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
+          .venv/bin/python -m pytest -q
 
   openapi:
     name: OpenAPI spec + breaking-change diff

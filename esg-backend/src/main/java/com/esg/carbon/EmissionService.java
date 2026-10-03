@@ -430,12 +430,19 @@ public class EmissionService {
      * A record spanning several months is split pro rata by days, as on the Carbon Overview (F15), so periods add up.
      */
     public List<TrendPoint> trend(LocalDate from, LocalDate to, boolean quarterly) {
+        return trend(from, to, quarterly ? "quarter" : "year");
+    }
+
+    /** WP-50: the same split by {@code month}, {@code quarter} or {@code year} (months are "YYYY-MM"). */
+    public List<TrendPoint> trend(LocalDate from, LocalDate to, String granularity) {
+        boolean quarterly = "quarter".equals(granularity);
+        boolean monthly = "month".equals(granularity);
         StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_end >= ? and r.reporting_period_start <= ?");
         List<Object> args = new ArrayList<>(List.of(Date.valueOf(from), Date.valueOf(to)));
         appendOrgScope(where, args, "r.org_id");
         args.add(Date.valueOf(from.withDayOfMonth(1)));
         args.add(Date.valueOf(to));
-        String bucket = quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
+        String bucket = monthly ? "to_char(m, 'YYYY-MM')" : quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
         Map<String, Map<String, BigDecimal>> byPeriod = new java.util.TreeMap<>();
         jdbc.query("select " + bucket + " as period, r.scope, sum(r.co2e_tonnes * "
                 + "((least(r.reporting_period_end, (m + interval '1 month' - interval '1 day')::date) - greatest(r.reporting_period_start, m::date) + 1)::numeric "
@@ -445,12 +452,20 @@ public class EmissionService {
                     byPeriod.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>()).put(rs.getString(2), rs.getBigDecimal(3));
                 }, args.toArray());
         List<TrendPoint> out = new ArrayList<>();
-        for (String period : periods(from, to, quarterly)) {
+        for (String period : monthly ? months(from, to) : periods(from, to, quarterly)) {
             Map<String, BigDecimal> s = byPeriod.getOrDefault(period, Map.of());
             BigDecimal s1 = s.getOrDefault("scope_1", BigDecimal.ZERO);
             BigDecimal s2 = s.getOrDefault("scope_2", BigDecimal.ZERO);
             BigDecimal s3 = s.getOrDefault("scope_3", BigDecimal.ZERO);
             out.add(new TrendPoint(period, scale(s1), scale(s2), scale(s3), scale(s1.add(s2).add(s3))));
+        }
+        return out;
+    }
+
+    private static List<String> months(LocalDate from, LocalDate to) {
+        List<String> out = new ArrayList<>();
+        for (LocalDate d = from.withDayOfMonth(1); !d.isAfter(to); d = d.plusMonths(1)) {
+            out.add(String.format("%04d-%02d", d.getYear(), d.getMonthValue()));
         }
         return out;
     }

@@ -46,7 +46,8 @@ public final class AnalyticsDtos {
                           LocalDate periodStart, LocalDate periodEnd, String kind, String method, BigDecimal value, BigDecimal baseline,
                           BigDecimal expectedLow, BigDecimal expectedHigh, BigDecimal zscore, BigDecimal changePct, Integer historyN,
                           String status, String explanation, String explainedByName, Instant explainedAt, String reviewNote, String reviewedByName,
-                          Instant reviewedAt, Instant detectedAt, String detail, List<String> actions, Map<String, String> blockedActions, long version) {}
+                          Instant reviewedAt, Instant detectedAt, String detail, BigDecimal mlScore, UUID aiRunId, boolean aiGenerated,
+                          List<String> actions, Map<String, String> blockedActions, long version) {}
 
     public record ScanRequest(@Min(2000) @Max(2100) Integer year) {}
 

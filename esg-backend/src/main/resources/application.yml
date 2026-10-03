@@ -90,6 +90,11 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  ai:
+    # WP-50 (D38): the Python AI service (esg-ai). Empty = not configured: AI features say so and nothing is invented.
+    url: ${ESG_AI_URL:}
+    token: ${ESG_AI_TOKEN:}
+    timeout-seconds: 900
   app:
     # Where people open the web app (links in emails, e.g. supplier questionnaires).
     public-url: ${ESG_PUBLIC_URL:http://localhost:5173}

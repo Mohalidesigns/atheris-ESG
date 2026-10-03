@@ -40,6 +40,8 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-413` | 413 | File larger than the upload limit (50 MB) | |
 | `ESG-415` | 415 | File type not allowed, or content doesn't match the extension | |
 | `ESG-422-MALWARE` | 422 | The upload failed the virus scan and was quarantined, not stored (S6) | `quarantined` row |
+| `ESG-422-AI-INPUT` | 422 | The AI service refused the input: too little history to forecast, an unreadable or scanned PDF (WP-50) | |
 | `ESG-422-WATERMARK` | 422 | A PDF in a watermarked data room or a shared report can't be read to stamp the viewer's name, so it isn't handed out (WP-40) | |
 | `ESG-429-RATE-LIMIT` | 429 | Too many anonymous whistleblower submissions or status checks, supplier questionnaire link calls, or public certificate checks, from this client; try later (WP-34, WP-31, WP-42) | |
+| `ESG-503-AI-UNAVAILABLE` | 503 | The AI service isn't configured or reachable, or its language model isn't loaded; nothing is estimated in its place (WP-50, D38) | |
 | `ESG-500` | 500 | Unexpected error (details only in the server log) | |
