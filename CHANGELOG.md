@@ -3,6 +3,13 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-51 Performance (D39)
+
+- Performance suite (k6) for the TRD targets on a throwaway database with a million data points: `./scripts/perf.sh`; results and method in docs/esg-completion/PERFORMANCE.md.
+- Executive dashboard over a million data points: 6.97 s → 1.56 s (P95, 10 concurrent viewers). Year filters on data points and emissions now use indexes under Row-Level Security; "which metrics have data" questions use per-metric index lookups; recent activity has its own audit-log index.
+- Recalculating emissions lists the first 50 changes (with the full count) instead of every record.
+- Secrets scanning configuration (gitleaks); performance summaries no longer keep the sign-in token.
+
 ## Unreleased — WP-50 Grounded AI (D38)
 
 - AI service (Python, FastAPI) behind an adapter; IBM Granite through Ollama reads reports. When it isn't running, AI features say so and nothing is estimated instead (ESG-503-AI-UNAVAILABLE).

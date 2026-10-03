@@ -55,6 +55,7 @@ export default function RecalculateDialog({ onClose }) {
             <Alert severity="success" sx={{ mt: 2 }} aria-label="Recalculation result">
               Checked {result.checked} records, updated {result.updated}.
               {result.changes.length > 0 && <List dense>{result.changes.map((c) => <ListItem key={c} disableGutters>{c}</ListItem>)}</List>}
+              {result.updated > result.changes.length && ` The first ${result.changes.length} changes are listed.`}
             </Alert>
           )}
         </DialogContent>

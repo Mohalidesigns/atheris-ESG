@@ -149,11 +149,11 @@ public class PricingService {
         Price p = inForce.get(0);
         List<ExposureRow> rows = new ArrayList<>();
         jdbc.query("select o.id, o.name, coalesce(sum(e.co2e_tonnes), 0) from carbon.emission_records e join auth.organisations o on o.id = e.org_id "
-                + "where e.deleted_at is null and extract(year from e.reporting_period_end) = ? and e.scope = any(?) group by o.id, o.name order by 3 desc",
+                + "where e.deleted_at is null and e.reporting_period_end between ? and ? and e.scope = any(?) group by o.id, o.name order by 3 desc",
                 rs -> {
                     BigDecimal t = rs.getBigDecimal(3).setScale(3, RoundingMode.HALF_UP);
                     rows.add(new ExposureRow(rs.getObject(1, UUID.class), rs.getString(2), t, t.multiply(p.price()).setScale(2, RoundingMode.HALF_UP)));
-                }, year, p.scopes().toArray(String[]::new));
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)), p.scopes().toArray(String[]::new));
         BigDecimal tonnes = rows.stream().map(ExposureRow::tonnes).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cost = rows.stream().map(ExposureRow::cost).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new Exposure(year, priceType, p, tonnes, cost, rows, rows.isEmpty() ? "No emissions recorded for " + year + " in the scopes covered." : null);
@@ -163,10 +163,10 @@ public class PricingService {
 
     public Offsetting offsetting(int year) {
         Map<String, BigDecimal> gross = new HashMap<>();
-        jdbc.query("select scope, coalesce(sum(co2e_tonnes), 0) from carbon.emission_records where deleted_at is null and extract(year from reporting_period_end) = ? "
+        jdbc.query("select scope, coalesce(sum(co2e_tonnes), 0) from carbon.emission_records where deleted_at is null and reporting_period_end between ? and ? "
                 + "group by scope", rs -> {
                     gross.put(rs.getString(1), rs.getBigDecimal(2).setScale(3, RoundingMode.HALF_UP));
-                }, year);
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)));
         Map<String, BigDecimal> retired = new HashMap<>();
         jdbc.query("select purpose, sum(quantity) from carbon_market.retirements where status = 'retired' and claimed_year = ? group by purpose", rs -> {
             retired.put(rs.getString(1), rs.getBigDecimal(2));
@@ -188,7 +188,7 @@ public class PricingService {
             basis = "base year " + target.get(0).get("base_year") + " of the target \"" + target.get(0).get("target_name") + "\"";
         } else {
             baseline = jdbc.queryForObject("select sum(co2e_tonnes) from carbon.emission_records where deleted_at is null and scope in ('scope_1', 'scope_2') "
-                    + "and extract(year from reporting_period_end) = ?", BigDecimal.class, year - 1);
+                    + "and reporting_period_end between ? and ?", BigDecimal.class, java.sql.Date.valueOf(java.time.LocalDate.of(year - 1, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year - 1, 12, 31)));
             basis = baseline == null ? "no target and no " + (year - 1) + " emissions to compare with" : (year - 1) + " Scope 1+2 emissions (no target set)";
         }
         BigDecimal reductions = baseline == null ? null : baseline.subtract(gross12).setScale(3, RoundingMode.HALF_UP);

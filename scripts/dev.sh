@@ -6,6 +6,7 @@
 #   ./scripts/dev.sh reset-db   # drop and recreate esg_dev (needed once after the WP-11 re-baseline)
 #   ./scripts/dev.sh testdb     # create esg_test for integration tests without Docker (see README)
 #   ./scripts/dev.sh e2edb      # create a fresh esg_e2e for the Cypress journeys (used by scripts/e2e.sh)
+#   ./scripts/dev.sh perfdb     # create a fresh esg_perf for the performance runs (used by scripts/perf.sh)
 #   ./scripts/dev.sh reset-dev  # wipe esg_dev, migrate and reseed the demo tenant, then exit (make reset-dev)
 #   ./scripts/dev.sh clean-test-data  # remove records marked as test data from the demo tenant (make clean-test-data)
 #
@@ -123,6 +124,11 @@ case "$CMD" in
     su_sql postgres "DROP DATABASE IF EXISTS esg_e2e WITH (FORCE)"
     ensure_db esg_e2e
     log "E2E database ready: jdbc:postgresql://localhost:$PG_PORT/esg_e2e"
+    exit 0 ;;
+  perfdb)
+    su_sql postgres "DROP DATABASE IF EXISTS esg_perf WITH (FORCE)"
+    ensure_db esg_perf
+    log "Performance database ready: jdbc:postgresql://localhost:$PG_PORT/esg_perf"
     exit 0 ;;
   testdb)
     su_sql postgres "DROP DATABASE IF EXISTS esg_test WITH (FORCE)"
