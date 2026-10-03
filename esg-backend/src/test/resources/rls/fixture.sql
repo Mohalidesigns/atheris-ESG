@@ -188,6 +188,23 @@ insert into carbon_market.credit_lots (id, project_id, vintage, serial_prefix, s
 insert into carbon_market.retirements (lot_id, serial_key, serial_from, serial_to, purpose, claimed_year, beneficiary)
   values ('a0000000-0000-4000-8000-000000000702', 'gold_standard:FIXTURE-BATCH', 1, 10, 'scope_1', 2026, 'Tenant A');
 insert into carbon_market.internal_prices (price_type, price, currency, effective_from, scopes) values ('shadow', 50, 'USD', '2025-01-01', '{scope_1,scope_2}');
+-- WP-42 training (one row per tenant table for the RLS suite): a draft course gets its module and question, then is published.
+insert into training.courses (id, code, title, category, delivery, duration_hours) values
+  ('a0000000-0000-4000-8000-000000000801', 'FIX-101', 'Fixture ESG basics', 'esg_fundamentals', 'online', 2);
+insert into training.course_modules (course_id, sort_order, title, kind, body, minutes)
+  values ('a0000000-0000-4000-8000-000000000801', 1, 'Fixture module', 'text', 'Fixture text', 30);
+insert into training.quiz_questions (course_id, sort_order, question, options, correct_index)
+  values ('a0000000-0000-4000-8000-000000000801', 1, 'Fixture question?', '{Yes,No}', 0);
+update training.courses set status = 'published', published_at = now() where id = 'a0000000-0000-4000-8000-000000000801';
+insert into training.learning_paths (name, target_role, course_ids)
+  values ('Fixture path', 'ESG_ANALYST', '{a0000000-0000-4000-8000-000000000801}');
+insert into training.enrollments (id, course_id, user_id, source, status, completed_on, hours, best_score, attempts)
+  values ('a0000000-0000-4000-8000-000000000802', 'a0000000-0000-4000-8000-000000000801', 'a0000000-0000-4000-8000-0000000000a1', 'self', 'passed',
+          '2026-03-01', 2, 100, 1);
+insert into training.quiz_attempts (enrollment_id, answers, score, passed) values ('a0000000-0000-4000-8000-000000000802', '{0}', 100, true);
+insert into training.certificates (enrollment_id, user_id, course_id, code, holder_name, course_title, score, issued_on)
+  values ('a0000000-0000-4000-8000-000000000802', 'a0000000-0000-4000-8000-0000000000a1', 'a0000000-0000-4000-8000-000000000801', 'FXTRAAAAAA',
+          'Fixture User', 'Fixture ESG basics', 100, '2026-03-01');
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');

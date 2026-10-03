@@ -12,6 +12,8 @@ const WhistleblowerPortal = lazy(() => import('../features/governance/components
 const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPoliciesPage'));
 // WP-31: a supplier answers a questionnaire through its link (no session).
 const SupplierQuestionnairePortal = lazy(() => import('../features/supplyChain/components/SupplierQuestionnairePortal'));
+// WP-42: anyone checks a training certificate by its code or QR code (no session).
+const VerifyCertificatePage = lazy(() => import('../features/training/components/VerifyCertificatePage'));
 const pages = {
   '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
   '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
@@ -87,6 +89,8 @@ export default function AppRoutes() {
         <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
         <Route path="/whistleblower/:tenant" element={<WhistleblowerPortal />} />
         <Route path="/supplier-questionnaire/:token" element={<SupplierQuestionnairePortal />} />
+        <Route path="/verify-certificate" element={<VerifyCertificatePage />} />
+        <Route path="/verify-certificate/:code" element={<VerifyCertificatePage />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route index element={<Landing />} />
           <Route path="my-policies" element={<MyPoliciesPage />} />

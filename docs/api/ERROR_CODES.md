@@ -25,7 +25,7 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-404` | 404 | Not found (also for records in another tenant or, for tenant admins, platform users) | |
 | `ESG-409-VERSION` | 409 | Changed by someone else since you loaded it (optimistic locking) | |
 | `ESG-409-STATE` | 409 | Not allowed in the record's current state (e.g. editing an approved report) | |
-| `ESG-409-LOCKED` | 409 | The reporting period is locked | ✅ |
+| `ESG-409-LOCKED` | 409 | The reporting period is locked (also: course content changed after publishing, WP-42) | ✅ |
 | `ESG-409-SOD` | 409 | Segregation of duties (reports, regulatory changes, policies, social records, materiality assessments, supplier corrective actions, anomaly explanations): submitter can't approve; assessor can't close; whoever records incident findings or resolves a grievance can't close it (WP-33); whoever explains an anomaly flag can't accept the explanation (WP-35); whoever generates an investor scorecard can't publish it (WP-40); whoever requests a carbon credit retirement can't approve it (WP-41) | ✅ |
 | `ESG-409-SERIAL` | 409 | Carbon credit serials already held in another lot or already retired/reserved — in any tenant; the message never says who holds them (WP-41) | ✅ |
 | `ESG-409-CONTENT-VERSION` | 409 | This framework already has a content version with that label; use a new label (Phase 3) | |
@@ -41,5 +41,5 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-415` | 415 | File type not allowed, or content doesn't match the extension | |
 | `ESG-422-MALWARE` | 422 | The upload failed the virus scan and was quarantined, not stored (S6) | `quarantined` row |
 | `ESG-422-WATERMARK` | 422 | A PDF in a watermarked data room or a shared report can't be read to stamp the viewer's name, so it isn't handed out (WP-40) | |
-| `ESG-429-RATE-LIMIT` | 429 | Too many anonymous whistleblower submissions or status checks, or supplier questionnaire link calls, from this client; try later (WP-34, WP-31) | |
+| `ESG-429-RATE-LIMIT` | 429 | Too many anonymous whistleblower submissions or status checks, supplier questionnaire link calls, or public certificate checks, from this client; try later (WP-34, WP-31, WP-42) | |
 | `ESG-500` | 500 | Unexpected error (details only in the server log) | |

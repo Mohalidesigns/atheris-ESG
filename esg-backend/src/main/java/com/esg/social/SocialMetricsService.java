@@ -23,7 +23,8 @@ public class SocialMetricsService {
 
     /** Catalogue metric keys the Social module can supply (reference.metrics). */
     public static final Set<String> METRICS = Set.of("employees_total", "employees_female", "new_hires", "employee_turnover_pct",
-            "women_in_management_pct", "hours_worked", "recordable_injuries", "work_related_fatalities", "community_investment");
+            "women_in_management_pct", "hours_worked", "recordable_injuries", "work_related_fatalities", "community_investment",
+            "training_hours_per_employee");
     /** {@code social:<key>} report variables. */
     public static final Set<String> VARIABLES = Set.of("headcount", "women_pct", "women_management_pct", "women_senior_pct", "disability_pct",
             "pay_gap_pct", "turnover_pct", "hours_worked", "ltifr", "trir", "lost_time_injuries", "recordable_cases", "fatalities",
@@ -70,6 +71,9 @@ public class SocialMetricsService {
             case "employee_turnover_pct" -> Optional.ofNullable(m.turnoverPct()).map(v -> new Value(v, "%", basis + "; " + m.turnoverBasis()));
             case "new_hires" -> sum("new_hires", start, end).map(v -> new Value(v, "count", "approved workforce figures ending in the period"));
             case "hours_worked" -> sum("hours_worked", start, end).map(v -> new Value(v, "hours", "approved workforce figures ending in the period"));
+            case "training_hours_per_employee" -> trainingHours(start, end).filter(h -> m.headcount() > 0).map(h -> new Value(
+                    h.divide(BigDecimal.valueOf(m.headcount()), 1, java.math.RoundingMode.HALF_UP), "hours", "training completed in the period "
+                    + "(Training, " + h.stripTrailingZeros().toPlainString() + " hours) ÷ " + basis));
             default -> {
                 SocialDtos.SafetyStatistics s = range(start, end);
                 long n = "recordable_injuries".equals(key) ? s.recordableCases() : s.fatalities();
@@ -94,6 +98,9 @@ public class SocialMetricsService {
             }
             if (m.turnoverPct() != null) {
                 out.add("employee_turnover_pct");
+            }
+            if (m.headcount() > 0 && trainingHours(start, end).isPresent()) {
+                out.add("training_hours_per_employee");
             }
             if (sum("new_hires", start, end).isPresent()) {
                 out.add("new_hires");
@@ -187,6 +194,13 @@ public class SocialMetricsService {
         Map<String, Object> r = jdbc.queryForMap("select count(" + column + ") as n, coalesce(sum(" + column + "), 0) as total "
                 + "from social.workforce_snapshots where deleted_at is null and status = 'approved' and reporting_period_end between ? and ?",
                 java.sql.Date.valueOf(start), java.sql.Date.valueOf(end));
+        return ((Number) r.get("n")).longValue() == 0 ? Optional.empty() : Optional.of(new BigDecimal(r.get("total").toString()));
+    }
+
+    /** WP-42 (D37 (6)): hours of training passed in the period, or empty when nobody completed any. */
+    private Optional<BigDecimal> trainingHours(LocalDate start, LocalDate end) {
+        Map<String, Object> r = jdbc.queryForMap("select count(*) as n, coalesce(sum(hours), 0) as total from training.enrollments "
+                + "where status = 'passed' and completed_on between ? and ?", java.sql.Date.valueOf(start), java.sql.Date.valueOf(end));
         return ((Number) r.get("n")).longValue() == 0 ? Optional.empty() : Optional.of(new BigDecimal(r.get("total").toString()));
     }
 

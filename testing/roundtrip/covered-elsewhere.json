@@ -169,5 +169,20 @@
   ],
   "Credit lot verification": [
     "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Course assignment": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "Learning path assignment": [
+    "com.esg.training.TrainingApiTest#pathsGapsAndAccess"
+  ],
+  "Quiz answers": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "Classroom attendance": [
+    "com.esg.training.TrainingApiTest#classroomAttendanceIsRecordedByTheTrainingTeamAndRespectsLockedPeriods"
+  ],
+  "Certificate revocation": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
   ]
 }

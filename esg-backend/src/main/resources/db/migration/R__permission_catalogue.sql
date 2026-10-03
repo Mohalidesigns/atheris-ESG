@@ -180,5 +180,15 @@ FROM (VALUES
     'whistleblower:read', 'whistleblower:update', 'whistleblower:read_summary'])
 ) AS v(r, perms), unnest(perms) AS p;
 
+-- WP-42 (D37): everyone who works in the platform takes courses and sees their own learning; the director can assign;
+-- the training admin can attach course files and see the organisation tree.
+INSERT INTO auth.system_role_permissions (role_name, resource, action)
+SELECT r, 'training', 'read' FROM unnest(ARRAY['ESG_DIRECTOR', 'ESG_MANAGER', 'ESG_ANALYST', 'DATA_COLLECTOR', 'AUDITOR', 'CONSULTANT',
+  'BOARD_MEMBER', 'COMPLIANCE_OFFICER', 'ETHICS_OFFICER']) AS r
+UNION ALL SELECT 'ESG_DIRECTOR', 'training', 'update'
+UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'create'
+UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'read'
+UNION ALL SELECT 'TRAINING_ADMIN', 'org_structure', 'read';
+
 -- Re-sync every existing tenant.
 SELECT auth.sync_system_roles(id) FROM auth.tenants;

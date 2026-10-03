@@ -363,6 +363,32 @@ function CarbonMarketCard({ market: m }) {
   );
 }
 
+function TrainingCard({ training: t }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Training</Typography>
+        <Table size="small" aria-label="Training summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/training?tab=team" underline="hover">Hours completed in {t.year}</Link></TableCell>
+              <TableCell align="right">{fmt(t.hours)}{t.hoursPerEmployee == null ? '' : ` · ${fmt(t.hoursPerEmployee)} per person`}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Completion rate</TableCell>
+              <TableCell align="right">{t.completionRate == null ? '—' : `${fmt(t.completionRate)}%`}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/training?tab=certificates" underline="hover">Certificates issued</Link></TableCell>
+              <TableCell align="right">{t.certificatesIssued}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -412,6 +438,7 @@ export default function DashboardPage() {
             {data.supplyChain && <Grid size={{ xs: 12, md: 5 }}><SupplyCard supply={data.supplyChain} /></Grid>}
             {data.analytics && <Grid size={{ xs: 12, md: 5 }}><AnalyticsCard analytics={data.analytics} /></Grid>}
             {data.carbonMarket && <Grid size={{ xs: 12, md: 5 }}><CarbonMarketCard market={data.carbonMarket} /></Grid>}
+            {data.training && <Grid size={{ xs: 12, md: 5 }}><TrainingCard training={data.training} /></Grid>}
           </Grid>
         </>
       )}

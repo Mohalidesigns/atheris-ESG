@@ -153,6 +153,12 @@
             <version>10.5.0</version>
         </dependency>
         <dependency>
+            <!-- WP-42: QR codes on training certificates (D37 (5)); tests decode them with it too. -->
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
             <!-- WP-40: watermarks data room downloads (D35 (4)); tests also read PDFs with it. -->
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>

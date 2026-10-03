@@ -60,14 +60,16 @@ public class DashboardService {
     private final com.esg.supplychain.SupplierService supply;
     private final com.esg.analytics.AnalyticsInsights analytics;
     private final com.esg.carbonmarket.CarbonMarketInsights carbonMarket;
+    private final com.esg.training.TrainingInsights training;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
                             OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
                             com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases,
                             com.esg.social.SocialMetricsService social, com.esg.risk.RiskInsights risk,
                             com.esg.supplychain.SupplierService supply, com.esg.analytics.AnalyticsInsights analytics,
-                            com.esg.carbonmarket.CarbonMarketInsights carbonMarket) {
+                            com.esg.carbonmarket.CarbonMarketInsights carbonMarket, com.esg.training.TrainingInsights training) {
         this.carbonMarket = carbonMarket;
+        this.training = training;
         this.supply = supply;
         this.analytics = analytics;
         this.social = social;
@@ -98,7 +100,8 @@ public class DashboardService {
                 CurrentUser.hasPermission("risk:read") ? risk.overview() : null,
                 CurrentUser.hasPermission("supply_chain:read") ? supply.overview(year) : null,
                 CurrentUser.hasPermission("analytics:read") ? analytics.overview(year) : null,
-                CurrentUser.hasPermission("carbon_market:read") ? carbonMarket.overview(year) : null);
+                CurrentUser.hasPermission("carbon_market:read") ? carbonMarket.overview(year) : null,
+                CurrentUser.hasPermission("training:update") ? training.overview(year) : null);
     }
 
     DashboardDtos.Social social(int year) {

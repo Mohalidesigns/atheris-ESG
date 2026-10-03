@@ -3,6 +3,14 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-42 Training & Capacity Building (D37)
+
+- Courses written by each organisation (nothing is shipped): modules as text, PDF or a video link, a multiple-choice quiz and a pass mark; drafts are published, retired or copied to revise them, and published content can't change.
+- Learning paths for a role: people holding the role see its courses as required, and the path can be assigned to all of them at once.
+- Self-enrolment (prerequisites passed first) and assignment with a due date and a notification; learners mark modules done and take the quiz with unlimited attempts, keeping the best score; classroom courses are completed by recording attendance, refused for a locked period.
+- Certificates on passing with a 10-character code and a QR code on the PDF; anyone can check a code at /verify-certificate without signing in and sees only holder, course, organisation, dates and status; revocation needs a reason.
+- My learning (hours this year and gaps against role paths), team progress, a dashboard card and `training:*` report variables; training hours now fill GRI 404-1 training hours per employee from approved headcount. Every working role can take training; ESG directors can assign it.
+
 ## Unreleased — WP-41 Carbon Market (D36)
 
 - Offset projects (Verra VCS, Gold Standard, Plan Vivo, CDM, Article 6.4, ACMI-endorsed) entered with their registry ID; nature-based projects flagged. Nothing is seeded.

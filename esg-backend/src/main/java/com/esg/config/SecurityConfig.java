@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/v1/public/whistleblower/*", "/v1/public/whistleblower/*/status").permitAll()
                 // WP-31: a supplier answers a questionnaire through its tokenised link, with no account.
                 .requestMatchers(HttpMethod.GET, "/v1/public/supplier-questionnaires/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/v1/public/certificates/*").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/v1/public/supplier-questionnaires/*/answers").permitAll()
                 .requestMatchers(HttpMethod.POST, "/v1/public/supplier-questionnaires/*/evidence", "/v1/public/supplier-questionnaires/*/submit").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
