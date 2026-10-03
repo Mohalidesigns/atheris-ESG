@@ -42,6 +42,8 @@ FROM (VALUES
   ('training:configure', 'Manage training programme'),
   ('privacy:read', 'View privacy notices, data subject requests and retention (NDPA)'),
   ('privacy:manage', 'Publish privacy notices, handle data subject requests (export, erasure), set retention (NDPA)'),
+  ('integrations:read', 'View integrations: connector requests, API keys, webhooks and their deliveries'),
+  ('integrations:manage', 'Request connectors, create and revoke API keys, manage webhooks'),
   ('users:create', 'Create users'), ('users:read', 'View users'), ('users:update', 'Update users'),
   ('users:delete', 'Deactivate users'), ('users:read_pii', 'See user contact details (field-level)'),
   ('roles:read', 'View roles and permissions'), ('roles:assign', 'Assign and revoke roles'),

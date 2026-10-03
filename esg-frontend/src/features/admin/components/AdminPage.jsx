@@ -15,7 +15,8 @@ import SubscriptionTab from './SubscriptionTab';
 import AuditLogTab from '../../audit/components/AuditLogTab';
 import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
-import IntegrationsTab from './IntegrationsTab';
+import IntegrationsTab from '../../integrations/components/IntegrationsTab';
+import PlatformRequestsTab from '../../integrations/components/PlatformRequestsTab';
 import FrameworkContentTab from './FrameworkContentTab';
 import PrivacyTab from '../../privacy/components/PrivacyTab';
 import { useSearchParams } from 'react-router-dom';
@@ -243,9 +244,11 @@ const TABS = [
   { value: 'organisations', label: 'Organisations', permission: 'org_structure:read', render: () => <OrganisationsTab /> },
   { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
   { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
-  { value: 'integrations', label: 'Integrations', permission: 'tenant_settings:read', render: () => <IntegrationsTab /> },
+  { value: 'integrations', label: 'Integrations', anyOf: ['tenant_settings:read', 'integrations:read'], render: () => <IntegrationsTab /> },
   { value: 'subscription', label: 'Subscription', permission: 'subscription:read', render: () => <SubscriptionTab /> },
   { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
+  // WP-46 (D44): the platform team's queue of connector requests from every client.
+  { value: 'integration-requests', label: 'Integration requests', permission: 'tenants:read', render: () => <PlatformRequestsTab /> },
   { value: 'framework-content', label: 'Framework content', permission: 'framework_content:import', render: () => <FrameworkContentTab /> },
   { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
   { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
@@ -254,7 +257,7 @@ const TABS = [
 
 export default function AdminPage() {
   const { can } = useAuth();
-  const tabs = TABS.filter((t) => can(t.permission));
+  const tabs = TABS.filter((t) => (t.anyOf ? t.anyOf.some(can) : can(t.permission)));
   // ?tab=… opens a tab directly, e.g. from a "Sandbox" label (→ Integrations).
   const [params] = useSearchParams();
   const [selected, setSelected] = useState(params.get('tab'));

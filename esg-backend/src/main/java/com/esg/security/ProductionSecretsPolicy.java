@@ -42,6 +42,11 @@ public class ProductionSecretsPolicy {
         if (!property.apply("esg.ai.url").isBlank() && property.apply("esg.ai.token").length() < 24) {
             out.add("esg.ai.token must be set (at least 24 characters) when esg.ai.url is");
         }
+        // WP-46 (D44): webhooks never go to plain HTTP or private networks from a real environment (request forgery).
+        if ("true".equalsIgnoreCase(property.apply("esg.webhooks.allow-private-networks"))
+                || "true".equalsIgnoreCase(property.apply("esg.webhooks.allow-http"))) {
+            out.add("esg.webhooks.allow-http and allow-private-networks must be false");
+        }
         return out;
     }
 }

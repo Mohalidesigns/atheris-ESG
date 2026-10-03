@@ -103,6 +103,16 @@ esg:
   app:
     # Where people open the web app (links in emails, e.g. supplier questionnaires).
     public-url: ${ESG_PUBLIC_URL:http://localhost:5173}
+  integrations:
+    # WP-46 (D44): where new connector requests are emailed (the platform team's inbox); empty = queue only.
+    requests-email: ${ESG_INTEGRATION_REQUESTS_EMAIL:}
+  webhooks:
+    dispatch:
+      enabled: true
+      interval-ms: 10000
+    # Production sends to public HTTPS addresses only; local development may use http://localhost receivers.
+    allow-http: ${ESG_WEBHOOKS_ALLOW_HTTP:false}
+    allow-private-networks: ${ESG_WEBHOOKS_ALLOW_PRIVATE:false}
   privacy:
     retention:
       # WP-52 (D40): nightly removal of personal data past each tenant's retention settings.

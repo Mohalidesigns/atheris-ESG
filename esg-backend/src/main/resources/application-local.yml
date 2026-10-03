@@ -15,6 +15,12 @@ esg:
     # esg-ai on its default port (scripts/dev.sh starts it when its virtualenv exists). Dev-only token.
     url: ${ESG_AI_URL:http://localhost:8090}
     token: ${ESG_AI_TOKEN:local-dev-ai-token}
+  webhooks:
+    # Local development: receivers on http://localhost are allowed (never in production, WebhookUrlPolicy).
+    allow-http: true
+    allow-private-networks: true
+    dispatch:
+      interval-ms: 3000
   testing:
     # Phase 3 (7): requests with X-ESG-Test-Run mark what they create as test data (E2E cleans up after itself).
     test-data-marking: true

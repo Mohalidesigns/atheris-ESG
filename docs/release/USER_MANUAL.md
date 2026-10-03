@@ -1278,6 +1278,32 @@ Each external connection shows **Connected**, **Sandbox** or **Not configured**:
 check, regulatory change feed, virus scanner, email, SMS, the AI service, carbon registries and exchanges. Every
 **Sandbox** label elsewhere in the app links here. See [16.4](#164-sandbox-and-test-labels).
 
+These tabs are for administrators:
+
+- **Services** shows each external connection as described above.
+- **Connectors** lists the systems we can connect to:
+  - **Available now** needs no set-up: the API with an API key, and the file templates.
+  - **On request** covers ERP, accounting, HR and utility connectors such as SAP, Oracle, Dynamics, QuickBooks, Sage,
+    SeamlessHR and Workday, plus a scheduled file drop. Select **Request**, describe your system and the data you
+    need, and give a contact. The Atheris team reviews the request, schedules the work and switches the connector on.
+    You follow the status (*Requested*, *In review*, *Scheduled*, *Active*, *Declined*) under **Your requests**, and
+    you can withdraw a request until it is active. Nothing is connected until a request is active.
+- **API keys** are for your own systems, such as gateways, meters, scripts or BI tools. Select **Create API key**,
+  name it and tick only the permissions it needs; you can only tick permissions you hold yourself.
+  - The key is shown once. Copy it into the system that uses it.
+  - Data sent with a key arrives as drafts for review. Changes it makes are recorded in the audit log under your name,
+    with the key named.
+  - **Revoke** stops a key at once. Keys expire after a year unless you choose otherwise.
+- **Webhooks** notify your systems when data is approved, an approved value is reopened, a report is approved or an
+  incident is recorded. Select **Add webhook**, give an HTTPS address and choose the events.
+  - The signing secret is shown once.
+  - **Send test** checks that your endpoint answers.
+  - **Deliveries** shows what was sent and lets you **Send again**.
+  - If your endpoint keeps failing, the webhook is switched off and the reason is shown.
+- **File templates** offer one CSV per source system: energy and fuel, utilities, workforce and waste. Upload the
+  filled-in file under Data Hub › Import.
+- **Developer guide** is for your IT team. You can also download the full API description there.
+
 ### 15.6 Audit log
 
 1. Filter by **Table**, **Action** (for example *Created*, *Changed*, *Refused*, *Quarantined*), **User**, **Record
@@ -1575,7 +1601,7 @@ Each link opens only its own questionnaire. Resending a questionnaire replaces t
 | Language | English only. French, Arabic and other languages are planned. |
 | Offline use | Data points and incident reports only (section 1.9); evidence is attached after sync; other changes need a connection. On slow 3G the first visit can take several seconds; later visits load from the device. |
 | SMS and USSD | No data entry by SMS or USSD yet. SMS notifications are in Sandbox. |
-| Integrations | ERP and meter connectors, the carbon registries (ACMI, Verra, Gold Standard) and exchange, the satellite flaring check, regional climate data and the regulatory change feed are Sandbox or not configured. Nothing is fetched from them automatically. |
+| Integrations | Named ERP, accounting, HR and utility connectors are set up on request (15.5); the API with API keys, webhooks and file templates work now. The carbon registries (ACMI, Verra, Gold Standard) and exchange, the satellite flaring check, regional climate data and the regulatory change feed are Sandbox or not configured. Nothing is fetched from them automatically. |
 | Framework content | The bundled framework requirements (for example NGX, SEC Nigeria, PenCom, CDP, GHG Protocol, SASB) and report templates are pending verification by an ESG subject-matter expert. SEC Nigeria and NGX report templates aren't available yet. No NAICOM content is included. |
 | Emission factors and rules | Platform emission factors, data rules, quality sub-scores, governance code rules, scoring thresholds and SDG links are pending expert review; results using pending factors are marked provisional. |
 | Reporting | No HTML, Word or XBRL export; no drag-and-drop or collaborative editing; reports in English only. |

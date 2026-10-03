@@ -19,6 +19,7 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-400-MFA` | 400 | MFA verification without MFA set up | |
 | `ESG-401` | 401 | Not signed in, or invalid/expired credentials or refresh token | |
 | `ESG-401-MFA-REQUIRED` | 401 | Your role requires two-factor authentication and this session wasn't verified with a code; sign in again (S1) | |
+| `ESG-401-API-KEY` | 401 | The API key is unknown, revoked or expired (`X-API-Key` / `Authorization: ApiKey …`, WP-46) | |
 | `ESG-403` | 403 | Missing permission, organisation outside your scope, or module not in the subscription | ✅ |
 | `ESG-403-SOD` | 403 | Segregation of duties (Data Hub): you created/submitted this data point, or you validated it and can't also approve | ✅ |
 | `ESG-403-ROLE` | 403 | You can't assign a role with permissions you don't hold (no privilege escalation) | ✅ |
