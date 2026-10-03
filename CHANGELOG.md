@@ -3,6 +3,12 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-54 UAT and release, 1.0 release candidate 1 (D42)
+
+- Release candidate 1 for pilots: release notes, user manual, UAT scripts for five personas, a pilot onboarding kit and an evidence-based re-score of the benchmark (115 of 265).
+- Container images for the backend, web app and AI service, a single-host pilot setup and a deployment guide; the web server sends exactly the security headers the app is tested with.
+- A new installation creates its first platform administrator from start-up settings, once; afterwards the setting has no effect.
+
 ## Unreleased — WP-53 Accessibility and slow networks (D41)
 
 - Every module page, key tabs, the public pages and dialogs are checked against WCAG 2.1 AA (axe-core) in the end-to-end suite.

@@ -32,7 +32,7 @@ any HIGH/CRITICAL vulnerability that has a fix.
 Scope for an external test: the web app, `/api/v1/**` (OpenAPI from CI), the public endpoints (whistleblower, supplier
 questionnaire, certificate verification — throttled), file upload/download (virus-scanned, signed URLs), multi-tenant
 isolation (RLS; cross-tenant API tests in `RlsIsolationTest`, `TenancyApiTest`), and the AI service (internal only,
-token-authenticated). Test accounts: seeded local demo users (`db/seed/README.md`) on a dedicated environment.
+token-authenticated). Test accounts: seeded local demo users (`esg-backend/src/main/resources/db/seed/README.md`) on a dedicated environment.
 
 ## Open (D40)
 

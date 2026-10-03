@@ -90,6 +90,11 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  bootstrap:
+    # WP-54 (D42): first platform administrator of a new installation; ignored once one exists.
+    admin-email: ${ESG_BOOTSTRAP_ADMIN_EMAIL:}
+    admin-password: ${ESG_BOOTSTRAP_ADMIN_PASSWORD:}
+    organisation: ${ESG_BOOTSTRAP_ORGANISATION:Platform operator}
   ai:
     # WP-50 (D38): the Python AI service (esg-ai). Empty = not configured: AI features say so and nothing is invented.
     url: ${ESG_AI_URL:}
