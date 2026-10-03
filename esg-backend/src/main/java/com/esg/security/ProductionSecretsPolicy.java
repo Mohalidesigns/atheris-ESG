@@ -16,7 +16,8 @@ public class ProductionSecretsPolicy {
 
     /** Markers in the committed local/test values (application-local.yml, application-test.yml, CI). */
     static final List<String> DEV_MARKERS = List.of("local-dev", "test-only", "dev-only", "esg_app_local", "esg_owner_local", "e2e-ai-token",
-            "ci-ai-token", "YS0bCdEHVNXWPBZwaz5BaQrw7vGZoHjF+yTlWjZMnFw=", "S5gZx/LBue1vcvNZoRCnZrSAJI+G1tekOSj6v5Is6Y0=");
+            // The committed local and test encryption keys (development values, listed so they are refused).
+            "ci-ai-token", "YS0bCdEHVNXWPBZwaz5BaQrw7vGZoHjF+yTlWjZMnFw=", "S5gZx/LBue1vcvNZoRCnZrSAJI+G1tekOSj6v5Is6Y0="); // gitleaks:allow
     static final List<String> SECRETS = List.of("esg.security.jwt-secret", "esg.security.data-encryption-key", "spring.datasource.password",
             "esg.ai.token");
 
