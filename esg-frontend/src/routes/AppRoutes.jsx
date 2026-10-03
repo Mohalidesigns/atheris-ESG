@@ -10,6 +10,8 @@ const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
 // WP-34: the public whistleblower portal (no session) and everyone's policy acknowledgements.
 const WhistleblowerPortal = lazy(() => import('../features/governance/components/WhistleblowerPortal'));
 const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPoliciesPage'));
+// WP-31: a supplier answers a questionnaire through its link (no session).
+const SupplierQuestionnairePortal = lazy(() => import('../features/supplyChain/components/SupplierQuestionnairePortal'));
 const pages = {
   '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
   '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
@@ -84,6 +86,7 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
         <Route path="/whistleblower/:tenant" element={<WhistleblowerPortal />} />
+        <Route path="/supplier-questionnaire/:token" element={<SupplierQuestionnairePortal />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route index element={<Landing />} />
           <Route path="my-policies" element={<MyPoliciesPage />} />

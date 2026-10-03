@@ -188,6 +188,48 @@ public class EmissionService {
         }
     }
 
+    /**
+     * WP-31: the Scope 3 record behind a supplier spend line, created or recalculated with the spend-based method
+     * (record_source 'supply_chain', so it's edited through the spend line, not here). Returns its id.
+     */
+    @Transactional
+    public UUID upsertForSupplierSpend(UUID spendId, EmissionRequest r) {
+        Calculation c = calculate(r);
+        List<UUID> existing = jdbc.queryForList("select id from carbon.emission_records where supplier_spend_id = ? and deleted_at is null",
+                UUID.class, spendId);
+        UUID id = existing.isEmpty() ? UUID.randomUUID() : existing.get(0);
+        if (existing.isEmpty()) {
+            jdbc.update("insert into carbon.emission_records (id, org_id, scope, scope3_category, source_activity, activity_data, "
+                            + "activity_unit, emission_factor_id, factor_version, factor_value, factor_unit, factor_level, gwp_set, "
+                            + "co2e_tonnes, co2_tonnes, ch4_tonnes, n2o_tonnes, reporting_period_start, reporting_period_end, "
+                            + "calculation_method, spend_amount, spend_currency, fx_rate, notes, record_source, supplier_spend_id, calculated_at) "
+                            + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'supply_chain', ?, now())",
+                    id, r.orgId(), r.scope(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(),
+                    c.factor().factorVersion(), c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(),
+                    c.result().co2eTonnes(), c.result().co2Tonnes(), c.result().ch4Tonnes(), c.result().n2oTonnes(),
+                    Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()), r.method(), c.spendAmount(),
+                    c.spendCurrency(), c.fxRate(), blank(r.notes()), spendId);
+        } else {
+            jdbc.update("update carbon.emission_records set org_id = ?, scope3_category = ?, source_activity = ?, activity_data = ?, activity_unit = ?, "
+                            + "emission_factor_id = ?, factor_version = ?, factor_value = ?, factor_unit = ?, factor_level = ?, gwp_set = ?, co2e_tonnes = ?, "
+                            + "co2_tonnes = ?, ch4_tonnes = ?, n2o_tonnes = ?, reporting_period_start = ?, reporting_period_end = ?, spend_amount = ?, "
+                            + "spend_currency = ?, fx_rate = ?, notes = ?, calculated_at = now(), version = version + 1 where id = ?",
+                    r.orgId(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(), c.factor().factorVersion(),
+                    c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(), c.result().co2eTonnes(), c.result().co2Tonnes(),
+                    c.result().ch4Tonnes(), c.result().n2oTonnes(), Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()),
+                    c.spendAmount(), c.spendCurrency(), c.fxRate(), blank(r.notes()), id);
+        }
+        recordLineage(id, c);
+        return id;
+    }
+
+    /** A removed spend line no longer backs a Scope 3 record. */
+    @Transactional
+    public void removeForSupplierSpend(UUID spendId) {
+        jdbc.update("update carbon.emission_records set deleted_at = now(), version = version + 1 where supplier_spend_id = ? and deleted_at is null",
+                spendId);
+    }
+
     /** Marks a record verified (carbon_data:approve): recalculation then leaves it alone. */
     @Transactional
     public EmissionResponse verify(UUID id, Long version) {
@@ -594,7 +636,8 @@ public class EmissionService {
         EmissionResponse r = get(id);
         if (!"manual".equals(r.recordSource())) {
             throw ApiException.conflict("ESG-409-STATE", "This record comes from " + ("data_hub".equals(r.recordSource())
-                    ? "an approved Data Hub point; reopen the point to change it" : "a flaring record; edit that instead"));
+                    ? "an approved Data Hub point; reopen the point to change it" : "supply_chain".equals(r.recordSource())
+                    ? "supplier spend; edit the spend line in Supply Chain instead" : "a flaring record; edit that instead"));
         }
         if (r.verified()) {
             throw ApiException.conflict("ESG-409-STATE", "A verified record can't be changed");

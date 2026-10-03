@@ -27,6 +27,10 @@ import { GrievanceDialog } from '../features/social/components/GrievancesTab';
 import { AssessmentDialog } from '../features/risk/components/MaterialityTab';
 import { RiskDialog } from '../features/risk/components/RiskRegisterTab';
 import { PhysicalDialog } from '../features/risk/components/ClimateTab';
+import { SupplierDialog } from '../features/supplyChain/components/SuppliersTab';
+import { TemplateDialog } from '../features/supplyChain/components/TemplatesTab';
+import { SpendDialog } from '../features/supplyChain/components/SpendTab';
+import { ActionDialog } from '../features/supplyChain/components/ActionsTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -52,6 +56,9 @@ const TEMPLATE_A = 'a0000000-0000-4000-8000-0000000000f4';
 const USER_MANAGER = 'a1000000-0000-4000-8000-000000000004';
 const PROJECT_A = 'a0000000-0000-4000-8000-000000000301';
 const TOPIC_A = 'a0000000-0000-4000-8000-000000000102';
+const SUPPLIER_A = 'a0000000-0000-4000-8000-000000000201';
+const QUESTIONNAIRE_A = 'a0000000-0000-4000-8000-000000000204';
+const QUESTION_A = 'a0000000-0000-4000-8000-000000000203';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
@@ -61,7 +68,8 @@ const resolve = (v) => {
       .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
       .replaceAll('{TEMPLATE_A}', TEMPLATE_A)
       .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
-      .replaceAll('{TOPIC_A}', TOPIC_A);
+      .replaceAll('{TOPIC_A}', TOPIC_A)
+      .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -298,6 +306,38 @@ const openers = {
     renderWithStore(<PhysicalDialog assessment={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
+  supplier: async (record) => {
+    fakeApi({
+      'GET /reference/sectors': () => ok([{ code: 'C', name: 'Manufacturing', classification: 'ISIC_REV4' }]),
+      'GET /reference/countries': () => ok([{ code: 'NG', name: 'Nigeria' }, { code: 'GH', name: 'Ghana' }]),
+      'GET /supply-chain/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }]),
+    });
+    renderWithStore(<SupplierDialog supplier={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'questionnaire-template': async (record) => {
+    renderWithStore(<TemplateDialog template={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'supplier-spend': async (record) => {
+    fakeApi({
+      'GET /supply-chain/suppliers': () => ok([{ id: SUPPLIER_A, name: 'Supplier A' }]),
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /supply-chain/spend/categories': () => ok([{ code: 'spend_paper_stationery', label: 'Paper and stationery (spend)' }]),
+    });
+    renderWithStore(<SpendDialog line={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'corrective-action': async (record) => {
+    fakeApi({
+      'GET /supply-chain/suppliers': () => ok([{ id: SUPPLIER_A, name: 'Supplier A' }]),
+      'GET /supply-chain/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }]),
+      'GET /supply-chain/questionnaires': () => ok([{ id: QUESTIONNAIRE_A, title: 'ESG survey' }]),
+      [`GET /supply-chain/questionnaires/${QUESTIONNAIRE_A}`]: () => ok({ id: QUESTIONNAIRE_A, questions: [{ id: QUESTION_A, question: 'Do you measure energy use?' }] }),
+    });
+    renderWithStore(<ActionDialog action={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
   report: async (record) => {
     fakeApi({ 'GET /reports/templates': () => ok([{ id: TEMPLATE_A, name: 'A custom template', platform: false, sections: [] }]) });
     renderWithStore(<ReportDialog report={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
@@ -336,7 +376,11 @@ describe('UI reload generator: edit forms show every saved value', () => {
         for (const [i, row] of value.entries()) {
           for (const [key, col] of Object.entries(ui.columns)) {
             const name = `${col.label}, line ${i + 1}`;
-            if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[row[key]]);
+            if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[String(row[key])]);
+            else if (col.kind === 'switch') {
+              if (row[key]) expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toBeChecked();
+              else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).not.toBeChecked();
+            }
             else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : String(row[key]));
           }
         }

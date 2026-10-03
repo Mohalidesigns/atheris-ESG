@@ -90,6 +90,15 @@ esg:
       secret-key: ${S3_SECRET_KEY:}
       server-side-encryption: ${S3_SSE:true}
       create-bucket: false
+  app:
+    # Where people open the web app (links in emails, e.g. supplier questionnaires).
+    public-url: ${ESG_PUBLIC_URL:http://localhost:5173}
+  supply-chain:
+    reminders:
+      # Daily reminders for corrective actions due in 7 days, due today or overdue (WP-31, TRD §8.6).
+      enabled: true
+      cron: "0 50 6 * * *"
+      zone: Africa/Lagos
   social:
     escalation:
       # Daily escalation of community grievances past their resolution due date (WP-33, TRD §8.7).

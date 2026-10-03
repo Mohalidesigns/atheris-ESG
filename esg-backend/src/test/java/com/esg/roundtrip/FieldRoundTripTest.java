@@ -433,6 +433,8 @@ class FieldRoundTripTest extends ApiTestSupport {
             .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR"))
             .replace("{USER_MANAGER}", roleUserId("ESG_MANAGER")).replace("{PROJECT_A}", "a0000000-0000-4000-8000-000000000301")
             .replace("{TOPIC_A}", "a0000000-0000-4000-8000-000000000102")
+            .replace("{SUPPLIER_A}", "a0000000-0000-4000-8000-000000000201").replace("{QUESTIONNAIRE_A}", "a0000000-0000-4000-8000-000000000204")
+            .replace("{QUESTION_A}", "a0000000-0000-4000-8000-000000000203")
             .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4"));
       }
       if (node.isObject() && node.has("$repeat")) {
@@ -501,7 +503,17 @@ class FieldRoundTripTest extends ApiTestSupport {
         List<JsonNode> left = new ArrayList<>();
         actual.forEach(left::add);
         for (JsonNode e : expected) {
-          JsonNode match = left.stream().filter(a -> same(e, a)).findFirst().orElse(null);
+          // Rows are compared on the fields the spec sends (the response may add ids or positions).
+          JsonNode match = left.stream().filter(a -> {
+            java.util.Iterator<String> names = e.fieldNames();
+            while (names.hasNext()) {
+              String k = names.next();
+              if (!same(e.get(k), a.get(k))) {
+                return false;
+              }
+            }
+            return true;
+          }).findFirst().orElse(null);
           if (match == null) {
             return false;
           }

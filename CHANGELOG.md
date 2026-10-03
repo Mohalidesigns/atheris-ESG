@@ -3,6 +3,16 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-31 Supply Chain ESG (D33)
+
+- Supplier register with full or simplified (SME / informal sector) onboarding, tiers, local-supplier flag, score history and risk tier.
+- Questionnaire builder: full or simplified templates with weighted E/S/G questions; published templates are fixed (copy to revise).
+- Suppliers answer through a private link with no account — answers, comments and evidence files, save and finish later, submit; the link opens their questionnaire only and can be replaced or closed.
+- Scorecards: weighted E/S/G scores and a risk tier, accepted by an approver; weak answers can be turned into corrective actions.
+- Corrective actions raise → assign → implement → verify → close, verified by someone else, with reminders before, on and after the due date.
+- Supplier spend (entered or imported from CSV/Excel) becomes spend-based Scope 3 Category 1 emissions in Carbon and stays in step with the spend line.
+- Dashboard Supply chain card; `supply:*` report variables; the supplier register evidences GRI 2-6.
+
 ## Unreleased — WP-32 Risk & Materiality (D32)
 
 - Double materiality: stakeholder groups with weights, topics scored for impact (severity × likelihood) and financial effect, stakeholder ratings, thresholds; the matrix is computed from the stored scores and moves when weights change; approval by someone other than the submitter. Approved assessments evidence GRI 3-1/3-2 and fill report variables.

@@ -51,5 +51,15 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || 'A {{outcome}} incident ("{{title}}") was recorded at {{site}} on {{date}}. Sign in to Atheris ESG to follow the investigation.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('WORKFORCE_SNAPSHOT_SUBMITTED', 'in_app', 'en', 'Workforce figures to approve: {{site}}', 'Figures for {{period}} were submitted. Open Social Impact → Workforce.'),
   ('WORKFORCE_SNAPSHOT_SUBMITTED', 'email', 'en', 'Workforce figures to approve: {{site}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'Workforce figures for {{site}} ({{period}}) were submitted for approval. Sign in to Atheris ESG to review them.' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Workforce figures for {{site}} ({{period}}) were submitted for approval. Sign in to Atheris ESG to review them.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-31: supply chain.
+  ('SUPPLIER_QUESTIONNAIRE_SUBMITTED', 'in_app', 'en', 'Questionnaire answered: {{supplier}}', '"{{title}}" is ready for review. Open Supply Chain → Questionnaires.'),
+  ('SUPPLIER_QUESTIONNAIRE_SUBMITTED', 'email', 'en', 'Questionnaire answered: {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || '{{supplier}} submitted the questionnaire "{{title}}". Sign in to Atheris ESG to review the scorecard.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('CORRECTIVE_ACTION_ASSIGNED', 'in_app', 'en', 'Corrective action for {{supplier}}', '"{{title}}" is yours, due {{due}}.'),
+  ('CORRECTIVE_ACTION_ASSIGNED', 'email', 'en', 'Corrective action for {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You own the corrective action "{{title}}" for {{supplier}}, due {{due}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('CORRECTIVE_ACTION_DUE', 'in_app', 'en', 'Corrective action {{when}}: {{supplier}}', '"{{title}}" {{when}}. Open Supply Chain → Corrective actions.'),
+  ('CORRECTIVE_ACTION_DUE', 'email', 'en', 'Corrective action {{when}}: {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The corrective action "{{title}}" for {{supplier}} {{when}}.' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

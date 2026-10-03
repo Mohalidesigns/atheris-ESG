@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * Throttles the public whistleblower endpoints (WP-34, D30) without recording who called: the client address is hashed
+ * Throttles the public whistleblower endpoints (WP-34, D30) and supplier questionnaire links (WP-31) without recording who called: the client address is hashed
  * with a per-process random salt, kept only in memory for the window, and never logged or stored.
  */
 @Component
@@ -23,6 +23,8 @@ public class IntakeRateLimiter {
     /** Submissions per client per hour, and status checks per client per hour. */
     static final int SUBMISSIONS = 5;
     static final int STATUS_CHECKS = 30;
+    /** WP-31: calls to a supplier questionnaire link per client per hour (answering saves often). */
+    static final int SUPPLIER_CALLS = 300;
     static final Duration WINDOW = Duration.ofHours(1);
 
     private final byte[] salt = new java.security.SecureRandom().generateSeed(16);
@@ -35,7 +37,7 @@ public class IntakeRateLimiter {
 
     /** True if this client may make another call of this kind to this tenant's channel now (and counts it). */
     public boolean allow(String kind, String tenant, String clientAddress) {
-        int limit = "submit".equals(kind) ? SUBMISSIONS : STATUS_CHECKS;
+        int limit = "submit".equals(kind) ? SUBMISSIONS : "supplier".equals(kind) ? SUPPLIER_CALLS : STATUS_CHECKS;
         Instant now = clock.instant();
         Deque<Instant> q = hits.computeIfAbsent(kind + ":" + tenant + ":" + hash(clientAddress), k -> new ArrayDeque<>());
         synchronized (q) {

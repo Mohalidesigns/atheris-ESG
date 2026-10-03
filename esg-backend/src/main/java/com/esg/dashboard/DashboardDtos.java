@@ -40,5 +40,6 @@ public final class DashboardDtos {
                          BigDecimal communityInvestment, String baseCurrency, int activeProjects) {}
 
     public record Executive(int year, Emissions emissions, Compliance compliance, SdgAlignment sdg, List<Activity> activity,
-                            List<Filing> filings, Governance governance, Social social, com.esg.risk.RiskDtos.Overview risk) {}
+                            List<Filing> filings, Governance governance, Social social, com.esg.risk.RiskDtos.Overview risk,
+                            com.esg.supplychain.SupplyDtos.Overview supplyChain) {}
 }

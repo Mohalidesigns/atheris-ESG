@@ -322,6 +322,12 @@ public class ComplianceService {
         for (String metric : social.available(year)) {
             states.merge(metric, new MetricState(true, false), (x, y) -> new MetricState(true, x.pending()));
         }
+        // WP-31 (D33): an active supplier on the register during the year evidences the value chain (GRI 2-6).
+        if (year <= today().getYear() && Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from supply_chain.suppliers "
+                + "where deleted_at is null and status = 'active' and created_at < ?)", Boolean.class,
+                java.sql.Timestamp.valueOf(java.time.LocalDate.of(year + 1, 1, 1).atStartOfDay())))) {
+            states.put(SOURCE + "supply_chain.suppliers", new MetricState(true, false));
+        }
         // WP-32 (D32): an approved materiality assessment, climate risks in the register, scenario analysis.
         for (String source : risk.evidence(year)) {
             states.put(SOURCE + source, new MetricState(true, false));
@@ -365,6 +371,7 @@ public class ComplianceService {
         names.put(SOURCE + "carbon.reduction_targets", "a GHG reduction target (Carbon → Reduction targets)");
         names.put(SOURCE + "governance.board_members", "the board register (Governance → Board)");
         names.put(SOURCE + "governance.governance_policies", "a published policy (Governance → Policies)");
+        names.put(SOURCE + "supply_chain.suppliers", "the supplier register (Supply Chain → Suppliers)");
         names.put(SOURCE + "risk.materiality_assessment", "an approved double materiality assessment (Risk → Materiality)");
         names.put(SOURCE + "risk.risk_register", "climate-related risks in the risk register (Risk → Risk register)");
         names.put(SOURCE + "risk.climate_scenarios", "climate scenario analysis (Risk → Climate scenarios)");

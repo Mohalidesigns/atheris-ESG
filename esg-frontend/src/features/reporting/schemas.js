@@ -43,6 +43,12 @@ export const RISK_VARIABLES = {
   high_risks: 'High and very high risks', climate_risks: 'Open climate risks', physical_high_risks: 'Sites at high physical risk',
   scenarios_analysed: 'Climate scenarios analysed',
 };
+// no-mock-gate: config — supply chain variables (VariableEngine.SUPPLY, WP-31)
+export const SUPPLY_VARIABLES = {
+  suppliers: 'Suppliers on the register', suppliers_assessed: 'Suppliers assessed', high_risk_suppliers: 'High-risk suppliers',
+  average_score: 'Average supplier ESG score', open_actions: 'Open corrective actions', local_spend_pct: 'Local spend %',
+  scope3_cat1_tonnes: 'Scope 3 Category 1 from supplier spend',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
@@ -57,6 +63,7 @@ export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}
       || (source === 'governance' && key in GOVERNANCE_VARIABLES)
       || (source === 'social' && key in SOCIAL_VARIABLES)
       || (source === 'risk' && key in RISK_VARIABLES)
+      || (source === 'supply' && key in SUPPLY_VARIABLES)
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)
       || (source === 'report' && ['title', 'period'].includes(key))
       || (source === 'tenant' && key === 'name');

@@ -111,5 +111,21 @@
   ],
   "Assessment approval": [
     "com.esg.risk.RiskApiTest#journey14MaterialityMatrixFromRealScoresApprovedBySomeoneElse"
+  ],
+  "Send questionnaire": [
+    "com.esg.supplychain.SupplyChainApiTest#journey15SupplierOnboardedQuestionnaireAnsweredScoredAndCorrectiveActionClosed"
+  ],
+  "Supplier questionnaire (public link)": [
+    "com.esg.supplychain.SupplyChainApiTest#journey15SupplierOnboardedQuestionnaireAnsweredScoredAndCorrectiveActionClosed",
+    "com.esg.supplychain.SupplyChainApiTest#aLinkOpensOnlyItsOwnQuestionnaireAndCanBeReturnedOrReplaced"
+  ],
+  "Questionnaire review": [
+    "com.esg.supplychain.SupplyChainApiTest#aLinkOpensOnlyItsOwnQuestionnaireAndCanBeReturnedOrReplaced"
+  ],
+  "Corrective action step": [
+    "com.esg.supplychain.SupplyChainApiTest#journey15SupplierOnboardedQuestionnaireAnsweredScoredAndCorrectiveActionClosed"
+  ],
+  "Spend import": [
+    "com.esg.supplychain.SupplyChainApiTest#supplierSpendBecomesScope3Category1InCarbonAndCanBeImported"
   ]
 }

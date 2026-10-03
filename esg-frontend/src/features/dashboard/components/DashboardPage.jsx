@@ -283,6 +283,33 @@ function RiskCard({ risk }) {
   );
 }
 
+function SupplyCard({ supply }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Supply chain</Typography>
+        <Table size="small" aria-label="Supply chain summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=suppliers" underline="hover">Suppliers assessed</Link></TableCell>
+              <TableCell align="right">{supply.assessed} of {supply.suppliers}{supply.averageScore != null ? ` · average ${fmt(supply.averageScore)}` : ''}</TableCell>
+            </TableRow>
+            <TableRow><TableCell>High-risk suppliers</TableCell><TableCell align="right">{supply.byRisk.high}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=actions" underline="hover">Open corrective actions</Link></TableCell>
+              <TableCell align="right">{supply.openActions}{supply.overdueActions ? ` · ${supply.overdueActions} overdue` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=spend" underline="hover">Scope 3 Cat 1 from spend</Link></TableCell>
+              <TableCell align="right">{fmt(supply.scope3Cat1Tonnes)} tCO2e</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -329,6 +356,7 @@ export default function DashboardPage() {
             {data.governance && <Grid size={{ xs: 12, md: 5 }}><GovernanceCard governance={data.governance} /></Grid>}
             {data.social && <Grid size={{ xs: 12, md: 5 }}><SocialCard social={data.social} /></Grid>}
             {data.risk && <Grid size={{ xs: 12, md: 5 }}><RiskCard risk={data.risk} /></Grid>}
+            {data.supplyChain && <Grid size={{ xs: 12, md: 5 }}><SupplyCard supply={data.supplyChain} /></Grid>}
           </Grid>
         </>
       )}

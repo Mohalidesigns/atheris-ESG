@@ -34,9 +34,15 @@ FROM (VALUES ('risk.materiality_assessment', 'GRI', '3-1'), ('risk.materiality_a
 JOIN compliance.regulatory_frameworks f ON f.code = s.framework
 JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
 
+-- WP-31 (D33): an active supplier register evidences the value-chain disclosure (GRI 2-6).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT 'supply_chain.suppliers', r.id
+FROM compliance.framework_requirements r JOIN compliance.regulatory_frameworks f ON f.id = r.framework_id
+WHERE f.code = 'GRI' AND r.requirement_code = '2-6';
+
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 15 THEN
-    RAISE EXCEPTION 'Expected 15 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
+  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 16 THEN
+    RAISE EXCEPTION 'Expected 16 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
   END IF;
 END $$;

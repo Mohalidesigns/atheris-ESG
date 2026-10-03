@@ -105,7 +105,19 @@ insert into risk.physical_assessments (org_id, hazard, pathway, horizon_year, ex
   values ('a0000000-0000-4000-8000-00000000000a', 'flooding', 'RCP4.5', 2050, 3, 3, 'Fixture source', '2026-01-15');
 
 insert into supply_chain.suppliers (id, name) values ('a0000000-0000-4000-8000-000000000201', 'Supplier A');
-insert into supply_chain.questionnaires (supplier_id, title) values ('a0000000-0000-4000-8000-000000000201', 'ESG survey');
+insert into supply_chain.questionnaire_templates (id, name, kind, weight_e, weight_s, weight_g)
+  values ('a0000000-0000-4000-8000-000000000202', 'Fixture template', 'full', 40, 30, 30);
+insert into supply_chain.template_questions (id, template_id, pillar, question, answer_type, positive_answer, weight)
+  values ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-000000000202', 'E', 'Do you measure energy use?', 'yes_no', 'yes', 2);
+insert into supply_chain.questionnaires (id, supplier_id, title, template_id)
+  values ('a0000000-0000-4000-8000-000000000204', 'a0000000-0000-4000-8000-000000000201', 'ESG survey', 'a0000000-0000-4000-8000-000000000202');
+insert into supply_chain.questionnaire_answers (questionnaire_id, question_id, answer_choice)
+  values ('a0000000-0000-4000-8000-000000000204', 'a0000000-0000-4000-8000-000000000203', 'yes');
+insert into supply_chain.corrective_actions (id, supplier_id, title, severity, due_date)
+  values ('a0000000-0000-4000-8000-000000000205', 'a0000000-0000-4000-8000-000000000201', 'Install meters', 'medium', '2026-06-30');
+insert into supply_chain.action_reminders (action_id, kind, sent_on) values ('a0000000-0000-4000-8000-000000000205', 'due_7', '2026-06-23');
+insert into supply_chain.supplier_spend (supplier_id, org_id, reporting_period_start, reporting_period_end, amount, currency, source_activity)
+  values ('a0000000-0000-4000-8000-000000000201', 'a0000000-0000-4000-8000-00000000000a', '2026-01-01', '2026-03-31', 1000, 'NGN', 'spend_paper_stationery');
 
 insert into social.safety_incidents (org_id, title, incident_type, outcome, occurred_at)
   values ('a0000000-0000-4000-8000-00000000000a', 'Slip in the yard', 'injury', 'first_aid', now());
