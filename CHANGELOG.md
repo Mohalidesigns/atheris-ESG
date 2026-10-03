@@ -3,6 +3,16 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-35 Analytics (D34)
+
+- Anomaly flags on data: each submitted or approved value is compared with earlier periods of the same site and metric (z-score and IQR) and with the same period a year earlier; flags are raised when a point is approved, nightly and on demand, with sensitivity set per tenant.
+- Variance explanations: a flag is explained (with evidence), then accepted or sent back by an approver who didn't write the explanation; false positives can be dismissed with a reason; a corrected value clears its flag; locked periods can't change.
+- Custom KPI builder: a metric alone or combined with another (÷ × + −), scaled, calculated each year from approved data, with a target line, on-track status, SDG tags and a `{{kpi:<code>}}` report variable.
+- Benchmarks from datasets the tenant imports with their publisher, year and source document (none are built in); each site is placed in a quartile band, and sites are ranked against each other.
+- ESG maturity index (1–5, six dimensions) with the evidence behind each score and the next step; snapshots for the history.
+- SDG alignment per goal from the linked metrics' evidence and direction of change, with tagged KPIs and priority goals.
+- Dashboard Analytics card; `analytics:*` report variables; a KPI with a target evidences GRI 3-3 and TCFD Metrics & Targets (a). ESG directors can now configure analytics.
+
 ## Unreleased — WP-31 Supply Chain ESG (D33)
 
 - Supplier register with full or simplified (SME / informal sector) onboarding, tiers, local-supplier flag, score history and risk tier.

@@ -310,6 +310,32 @@ function SupplyCard({ supply }) {
   );
 }
 
+function AnalyticsCard({ analytics: a }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Analytics</Typography>
+        <Table size="small" aria-label="Analytics summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=maturity" underline="hover">ESG maturity</Link></TableCell>
+              <TableCell align="right">{fmt(a.maturity)} of 5 · {a.maturityLevelName}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=anomalies" underline="hover">Anomaly flags to explain</Link></TableCell>
+              <TableCell align="right">{a.anomaliesOpen}{a.anomaliesExplained ? ` · ${a.anomaliesExplained} to review` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=kpis" underline="hover">KPIs on track</Link></TableCell>
+              <TableCell align="right">{a.kpisWithTarget ? `${a.kpisOnTrack} of ${a.kpisWithTarget}` : '—'}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -357,6 +383,7 @@ export default function DashboardPage() {
             {data.social && <Grid size={{ xs: 12, md: 5 }}><SocialCard social={data.social} /></Grid>}
             {data.risk && <Grid size={{ xs: 12, md: 5 }}><RiskCard risk={data.risk} /></Grid>}
             {data.supplyChain && <Grid size={{ xs: 12, md: 5 }}><SupplyCard supply={data.supplyChain} /></Grid>}
+            {data.analytics && <Grid size={{ xs: 12, md: 5 }}><AnalyticsCard analytics={data.analytics} /></Grid>}
           </Grid>
         </>
       )}

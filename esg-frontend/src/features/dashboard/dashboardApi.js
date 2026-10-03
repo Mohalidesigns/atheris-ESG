@@ -6,7 +6,7 @@ export const dashboardApi = apiSlice.injectEndpoints({
     executiveDashboard: build.query({
       query: (granularity = 'year') => ({ url: '/dashboard/executive', params: { granularity } }),
       transformResponse: unwrap,
-      providesTags: ['DataPoint', 'Emission', 'ComplianceStatus', 'Deadline', 'Report', 'RegChange', 'Period', 'SocialOverview', 'RiskOverview', 'SupplyOverview'],
+      providesTags: ['DataPoint', 'Emission', 'ComplianceStatus', 'Deadline', 'Report', 'RegChange', 'Period', 'SocialOverview', 'RiskOverview', 'SupplyOverview', 'AnalyticsOverview'],
     }),
   }),
 });

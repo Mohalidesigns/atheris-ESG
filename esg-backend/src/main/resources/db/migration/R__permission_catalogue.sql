@@ -104,7 +104,8 @@ FROM (VALUES
     'supply_chain:create', 'supply_chain:read', 'supply_chain:update', 'supply_chain:delete', 'supply_chain:approve',
     'social:create', 'social:read', 'social:update', 'social:approve',
     'governance:create', 'governance:read', 'governance:update', 'governance:approve',
-    'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
+    -- WP-35: analytics:configure for anomaly sensitivity and benchmark datasets (D34).
+    'analytics:create', 'analytics:read', 'analytics:configure', 'investor:read', 'investor:share', 'carbon_market:read']),
   ('ESG_MANAGER', ARRAY[
     'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
     'reference_data:read',

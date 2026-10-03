@@ -99,6 +99,12 @@ esg:
       enabled: true
       cron: "0 50 6 * * *"
       zone: Africa/Lagos
+  analytics:
+    scan:
+      # Nightly anomaly scan of tenants whose data changed in the last two days (WP-35, D34).
+      enabled: true
+      cron: "0 30 2 * * *"
+      zone: Africa/Lagos
   social:
     escalation:
       # Daily escalation of community grievances past their resolution due date (WP-33, TRD §8.7).

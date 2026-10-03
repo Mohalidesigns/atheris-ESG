@@ -150,6 +150,18 @@ insert into files.file_metadata (id, original_name, content_type, size_bytes, sh
 insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256)
   values ('a0000000-0000-4000-8000-0000000004f1', 1, 'fixture/evidence-v1.pdf', 'application/pdf', 4, repeat('0', 64));
 insert into files.file_access_log (file_id, version_no, action) values ('a0000000-0000-4000-8000-0000000004f1', 1, 'upload');
+
+-- WP-35 analytics (one row per tenant table for the RLS suite).
+insert into analytics.settings (z_threshold) values (3.00);
+insert into analytics.anomalies (org_id, data_point_id, metric_key, reporting_period_start, reporting_period_end, kind, method, value, change_pct)
+  values ('a0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-0000000000dd', 'electricity_kwh', '2026-01-01', '2026-03-31', 'variance', 'yoy', 1000, 40);
+insert into analytics.custom_kpis (code, name, pillar, metric_a, unit, direction) values ('fixture_kpi', 'Fixture KPI', 'E', 'electricity_kwh', 'kWh', 'lower_better');
+insert into analytics.benchmark_datasets (id, name, publisher, publication_year, source_file_id)
+  values ('a0000000-0000-4000-8000-000000000401', 'Fixture benchmark', 'Fixture publisher', 2025, 'a0000000-0000-4000-8000-0000000004f1');
+insert into analytics.benchmark_values (dataset_id, metric_key, data_year, p25, median, p75)
+  values ('a0000000-0000-4000-8000-000000000401', 'employee_turnover_pct', 2025, 5, 10, 15);
+insert into analytics.maturity_scores (assessment_year, overall, level, dimensions) values (2025, 2.5, 2, '[]');
+insert into analytics.sdg_alignments (goal, rationale) values (13, 'Fixture priority');
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');

@@ -18,6 +18,9 @@ esg:
   supply-chain:
     reminders:
       enabled: false   # tests drive CorrectiveActionService.runAll(clock) with a shifted clock
+  analytics:
+    scan:
+      enabled: false   # tests call AnomalyService.runAll(clock)
   social:
     escalation:
       enabled: false   # tests drive GrievanceService.runAll(clock) with a shifted clock

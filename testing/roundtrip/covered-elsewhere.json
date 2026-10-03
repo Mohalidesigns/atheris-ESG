@@ -127,5 +127,23 @@
   ],
   "Spend import": [
     "com.esg.supplychain.SupplyChainApiTest#supplierSpendBecomesScope3Category1InCarbonAndCanBeImported"
+  ],
+  "Anomaly explanation and review": [
+    "com.esg.analytics.AnalyticsApiTest#anOutlierApprovedIsFlaggedThenExplainedAndAccepted",
+    "com.esg.analytics.AnalyticsApiTest#flagsInALockedPeriodCantChange"
+  ],
+  "Anomaly scan": [
+    "com.esg.analytics.AnalyticsApiTest#anOutlierApprovedIsFlaggedThenExplainedAndAccepted",
+    "com.esg.analytics.AnalyticsApiTest#aCorrectedValueClearsItsFlagsAndTheNightlyScanRuns"
+  ],
+  "Maturity assessment": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment"
+  ],
+  "SDG priority": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment"
+  ],
+  "Analytics filters (year, benchmark metric)": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment",
+    "com.esg.analytics.AnalyticsApiTest#accessFollowsTheRoleMatrixAndTheTenant"
   ]
 }

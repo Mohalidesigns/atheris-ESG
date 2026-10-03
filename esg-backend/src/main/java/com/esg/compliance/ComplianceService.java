@@ -340,6 +340,11 @@ public class ComplianceService {
                 + "and base_year <= ? and target_year >= ?)", Boolean.class, year, year))) {
             states.put(SOURCE + "carbon.reduction_targets", new MetricState(true, false));
         }
+        // WP-35 (D34): an active custom KPI with a target, set up by the end of the year and aiming at it or later.
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where deleted_at is null and status = 'active' "
+                + "and target_year >= ? and created_at < ?)", Boolean.class, year, java.sql.Timestamp.valueOf(java.time.LocalDate.of(year + 1, 1, 1).atStartOfDay())))) {
+            states.put(SOURCE + "analytics.custom_kpis", new MetricState(true, false));
+        }
         // WP-34 (D30): the board register (someone on the board during the year), published policies, and a published
         // whistleblowing policy.
         java.sql.Date yearStart = java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1));
@@ -376,6 +381,7 @@ public class ComplianceService {
         names.put(SOURCE + "risk.risk_register", "climate-related risks in the risk register (Risk → Risk register)");
         names.put(SOURCE + "risk.climate_scenarios", "climate scenario analysis (Risk → Climate scenarios)");
         names.put(SOURCE + "governance.whistleblowing_policy", "a published whistleblowing policy (Governance → Policies)");
+        names.put(SOURCE + "analytics.custom_kpis", "a KPI with a target (Analytics → KPIs)");
         return new Context(year, metrics, states, attestations, edges, names);
     }
 

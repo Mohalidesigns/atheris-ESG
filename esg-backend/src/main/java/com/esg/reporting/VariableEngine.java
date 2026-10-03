@@ -1,5 +1,6 @@
 package com.esg.reporting;
 
+import com.esg.analytics.AnalyticsInsights;
 import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
@@ -42,6 +43,9 @@ import org.springframework.stereotype.Component;
  *       CBN NSBP Principle 4 section fills from approved workforce figures;</li>
  *   <li>{@code risk:material_topics|material_topic_list|open_risks|high_risks|climate_risks|physical_high_risks|scenarios_analysed}
  *       — the approved materiality assessment of the period's end year, the risk register and scenario work (WP-32);</li>
+ *   <li>{@code analytics:maturity_score|maturity_level|anomalies_open|anomalies_accepted|variance_explanations} — the maturity
+ *       index of the period's end year and the anomaly flags of the period (WP-35); {@code kpi:<code>} — a custom KPI's
+ *       value for the period's end year;</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -64,8 +68,11 @@ public class VariableEngine {
     private final SocialMetricsService social;
     private final RiskInsights risk;
     private final SupplierService supply;
+    private final AnalyticsInsights analytics;
 
-    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply) {
+    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply,
+                          AnalyticsInsights analytics) {
+        this.analytics = analytics;
         this.risk = risk;
         this.supply = supply;
         this.jdbc = jdbc;
@@ -110,6 +117,9 @@ public class VariableEngine {
             case "social" -> SocialMetricsService.VARIABLES.contains(p[1]);
             case "risk" -> RiskInsights.VARIABLES.contains(p[1]);
             case "supply" -> SUPPLY.contains(p[1]);
+            case "analytics" -> AnalyticsInsights.VARIABLES.contains(p[1]);
+            case "kpi" -> Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where code = ? and deleted_at is null)",
+                    Boolean.class, p[1]));
             default -> false;
         };
     }
@@ -200,6 +210,14 @@ public class VariableEngine {
             }
             case "supply" -> {
                 return supply(p[1], end);
+            }
+            case "analytics" -> {
+                return analytics.variable(p[1], start, end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing("no accepted variance explanations in the period"));
+            }
+            case "kpi" -> {
+                return analytics.kpi(p[1], end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing(analytics.kpiMissing(p[1], end)));
             }
             case "risk" -> {
                 return risk.variable(p[1], end).map(v -> v.number() == null

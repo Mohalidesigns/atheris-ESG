@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import AnalyticsPage from './analytics/components/AnalyticsPage';
 import CarbonMarketPage from './carbonMarket/components/CarbonMarketPage';
 import InvestorPage from './investor/components/InvestorPage';
 import TrainingPage from './training/components/TrainingPage';
 
 // Modules without a backend (WP-16 quarantine): each says it isn't available and which WP builds it; no figures.
 describe.each([
-  ['Analytics', AnalyticsPage, 'WP-35'], ['Carbon Market', CarbonMarketPage, 'WP-41'],
+  ['Carbon Market', CarbonMarketPage, 'WP-41'],
   ['Investor Portal', InvestorPage, 'WP-40'],
   ['Training & Capacity Building', TrainingPage, 'WP-42'],
 ])('%s page', (title, Page, wp) => {

@@ -58,13 +58,15 @@ public class DashboardService {
     private final com.esg.social.SocialMetricsService social;
     private final com.esg.risk.RiskInsights risk;
     private final com.esg.supplychain.SupplierService supply;
+    private final com.esg.analytics.AnalyticsInsights analytics;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
                             OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
                             com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases,
                             com.esg.social.SocialMetricsService social, com.esg.risk.RiskInsights risk,
-                            com.esg.supplychain.SupplierService supply) {
+                            com.esg.supplychain.SupplierService supply, com.esg.analytics.AnalyticsInsights analytics) {
         this.supply = supply;
+        this.analytics = analytics;
         this.social = social;
         this.risk = risk;
         this.board = board;
@@ -91,7 +93,8 @@ public class DashboardService {
                 CurrentUser.hasPermission("governance:read") ? governance(today) : null,
                 CurrentUser.hasPermission("social:read") ? social(year) : null,
                 CurrentUser.hasPermission("risk:read") ? risk.overview() : null,
-                CurrentUser.hasPermission("supply_chain:read") ? supply.overview(year) : null);
+                CurrentUser.hasPermission("supply_chain:read") ? supply.overview(year) : null,
+                CurrentUser.hasPermission("analytics:read") ? analytics.overview(year) : null);
     }
 
     DashboardDtos.Social social(int year) {

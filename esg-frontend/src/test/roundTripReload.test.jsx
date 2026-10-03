@@ -31,6 +31,9 @@ import { SupplierDialog } from '../features/supplyChain/components/SuppliersTab'
 import { TemplateDialog } from '../features/supplyChain/components/TemplatesTab';
 import { SpendDialog } from '../features/supplyChain/components/SpendTab';
 import { ActionDialog } from '../features/supplyChain/components/ActionsTab';
+import { KpiDialog } from '../features/analytics/components/KpisTab';
+import { DatasetDialog } from '../features/analytics/components/BenchmarksTab';
+import { SensitivityDialog } from '../features/analytics/components/AnomaliesTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -326,6 +329,34 @@ const openers = {
       'GET /supply-chain/spend/categories': () => ok([{ code: 'spend_paper_stationery', label: 'Paper and stationery (spend)' }]),
     });
     renderWithStore(<SpendDialog line={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'custom-kpi': async (record) => {
+    fakeApi({
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /reference/metrics': () => ok([
+        { metricKey: 'water_consumption_m3', name: 'Water consumption', unit: 'm3', dataType: 'decimal' },
+        { metricKey: 'production_output', name: 'Production output', unit: 'unit', dataType: 'decimal' },
+      ]),
+    });
+    renderWithStore(<KpiDialog kpi={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'benchmark-dataset': async (record) => {
+    fakeApi({
+      'GET /reference/metrics': () => ok([
+        { metricKey: 'employee_turnover_pct', name: 'Employee turnover rate', unit: '%', dataType: 'percentage' },
+        { metricKey: 'women_in_management_pct', name: 'Women in management', unit: '%', dataType: 'percentage' },
+      ]),
+      'GET /reference/sectors': () => ok([{ code: 'C', name: 'Manufacturing' }]),
+      'GET /files': () => ok([{ id: FILE_A, originalName: 'evidence.pdf' }]),
+      'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 1000, allowedExtensions: 'pdf', virusScanning: 'Not configured' }),
+    });
+    renderWithStore(<DatasetDialog dataset={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'analytics-settings': async (record) => {
+    renderWithStore(<SensitivityDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   'corrective-action': async (record) => {

@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (branch `feature/wp-31-supply-chain`, stacked on #19) |
-| Next | **Phase 4 modules**: WP-33 Social next, then 32, 31, 35, 40, 41, 42. **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (branch `feature/wp-35-analytics`, stacked on #20) |
+| Next | **Phase 4 modules**: WP-40 Investor Portal next, then 41, 42. **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,28 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-35 — Analytics (rules and statistics)
+
+Branch `feature/wp-35-analytics` (stacked on WP-31, PR #20). Design: D34. Migration V031; `R__ref_16_metric_analytics`; GRI 3-3 / TCFD MT-a links in `R__ref_11`; notification templates.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Anomaly detection on data points | z-score / IQR outliers against earlier periods of the same site, metric and period length; year-on-year variance; on approval, nightly and on demand; per-tenant sensitivity | `AnalyticsMathTest` (golden), `AnalyticsApiTest`, round-trip `analytics-settings`, Cypress `wp-35-analytics` |
+| Variance explanations | Explain (with evidence) → accept / return by someone else (ESG-409-SOD) or dismiss; cleared when the value is corrected; locked periods frozen | `AnalyticsApiTest` (SoD, lock, clearing, nightly run), `AnalyticsPage.test.jsx`, Cypress |
+| Custom KPI builder | Metric (÷ × + − metric) × multiplier from approved data per year, trend chart, target line and on-track status, SDG tags, `{{kpi:<code>}}` | round-trip `custom-kpi`, `AnalyticsMathTest.kpiTargetTracking`, `AnalyticsApiTest`, UI, Cypress |
+| Benchmark comparisons | Tenant-imported datasets with their source document (none built in), quartile bands by direction, internal ranking | round-trip `benchmark-dataset`, `AnalyticsMathTest`, `AnalyticsApiTest`, UI, Cypress |
+| ESG maturity index | Six dimensions 1–5 from platform evidence with next steps; snapshots | `MaturityModelTest` (golden), `AnalyticsApiTest`, UI, Cypress |
+| SDG alignment | Per-goal evidence and improvement score, tagged KPIs, priority goals | `AnalyticsMathTest`, `AnalyticsApiTest`, UI |
+| Links | Report variables `analytics:*`, `kpi:*`; GRI 3-3 and TCFD MT-a evidence; dashboard card | `AnalyticsApiTest` |
+
+Results: backend `mvn verify` 1,036 tests, 0 failures, 88.9% lines (analytics package 91.7%), 0 Checkstyle; frontend 418 tests, lint, no-mock gate 0 findings; Cypress 28 specs / 61 tests on a fresh database, all on the first attempt (`wp-35-analytics` new).
+
+Found and fixed: a rescan bumped a flag's version, so someone explaining it at the same time got a stale-version conflict (statistics refreshes no longer change the version); a flag with no baseline broke the list (500).
+
+Open (D34): predictions and Isolation Forest (WP-50); cross-tenant anonymised peer pool (product owner: NDPA consent, tenant sector code); SME review of maturity thresholds, metric directions and SDG score weights.
 
 ---
 

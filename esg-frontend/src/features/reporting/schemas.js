@@ -49,13 +49,18 @@ export const SUPPLY_VARIABLES = {
   average_score: 'Average supplier ESG score', open_actions: 'Open corrective actions', local_spend_pct: 'Local spend %',
   scope3_cat1_tonnes: 'Scope 3 Category 1 from supplier spend',
 };
+// no-mock-gate: config — analytics variables (WP-35; AnalyticsInsights.VARIABLES)
+export const ANALYTICS_VARIABLES = {
+  maturity_score: 'ESG maturity score', maturity_level: 'ESG maturity level', anomalies_open: 'Anomaly flags not yet resolved',
+  anomalies_accepted: 'Anomaly flags explained and accepted', variance_explanations: 'Accepted variance explanations (text)',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
 const VAR = /\{\{\s*([a-z]+):([A-Za-z0-9_]+(?::[a-z]+)?)\s*\}\}/g;
 
 /** Variables in the text that VariableEngine wouldn't know (same rules as the server). */
-export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}) => {
+export const unknownVariables = (text, { metricKeys = [], frameworks = [], kpiCodes = null } = {}) => {
   const unknown = [];
   for (const [, source, key] of (text ?? '').matchAll(VAR)) {
     const ok = (source === 'metric' && metricKeys.includes(key))
@@ -64,6 +69,9 @@ export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}
       || (source === 'social' && key in SOCIAL_VARIABLES)
       || (source === 'risk' && key in RISK_VARIABLES)
       || (source === 'supply' && key in SUPPLY_VARIABLES)
+      || (source === 'analytics' && key in ANALYTICS_VARIABLES)
+      // KPI codes: checked when the user can list KPIs; otherwise the server checks them on save.
+      || (source === 'kpi' && (kpiCodes == null || kpiCodes.includes(key)))
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)
       || (source === 'report' && ['title', 'period'].includes(key))
       || (source === 'tenant' && key === 'name');

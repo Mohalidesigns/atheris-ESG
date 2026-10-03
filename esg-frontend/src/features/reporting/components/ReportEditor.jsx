@@ -13,12 +13,13 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useFrameworksQuery, useMetricsQuery } from '../../reference/referenceApi';
+import { useKpisQuery } from '../../analytics/analyticsApi';
 import {
   useDeleteReportMutation, useGenerateReportMutation, useReportPreviewMutation, useLazyReportVersionQuery, useRefreshReportMutation, useReopenReportMutation, useReportQuery,
   useSaveSectionsMutation, useSubmitReportMutation,
 } from '../reportingApi';
 import {
-  CARBON_VARIABLES, COMPLIANCE_MEASURES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
+  ANALYTICS_VARIABLES, CARBON_VARIABLES, COMPLIANCE_MEASURES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
 } from '../schemas';
 import ApprovalPanel from './ApprovalPanel';
 import ReportDialog from './ReportDialog';
@@ -33,7 +34,7 @@ function Rendered({ text }) {
 }
 
 /** Simple narrative editor: text with paragraphs and "- " bullets, plus an "Insert data" menu for {{variables}}. */
-function SectionEditor({ control, index, remove, move, count, metrics, frameworks }) {
+function SectionEditor({ control, index, remove, move, count, metrics, frameworks, kpis, analytics }) {
   const [anchor, setAnchor] = useState(null);
   // Phase 2: the caret is remembered as the user types or clicks, because opening the Insert menu takes the focus away.
   const caret = useRef(null);
@@ -96,6 +97,9 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
                     {Object.entries(RISK_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{risk:${k}}}`)}>{l}</MenuItem>)}
                     <MenuItem disabled>Supply chain</MenuItem>
                     {Object.entries(SUPPLY_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{supply:${k}}}`)}>{l}</MenuItem>)}
+                    {analytics && <MenuItem disabled>Analytics</MenuItem>}
+                    {analytics && Object.entries(ANALYTICS_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{analytics:${k}}}`)}>{l}</MenuItem>)}
+                    {kpis.map((k) => <MenuItem key={k.id} onClick={() => insert(`{{kpi:${k.code}}}`)}>KPI: {k.name}</MenuItem>)}
                     <MenuItem disabled>Social</MenuItem>
                     {Object.entries(SOCIAL_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{social:${k}}}`)}>{l}</MenuItem>)}
                     <MenuItem disabled>Compliance</MenuItem>
@@ -123,7 +127,9 @@ function ContentTab({ report }) {
   const editable = report.status === 'draft' && can('reports:update');
   const { data: metricList = [] } = useMetricsQuery();
   const { data: frameworkList = [] } = useFrameworksQuery();
-  const ctx = useMemo(() => ({ metricKeys: metricList.map((m) => m.metricKey), frameworks: frameworkList.map((f) => f.code) }), [metricList, frameworkList]);
+  const { data: kpiList } = useKpisQuery(undefined, { skip: !can('analytics:read') });
+  const ctx = useMemo(() => ({ metricKeys: metricList.map((m) => m.metricKey), frameworks: frameworkList.map((f) => f.code),
+    kpiCodes: kpiList ? kpiList.map((k) => k.code) : null }), [metricList, frameworkList, kpiList]);
   const [save, { isLoading }] = useSaveSectionsMutation();
   const [formError, setFormError] = useState('');
   const { control, handleSubmit, setError } = useForm({
@@ -161,7 +167,7 @@ function ContentTab({ report }) {
         {fields.map((f, i) => (
           <Grid key={f.id} size={12}>
             <SectionEditor control={control} index={i} remove={remove} move={move} count={fields.length}
-              metrics={metricList} frameworks={ctx.frameworks.filter((c) => frameworkList.find((x) => x.code === c)?.requirementCount > 0)} />
+              metrics={metricList} kpis={kpiList ?? []} analytics={Boolean(kpiList)} frameworks={ctx.frameworks.filter((c) => frameworkList.find((x) => x.code === c)?.requirementCount > 0)} />
           </Grid>
         ))}
       </Grid>
