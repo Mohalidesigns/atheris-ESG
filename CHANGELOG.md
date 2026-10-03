@@ -22,6 +22,7 @@ One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs
 - Corrective actions raise → assign → implement → verify → close, verified by someone else, with reminders before, on and after the due date.
 - Supplier spend (entered or imported from CSV/Excel) becomes spend-based Scope 3 Category 1 emissions in Carbon and stays in step with the spend line.
 - Dashboard Supply chain card; `supply:*` report variables; the supplier register evidences GRI 2-6.
+- Fixed: the tenant-isolation test could fail depending on test order (an approved assessment's lock refused before the isolation policy); it now checks rows one at a time.
 
 ## Unreleased — WP-32 Risk & Materiality (D32)
 
