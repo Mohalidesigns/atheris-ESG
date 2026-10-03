@@ -20,6 +20,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Local settings that must not be committed (SMTP credentials, …): .env.local at the repo root, git-ignored.
+if [ -f "$ROOT/.env.local" ]; then set -a; . "$ROOT/.env.local"; set +a; fi
 MODE="${ESG_DB_MODE:-auto}"
 DB_NAME="esg_dev"
 DB_OWNER="esg_owner"
