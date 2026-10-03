@@ -29,7 +29,7 @@ describe('Journey 19: anonymous whistleblower report', () => {
       cy.contains('button', 'Save case').click();
       cy.get('[aria-label="Case status"]').should('contain', 'Being assessed');
     });
-    cy.get('body').type('{esc}'); // close the case drawer
+    cy.closeDrawer();
     cy.logout();
 
     // A director can't see cases at all.

@@ -19,8 +19,11 @@ describe('WP-52: privacy notice, own data and erasure', () => {
       cy.contains('button', 'Publish').click();
     });
     // The publisher reads it too before carrying on.
+    cy.intercept('POST', '/api/v1/privacy/notice/acknowledge').as('acknowledge');
     cy.get('[role="dialog"]').should('contain', title).contains('button', 'I have read this notice').click();
-    cy.get('[aria-label="Acknowledgements"]').should('contain', 'have read it');
+    cy.wait('@acknowledge').its('response.statusCode').should('eq', 200);
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.get('[aria-label="Acknowledgements"]').should('contain', '1 of');
 
     // An analyst is shown the notice once, then can download their own data.
     cy.login(roles.ESG_ANALYST.email);

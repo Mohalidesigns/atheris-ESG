@@ -36,8 +36,8 @@ insert into data_hub.approval_workflows (id, workflow_type, total_steps, initiat
   values ('a0000000-0000-4000-8000-0000000000d1', 'data_validation', 2, 'a0000000-0000-4000-8000-0000000000a1');
 insert into data_hub.approval_steps (workflow_id, step_number, approver_id)
   values ('a0000000-0000-4000-8000-0000000000d1', 1, 'a0000000-0000-4000-8000-0000000000a1');
-insert into data_hub.offline_sync_queue (user_id, device_id, payload)
-  values ('a0000000-0000-4000-8000-0000000000a1', 'device-1', '{}');
+insert into data_hub.offline_sync_queue (op_id, client_id, kind, user_id, device_id, captured_at, payload, status)
+  values (gen_random_uuid(), gen_random_uuid(), 'data_point', 'a0000000-0000-4000-8000-0000000000a1', 'device-1', now(), '{}', 'applied');
 
 insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from, is_custom, tenant_id, verification_status)
   values ('NG', 'custom_fuel', 1.5, 'kgCO2e/litre', 'Supplier fuel certificate 2026', '2026-01-01', true,

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,23 +23,57 @@ import {
   INCIDENT_ACTIONS, INCIDENT_STATUS, INCIDENT_TYPES, OUTCOMES, PERSON_TYPES, emptyIncident, fmt, incidentSchema, toIncidentBody, toIncidentForm, problemText,
 } from '../schemas';
 import { ActionBar, Stat, StepDialog } from './shared';
+import { toastShown } from '../../../store/uiSlice';
+import { requestSync, useOnline } from '../../offline/hooks';
+import { enqueue } from '../../offline/outbox';
+import { QUEUED_MESSAGE, saveOrQueue } from '../../offline/saveOrQueue';
 
 const opts = (map, empty) => [...(empty ? [{ value: '', label: empty }] : []), ...Object.entries(map).map(([value, label]) => ({ value, label }))];
 const rate = (v) => (v == null ? '—' : Number(v).toFixed(2));
 
-export function IncidentDialog({ incident, onClose }) {
+/**
+ * WP-43: a new incident reported without a connection is kept on this device and sent later (`offlineItem` = one
+ * waiting on the device, corrected and queued again; `orgs` = the device's copy of the organisations when offline).
+ */
+export function IncidentDialog({ incident, onClose, offlineItem = null, orgs: offlineOrgs = null }) {
   const editing = Boolean(incident?.id);
-  const { data: orgs = [] } = useListOrganisationsQuery();
+  const dispatch = useDispatch();
+  const { user, status } = useSelector((st) => st.auth);
+  const reachable = useOnline() && status === 'authenticated';
+  const { data: fetchedOrgs = [] } = useListOrganisationsQuery(undefined, { skip: Boolean(offlineOrgs) });
+  const orgs = offlineOrgs ?? fetchedOrgs;
   const [create, c] = useCreateIncidentMutation();
   const [update, u] = useUpdateIncidentMutation();
   const [formError, setFormError] = useState('');
   const schema = useMemo(() => incidentSchema(), []);
-  const { control, handleSubmit, setError } = useForm({ defaultValues: editing ? toIncidentForm(incident) : emptyIncident, resolver: zodResolver(schema) });
+  const { control, handleSubmit, setError } = useForm({
+    defaultValues: offlineItem ? toIncidentForm(offlineItem.payload) : editing ? toIncidentForm(incident) : emptyIncident, resolver: zodResolver(schema),
+  });
+  useEffect(() => {
+    Object.entries(offlineItem?.errors ?? {}).forEach(([field, message]) => setError(field, { type: 'server', message }));
+  }, [offlineItem, setError]);
   const submit = handleSubmit(async (v) => {
     setFormError('');
     try {
-      const saved = editing ? await update({ id: incident.id, ...toIncidentBody(v), version: incident.version }).unwrap() : await create(toIncidentBody(v)).unwrap();
-      onClose(saved);
+      const body = toIncidentBody(v);
+      const item = { kind: 'safety_incident', payload: body, label: `${body.title} · ${body.occurredAt.replace('T', ' ')}`, clientId: offlineItem?.clientId };
+      const queued = (q) => {
+        dispatch(toastShown({ severity: 'info', message: QUEUED_MESSAGE }));
+        if (reachable) requestSync();
+        onClose({ queued: q });
+      };
+      if (offlineItem || (!editing && !reachable)) {
+        queued(await enqueue(user, item));
+        return;
+      }
+      // Edits of a recorded incident (its investigation) need the server; only new reports are kept offline.
+      const result = editing ? { saved: await update({ id: incident.id, ...body, version: incident.version }).unwrap() }
+        : await saveOrQueue(() => create(body).unwrap(), user, item);
+      if (result.queued) {
+        queued(result.queued);
+        return;
+      }
+      onClose(result.saved);
     } catch (err) {
       setFormError(applyProblem(err, setError, { knownFields: Object.keys(emptyIncident) }));
     }
@@ -46,9 +81,13 @@ export function IncidentDialog({ incident, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${incident.title}` : 'Record an incident'}</DialogTitle>
+        <DialogTitle>{offlineItem ? 'Correct report on this device' : editing ? `Edit ${incident.title}` : 'Record an incident'}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+          {!reachable && !editing && !offlineItem && (
+            <Alert severity="info" sx={{ mb: 2 }}>You're offline. The report will be saved on this device and sent when you're back online.</Alert>
+          )}
+          {offlineItem?.message && <Alert severity="warning" sx={{ mb: 2 }}>{offlineItem.message}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (

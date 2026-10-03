@@ -208,5 +208,8 @@
   ],
   "Retention": [
     "com.esg.privacy.PrivacyApiTest#retentionRemovesPersonalDataPastEachTenantsSettings"
+  ],
+  "Sync conflict decision": [
+    "com.esg.offline.OfflineSyncApiTest#twoDevicesConflictOnTheSameMetricAndPeriodAndThePersonDecides"
   ]
 }

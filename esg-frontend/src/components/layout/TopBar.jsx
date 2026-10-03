@@ -11,6 +11,8 @@ import NotificationBell from '../../features/notifications/components/Notificati
 import { roleLabel } from '../../services/labels';
 import { useMyDataMutation } from '../../features/privacy/privacyApi';
 import { saveBlob } from '../../services/download';
+import OfflineStatus from '../../features/offline/components/OfflineStatus';
+import { canCapture } from '../../features/offline/hooks';
 
 export default function TopBar({ onMenu = () => {} }) {
   const { user, logout } = useAuth();
@@ -34,6 +36,8 @@ export default function TopBar({ onMenu = () => {} }) {
         </IconButton>
         {/* Global search isn't built yet (FIELD_INVENTORY "Global search" row); no non-working search box until it is. */}
         <Box sx={{ flex: 1 }} />
+
+        {canCapture(user?.permissions) && <OfflineStatus />}
 
         <Can permission="notifications:read">
           <NotificationBell />

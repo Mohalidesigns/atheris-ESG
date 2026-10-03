@@ -3,6 +3,14 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-43 Offline capture (D43)
+
+- The web app can be installed on a phone or tablet and opens without a connection; pages load from the device after the first visit.
+- Data points and incident reports saved without a connection are kept on the device and sent automatically when the connection returns (also at sign-in, every minute while something waits, and with "Sync now"); the top bar shows when you're offline and what is waiting.
+- Someone who signed in on the device before can open the app offline to capture data; nothing is sent until they are signed in again.
+- If the server already has a value for the same metric, organisation and period, a newer offline value replaces an older draft; otherwise Data Hub → On this device shows both and the person who captured it decides. Values in the approval workflow are never replaced from a device.
+- New: `POST /api/v1/data/sync`, `GET /api/v1/data/sync/conflicts`, `POST /api/v1/data/sync/conflicts/{id}/resolve`. 500 records sync in about 3 seconds.
+
 ## Unreleased — WP-54 UAT and release, 1.0 release candidate 1 (D42)
 
 - Release candidate 1 for pilots: release notes, user manual, UAT scripts for five personas, a pilot onboarding kit and an evidence-based re-score of the benchmark (115 of 265).

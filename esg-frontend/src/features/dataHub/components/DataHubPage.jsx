@@ -17,6 +17,7 @@ import DataPointDialog from './DataPointDialog';
 import DataPointDrawer from './DataPointDrawer';
 import DataSourcesTab from './DataSourcesTab';
 import FxRatesTab from './FxRatesTab';
+import OfflineTab from '../../offline/components/OfflineTab';
 import ImportWizard from './ImportWizard';
 import StatusChip from './StatusChip';
 import BulkActions from './BulkActions';
@@ -176,6 +177,8 @@ const TABS = [
   { value: 'import', label: 'Import', anyOf: ['data_points:create'] },
   { value: 'sources', label: 'Sources', anyOf: ['data_sources:read'] },
   { value: 'rates', label: 'Exchange rates', anyOf: ['fx_rates:read'] },
+  // WP-43: records saved offline on this device, and conflicts waiting for a decision.
+  { value: 'device', label: 'On this device', anyOf: ['data_points:create'] },
 ];
 
 /** M1 ESG Data Hub (WP-20): collect → validate → approve, with quality scores, import, sources and exchange rates. */
@@ -185,6 +188,13 @@ export default function DataHubPage() {
   // ?tab=review (e.g. from the Dashboard's review card, F14) opens that tab.
   const [params, setParams] = useSearchParams();
   const [tab, setTab] = useState(params.get('tab') ?? 'data');
+  // A link to another tab while the page is open (e.g. the top bar's offline chip → ?tab=device) switches to it.
+  const tabParam = params.get('tab');
+  const [seenTabParam, setSeenTabParam] = useState(tabParam);
+  if (tabParam !== seenTabParam) {
+    setSeenTabParam(tabParam);
+    if (tabParam) setTab(tabParam);
+  }
   const [filters, setFilters] = useState(emptyFilters);
   // ?add=<metric>&from=&to= (Phase 3: the Carbon intensity prompt) opens the form with that metric and period.
   const preset = params.get('add') && permissions.includes('data_points:create')
@@ -219,6 +229,7 @@ export default function DataHubPage() {
       )}
       {current === 'sources' && <DataSourcesTab />}
       {current === 'rates' && <FxRatesTab />}
+      {current === 'device' && <OfflineTab metrics={sortedMetrics} orgs={orgs} />}
 
       <DataPointDrawer id={openId} onClose={() => setOpenId(null)} onEdit={(dp) => setEditing(dp)} />
       {editing !== undefined && metrics.length > 0 && (

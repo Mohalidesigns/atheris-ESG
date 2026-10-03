@@ -151,3 +151,12 @@ Cypress.Commands.add('a11y', (label, { exclude = [] } = {}) => {
     throw new Error(`${label}: ${violations.length} WCAG 2.1 AA violation(s)\n${lines.join('\n')}`);
   });
 });
+
+/**
+ * Closes the open side drawer with its Close button and waits until it has gone. (Esc on <body> only works while focus
+ * is inside the drawer — not guaranteed while the service worker is caching the app in the background, WP-43.)
+ */
+Cypress.Commands.add('closeDrawer', () => {
+  cy.get('.MuiDrawer-modal').last().find('[aria-label="Close"]').click();
+  cy.get('.MuiDrawer-modal').should('not.exist');
+});

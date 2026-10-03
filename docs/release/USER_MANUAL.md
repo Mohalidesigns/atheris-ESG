@@ -176,8 +176,16 @@ On screens narrower than a small laptop, the left menu folds away.
 1. Select the menu icon (**Open menu**) at the top left to show it.
 2. Choose a module. The menu closes by itself.
 
-On a phone, dialogs fill the whole screen and wide tables scroll sideways inside their card. The app needs a network
-connection; offline use isn't available yet.
+On a phone, dialogs fill the whole screen and wide tables scroll sideways inside their card.
+
+**Working offline.** Your browser can install the app (an "Install" or "Add to Home Screen" option) so it opens like
+any other app. Without a connection you can still add data points and report incidents: they're saved on the device,
+and the top bar shows **Offline · N waiting**. They are sent automatically when you're back online. If you signed in on
+the device before, the app also opens offline, for capture only. If the server already has a value for the same
+metric, organisation and period, open **Data Hub → On this device** and choose **Keep server value** or **Use mine**.
+Records the server refuses wait there too, with the reason, so you can correct and resend them. Attach evidence files
+once a record has synced. Signing out removes your details from the device, but records that haven't synced stay
+until you sign in again.
 
 ### 1.10 Accessibility
 
@@ -1565,7 +1573,7 @@ Each link opens only its own questionnaire. Resending a questionnaire replaces t
 | Area | Limitation |
 |---|---|
 | Language | English only. French, Arabic and other languages are planned. |
-| Offline use | No offline mode yet; the app needs a connection. On slow 3G the first sign-in page can take several seconds. |
+| Offline use | Data points and incident reports only (section 1.9); evidence is attached after sync; other changes need a connection. On slow 3G the first visit can take several seconds; later visits load from the device. |
 | SMS and USSD | No data entry by SMS or USSD yet. SMS notifications are in Sandbox. |
 | Integrations | ERP and meter connectors, the carbon registries (ACMI, Verra, Gold Standard) and exchange, the satellite flaring check, regional climate data and the regulatory change feed are Sandbox or not configured. Nothing is fetched from them automatically. |
 | Framework content | The bundled framework requirements (for example NGX, SEC Nigeria, PenCom, CDP, GHG Protocol, SASB) and report templates are pending verification by an ESG subject-matter expert. SEC Nigeria and NGX report templates aren't available yet. No NAICOM content is included. |

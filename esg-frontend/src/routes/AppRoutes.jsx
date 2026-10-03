@@ -15,6 +15,8 @@ const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPo
 const SupplierQuestionnairePortal = lazy(() => import('../features/supplyChain/components/SupplierQuestionnairePortal'));
 // WP-42: anyone checks a training certificate by its code or QR code (no session).
 const VerifyCertificatePage = lazy(() => import('../features/training/components/VerifyCertificatePage'));
+// WP-43: opened without a connection by someone who signed in on this device before — offline capture only.
+const OfflineCapturePage = lazy(() => import('../features/offline/components/OfflineCapturePage'));
 const pages = {
   '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
   '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
@@ -83,6 +85,7 @@ export default function AppRoutes() {
   }, [status, restoreSession]);
 
   if (status === 'unknown') return <Loading />;
+  if (status === 'offline') return <Suspense fallback={<Loading />}><OfflineCapturePage /></Suspense>;
 
   return (
     <Suspense fallback={<Loading />}>

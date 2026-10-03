@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar, { DRAWER_WIDTH } from './Sidebar';
 import TopBar from './TopBar';
 import PrivacyNoticeGate from '../../features/privacy/components/PrivacyNoticeGate';
+import OfflineAgent from '../../features/offline/components/OfflineAgent';
 
 /**
  * App shell. From 900 px (md) the sidebar is always shown; below that it is a drawer opened from the top bar's menu
@@ -25,6 +26,7 @@ export default function MainLayout() {
           <Outlet />
         </Box>
         <PrivacyNoticeGate />
+        <OfflineAgent />
       </Box>
     </Box>
   );

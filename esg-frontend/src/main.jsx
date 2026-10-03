@@ -12,6 +12,14 @@ import '@fontsource/roboto-mono/600.css'
 import './index.css'
 import App from './App.jsx'
 
+// WP-43: the service worker that lets the app open and take data offline. Registered after the page has loaded, so it
+// never competes with the first visit; production builds only (the dev server serves modules fresh).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true }));
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
