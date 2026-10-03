@@ -98,6 +98,11 @@ esg:
   app:
     # Where people open the web app (links in emails, e.g. supplier questionnaires).
     public-url: ${ESG_PUBLIC_URL:http://localhost:5173}
+  privacy:
+    retention:
+      # WP-52 (D40): nightly removal of personal data past each tenant's retention settings.
+      enabled: true
+      cron: "0 30 2 * * *"
   supply-chain:
     reminders:
       # Daily reminders for corrective actions due in 7 days, due today or overdue (WP-31, TRD §8.6).

@@ -210,6 +210,12 @@ insert into ai.runs (id, kind, status, engine, parameters, input_summary, output
   values ('a0000000-0000-4000-8000-000000000901', 'extraction', 'completed', 'fixture engine', '{}', '{}', '{}', 'a0000000-0000-4000-8000-0000000004f1', now());
 insert into ai.extracted_values (run_id, page, metric_key, value, unit, quote, confidence)
   values ('a0000000-0000-4000-8000-000000000901', 1, 'electricity_kwh', 1000, 'kWh', 'Fixture electricity use was 1000 kWh.', 'high');
+-- WP-52 privacy (one row per tenant table for the RLS suite).
+insert into auth.privacy_notices (id, version, title, body, dpo_contact)
+  values ('a0000000-0000-4000-8000-000000000a01', 1, 'Fixture privacy notice', 'Fixture notice text.', 'dpo@fixture.test');
+insert into auth.privacy_acknowledgements (notice_id, user_id) values ('a0000000-0000-4000-8000-000000000a01', 'a0000000-0000-4000-8000-0000000000a1');
+insert into auth.data_subject_requests (reference, kind, subject_name, received_on, due_on) values ('DSR-FIX-0001', 'access', 'Fixture Person', '2026-01-05', '2026-02-04');
+insert into auth.retention_settings (notifications_days) values (365);
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');

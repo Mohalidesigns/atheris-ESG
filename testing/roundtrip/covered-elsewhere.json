@@ -196,5 +196,17 @@
   ],
   "Extracted value acceptance": [
     "com.esg.ai.AiApiTest#extractedValuesReachTheDataHubOnlyWhenAPersonAcceptsThem"
+  ],
+  "Privacy notice": [
+    "com.esg.privacy.PrivacyApiTest#theNoticeIsAcknowledgedPerVersionAndPeopleCanDownloadTheirData"
+  ],
+  "Data subject request": [
+    "com.esg.privacy.PrivacyApiTest#requestsAreRegisteredWithADueDateAndAnsweredWithAnExport"
+  ],
+  "Data subject request answer": [
+    "com.esg.privacy.PrivacyApiTest#requestsAreRegisteredWithADueDateAndAnsweredWithAnExport"
+  ],
+  "Retention": [
+    "com.esg.privacy.PrivacyApiTest#retentionRemovesPersonalDataPastEachTenantsSettings"
   ]
 }

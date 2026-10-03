@@ -17,6 +17,7 @@ import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
 import SetPasswordDialog from './SetPasswordDialog';
 import IntegrationsTab from './IntegrationsTab';
 import FrameworkContentTab from './FrameworkContentTab';
+import PrivacyTab from '../../privacy/components/PrivacyTab';
 import { useSearchParams } from 'react-router-dom';
 import { toFormError } from '../../../services/apiSlice';
 import UserFormDialog from './UserFormDialog';
@@ -248,6 +249,7 @@ const TABS = [
   { value: 'framework-content', label: 'Framework content', permission: 'framework_content:import', render: () => <FrameworkContentTab /> },
   { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
   { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
+  { value: 'privacy', label: 'Privacy (NDPA)', permission: 'privacy:read', render: () => <PrivacyTab /> },
 ];
 
 export default function AdminPage() {

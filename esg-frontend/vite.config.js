@@ -13,11 +13,24 @@ const proxy = {
   },
 };
 
+// WP-52: the headers the production web server must send (docs/esg-completion/SECURITY.md). The preview server sends
+// them too, so the E2E journeys and the ZAP scan run against the real policy. MUI injects <style> tags, hence
+// 'unsafe-inline' for styles only; scripts are same-origin; the API is same-origin through /api.
+export const securityHeaders = {
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+    + "font-src 'self' data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+};
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: { proxy },
-  preview: { proxy }, // E2E (WP-18) runs Cypress against the production build served by `vite preview`
+  preview: { proxy, headers: securityHeaders }, // E2E (WP-18) runs Cypress against the production build served by `vite preview`
 
   test: {
     environment: 'jsdom',

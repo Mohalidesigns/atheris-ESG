@@ -3,6 +3,14 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-52 Security and NDPA 2023 (D40)
+
+- Privacy notice: the organisation publishes it (with its data protection officer's contact) under Administration › Privacy; everyone is shown each new version when they sign in until they confirm they have read it.
+- Data subject requests (access, correction, erasure, objection, portability) are recorded with a 30-day deadline and flagged when overdue; the DPO can export a person's data or erase it. Erasure anonymises the account (name, contact details, sign-in secrets, roles, sessions, notifications, message logs; certificates anonymised and revoked) and keeps the audit trail and approved records as the law requires.
+- Anyone can download a copy of their own data from the account menu.
+- Retention settings: read notifications, sent email/SMS logs, ended sessions and IP addresses in file logs are removed after each organisation's chosen periods, every night.
+- Security: patched Tomcat (three critical CVEs), Netty, Jackson, HttpCore and the PostgreSQL driver in the backend and pypdf/python-multipart in the AI service; secrets and dependency scans run in CI; production refuses to start with development secrets; strict security headers on the API and web app; fonts are served by the platform instead of Google.
+
 ## Unreleased — WP-51 Performance (D39)
 
 - Performance suite (k6) for the TRD targets on a throwaway database with a million data points: `./scripts/perf.sh`; results and method in docs/esg-completion/PERFORMANCE.md.

@@ -31,7 +31,7 @@ export const navSections = [
   ]},
   { label: 'PLATFORM', items: [
     { text: 'Training', icon: <School />, path: '/training', module: 'training', anyOf: ['training:read'] },
-    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read'] },
+    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read', 'privacy:read'] },
   ]},
 ];
 

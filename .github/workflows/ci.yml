@@ -143,6 +143,12 @@ jobs:
         run: npx cypress run
         env:
           E2E_BASE_URL: http://localhost:4173
+      - name: OWASP ZAP baseline (WP-52)
+        # Passive scan of the web app and API behind it while the stack is up; fails on FAIL-level alerts only.
+        run: |
+          mkdir -p zap && chmod 777 zap
+          docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://localhost:4173 -r zap-baseline.html -J zap-baseline.json -I
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
@@ -152,6 +158,11 @@ jobs:
             backend.log
             frontend.log
             ai.log
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: zap-baseline
+          path: zap/
 
   ai:
     name: AI service tests (pytest)
@@ -169,6 +180,35 @@ jobs:
         run: |
           python -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
           .venv/bin/python -m pytest -q
+
+  security:
+    name: Security scans (secrets, dependencies)
+    # WP-52 (D40): no secrets in the history; no HIGH/CRITICAL vulnerability with a fix in any dependency set
+    # (backend jar, frontend lockfile, AI service requirements).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Secrets (gitleaks)
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build backend jar
+        working-directory: esg-backend
+        run: ./mvnw -B -q package -DskipTests -Dcheckstyle.skip -Djacoco.skip
+      - name: Dependencies (Trivy)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b . v0.75.0
+          opts="--quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --timeout 30m"
+          ./trivy rootfs $opts esg-backend/target/esg-platform-1.0.0-SNAPSHOT.jar
+          ./trivy fs $opts esg-frontend/package-lock.json
+          ./trivy fs $opts esg-ai/requirements.txt
 
   openapi:
     name: OpenAPI spec + breaking-change diff

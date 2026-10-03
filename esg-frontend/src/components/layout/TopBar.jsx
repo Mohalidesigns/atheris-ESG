@@ -9,10 +9,13 @@ import { useAuth } from '../../features/auth/hooks/useAuth';
 import Can from '../rbac/Can';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
 import { roleLabel } from '../../services/labels';
+import { useMyDataMutation } from '../../features/privacy/privacyApi';
+import { saveBlob } from '../../features/privacy/schemas';
 
 export default function TopBar({ onMenu = () => {} }) {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [myData] = useMyDataMutation();
 
   return (
     <AppBar
@@ -63,6 +66,10 @@ export default function TopBar({ onMenu = () => {} }) {
           <Divider />
           {/* WP-34: every user acknowledges published policies there. */}
           <MenuItem component={RouterLink} to="/my-policies" onClick={() => setAnchorEl(null)}>My policies</MenuItem>
+          {/* WP-52 (NDPA 2023 ss. 34, 38): anyone can take a copy of their own data. */}
+          <MenuItem onClick={async () => { setAnchorEl(null); try { saveBlob(await myData().unwrap(), 'my-data.json'); } catch { /* the download shows nothing on failure */ } }}>
+            Download my data
+          </MenuItem>
           <MenuItem onClick={() => { setAnchorEl(null); logout(); }}>Sign Out</MenuItem>
         </Menu>
       </Toolbar>

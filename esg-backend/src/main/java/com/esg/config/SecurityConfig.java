@@ -42,6 +42,17 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // WP-52: the API serves JSON and files, never pages — nothing may be framed, scripted or embedded from it
+            // (the Swagger UI, off in production, keeps Spring's defaults). HSTS applies when served over HTTPS.
+            .headers(h -> h
+                .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter(
+                    request -> !request.getRequestURI().contains("/swagger-ui"),
+                    new org.springframework.security.web.header.writers.StaticHeadersWriter("Content-Security-Policy",
+                        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints; each is marked @PublicEndpoint (see ControllerSecurityArchTest).
                 .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/logout",
