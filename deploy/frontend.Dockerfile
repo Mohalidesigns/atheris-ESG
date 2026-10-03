@@ -13,3 +13,5 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/esg-frontend/dist /usr/share/nginx/html
 EXPOSE 8080
+# The base image already runs as nginx (uid 101); stated explicitly so the image never falls back to root.
+USER 101
