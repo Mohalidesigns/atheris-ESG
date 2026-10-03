@@ -117,7 +117,7 @@ function TargetCard({ target, onEdit, onDelete }) {
             <Typography variant="body2">
               {target.progressYear}: {n(target.currentValue)} actual vs {n(target.expectedValue)} on the pathway · {n(target.progressPct)}% of the reduction achieved
             </Typography>
-            <LinearProgress variant="determinate" value={Math.max(0, Math.min(100, Number(target.progressPct ?? 0)))} sx={{ mt: 0.5, height: 6, borderRadius: 3 }} />
+            <LinearProgress variant="determinate" aria-label={`${target.targetName} progress`} value={Math.max(0, Math.min(100, Number(target.progressPct ?? 0)))} sx={{ mt: 0.5, height: 6, borderRadius: 3 }} />
           </Box>
         )}
         {target.baselineWarning && <Alert severity="warning" sx={{ my: 1 }} aria-label="Baseline check">{target.baselineWarning}</Alert>}

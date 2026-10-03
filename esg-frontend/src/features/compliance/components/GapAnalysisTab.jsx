@@ -67,7 +67,7 @@ export default function GapAnalysisTab({ year, initialFramework }) {
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }} aria-label="Overall completeness">
                 {data.frameworkName} · {data.reportingYear}: {data.overallCompleteness}% complete
               </Typography>
-              <LinearProgress variant="determinate" value={Number(data.overallCompleteness)} sx={{ my: 1, height: 8, borderRadius: 4 }} />
+              <LinearProgress variant="determinate" aria-label="Completeness progress" value={Number(data.overallCompleteness)} sx={{ my: 1, height: 8, borderRadius: 4 }} />
               {data.contentStatus !== 'sme_verified' && (
                 <Typography variant="caption" color="text.secondary">Requirement content is pending ESG SME verification.</Typography>
               )}

@@ -55,7 +55,7 @@ export default function OverviewTab({ year, onOpenGaps }) {
                   ) : (
                     <>
                       <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>{f.completeness}%</Typography>
-                      <LinearProgress variant="determinate" value={Number(f.completeness)} sx={{ height: 8, borderRadius: 4, my: 1 }} />
+                      <LinearProgress variant="determinate" aria-label={`${f.code} completeness`} value={Number(f.completeness)} sx={{ height: 8, borderRadius: 4, my: 1 }} />
                       <Typography variant="body2">
                         {f.met} met · {f.partial} partial · {f.missing} missing{f.notApplicable ? ` · ${f.notApplicable} n/a` : ''}
                         {f.highPriority > 0 && <> · <strong>{f.highPriority} high priority</strong></>}

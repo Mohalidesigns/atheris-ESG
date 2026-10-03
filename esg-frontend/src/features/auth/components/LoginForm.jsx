@@ -39,14 +39,14 @@ function LoginStep() {
         fullWidth label="Email Address" type="email" autoComplete="username" sx={{ mb: 2 }}
         {...register('email')} error={!!errors.email} helperText={errors.email?.message}
         InputProps={{
-          startAdornment: <InputAdornment position="start"><Email sx={{ color: '#718096', fontSize: 20 }} /></InputAdornment>,
+          startAdornment: <InputAdornment position="start"><Email sx={{ color: '#5F6B7A', fontSize: 20 }} /></InputAdornment>,
         }}
       />
       <TextField
         fullWidth label="Password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" sx={{ mb: 1.5 }}
         {...register('password')} error={!!errors.password} helperText={errors.password?.message}
         InputProps={{
-          startAdornment: <InputAdornment position="start"><Lock sx={{ color: '#718096', fontSize: 20 }} /></InputAdornment>,
+          startAdornment: <InputAdornment position="start"><Lock sx={{ color: '#5F6B7A', fontSize: 20 }} /></InputAdornment>,
           endAdornment: (
             <InputAdornment position="end">
               <IconButton size="small" aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -57,7 +57,7 @@ function LoginStep() {
           ),
         }}
       />
-      <Typography variant="caption" sx={{ display: 'block', mb: 2.5, color: '#718096' }}>
+      <Typography variant="caption" sx={{ display: 'block', mb: 2.5, color: '#5F6B7A' }}>
         Forgot your password? Ask your administrator to reset it.
       </Typography>
       <Button
@@ -96,7 +96,7 @@ export default function LoginForm() {
               <Shield sx={{ fontSize: 36, color: '#D4AF37' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A365D' }}>ESG Pro</Typography>
-            <Typography variant="body2" sx={{ color: '#718096', mt: 0.5 }}>
+            <Typography variant="body2" sx={{ color: '#5F6B7A', mt: 0.5 }}>
               Africa&apos;s Premier ESG Management Platform
             </Typography>
           </Box>

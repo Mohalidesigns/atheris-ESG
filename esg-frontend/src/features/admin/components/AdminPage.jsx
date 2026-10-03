@@ -155,7 +155,7 @@ function UsersTab() {
                     </TableCell>
                     <TableCell>
                       <Chip size="small" label={u.active ? 'Active' : 'Deactivated'} sx={{
-                        bgcolor: u.active ? '#E6F4EA' : '#FEE2E2', color: u.active ? '#2D7D46' : '#C53030', fontSize: '0.65rem',
+                        bgcolor: u.active ? '#E6F4EA' : '#FEE2E2', color: u.active ? '#1E5C32' : '#9B2020', fontSize: '0.65rem',
                       }} />
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.75rem' }}>{u.mfaEnabled ? 'On' : 'Off'}</TableCell>
@@ -263,7 +263,7 @@ export default function AdminPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>Administration</Typography>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>Administration</Typography>
         <Typography variant="body2" color="text.secondary">Users, roles, organisation structure, reporting periods and settings</Typography>
       </Box>
       {!tab && <Alert severity="info">You don&apos;t have access to any administration area.</Alert>}

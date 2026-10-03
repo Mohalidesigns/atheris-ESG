@@ -44,7 +44,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
           <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem' }}>
             ESG Pro
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }}>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }}>
             Africa Edition
           </Typography>
         </Box>
@@ -58,7 +58,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
           <Box key={section.label}>
             <Typography
               variant="caption"
-              sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
+              sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
             >
               {section.label}
             </Typography>
@@ -104,14 +104,14 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
 
       {/* User Profile */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ width: 36, height: 36, bgcolor: '#D4AF37', fontSize: '0.8rem', fontWeight: 700 }}>
+        <Avatar sx={{ width: 36, height: 36, bgcolor: '#D4AF37', color: '#1A365D', fontSize: '0.8rem', fontWeight: 700 }}>
           {user?.firstName?.[0]}{user?.lastName?.[0]}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600, fontSize: '0.78rem', lineHeight: 1.3 }} noWrap>
             {user?.firstName} {user?.lastName}
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }} noWrap>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }} noWrap>
             {(user?.roles ?? []).map(roleLabel).join(', ')}
           </Typography>
         </Box>
@@ -119,7 +119,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
           role="button"
           aria-label="Sign out"
           onClick={logout}
-          sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
+          sx={{ color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
         />
       </Box>
     </Drawer>

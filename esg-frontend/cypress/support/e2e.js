@@ -129,3 +129,25 @@ Cypress.Commands.add('carbonTab', (tab, year) => {
   if (year) cy.pick('Year', String(year));
   cy.contains('[role="tab"]', tab).click();
 });
+
+/**
+ * WP-53: WCAG 2.1 AA check of the current page with axe-core (A and AA rules of WCAG 2.0 and 2.1). Fails with each
+ * violation, its impact and the first elements affected. `exclude`: selectors outside our control.
+ */
+Cypress.Commands.add('a11y', (label, { exclude = [] } = {}) => {
+  cy.wait(400, { log: false }); // let MUI transitions finish: colours measured mid-animation are meaningless
+  cy.readFile('node_modules/axe-core/axe.min.js', { log: false }).then((src) => cy.window({ log: false }).then((win) => {
+    if (!win.axe) win.eval(src);
+  }));
+  cy.window({ log: false }).then((win) => win.axe.run({ include: [win.document], exclude: exclude.map((s) => [s]) }, {
+    runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }, resultTypes: ['violations'],
+  })).then(({ violations }) => {
+    if (violations.length === 0) return;
+    const lines = violations.map((v) => `  ${v.id} [${v.impact}] ${v.help} — ${v.nodes.length} element(s): `
+      + v.nodes.slice(0, 3).map((n) => {
+        const d = n.any?.[0]?.data;
+        return n.target.join(' ') + (d?.fgColor ? ` (${d.fgColor} on ${d.bgColor} = ${d.contrastRatio}:1, "${(n.html || '').replace(/<[^>]+>/g, '').slice(0, 30)}")` : '');
+      }).join(' | '));
+    throw new Error(`${label}: ${violations.length} WCAG 2.1 AA violation(s)\n${lines.join('\n')}`);
+  });
+});

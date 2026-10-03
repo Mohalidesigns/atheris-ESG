@@ -236,7 +236,7 @@ function ProjectDrawer({ id, onClose, onEdit }) {
             {used != null && ` (${pct(p.budgetUsedPct)})`}
             {p.currency !== p.baseCurrency && ` · ${p.baseCurrency} ${fmt(p.spentBase, 2)}`}
           </Typography>
-          {used != null && <LinearProgress variant="determinate" value={used} color={Number(p.budgetUsedPct) > 100 ? 'error' : 'primary'} sx={{ my: 1 }} />}
+          {used != null && <LinearProgress variant="determinate" aria-label="Budget used" value={used} color={Number(p.budgetUsedPct) > 100 ? 'error' : 'primary'} sx={{ my: 1 }} />}
           {p.expenditures.length > 0 && (
             <Table size="small" aria-label="Expenditure">
               <TableBody>

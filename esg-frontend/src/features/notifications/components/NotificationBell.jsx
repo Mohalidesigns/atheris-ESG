@@ -42,7 +42,7 @@ export default function NotificationBell() {
         <IconButton size="small" sx={{ mr: 1 }} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
           onClick={(e) => setAnchor(e.currentTarget)}>
           <Badge badgeContent={unread} color="error" max={99}>
-            <NotificationsOutlined sx={{ color: '#718096', fontSize: 20 }} />
+            <NotificationsOutlined sx={{ color: '#5F6B7A', fontSize: 20 }} />
           </Badge>
         </IconButton>
       </Tooltip>

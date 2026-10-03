@@ -46,7 +46,7 @@ function Result({ jobId, onShowImported }) {
   useEffect(() => {
     if (finished) dispatch(dataHubApi.util.invalidateTags([{ type: 'Import', id: 'LIST' }, { type: 'DataPoint', id: 'LIST' }]));
   }, [finished, dispatch]);
-  if (!job) return <LinearProgress />;
+  if (!job) return <LinearProgress aria-label="Loading the import" />;
   const done = job.status !== 'processing';
   const errors = job.rowErrors ?? [];
   const downloadFailed = async () => {
@@ -58,7 +58,7 @@ function Result({ jobId, onShowImported }) {
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{job.fileName}</Typography>
       {!done && (
         <Box sx={{ my: 2 }}>
-          <LinearProgress variant="determinate" value={job.totalRows ? (100 * job.processedRows) / job.totalRows : 0} />
+          <LinearProgress variant="determinate" aria-label="Rows processed" value={job.totalRows ? (100 * job.processedRows) / job.totalRows : 0} />
           <Typography variant="caption">{job.processedRows} of {job.totalRows} rows</Typography>
         </Box>
       )}

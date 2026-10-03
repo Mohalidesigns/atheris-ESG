@@ -2,11 +2,12 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CircularProgress, Box, Typography } from '@mui/material';
 import { useSelector } from 'react-redux';
-import MainLayout from '../components/layout/MainLayout';
 import { useRestoreSessionMutation } from '../features/auth/authApi';
 import { allNavItems, firstAllowedPath, moduleEnabled } from './navigation';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
+// WP-53: the app shell loads after sign-in, so the sign-in page downloads only what it needs (3G target).
+const MainLayout = lazy(() => import('../components/layout/MainLayout'));
 // WP-34: the public whistleblower portal (no session) and everyone's policy acknowledgements.
 const WhistleblowerPortal = lazy(() => import('../features/governance/components/WhistleblowerPortal'));
 const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPoliciesPage'));

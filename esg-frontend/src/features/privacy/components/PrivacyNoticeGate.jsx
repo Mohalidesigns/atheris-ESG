@@ -1,6 +1,6 @@
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import { useAcknowledgeNoticeMutation, useMyNoticeQuery } from '../privacyApi';
-import { problemText } from '../schemas';
+import { problemText } from '../../../services/download';
 
 /**
  * NDPA 2023 (D40 (1)): the organisation's privacy notice in force, shown once per version until the person

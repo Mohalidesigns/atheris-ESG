@@ -3,6 +3,12 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-53 Accessibility and slow networks (D41)
+
+- Every module page, key tabs, the public pages and dialogs are checked against WCAG 2.1 AA (axe-core) in the end-to-end suite.
+- Text that was too faint to read for many people now meets the contrast standard: secondary text, sidebar captions, Sandbox labels, warning and info chips, the user avatar and status chips; progress bars are announced by screen readers; Administration has a page heading.
+- The sign-in page downloads less before it appears (entry bundle 140 → 86 KB compressed): first paint 1.8 s on a fast-3G profile; a size budget in CI keeps it that way.
+
 ## Unreleased — WP-52 Security and NDPA 2023 (D40)
 
 - Privacy notice: the organisation publishes it (with its data protection officer's contact) under Administration › Privacy; everyone is shown each new version when they sign in until they confirm they have read it.

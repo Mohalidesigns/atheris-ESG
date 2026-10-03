@@ -10,7 +10,7 @@ import Can from '../rbac/Can';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
 import { roleLabel } from '../../services/labels';
 import { useMyDataMutation } from '../../features/privacy/privacyApi';
-import { saveBlob } from '../../features/privacy/schemas';
+import { saveBlob } from '../../services/download';
 
 export default function TopBar({ onMenu = () => {} }) {
   const { user, logout } = useAuth();
@@ -55,7 +55,7 @@ export default function TopBar({ onMenu = () => {} }) {
             <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: '0.78rem' }}>
               {user?.firstName} {user?.lastName}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#718096', fontSize: '0.65rem' }}>
+            <Typography variant="caption" sx={{ color: '#5F6B7A', fontSize: '0.65rem' }}>
               {(user?.roles ?? []).map(roleLabel).join(', ')}
             </Typography>
           </Box>

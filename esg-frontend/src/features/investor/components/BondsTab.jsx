@@ -170,7 +170,7 @@ function BondCard({ bond: b, manager, onEdit, onDelete }) {
         {b.instrument !== 'sustainability_linked_bond' && (
           <Box sx={{ mt: 1.5 }} aria-label="Use of proceeds">
             <Typography variant="body2">Allocated {b.currency} {fmt(b.allocated, 2)} of {fmt(b.amount, 2)} ({fmt(b.allocatedPct)}%) · unallocated {fmt(b.unallocated, 2)}</Typography>
-            <LinearProgress variant="determinate" value={Math.min(100, Number(b.allocatedPct))} sx={{ my: 0.5 }} />
+            <LinearProgress variant="determinate" aria-label="Proceeds allocated" value={Math.min(100, Number(b.allocatedPct))} sx={{ my: 0.5 }} />
             {b.allocations.length > 0 && (
               <Table size="small">
                 <TableHead><TableRow><TableCell>Project</TableCell><TableCell>Category</TableCell><TableCell>Site</TableCell><TableCell>Date</TableCell><TableCell align="right">Amount</TableCell>{manager && <TableCell />}</TableRow></TableHead>

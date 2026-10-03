@@ -214,7 +214,7 @@ TRD-11.2.4-02,TRD §11.2.4,X,Dashboard with 1M data points renders < 3 s,perf/k6
 TRD-11.2.4-03,TRD §11.2.4,X,"PDF report with 50,000 data points < 60 s",perf/k6/report.js,,"k6 report: ≈52,000 points, sections resolved + PDF in max 0.77 s — perf/results/20261003-152821",L4,P5 (WP-51),Measured on the draft preview (same renderer as the approved export)
 TRD-11.2.4-04,TRD §11.2.4,X,"Emission batch of 10,000 records < 5 min",perf/k6/calculate.js,,"k6 calculate: 10,000 records recalculated in 17.8 s — perf/results/20261003-152821",L4,P5 (WP-51),
 TRD-11.2.4-05,TRD §11.2.4,X,Offline sync of 500 records < 30 s,,,none,MISSING,P5 (WP-51 after WP-43),"The offline queue (WP-43) is not built, so there is nothing to measure yet"
-BRD-7.1-01,BRD §7.1 (NFR),X,Page load < 3 s on 3G,,,none,MISSING,P5 (WP-53),
+BRD-7.1-01,BRD §7.1 (NFR),X,Page load < 3 s on 3G,,esg-frontend/src/routes/AppRoutes.jsx (lazy shell); src/services/download.js; scripts/check-bundle-size.mjs,"Lighthouse (sign-in): Fast-3G/Slow-4G profile FCP 1.8 s, LCP 3.0 s; regular 3G (700 kbps, 300 ms RTT, 4× CPU) FCP 3.9 s, LCP 6.3 s; CI bundle budget",L3,P5 (WP-53),"Met on the Lighthouse mobile (""fast 3G"") profile, not on regular 3G: the first visit needs ~285 KiB. Next: offline precache (WP-43) for repeat visits, Brotli at the edge, an HTML sign-in shell (D41 OPEN)"
 BRD-7.1-02,BRD §7.1 (NFR),X,API P95 < 500 ms,,,none,MISSING,P5 (WP-51),
 BRD-7.1-03,BRD §7.1 (NFR),X,"10,000+ concurrent users",,,none,MISSING,P5 (WP-51),
 BRD-7.1-04,BRD §7.1 (NFR),X,Report generation for 1M data points < 60 s,,,none,MISSING,P5 (WP-51),
@@ -245,7 +245,7 @@ BRD-7.5-03,BRD §7.5 (NFR),X,SSO via SAML 2.0 and OIDC,,,none,MISSING,not planne
 BRD-7.5-04,BRD §7.5 (NFR),X,Webhooks for real-time events,,,none,MISSING,P4 (WP-46),
 BRD-7.5-05,BRD §7.5 (NFR),X,"File import/export: CSV, Excel, JSON, XML, XBRL",,,none,MISSING,P2–P4,
 BRD-7.5-06,BRD §7.5 (NFR),X,IoT device integration,,,none,MISSING,P4 (WP-46),
-BRD-7.6-01,BRD §7.6 (NFR),X,WCAG 2.1 AA,,,none,MISSING,P5 (WP-53),
+BRD-7.6-01,BRD §7.6 (NFR),X,WCAG 2.1 AA,,esg-frontend/src/theme/lightTheme.js; components/layout/Sidebar.jsx; feedback/SandboxChip.jsx,"Cypress wp-53-accessibility (axe-core, WCAG 2.0/2.1 A+AA, 22 checks: 15 module pages, 5 tabs, 3 public pages, 2 dialogs); Lighthouse accessibility 100 (sign-in)",L4,P5 (WP-53),"WP-53 (D41): automated checks pass; contrast, progress-bar names and page headings fixed. Manual screen-reader and keyboard walkthrough OPEN"
 BRD-7.6-02,BRD §7.6 (NFR),X,RTL support for Arabic,,,none,MISSING,P4 (WP-45),
 BRD-7.6-03,BRD §7.6 (NFR),X,"UI in EN, FR, PT, AR, SW, HA, YO",,,none,MISSING,P4 (WP-45),"i18next installed, unused"
 BRD-7.6-04,BRD §7.6 (NFR),X,Mobile-responsive design for Android,,,none,L0,P5 (WP-53),MUI Grid used; unverified on devices

@@ -100,7 +100,7 @@ function Review({ runId }) {
           <AiChip engine={run.engine} />
           <Chip size="small" color={RUN_STATUS[run.status].color} label={RUN_STATUS[run.status].label} />
         </Box>
-        {run.status === 'running' && <><LinearProgress sx={{ mb: 1 }} /><Typography variant="body2">Reading the report. This can take a few minutes; you can leave this page.</Typography></>}
+        {run.status === 'running' && <><LinearProgress aria-label="Reading the report" sx={{ mb: 1 }} /><Typography variant="body2">Reading the report. This can take a few minutes; you can leave this page.</Typography></>}
         {run.status === 'failed' && <Alert severity="error">{run.error}</Alert>}
         {run.status === 'completed' && (
           <>

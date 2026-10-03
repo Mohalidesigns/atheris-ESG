@@ -134,7 +134,7 @@ function SdgAlignment({ sdg }) {
                   <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, minHeight: 28 }}>{g.title}</Typography>
                   {g.linkedMetrics === 0 ? <Typography variant="caption" color="text.secondary">No linked metrics</Typography> : (
                     <>
-                      <LinearProgress variant="determinate" value={Number(g.coveragePct)} sx={{ height: 5, borderRadius: 3, my: 0.5 }} />
+                      <LinearProgress variant="determinate" aria-label={`SDG ${g.goal} coverage`} value={Number(g.coveragePct)} sx={{ height: 5, borderRadius: 3, my: 0.5 }} />
                       <Typography variant="caption" color="text.secondary">{g.evidencedMetrics} / {g.linkedMetrics} metrics</Typography>
                     </>
                   )}

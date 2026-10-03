@@ -62,6 +62,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Bundle budget (WP-53)
+        run: node ../scripts/check-bundle-size.mjs
       - name: No-mock gate (ENFORCE since WP-16)
         run: |
           npm run -s check:no-mocks -- --report no-mock-report.md

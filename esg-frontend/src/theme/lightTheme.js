@@ -38,7 +38,8 @@ const lightTheme = createTheme({
     },
     text: {
       primary: '#2D3748',
-      secondary: '#718096',
+      // WP-53: 5.4:1 on white (WCAG AA needs 4.5:1; the former #718096 was 4.0:1).
+      secondary: '#5F6B7A',
     },
     divider: '#E2E8F0',
   },
@@ -52,14 +53,30 @@ const lightTheme = createTheme({
     h6: { fontWeight: 600, fontSize: '0.875rem', color: '#2D3748' },
     body1: { fontFamily: '"Inter", "SF Pro Text", sans-serif', fontSize: '0.875rem' },
     body2: { fontFamily: '"Inter", "SF Pro Text", sans-serif', fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', color: '#718096' },
+    caption: { fontSize: '0.75rem', color: '#5F6B7A' },
     mono: { fontFamily: '"Roboto Mono", monospace' },
   },
   shape: {
     borderRadius: 8,
   },
   components: {
+    // WP-53: outlined chips and text buttons draw text in the palette's main colour; gold (2.2:1) and teal (3.5:1) fail
+    // WCAG AA on white, so their text uses darker shades (≥ 5.4:1). Filled chips already get dark text from MUI.
+    MuiChip: {
+      styleOverrides: {
+        root: { fontWeight: 500 },
+      },
+      variants: [
+        { props: { variant: 'outlined', color: 'warning' }, style: { color: '#7A5B00', borderColor: '#D4AF37' } },
+        { props: { variant: 'outlined', color: 'info' }, style: { color: '#237574' } },
+      ],
+    },
     MuiButton: {
+      variants: [
+        { props: { variant: 'text', color: 'warning' }, style: { color: '#7A5B00' } },
+        { props: { variant: 'outlined', color: 'warning' }, style: { color: '#7A5B00' } },
+        { props: { variant: 'text', color: 'info' }, style: { color: '#237574' } },
+      ],
       styleOverrides: {
         root: {
           textTransform: 'none',
@@ -84,11 +101,6 @@ const lightTheme = createTheme({
           boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)',
           border: '1px solid #E2E8F0',
         },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: { fontWeight: 500 },
       },
     },
     // Phase 2 (item 8): tables scroll sideways inside their card rather than being cut off at 1024–1280 px, cells are a
