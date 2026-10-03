@@ -29,8 +29,10 @@ class ProductionSecretsPolicyTest {
 
   @Test
   void realSecretsAndLocalProfilesStart() {
-    new ProductionSecretsPolicy(env("prod", Map.of("esg.security.jwt-secret", "q7Zr0n8w5mKfX2pL9sVb3cYt6hJd1gNe4aUo", "esg.ai.url", "http://ai:8090",
-        "esg.ai.token", "f3d9a7c1e5b2084d6a9c3e7b1f5d2a8c")));
+    // Stand-ins for production values: long enough and not a committed development value.
+    String jwt = "prod-signing-key-" + "x".repeat(40);
+    String token = "prod-ai-token-" + "y".repeat(24);
+    new ProductionSecretsPolicy(env("prod", Map.of("esg.security.jwt-secret", jwt, "esg.ai.url", "http://ai:8090", "esg.ai.token", token)));
     new ProductionSecretsPolicy(env("local", Map.of("esg.security.jwt-secret", "local-dev-only")));
     assertThat(ProductionSecretsPolicy.problems(name -> "")).isEmpty();
   }
