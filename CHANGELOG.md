@@ -12,6 +12,7 @@ One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs
 - ESG maturity index (1–5, six dimensions) with the evidence behind each score and the next step; snapshots for the history.
 - SDG alignment per goal from the linked metrics' evidence and direction of change, with tagged KPIs and priority goals.
 - Dashboard Analytics card; `analytics:*` report variables; a KPI with a target evidences GRI 3-3 and TCFD Metrics & Targets (a). ESG directors can now configure analytics.
+- Fixed: three organisation-scope tests assumed Site 1 had no sub-sites and failed once another test added one (CI on #21); they now check that nothing outside the scope appears.
 
 ## Unreleased — WP-31 Supply Chain ESG (D33)
 
