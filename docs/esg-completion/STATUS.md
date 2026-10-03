@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (PR #21, stacked on #20), **WP-40** Investor Portal (branch `feature/wp-40-investor`, stacked on #21) |
-| Next | **Phase 4 modules**: WP-41 Carbon Market next, then 42. **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (PR #21, stacked on #20), **WP-40** Investor Portal (PR #22, stacked on #21), **WP-41** Carbon Market (branch `feature/wp-41-carbon-market`, stacked on #22) |
+| Next | **Phase 4 modules**: WP-42 Training next, then the Phase 4 report. **Product owner:** ACMI / registry and exchange access for the carbon market adapters, Article 6 (D36). **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,28 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-41 — Carbon Market
+
+Branch `feature/wp-41-carbon-market` (stacked on WP-40, PR #22). Design: D36. Migration V033; IFRS S2-33 link in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Credit portfolio | Lots by project, vintage and serial block; price, seller; verification from a registry statement | round-trip `credit-lot`, `CarbonMarketApiTest`, UI, Cypress journey 24 |
+| No double counting | Serials can't be held twice or retired twice across all tenants (DB trigger, ESG-409-SERIAL) | `CarbonMarketApiTest` (same tenant and cross-tenant), Cypress journey 24 |
+| Retirements | Next free serials reserved → approved with registry reference by someone else (ESG-409-SOD) or cancelled; locked years refused | `CarbonMarketMathTest`, `CarbonMarketApiTest`, UI, Cypress journey 24 |
+| Offset projects | Tenant-entered, standards and registries, nature-based flag | round-trip `offset-project`, `CarbonMarketApiTest` |
+| Offset monitoring | Gross beside credits, net, share, offset-to-reduction ratio, over-reliance vs ceiling | `CarbonMarketMathTest` (golden), `CarbonMarketApiTest`, UI |
+| Internal carbon price | Shadow price / internal fee × emissions per organisation | round-trip `internal-price`, `carbon-market-settings`, `CarbonMarketApiTest` |
+| Registry and exchange | Adapters, Sandbox only, labelled in the UI and under Integrations | `CarbonMarketApiTest`, `AdminUserApiTest` |
+
+Results: backend `mvn verify` 1,155 tests, 0 failures, 88.7% lines (carbon market 85.2%), 0 Checkstyle; frontend 438 tests, lint, no-mock gate 0 findings; Cypress 31 specs / 64 tests on a fresh database (journey 24 new; journey 2's role-menu fixture updated for the manager's new Carbon Market menu and re-run).
+
+Found and fixed: an ambiguous column in the dashboard's holdings query (500 on the dashboard); `carbon_market:` couldn't be a report-variable source (the pattern takes letters only), so the variables are `offsets:*`.
+
+Open (D36): ACMI/registry and exchange connections; Article 6 corresponding adjustments; a separate transactions ledger (sales, transfers); a verified-developer project feed.
 
 ---
 

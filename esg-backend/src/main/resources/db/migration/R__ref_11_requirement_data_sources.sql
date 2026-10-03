@@ -48,9 +48,16 @@ FROM (VALUES ('analytics.custom_kpis', 'GRI', '3-3'), ('analytics.custom_kpis', 
 JOIN compliance.regulatory_frameworks f ON f.code = s.framework
 JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
 
+-- WP-41 (D36): retired carbon credits evidence the use of carbon credits disclosed with climate-related targets
+-- (IFRS S2 paragraphs 33-36).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT 'carbon_market.retirements', r.id
+FROM compliance.framework_requirements r JOIN compliance.regulatory_frameworks f ON f.id = r.framework_id
+WHERE f.code = 'ISSB_S2' AND r.requirement_code = 'S2-33';
+
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 18 THEN
-    RAISE EXCEPTION 'Expected 18 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
+  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 19 THEN
+    RAISE EXCEPTION 'Expected 19 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
   END IF;
 END $$;

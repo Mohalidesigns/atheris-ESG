@@ -107,7 +107,9 @@ FROM (VALUES
     -- WP-35: analytics:configure for anomaly sensitivity and benchmark datasets (D34).
     'analytics:create', 'analytics:read', 'analytics:configure', 'investor:read', 'investor:share',
     -- WP-40: investor:configure for the scorecard weights (D35).
-    'investor:configure', 'carbon_market:read']),
+    'investor:configure', 'carbon_market:read',
+    -- WP-41: the carbon credit portfolio and retirements (D36).
+    'carbon_market:create', 'carbon_market:update', 'carbon_market:approve']),
   ('ESG_MANAGER', ARRAY[
     'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
     'reference_data:read',
@@ -117,7 +119,9 @@ FROM (VALUES
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update', 'carbon_data:export',
     'compliance:read', 'reports:create', 'reports:read', 'reports:update', 'reports:export',
     'risk:create', 'risk:read', 'risk:update', 'supply_chain:create', 'supply_chain:read', 'supply_chain:update',
-    'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read']),
+    'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read',
+    -- WP-41 (D36): manages credits and requests retirements; the director approves.
+    'carbon_market:create', 'carbon_market:read', 'carbon_market:update']),
   ('ESG_ANALYST', ARRAY[
     'data_points:validate', 'data_sources:read', 'fx_rates:read',
     'reference_data:read',

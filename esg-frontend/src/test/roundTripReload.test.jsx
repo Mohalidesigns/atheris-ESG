@@ -38,6 +38,9 @@ import { WeightsDialog } from '../features/investor/components/ScorecardsTab';
 import { BondDialog } from '../features/investor/components/BondsTab';
 import { RoomDialog } from '../features/investor/components/DataRoomsTab';
 import { ImpactDialog } from '../features/investor/components/ImpactTab';
+import { ProjectDialog as OffsetProjectDialog } from '../features/carbonMarket/components/ProjectsTab';
+import { LotDialog } from '../features/carbonMarket/components/CreditsTab';
+import { PriceDialog, CeilingDialog } from '../features/carbonMarket/components/PricingTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -68,6 +71,7 @@ const QUESTIONNAIRE_A = 'a0000000-0000-4000-8000-000000000204';
 const QUESTION_A = 'a0000000-0000-4000-8000-000000000203';
 const KPI_A = 'a0000000-0000-4000-8000-000000000601';
 const USER_INVESTOR = 'a1000000-0000-4000-8000-000000000008';
+const PROJECT_CM = 'a0000000-0000-4000-8000-000000000701';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
@@ -79,7 +83,8 @@ const resolve = (v) => {
       .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
       .replaceAll('{TOPIC_A}', TOPIC_A)
       .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A)
-      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR);
+      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR)
+      .replaceAll('{PROJECT_CM}', PROJECT_CM);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -391,6 +396,23 @@ const openers = {
       'GET /analytics/kpis': () => ok([]),
     });
     renderWithStore(<ImpactDialog metric={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'offset-project': async (record) => {
+    renderWithStore(<OffsetProjectDialog project={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'credit-lot': async (record) => {
+    fakeApi({ 'GET /carbon-market/projects': () => ok([{ id: PROJECT_CM, name: 'Fixture cookstoves', status: 'active' }]) });
+    renderWithStore(<LotDialog lot={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'internal-price': async (record) => {
+    renderWithStore(<PriceDialog price={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'carbon-market-settings': async (record) => {
+    renderWithStore(<CeilingDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   'corrective-action': async (record) => {

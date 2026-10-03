@@ -436,7 +436,8 @@ class FieldRoundTripTest extends ApiTestSupport {
             .replace("{SUPPLIER_A}", "a0000000-0000-4000-8000-000000000201").replace("{QUESTIONNAIRE_A}", "a0000000-0000-4000-8000-000000000204")
             .replace("{QUESTION_A}", "a0000000-0000-4000-8000-000000000203")
             .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4")
-            .replace("{KPI_A}", "a0000000-0000-4000-8000-000000000601").replace("{USER_INVESTOR}", roleUserId("INVESTOR_VIEWER")));
+            .replace("{KPI_A}", "a0000000-0000-4000-8000-000000000601").replace("{USER_INVESTOR}", roleUserId("INVESTOR_VIEWER"))
+            .replace("{PROJECT_CM}", "a0000000-0000-4000-8000-000000000701"));
       }
       if (node.isObject() && node.has("$repeat")) {
         return JsonNodeFactory.instance.textNode(node.path("$repeat").get(0).asText().repeat(node.path("$repeat").get(1).asInt()));

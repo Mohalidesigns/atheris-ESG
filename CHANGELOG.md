@@ -3,6 +3,16 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-41 Carbon Market (D36)
+
+- Offset projects (Verra VCS, Gold Standard, Plan Vivo, CDM, Article 6.4, ACMI-endorsed) entered with their registry ID; nature-based projects flagged. Nothing is seeded.
+- Credit lots recorded by issuance batch and serial range, with price, seller and verification from an attached registry statement.
+- No double counting: the same serials can't be held in two lots or retired twice, in this or any other organisation on the platform (ESG-409-SERIAL).
+- Retirements: the next free serials are reserved against a year and purpose (Scope 1, 2, 3 or voluntary), approved with the registry's retirement reference by someone other than the requester, or cancelled to release them; locked years can't be offset.
+- Offset monitoring: credits beside gross Scope 1+2 (never netted out of the inventory), net figure, offset share, offset-to-reduction ratio and an over-reliance flag against the tenant's ceiling.
+- Internal carbon price (shadow price or internal fee) with the cost of each organisation's emissions in the scopes covered.
+- ACMI/registry and carbon exchange are adapters with labelled Sandbox implementations, also listed under Integrations. Dashboard card; `offsets:*` report variables; retirements evidence IFRS S2 climate targets. ESG directors approve retirements; ESG managers record credits.
+
 ## Unreleased — WP-40 Investor Portal (D35)
 
 - Investors are invited as users with the Investor viewer role and see only what the company publishes or shares with them.

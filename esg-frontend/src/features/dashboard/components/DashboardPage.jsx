@@ -336,6 +336,33 @@ function AnalyticsCard({ analytics: a }) {
   );
 }
 
+function CarbonMarketCard({ market: m }) {
+  const o = m.offsetting;
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Carbon credits</Typography>
+        <Table size="small" aria-label="Carbon market summary">
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/carbon-market?tab=credits" underline="hover">Credits held</Link></TableCell>
+              <TableCell align="right">{fmt(m.held)} · {fmt(m.available)} available</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/carbon-market?tab=retirements" underline="hover">Retired against {m.year}</Link></TableCell>
+              <TableCell align="right">{fmt(m.retiredThisYear)} tCO2e</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Offset share of Scope 1+2</TableCell>
+              <TableCell align="right">{o.offsetShare == null ? '—' : `${fmt(o.offsetShare)}%`}{o.overReliance ? ' · over-reliance' : ''}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -384,6 +411,7 @@ export default function DashboardPage() {
             {data.risk && <Grid size={{ xs: 12, md: 5 }}><RiskCard risk={data.risk} /></Grid>}
             {data.supplyChain && <Grid size={{ xs: 12, md: 5 }}><SupplyCard supply={data.supplyChain} /></Grid>}
             {data.analytics && <Grid size={{ xs: 12, md: 5 }}><AnalyticsCard analytics={data.analytics} /></Grid>}
+            {data.carbonMarket && <Grid size={{ xs: 12, md: 5 }}><CarbonMarketCard market={data.carbonMarket} /></Grid>}
           </Grid>
         </>
       )}

@@ -1,6 +1,7 @@
 package com.esg.reporting;
 
 import com.esg.analytics.AnalyticsInsights;
+import com.esg.carbonmarket.CarbonMarketInsights;
 import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
@@ -47,6 +48,8 @@ import org.springframework.stereotype.Component;
  *   <li>{@code analytics:maturity_score|maturity_level|anomalies_open|anomalies_accepted|variance_explanations} — the maturity
  *       index of the period's end year and the anomaly flags of the period (WP-35); {@code kpi:<code>} — a custom KPI's
  *       value for the period's end year;</li>
+ *   <li>{@code offsets:credits_retired|net_scope12|offset_share|offset_to_reduction} — credits retired against the period's end
+ *       year and what they mean beside gross emissions (WP-41);</li>
  *   <li>{@code investor:scorecard_grade|scorecard_score} — the newest published investor scorecard for the period's end year (WP-40);</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
@@ -72,9 +75,11 @@ public class VariableEngine {
     private final SupplierService supply;
     private final AnalyticsInsights analytics;
     private final ScorecardService scorecards;
+    private final CarbonMarketInsights carbonMarket;
 
     public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply,
-                          AnalyticsInsights analytics, ScorecardService scorecards) {
+                          AnalyticsInsights analytics, ScorecardService scorecards, CarbonMarketInsights carbonMarket) {
+        this.carbonMarket = carbonMarket;
         this.analytics = analytics;
         this.scorecards = scorecards;
         this.risk = risk;
@@ -123,6 +128,7 @@ public class VariableEngine {
             case "supply" -> SUPPLY.contains(p[1]);
             case "analytics" -> AnalyticsInsights.VARIABLES.contains(p[1]);
             case "investor" -> Set.of("scorecard_grade", "scorecard_score").contains(p[1]);
+            case "offsets" -> CarbonMarketInsights.VARIABLES.contains(p[1]);
             case "kpi" -> Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where code = ? and deleted_at is null)",
                     Boolean.class, p[1]));
             default -> false;
@@ -219,6 +225,10 @@ public class VariableEngine {
             case "analytics" -> {
                 return analytics.variable(p[1], start, end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
                         .orElseGet(() -> missing("no accepted variance explanations in the period"));
+            }
+            case "offsets" -> {
+                return carbonMarket.variable(p[1], end.getYear()).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing("not enough data for " + end.getYear() + " (no emissions, or no reductions to compare with)"));
             }
             case "investor" -> {
                 return scorecards.latestPublished(end.getYear()).map(sc -> "scorecard_grade".equals(p[1])

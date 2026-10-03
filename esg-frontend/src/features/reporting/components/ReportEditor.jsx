@@ -19,7 +19,7 @@ import {
   useSaveSectionsMutation, useSubmitReportMutation,
 } from '../reportingApi';
 import {
-  ANALYTICS_VARIABLES, CARBON_VARIABLES, COMPLIANCE_MEASURES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
+  ANALYTICS_VARIABLES, CARBON_VARIABLES, COMPLIANCE_MEASURES, OFFSET_VARIABLES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
 } from '../schemas';
 import ApprovalPanel from './ApprovalPanel';
 import ReportDialog from './ReportDialog';
@@ -91,6 +91,8 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
                   <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { maxHeight: 360 } } }}>
                     <MenuItem disabled>Emissions (Carbon)</MenuItem>
                     {Object.entries(CARBON_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{carbon:${k}}}`)}>{l}</MenuItem>)}
+                    <MenuItem disabled>Carbon credits</MenuItem>
+                    {Object.entries(OFFSET_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{offsets:${k}}}`)}>{l}</MenuItem>)}
                     <MenuItem disabled>Governance</MenuItem>
                     {Object.entries(GOVERNANCE_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{governance:${k}}}`)}>{l}</MenuItem>)}
                     <MenuItem disabled>Risk & materiality</MenuItem>

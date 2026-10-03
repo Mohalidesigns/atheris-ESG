@@ -21,8 +21,13 @@ public class IntegrationStatusService {
     private final VirusScanner scanner;
     private final EmailSender email;
     private final SmsSender sms;
+    private final com.esg.carbonmarket.CarbonRegistry registry;
+    private final com.esg.carbonmarket.CarbonExchange exchange;
 
-    public IntegrationStatusService(SatelliteFlareVerifier satellite, VirusScanner scanner, EmailSender email, SmsSender sms) {
+    public IntegrationStatusService(SatelliteFlareVerifier satellite, VirusScanner scanner, EmailSender email, SmsSender sms,
+                                    com.esg.carbonmarket.CarbonRegistry registry, com.esg.carbonmarket.CarbonExchange exchange) {
+        this.registry = registry;
+        this.exchange = exchange;
         this.satellite = satellite;
         this.scanner = scanner;
         this.email = email;
@@ -44,6 +49,11 @@ public class IntegrationStatusService {
                         "Notifications: reminders, approvals, account changes"),
                 new Integration("sms", "SMS (Africa's Talking)", !sms.configured() ? "not_configured" : sms.sandbox() ? "sandbox" : "connected",
                         !sms.configured() ? "No Africa's Talking API key configured" : sms.sandbox() ? "Africa's Talking sandbox" : "Africa's Talking live",
-                        "Notifications by SMS for users who choose it"));
+                        "Notifications by SMS for users who choose it"),
+                new Integration("carbon_registry", "Carbon credit registry (ACMI, Verra, Gold Standard)", registry.sandbox() ? "sandbox" : "connected",
+                        registry.sandbox() ? "No registry is connected; holdings are verified from attached registry statements" : registry.name(),
+                        "Carbon Market: checks that credit serials are held and retired as recorded"),
+                new Integration("carbon_exchange", "African carbon exchange", exchange.sandbox() ? "sandbox" : "connected",
+                        exchange.sandbox() ? "No exchange is connected; no listings are shown" : exchange.name(), "Carbon Market: credit listings"));
     }
 }

@@ -160,5 +160,14 @@
   ],
   "Use-of-proceeds allocation": [
     "com.esg.investor.InvestorApiTest#instrumentsTrackUseOfProceedsTargetsAndShariahReview"
+  ],
+  "Retirement request": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Retirement approval": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Credit lot verification": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
   ]
 }

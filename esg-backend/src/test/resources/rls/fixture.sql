@@ -178,6 +178,16 @@ insert into investor.bonds (id, instrument, name, issue_date, maturity_date, amo
 insert into investor.bond_allocations (bond_id, org_id, category, project, amount, allocated_on)
   values ('a0000000-0000-4000-8000-000000000502', 'a0000000-0000-4000-8000-00000000000a', 'renewable_energy', 'Rooftop solar', 250000, '2026-02-01');
 insert into investor.impact_metrics (iris_code, name, metric_key) values ('OI0001', 'Fixture impact', 'employees_total');
+
+-- WP-41 carbon market (one row per tenant table for the RLS suite).
+insert into carbon_market.settings (offset_ceiling_pct) values (10);
+insert into carbon_market.offset_projects (id, name, standard, registry, registry_project_id, project_type, country_code)
+  values ('a0000000-0000-4000-8000-000000000701', 'Fixture cookstoves', 'gold_standard', 'Gold Standard Impact Registry', 'GS-FIXTURE-1', 'clean_cookstoves', 'NG');
+insert into carbon_market.credit_lots (id, project_id, vintage, serial_prefix, serial_key, serial_from, serial_to, acquired_on)
+  values ('a0000000-0000-4000-8000-000000000702', 'a0000000-0000-4000-8000-000000000701', 2024, 'FIXTURE-BATCH', 'gold_standard:FIXTURE-BATCH', 1, 1000, '2025-06-01');
+insert into carbon_market.retirements (lot_id, serial_key, serial_from, serial_to, purpose, claimed_year, beneficiary)
+  values ('a0000000-0000-4000-8000-000000000702', 'gold_standard:FIXTURE-BATCH', 1, 10, 'scope_1', 2026, 'Tenant A');
+insert into carbon_market.internal_prices (price_type, price, currency, effective_from, scopes) values ('shadow', 50, 'USD', '2025-01-01', '{scope_1,scope_2}');
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');
