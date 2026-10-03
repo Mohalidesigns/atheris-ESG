@@ -4,6 +4,7 @@ import com.esg.analytics.AnalyticsInsights;
 import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
+import com.esg.investor.ScorecardService;
 import com.esg.reporting.ReportingDtos.VariableValue;
 import com.esg.risk.RiskInsights;
 import com.esg.social.SocialMetricsService;
@@ -46,6 +47,7 @@ import org.springframework.stereotype.Component;
  *   <li>{@code analytics:maturity_score|maturity_level|anomalies_open|anomalies_accepted|variance_explanations} — the maturity
  *       index of the period's end year and the anomaly flags of the period (WP-35); {@code kpi:<code>} — a custom KPI's
  *       value for the period's end year;</li>
+ *   <li>{@code investor:scorecard_grade|scorecard_score} — the newest published investor scorecard for the period's end year (WP-40);</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -69,10 +71,12 @@ public class VariableEngine {
     private final RiskInsights risk;
     private final SupplierService supply;
     private final AnalyticsInsights analytics;
+    private final ScorecardService scorecards;
 
     public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply,
-                          AnalyticsInsights analytics) {
+                          AnalyticsInsights analytics, ScorecardService scorecards) {
         this.analytics = analytics;
+        this.scorecards = scorecards;
         this.risk = risk;
         this.supply = supply;
         this.jdbc = jdbc;
@@ -118,6 +122,7 @@ public class VariableEngine {
             case "risk" -> RiskInsights.VARIABLES.contains(p[1]);
             case "supply" -> SUPPLY.contains(p[1]);
             case "analytics" -> AnalyticsInsights.VARIABLES.contains(p[1]);
+            case "investor" -> Set.of("scorecard_grade", "scorecard_score").contains(p[1]);
             case "kpi" -> Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where code = ? and deleted_at is null)",
                     Boolean.class, p[1]));
             default -> false;
@@ -214,6 +219,12 @@ public class VariableEngine {
             case "analytics" -> {
                 return analytics.variable(p[1], start, end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
                         .orElseGet(() -> missing("no accepted variance explanations in the period"));
+            }
+            case "investor" -> {
+                return scorecards.latestPublished(end.getYear()).map(sc -> "scorecard_grade".equals(p[1])
+                        ? new VariableValue(sc.grade(), null, null, "ok", "investor scorecard \"" + sc.title() + "\", published " + sc.publishedAt().toString().substring(0, 10), null)
+                        : new VariableValue(num(sc.total()) + " of 100", sc.total(), null, "ok", "investor scorecard \"" + sc.title() + "\"", null))
+                        .orElseGet(() -> missing("no published investor scorecard for " + end.getYear()));
             }
             case "kpi" -> {
                 return analytics.kpi(p[1], end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))

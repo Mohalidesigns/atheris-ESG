@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,8 +29,10 @@ public class AnalyticsInsights {
     private final MaturityService maturity;
     private final AnomalyService anomalies;
     private final KpiService kpis;
+    private final AnalyticsSupport support;
 
-    public AnalyticsInsights(JdbcTemplate jdbc, MaturityService maturity, AnomalyService anomalies, KpiService kpis) {
+    public AnalyticsInsights(JdbcTemplate jdbc, MaturityService maturity, AnomalyService anomalies, KpiService kpis, AnalyticsSupport support) {
+        this.support = support;
         this.jdbc = jdbc;
         this.maturity = maturity;
         this.anomalies = anomalies;
@@ -76,6 +79,11 @@ public class AnalyticsInsights {
 
     public String kpiMissing(String code, LocalDate end) {
         return kpis.codeExists(code) ? "the KPI has no value for " + end.getYear() : "unknown KPI";
+    }
+
+    /** Approved annual values of one catalogue metric (tenant-wide, or the caller's organisations): year → value. */
+    public Map<Integer, BigDecimal> metricValues(String metricKey, int from, int to) {
+        return support.annual(List.of(metricKey), from, to, null).getOrDefault(metricKey, Map.of());
     }
 
     public Overview overview(int year) {

@@ -26,7 +26,7 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-409-VERSION` | 409 | Changed by someone else since you loaded it (optimistic locking) | |
 | `ESG-409-STATE` | 409 | Not allowed in the record's current state (e.g. editing an approved report) | |
 | `ESG-409-LOCKED` | 409 | The reporting period is locked | ✅ |
-| `ESG-409-SOD` | 409 | Segregation of duties (reports, regulatory changes, policies, social records, materiality assessments, supplier corrective actions, anomaly explanations): submitter can't approve; assessor can't close; whoever records incident findings or resolves a grievance can't close it (WP-33); whoever explains an anomaly flag can't accept the explanation (WP-35) | ✅ |
+| `ESG-409-SOD` | 409 | Segregation of duties (reports, regulatory changes, policies, social records, materiality assessments, supplier corrective actions, anomaly explanations): submitter can't approve; assessor can't close; whoever records incident findings or resolves a grievance can't close it (WP-33); whoever explains an anomaly flag can't accept the explanation (WP-35); whoever generates an investor scorecard can't publish it (WP-40) | ✅ |
 | `ESG-409-CONTENT-VERSION` | 409 | This framework already has a content version with that label; use a new label (Phase 3) | |
 | `ESG-409-DUPLICATE` | 409 | A record with these values already exists | |
 | `ESG-409-IN-USE` | 409 | Still referenced (e.g. organisation with data) | |
@@ -39,5 +39,6 @@ target record id (the last id in the path) and the code (S3). Malware uploads ha
 | `ESG-413` | 413 | File larger than the upload limit (50 MB) | |
 | `ESG-415` | 415 | File type not allowed, or content doesn't match the extension | |
 | `ESG-422-MALWARE` | 422 | The upload failed the virus scan and was quarantined, not stored (S6) | `quarantined` row |
+| `ESG-422-WATERMARK` | 422 | A PDF in a watermarked data room or a shared report can't be read to stamp the viewer's name, so it isn't handed out (WP-40) | |
 | `ESG-429-RATE-LIMIT` | 429 | Too many anonymous whistleblower submissions or status checks, or supplier questionnaire link calls, from this client; try later (WP-34, WP-31) | |
 | `ESG-500` | 500 | Unexpected error (details only in the server log) | |

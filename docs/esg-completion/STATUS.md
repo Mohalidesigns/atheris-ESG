@@ -4,8 +4,8 @@
 |---|---|
 | Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
 | Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (branch `feature/wp-35-analytics`, stacked on #20) |
-| Next | **Phase 4 modules**: WP-40 Investor Portal next, then 41, 42. **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (PR #21, stacked on #20), **WP-40** Investor Portal (branch `feature/wp-40-investor`, stacked on #21) |
+| Next | **Phase 4 modules**: WP-41 Carbon Market next, then 42. **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -300,6 +300,28 @@ Honest gaps (scheduled):
 - Admin Console stays at **L4**: L5 needs E2E journeys in CI (WP-18).
 
 Design choices for review: D18 in `DECISIONS.md`.
+
+---
+
+## WP-40 — Investor Portal
+
+Branch `feature/wp-40-investor` (stacked on WP-35, PR #21). Design: D35. Migration V032; IFC and AfDB templates in `R__ref_08`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Read-only investor experience | INVESTOR_VIEWER sees published scorecards, shared reports, their own open data rooms and items marked visible | `InvestorApiTest` (access), `InvestorPage.test.jsx`, Cypress journey 22 |
+| Scorecards | Weighted E/S/G from platform evidence, grade A+–F, frozen draft → published by someone else (ESG-409-SOD) → withdrawn with a reason; immutable once published (DB trigger) | `ScorecardMathTest` (golden), `InvestorApiTest`, round-trip `investor-settings`, Cypress journey 22 |
+| Shared reports | Approved report versions shared as PDFs stamped with the investor's name; revocable | `InvestorApiTest` journey 23, Cypress journey 23 |
+| DFI reports | IFC (PS1–8) and AfDB (OS1–10) templates create Reporting reports from tenant data | `InvestorApiTest` journey 23, Cypress journey 23 |
+| Data rooms | Expiry, investor members, watermarked PDF downloads, view/download/refusal log | `InvestorApiTest` journey 22, round-trip `data-room`, Cypress journey 22 |
+| Sustainable finance | Green/social/sustainability bonds with period-locked use-of-proceeds; SLB targets from KPIs; sukuk Shariah review | `InvestorApiTest`, round-trip `bond-slb`, `bond-sukuk`, UI |
+| IRIS+ impact metrics | Tenant-entered codes mapped to metrics or KPIs with this and last year's values | `InvestorApiTest`, round-trip `impact-metric` |
+
+Results: backend `mvn verify` 1,102 tests, 0 failures (1 S3 test skipped without Docker), 88.6% lines (investor package 88.0%), 0 Checkstyle; frontend 429 tests, lint, no-mock gate 0 findings; Cypress 30 specs / 63 tests on a fresh database, all on the first attempt (journeys 22 and 23 new).
+
+Found and fixed: a PDF that couldn't be read for watermarking failed the download with a misleading 401 (now refused at upload, 422 at download); an investor's room check read a members list that investors don't receive.
+
+Open (D35): cross-tenant investor portfolio; CDC/BII, FMO, Proparco and Afreximbank formats; generated post-issuance report documents; IRIS+ catalogue content; SME review of scorecard components and grade bands.
 
 ---
 

@@ -214,7 +214,8 @@ public class DashboardService {
             new Source("social.workforce_snapshots", "status", "social:read", "workforce"),
             new Source("social.safety_incidents", "status", "social:read", "incident"),
             new Source("social.grievances", "status", "social:read", "grievance"),
-            new Source("risk.risk_assessments", "status", "risk:read", "materiality"));
+            new Source("risk.risk_assessments", "status", "risk:read", "materiality"),
+            new Source("investor.scorecards", "status", "investor:share", "scorecard"));
 
     /** Recent workflow steps (status changes from the audit trail) the caller may see, newest first. */
     List<Activity> activity() {
@@ -318,6 +319,11 @@ public class DashboardService {
                 case "draft" -> "approved".equals(from) ? "reopened" : "in_review".equals(from) ? "sent back" : null;
                 default -> null;
             };
+            case "scorecard" -> switch (to) {
+                case "published" -> "published to investors";
+                case "withdrawn" -> "withdrew from investors";
+                default -> null;
+            };
             case "grievance" -> switch (to) {
                 case "acknowledged" -> "acknowledged";
                 case "investigating" -> "resolved".equals(from) || "closed".equals(from) ? "reopened" : "started investigating";
@@ -353,6 +359,7 @@ public class DashboardService {
                     + "from risk.risk_assessments where id = ? and deleted_at is null", id);
             case "grievance" -> jdbc.queryForList("select reference || ' · ' || title as title, org_id from social.grievances where id = ? "
                     + "and deleted_at is null", id);
+            case "scorecard" -> jdbc.queryForList("select 'ESG scorecard · ' || title as title from investor.scorecards where id = ?", id);
             default -> jdbc.queryForList("select name as title from auth.reporting_periods where id = ?", id);
         };
         if (rows.isEmpty()) {
@@ -372,6 +379,7 @@ public class DashboardService {
             case "incident" -> "/social?tab=safety&incident=" + id;
             case "grievance" -> "/social?tab=grievances&grievance=" + id;
             case "materiality" -> "/risk?tab=materiality&assessment=" + id;
+            case "scorecard" -> "/investor?tab=scorecards&scorecard=" + id;
             default -> "/admin?tab=periods";
         });
         return row;

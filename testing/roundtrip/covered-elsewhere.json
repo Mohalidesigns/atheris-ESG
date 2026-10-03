@@ -145,5 +145,20 @@
   "Analytics filters (year, benchmark metric)": [
     "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment",
     "com.esg.analytics.AnalyticsApiTest#accessFollowsTheRoleMatrixAndTheTenant"
+  ],
+  "Investor scorecard": [
+    "com.esg.investor.InvestorApiTest#journey22AnInvestorSeesOnlyPublishedScorecardsAndTheirOwnDataRoom"
+  ],
+  "Data room document": [
+    "com.esg.investor.InvestorApiTest#journey22AnInvestorSeesOnlyPublishedScorecardsAndTheirOwnDataRoom"
+  ],
+  "Share report with investors": [
+    "com.esg.investor.InvestorApiTest#journey23AnIfcReportIsGeneratedFromTenantDataApprovedAndShared"
+  ],
+  "DFI report": [
+    "com.esg.investor.InvestorApiTest#journey23AnIfcReportIsGeneratedFromTenantDataApprovedAndShared"
+  ],
+  "Use-of-proceeds allocation": [
+    "com.esg.investor.InvestorApiTest#instrumentsTrackUseOfProceedsTargetsAndShariahReview"
   ]
 }

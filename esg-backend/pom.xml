@@ -153,10 +153,10 @@
             <version>10.5.0</version>
         </dependency>
         <dependency>
+            <!-- WP-40: watermarks data room downloads (D35 (4)); tests also read PDFs with it. -->
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>3.0.6</version>
-            <scope>test</scope>
         </dependency>
         <!-- WP-20 bulk import (TRD §8.1 BulkImportProcessor: Apache POI for Excel, OpenCSV for CSV) -->
         <dependency>

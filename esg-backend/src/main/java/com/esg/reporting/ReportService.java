@@ -339,7 +339,7 @@ public class ReportService {
     }
 
     /** The latest approved version: what exports render. */
-    VersionDetail latestApproved(UUID reportId) {
+    public VersionDetail latestApproved(UUID reportId) {
         List<UUID> ids = jdbc.queryForList("select id from reporting.report_versions where report_id = ? and event = 'approved' "
                 + "order by created_at desc limit 1", UUID.class, reportId);
         if (ids.isEmpty()) {

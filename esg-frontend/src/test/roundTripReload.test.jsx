@@ -34,6 +34,10 @@ import { ActionDialog } from '../features/supplyChain/components/ActionsTab';
 import { KpiDialog } from '../features/analytics/components/KpisTab';
 import { DatasetDialog } from '../features/analytics/components/BenchmarksTab';
 import { SensitivityDialog } from '../features/analytics/components/AnomaliesTab';
+import { WeightsDialog } from '../features/investor/components/ScorecardsTab';
+import { BondDialog } from '../features/investor/components/BondsTab';
+import { RoomDialog } from '../features/investor/components/DataRoomsTab';
+import { ImpactDialog } from '../features/investor/components/ImpactTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -62,6 +66,8 @@ const TOPIC_A = 'a0000000-0000-4000-8000-000000000102';
 const SUPPLIER_A = 'a0000000-0000-4000-8000-000000000201';
 const QUESTIONNAIRE_A = 'a0000000-0000-4000-8000-000000000204';
 const QUESTION_A = 'a0000000-0000-4000-8000-000000000203';
+const KPI_A = 'a0000000-0000-4000-8000-000000000601';
+const USER_INVESTOR = 'a1000000-0000-4000-8000-000000000008';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
@@ -72,7 +78,8 @@ const resolve = (v) => {
       .replaceAll('{TEMPLATE_A}', TEMPLATE_A)
       .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
       .replaceAll('{TOPIC_A}', TOPIC_A)
-      .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A);
+      .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A)
+      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -357,6 +364,33 @@ const openers = {
   },
   'analytics-settings': async (record) => {
     renderWithStore(<SensitivityDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'investor-settings': async (record) => {
+    renderWithStore(<WeightsDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'bond-slb': async (record) => {
+    fakeApi({ 'GET /analytics/kpis': () => ok([{ id: KPI_A, name: 'Fixture KPI' }]) });
+    renderWithStore(<BondDialog bond={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'bond-sukuk': async (record) => {
+    fakeApi({ 'GET /analytics/kpis': () => ok([]) });
+    renderWithStore(<BondDialog bond={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'data-room': async (record) => {
+    fakeApi({ 'GET /investor/people': () => ok([{ id: USER_INVESTOR, name: 'Investor Viewer Fixture', email: 'investor_viewer@fixture.test' }]) });
+    renderWithStore(<RoomDialog room={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'impact-metric': async (record) => {
+    fakeApi({
+      'GET /reference/metrics': () => ok([{ metricKey: 'employees_total', name: 'Total employees', unit: 'count', dataType: 'integer' }]),
+      'GET /analytics/kpis': () => ok([]),
+    });
+    renderWithStore(<ImpactDialog metric={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   'corrective-action': async (record) => {

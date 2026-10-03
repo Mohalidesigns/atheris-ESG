@@ -155,13 +155,29 @@ insert into files.file_access_log (file_id, version_no, action) values ('a000000
 insert into analytics.settings (z_threshold) values (3.00);
 insert into analytics.anomalies (org_id, data_point_id, metric_key, reporting_period_start, reporting_period_end, kind, method, value, change_pct)
   values ('a0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-0000000000dd', 'electricity_kwh', '2026-01-01', '2026-03-31', 'variance', 'yoy', 1000, 40);
-insert into analytics.custom_kpis (code, name, pillar, metric_a, unit, direction) values ('fixture_kpi', 'Fixture KPI', 'E', 'electricity_kwh', 'kWh', 'lower_better');
+insert into analytics.custom_kpis (id, code, name, pillar, metric_a, unit, direction) values ('a0000000-0000-4000-8000-000000000601', 'fixture_kpi', 'Fixture KPI', 'E', 'electricity_kwh', 'kWh', 'lower_better');
 insert into analytics.benchmark_datasets (id, name, publisher, publication_year, source_file_id)
   values ('a0000000-0000-4000-8000-000000000401', 'Fixture benchmark', 'Fixture publisher', 2025, 'a0000000-0000-4000-8000-0000000004f1');
 insert into analytics.benchmark_values (dataset_id, metric_key, data_year, p25, median, p75)
   values ('a0000000-0000-4000-8000-000000000401', 'employee_turnover_pct', 2025, 5, 10, 15);
 insert into analytics.maturity_scores (assessment_year, overall, level, dimensions) values (2025, 2.5, 2, '[]');
 insert into analytics.sdg_alignments (goal, rationale) values (13, 'Fixture priority');
+
+-- WP-40 investor portal (one row per tenant table for the RLS suite).
+insert into investor.settings (weight_e) values (40);
+insert into investor.scorecards (reporting_year, title, weight_e, weight_s, weight_g, total, grade, components)
+  values (2025, 'Fixture scorecard', 40, 30, 30, 55, 'C+', '[]');
+insert into investor.shared_reports (report_id, version_label, export_file_id)
+  values ('a0000000-0000-4000-8000-0000000000f1', 'v1.0', 'a0000000-0000-4000-8000-0000000004f1');
+insert into investor.data_rooms (id, name, purpose, expires_on) values ('a0000000-0000-4000-8000-000000000501', 'Fixture room', 'due_diligence', '2099-12-31');
+insert into investor.data_room_members (room_id, user_id) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000000a1');
+insert into investor.data_room_documents (room_id, file_id, title) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000004f1', 'Evidence');
+insert into investor.data_room_access_log (room_id, user_id, action) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000000a1', 'view');
+insert into investor.bonds (id, instrument, name, issue_date, maturity_date, amount, currency, framework_reference)
+  values ('a0000000-0000-4000-8000-000000000502', 'green_bond', 'Fixture green bond', '2025-06-01', '2032-06-01', 1000000, 'NGN', 'ICMA Green Bond Principles (2021)');
+insert into investor.bond_allocations (bond_id, org_id, category, project, amount, allocated_on)
+  values ('a0000000-0000-4000-8000-000000000502', 'a0000000-0000-4000-8000-00000000000a', 'renewable_energy', 'Rooftop solar', 250000, '2026-02-01');
+insert into investor.impact_metrics (iris_code, name, metric_key) values ('OI0001', 'Fixture impact', 'employees_total');
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');

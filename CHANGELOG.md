@@ -3,6 +3,15 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-40 Investor Portal (D35)
+
+- Investors are invited as users with the Investor viewer role and see only what the company publishes or shares with them.
+- ESG scorecards: weighted E, S and G pillars built from the platform's records (data coverage, maturity, framework completeness, KPIs on track, anomaly flags resolved), graded A+ to F; generated as a draft, published by someone else, fixed once published, withdrawable with a reason.
+- Approved reports can be shared with investors, who download the PDF stamped with their name; DFI reports for IFC (Performance Standards 1–8) and AfDB (Operational Safeguards 1–10) are created from tenant data and go through normal approval.
+- Data rooms with an expiry date, investor members, watermarked PDF downloads and a log of every view, download and refusal; a PDF that can't be watermarked is refused rather than handed out unmarked.
+- Sustainable finance instruments: green, social and sustainability bonds with use-of-proceeds allocations by ICMA category (period-locked), sustainability-linked bonds tied to a KPI target with met/missed status, and sukuk with their Shariah review.
+- IRIS+ impact metrics mapped to catalogue metrics or KPIs; scorecard publications appear in Recent activity; `investor:*` report variables. ESG directors can now set the scorecard weights.
+
 ## Unreleased — WP-35 Analytics (D34)
 
 - Anomaly flags on data: each submitted or approved value is compared with earlier periods of the same site and metric (z-score and IQR) and with the same period a year earlier; flags are raised when a point is approved, nightly and on demand, with sensitivity set per tenant.
