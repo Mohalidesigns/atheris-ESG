@@ -1,0 +1,103 @@
+{
+  "id": "fx-rate",
+  "forms": [
+    "Exchange rate"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_ANALYST",
+  "create": {
+    "method": "POST",
+    "path": "/v1/data/fx-rates"
+  },
+  "read": {
+    "path": "/v1/data/fx-rates/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/data/fx-rates/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "fromCurrency": "GBP",
+    "toCurrency": "NGN",
+    "rate": 1987.654321,
+    "rateDate": "{yyyy}-03-31",
+    "source": "Bank statement {u}"
+  },
+  "changes": {
+    "fromCurrency": "EUR",
+    "toCurrency": "KES",
+    "rate": 140.5,
+    "rateDate": "{yyyy}-04-30",
+    "source": "Treasury desk {u}"
+  },
+  "invalid": [
+    {
+      "field": "fromCurrency",
+      "value": "BTC",
+      "rule": "ISO list"
+    },
+    {
+      "field": "toCurrency",
+      "value": "GBP",
+      "rule": "differs from source currency"
+    },
+    {
+      "field": "rate",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "rate",
+      "value": 1000001,
+      "rule": "<= 1e6"
+    },
+    {
+      "field": "rateDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "source",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "source",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "fromCurrency": {
+        "label": "From",
+        "kind": "select",
+        "display": "GBP"
+      },
+      "toCurrency": {
+        "label": "To",
+        "kind": "select",
+        "display": "NGN"
+      },
+      "rate": {
+        "label": "Rate",
+        "display": "1987.654321"
+      },
+      "rateDate": {
+        "label": "Rate date"
+      },
+      "source": {
+        "label": "Source"
+      }
+    }
+  }
+}

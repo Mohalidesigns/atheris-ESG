@@ -3,8 +3,10 @@
 -- Repeatable. Requirements are upserted by (framework, requirement_code) and never deleted: tenant compliance
 -- status rows reference them; retire one with is_active = FALSE. Titles are short identifying titles, not the
 -- standard's text. Everything is 'pending_sme' until the ESG SME verifies it (master plan §10).
--- Frameworks with content_status 'pending_sme' and no requirements (SEC Nigeria, NGX, NAICOM, PenCom, SASB) wait for
--- SME-supplied content; nothing is invented for them.
+-- Frameworks without requirements here (SEC Nigeria, NGX, NAICOM, PenCom, SASB, CDP, GHG Protocol) get theirs from
+-- content versions (Phase 3, V025): bundled packs in src/main/resources/framework-content (R__ref_12, pending SME
+-- verification, sources in SOURCES.md) or a platform import. Once a framework has a content version, its version,
+-- effective date, source and content status come from that version and this file no longer overwrites them.
 -- ============================================================
 
 INSERT INTO compliance.regulatory_frameworks (code, name, jurisdiction, framework_type, effective_date, version, content_status, source, description) VALUES
@@ -13,16 +15,21 @@ INSERT INTO compliance.regulatory_frameworks (code, name, jurisdiction, framewor
   ('ISSB_S2', 'IFRS S2 Climate-related Disclosures', 'Global', 'mandatory', '2024-01-01', '2023', 'seeded', 'IFRS S2 (ISSB, June 2023)', 'Adopted in Nigeria through the FRCN adoption roadmap.'),
   ('TCFD', 'TCFD Recommendations', 'Global', 'recommended', '2017-06-01', '2017', 'seeded', 'TCFD Final Report (June 2017), recommended disclosures', NULL),
   ('CBN_NSBP', 'CBN Nigerian Sustainable Banking Principles', 'Nigeria', 'mandatory', '2012-01-01', '2012', 'seeded', 'Central Bank of Nigeria, Nigerian Sustainable Banking Principles (2012), Principles 1-9', NULL),
-  ('SEC_NG', 'SEC Nigeria Sustainability Reporting Guidelines', 'Nigeria', 'mandatory', '2018-01-01', '2018', 'pending_sme', NULL, 'Requirements to be supplied and verified by the ESG SME (WP-17).'),
+  -- D28: no instrument titled "SEC Nigeria Sustainability Reporting Guidelines" was found; SEC obligations now come from the
+  -- IFRS S1/S2 implementation circular (23 Sep 2026) with the FRC Roadmap and SRG 1. Pending SME confirmation.
+  ('SEC_NG', 'SEC Nigeria: IFRS Sustainability Disclosure Standards implementation (with FRC Roadmap and SRG 1)', 'Nigeria', 'mandatory', '2026-09-23', '2026-09', 'pending_sme', NULL, 'Nigeria-specific obligations; IFRS S1/S2 paragraph content is in the ISSB_S1 and ISSB_S2 frameworks.'),
   ('NGX', 'NGX Sustainability Disclosure Guidelines', 'Nigeria', 'mandatory', '2019-01-01', '2019', 'pending_sme', NULL, 'Requirements to be supplied and verified by the ESG SME (WP-17).'),
-  ('NAICOM', 'NAICOM sustainability requirements for insurers', 'Nigeria', 'mandatory', NULL, NULL, 'pending_sme', NULL, 'Exact instrument, title and requirements to be confirmed by the ESG SME (WP-17).'),
+  ('NAICOM', 'NAICOM sustainability requirements for insurers', 'Nigeria', 'mandatory', NULL, NULL, 'pending_sme', NULL, 'No issued NAICOM sustainability instrument found (2 Oct 2026; NAICOM is developing an ESG framework). Requirements wait for the instrument and SME (D28).'),
   ('PENCOM', 'PenCom sustainability/ESG requirements for pension fund operators', 'Nigeria', 'mandatory', NULL, NULL, 'pending_sme', NULL, 'Exact instrument, title and requirements to be confirmed by the ESG SME (WP-17).'),
   ('SASB', 'SASB Standards', 'Global', 'voluntary', '2018-01-01', '2023', 'pending_sme', NULL, 'Industry-specific: the SME selects the SASB industries relevant to tenants before metrics are loaded.'),
   ('CDP', 'Carbon Disclosure Project', 'Global', 'voluntary', '2000-01-01', '2024', 'pending_sme', NULL, NULL),
   ('GHG_PROTOCOL', 'GHG Protocol Corporate Standard', 'Global', 'voluntary', '2004-01-01', '2015', 'pending_sme', NULL, 'Methodology standard; implemented as calculation rules (TRD §8.2) rather than disclosure requirements.')
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, jurisdiction = EXCLUDED.jurisdiction, framework_type = EXCLUDED.framework_type,
-  effective_date = EXCLUDED.effective_date, version = EXCLUDED.version, content_status = EXCLUDED.content_status,
-  source = EXCLUDED.source, description = EXCLUDED.description;
+  description = EXCLUDED.description,
+  effective_date = CASE WHEN EXISTS (SELECT 1 FROM compliance.framework_content_versions v WHERE v.framework_id = regulatory_frameworks.id) THEN regulatory_frameworks.effective_date ELSE EXCLUDED.effective_date END,
+  version = CASE WHEN EXISTS (SELECT 1 FROM compliance.framework_content_versions v WHERE v.framework_id = regulatory_frameworks.id) THEN regulatory_frameworks.version ELSE EXCLUDED.version END,
+  content_status = CASE WHEN EXISTS (SELECT 1 FROM compliance.framework_content_versions v WHERE v.framework_id = regulatory_frameworks.id) THEN regulatory_frameworks.content_status ELSE EXCLUDED.content_status END,
+  source = CASE WHEN EXISTS (SELECT 1 FROM compliance.framework_content_versions v WHERE v.framework_id = regulatory_frameworks.id) THEN regulatory_frameworks.source ELSE EXCLUDED.source END;
 
 INSERT INTO compliance.framework_requirements (framework_id, requirement_code, title, category, data_type, source, sort_order)
 SELECT f.id, r.code, r.title, r.category, r.data_type, r.source, r.sort_order

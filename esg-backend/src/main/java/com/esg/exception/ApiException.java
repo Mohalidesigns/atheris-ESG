@@ -32,6 +32,11 @@ public class ApiException extends RuntimeException {
         return new ApiException(HttpStatus.FORBIDDEN, "ESG-403", message);
     }
 
+    /** A refusal with its own code, e.g. ESG-403-SOD (segregation of duties) or ESG-403-ROLE (privilege escalation). */
+    public static ApiException forbidden(String code, String message) {
+        return new ApiException(HttpStatus.FORBIDDEN, code, message);
+    }
+
     public static ApiException notFound(String what) {
         return new ApiException(HttpStatus.NOT_FOUND, "ESG-404", what + " not found");
     }

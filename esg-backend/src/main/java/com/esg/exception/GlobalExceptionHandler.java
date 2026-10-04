@@ -31,6 +31,19 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private final com.esg.audit.DeniedActionAuditor denials;
+
+    public GlobalExceptionHandler(com.esg.audit.DeniedActionAuditor denials) {
+        this.denials = denials;
+    }
+
+    /** Problem response; refusals (403, SoD, locked period, ...) are also written to the audit trail (S3). */
+    private ResponseEntity<ProblemDetail> problem(HttpStatus status, String code, String detail, HttpServletRequest req,
+                                                  Map<String, String> errors) {
+        denials.record(req, status, code, detail);
+        return Problems.response(status, code, detail, req.getRequestURI(), errors);
+    }
+
     @ExceptionHandler(FieldValidationException.class)
     public ResponseEntity<ProblemDetail> handleFieldValidation(FieldValidationException ex, HttpServletRequest req) {
         return Problems.response(HttpStatus.BAD_REQUEST, ex.getCode(), "One or more fields are invalid", req.getRequestURI(), ex.getErrors());
@@ -38,7 +51,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> handleApi(ApiException ex, HttpServletRequest req) {
-        return Problems.response(ex.getStatus(), ex.getCode(), ex.getMessage(), req.getRequestURI(), null);
+        return problem(ex.getStatus(), ex.getCode(), ex.getMessage(), req, null);
+    }
+
+    /** WP-50: the AI service can't be used now; never replaced by an invented answer (D38). */
+    @ExceptionHandler(com.esg.ai.AiEngine.AiUnavailable.class)
+    public ResponseEntity<ProblemDetail> handleAiUnavailable(com.esg.ai.AiEngine.AiUnavailable ex, HttpServletRequest req) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "ESG-503-AI-UNAVAILABLE", ex.getMessage(), req, null);
+    }
+
+    @ExceptionHandler(com.esg.ai.AiEngine.AiRefused.class)
+    public ResponseEntity<ProblemDetail> handleAiRefused(com.esg.ai.AiEngine.AiRefused ex, HttpServletRequest req) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "ESG-422-AI-INPUT", ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,7 +76,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
     public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException ex, HttpServletRequest req) {
-        return Problems.response(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", req.getRequestURI(), null);
+        return problem(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", req, null);
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
@@ -97,8 +121,10 @@ public class GlobalExceptionHandler {
         String state = sql == null ? "" : sql.getSQLState();
         String path = req.getRequestURI();
         return switch (state) {
-            case "42501" -> Problems.response(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", path, null);
-            case "P0L01" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-LOCKED", firstLine(sql.getMessage()), path, null);
+            case "42501" -> problem(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", req, null);
+            case "P0L01", "P0L02" -> problem(HttpStatus.CONFLICT, "ESG-409-LOCKED", firstLine(sql.getMessage()), req, null);
+            // WP-41: a carbon credit serial already held or retired (D36 (4)).
+            case "P0S01" -> problem(HttpStatus.CONFLICT, "ESG-409-SERIAL", firstLine(sql.getMessage()), req, null);
             case "P0V01" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-VERSION",
                     "This record was changed by someone else. Reload and try again.", path, null);
             case "23505" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-DUPLICATE", "A record with these values already exists", path, null);

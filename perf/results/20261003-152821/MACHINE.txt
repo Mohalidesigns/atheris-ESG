@@ -1,0 +1,2 @@
+Machine: Apple M4, 16 GB RAM; one backend instance; PostgreSQL on the same machine.
+Run: 20261003-152821; scripts: submit dashboard report calculate; volume: 1000000 data points, 10000 emission records.

@@ -1,0 +1,259 @@
+{
+  "id": "workforce-snapshot",
+  "forms": [
+    "Workforce figures"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/social/workforce"
+  },
+  "read": {
+    "path": "/v1/social/workforce/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/social/workforce/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Social Impact, so the module refuses before the record is looked up"
+  },
+  "values": {
+    "orgId": "{ORG_SITE_2}",
+    "reportingPeriodStart": "{yyyy}-01-01",
+    "reportingPeriodEnd": "{yyyy}-12-31",
+    "hoursWorked": 52000.5,
+    "newHires": 4,
+    "leavers": 2,
+    "payCurrency": "NGN",
+    "notes": "RT figures {u}",
+    "lines": [
+      {
+        "level": "middle_management",
+        "gender": "female",
+        "ageBand": "30_50",
+        "headcount": 6,
+        "disabledHeadcount": 1,
+        "totalAnnualPay": 48000000
+      },
+      {
+        "level": "non_management",
+        "gender": "male",
+        "ageBand": "under_30",
+        "headcount": 9,
+        "disabledHeadcount": 0,
+        "totalAnnualPay": 40500000
+      }
+    ]
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "reportingPeriodStart": "{yyyy}-02-01",
+    "reportingPeriodEnd": "{yyyy}-11-30",
+    "hoursWorked": 60000,
+    "newHires": 5,
+    "leavers": 3,
+    "payCurrency": "USD",
+    "notes": "RT figures {u} revised",
+    "lines": [
+      {
+        "level": "middle_management",
+        "gender": "female",
+        "ageBand": "30_50",
+        "headcount": 7,
+        "disabledHeadcount": 2,
+        "totalAnnualPay": 56000000
+      },
+      {
+        "level": "executive",
+        "gender": "male",
+        "ageBand": "over_50",
+        "headcount": 1,
+        "disabledHeadcount": 0,
+        "totalAnnualPay": null
+      }
+    ]
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodStart",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "1999-12-31",
+      "rule": "on or after start"
+    },
+    {
+      "field": "hoursWorked",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "newHires",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "leavers",
+      "value": 1000001,
+      "rule": "max"
+    },
+    {
+      "field": "payCurrency",
+      "value": "ABC",
+      "rule": "enum"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "lines",
+      "value": [],
+      "rule": "at least one line"
+    },
+    {
+      "field": "lines",
+      "value": [
+        {
+          "level": "staff",
+          "gender": "female",
+          "ageBand": "30_50",
+          "headcount": 1,
+          "disabledHeadcount": 0,
+          "totalAnnualPay": null
+        }
+      ],
+      "rule": "level enum",
+      "errorField": "lines[0].level"
+    },
+    {
+      "field": "lines",
+      "value": [
+        {
+          "level": "executive",
+          "gender": "female",
+          "ageBand": "30_50",
+          "headcount": 1,
+          "disabledHeadcount": 3,
+          "totalAnnualPay": null
+        }
+      ],
+      "rule": "disabled ≤ headcount",
+      "errorField": "lines[0].disabledHeadcount"
+    },
+    {
+      "field": "lines",
+      "value": [
+        {
+          "level": "executive",
+          "gender": "female",
+          "ageBand": "30_50",
+          "headcount": 1,
+          "disabledHeadcount": 0,
+          "totalAnnualPay": null
+        },
+        {
+          "level": "executive",
+          "gender": "female",
+          "ageBand": "30_50",
+          "headcount": 2,
+          "disabledHeadcount": 0,
+          "totalAnnualPay": null
+        }
+      ],
+      "rule": "unique level/gender/age",
+      "errorField": "lines[1]"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "hoursWorked": {
+        "label": "Hours worked (optional)"
+      },
+      "newHires": {
+        "label": "New hires (optional)"
+      },
+      "leavers": {
+        "label": "Leavers (optional)"
+      },
+      "payCurrency": {
+        "label": "Pay currency",
+        "kind": "select",
+        "display": "NGN"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      },
+      "lines": {
+        "kind": "rows",
+        "columns": {
+          "level": {
+            "label": "Level",
+            "kind": "select",
+            "options": {
+              "executive": "Executive",
+              "senior_management": "Senior management",
+              "middle_management": "Middle management",
+              "non_management": "Non-management"
+            }
+          },
+          "gender": {
+            "label": "Gender",
+            "kind": "select",
+            "options": {
+              "female": "Female",
+              "male": "Male",
+              "undisclosed": "Undisclosed"
+            }
+          },
+          "ageBand": {
+            "label": "Age band",
+            "kind": "select",
+            "options": {
+              "under_30": "Under 30",
+              "30_50": "30–50",
+              "over_50": "Over 50"
+            }
+          },
+          "headcount": {
+            "label": "Headcount"
+          },
+          "disabledHeadcount": {
+            "label": "With disability"
+          },
+          "totalAnnualPay": {
+            "label": "Total annual pay"
+          }
+        }
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { Alert, Box, Button, TextField, Typography } from '@mui/material';
 import { useSetupMfaMutation, useVerifyMfaMutation } from '../authApi';
 import { toFormError } from '../../../services/apiSlice';
 import { mfaCodeSchema } from '../schemas';
+import { tr } from '../../../i18n';
 
 /**
  * Second login step (TRD §5.4.1). For first-time enrolment (setupRequired) it shows the secret to add to an
@@ -35,20 +36,19 @@ export default function MfaStep({ mfa }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-        {mfa.setupRequired ? 'Set up two-factor authentication' : 'Two-factor authentication'}
+        {mfa.setupRequired ? tr("Set up two-factor authentication") : tr("Two-factor authentication")}
       </Typography>
 
       {mfa.setupRequired && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ mb: 1 }}>
-            Your role requires a second factor. Add this key to an authenticator app (Google Authenticator,
-            Microsoft Authenticator, 1Password…), then enter the 6-digit code it shows.
+            {tr("Your role requires a second factor. Add this key to an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then enter the 6-digit code it shows.")}
           </Typography>
-          {setup.isLoading && <Typography variant="caption">Generating your key…</Typography>}
-          {setup.isError && <Alert severity="error">{toFormError(setup.error).message}</Alert>}
+          {setup.isLoading && <Typography variant="caption">{tr("Generating your key…")}</Typography>}
+          {setup.isError && <Alert severity="error">{tr(toFormError(setup.error).message)}</Alert>}
           {setup.data && (
             <Box sx={{ p: 1.5, bgcolor: '#F7FAFC', border: '1px solid #E2E8F0', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary">Setup key</Typography>
+              <Typography variant="caption" color="text.secondary">{tr("Setup key")}</Typography>
               <Typography data-testid="mfa-secret" sx={{ fontFamily: 'Roboto Mono, monospace', wordBreak: 'break-all', fontWeight: 600 }}>
                 {setup.data.secret}
               </Typography>
@@ -61,17 +61,17 @@ export default function MfaStep({ mfa }) {
       )}
 
       {!mfa.setupRequired && (
-        <Typography variant="body2" sx={{ mb: 2 }}>Enter the 6-digit code from your authenticator app.</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>{tr("Enter the 6-digit code from your authenticator app.")}</Typography>
       )}
 
       {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
       <TextField
-        fullWidth label="Verification code" inputMode="numeric" autoComplete="one-time-code" sx={{ mb: 2 }}
-        {...register('code')} error={!!errors.code} helperText={errors.code?.message}
+        fullWidth label={tr("Verification code")} inputMode="numeric" autoComplete="one-time-code" sx={{ mb: 2 }}
+        {...register('code')} error={!!errors.code} helperText={tr(errors.code?.message)}
       />
       <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading}
         sx={{ py: 1.3, fontWeight: 700, bgcolor: '#1A365D', '&:hover': { bgcolor: '#2A4A7F' } }}>
-        {isLoading ? 'Verifying…' : 'Verify'}
+        {isLoading ? tr("Verifying…") : tr("Verify")}
       </Button>
     </form>
   );
