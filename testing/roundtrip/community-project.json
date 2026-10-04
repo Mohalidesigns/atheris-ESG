@@ -1,0 +1,264 @@
+{
+  "id": "community-project",
+  "forms": [
+    "Community project"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/social/projects"
+  },
+  "read": {
+    "path": "/v1/social/projects/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/social/projects/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Social Impact"
+  },
+  "values": {
+    "orgId": "{ORG_SITE_2}",
+    "name": "RT project {u}",
+    "category": "education",
+    "description": "Classroom block",
+    "community": "Ogale",
+    "stateRegion": "Rivers",
+    "lga": "Eleme",
+    "latitude": 4.79,
+    "longitude": 7.12,
+    "budget": 5000000.5,
+    "currency": "NGN",
+    "plannedBeneficiaries": 400,
+    "actualBeneficiaries": 120,
+    "status": "active",
+    "startDate": "2025-01-10",
+    "endDate": "2026-12-31",
+    "sdgs": [
+      4,
+      10
+    ],
+    "piaHostCommunity": true
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "name": "RT project {u} renamed",
+    "category": "health",
+    "description": "Health post",
+    "community": "Okrika",
+    "stateRegion": "Bayelsa",
+    "lga": "Yenagoa",
+    "latitude": 4.92,
+    "longitude": 6.26,
+    "budget": 7500000,
+    "currency": "USD",
+    "plannedBeneficiaries": 500,
+    "actualBeneficiaries": 300,
+    "status": "completed",
+    "startDate": "2025-02-01",
+    "endDate": "2026-06-30",
+    "sdgs": [
+      3
+    ],
+    "piaHostCommunity": false
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "category",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "community",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "stateRegion",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "lga",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "latitude",
+      "value": 91,
+      "rule": "max 90"
+    },
+    {
+      "field": "latitude",
+      "value": null,
+      "rule": "both or neither",
+      "errorField": "latitude"
+    },
+    {
+      "field": "longitude",
+      "value": -181,
+      "rule": "min -180"
+    },
+    {
+      "field": "budget",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "currency",
+      "value": "ABC",
+      "rule": "enum"
+    },
+    {
+      "field": "plannedBeneficiaries",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "actualBeneficiaries",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "status",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "endDate",
+      "value": "2024-01-01",
+      "rule": "on or after start"
+    },
+    {
+      "field": "sdgs",
+      "value": [
+        18
+      ],
+      "rule": "1–17",
+      "errorField": "sdgs[0]"
+    },
+    {
+      "field": "piaHostCommunity",
+      "value": null,
+      "rule": "required"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "name": {
+        "label": "Project name"
+      },
+      "category": {
+        "label": "Category",
+        "kind": "select",
+        "display": "Education"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "community": {
+        "label": "Community (optional)"
+      },
+      "stateRegion": {
+        "label": "State (optional)"
+      },
+      "lga": {
+        "label": "LGA (optional)"
+      },
+      "latitude": {
+        "label": "Latitude (optional)"
+      },
+      "longitude": {
+        "label": "Longitude (optional)"
+      },
+      "budget": {
+        "label": "Budget (optional)"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "NGN"
+      },
+      "plannedBeneficiaries": {
+        "label": "Planned beneficiaries (optional)"
+      },
+      "actualBeneficiaries": {
+        "label": "Actual beneficiaries (optional)"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      },
+      "startDate": {
+        "label": "Start date (optional)"
+      },
+      "endDate": {
+        "label": "End date (optional)"
+      },
+      "sdgs": {
+        "label": "SDGs (optional)",
+        "kind": "select",
+        "display": "SDG 4, SDG 10"
+      },
+      "piaHostCommunity": {
+        "label": "PIA 2021 host community",
+        "kind": "switch"
+      }
+    }
+  }
+}

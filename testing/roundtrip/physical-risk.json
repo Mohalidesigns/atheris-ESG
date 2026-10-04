@@ -1,0 +1,156 @@
+{
+  "id": "physical-risk",
+  "forms": [
+    "Physical risk assessment"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/risk/physical"
+  },
+  "read": {
+    "path": "/v1/risk/physical/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/risk/physical/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Risk & Materiality"
+  },
+  "values": {
+    "orgId": "{ORG_SITE_2}",
+    "hazard": "heat_stress",
+    "pathway": "RCP4.5",
+    "horizonYear": 2030,
+    "exposure": 3,
+    "vulnerability": 2,
+    "source": "RT source {u}",
+    "notes": "Outdoor crews",
+    "assessedOn": "2026-02-01"
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "hazard": "flooding",
+    "pathway": "RCP8.5",
+    "horizonYear": 2050,
+    "exposure": 5,
+    "vulnerability": 4,
+    "source": "RT source {u} v2",
+    "notes": "River basin",
+    "assessedOn": "2026-02-15"
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "hazard",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "pathway",
+      "value": "RCP6.0",
+      "rule": "enum"
+    },
+    {
+      "field": "horizonYear",
+      "value": 2040,
+      "rule": "2030 or 2050"
+    },
+    {
+      "field": "exposure",
+      "value": 0,
+      "rule": "min 1"
+    },
+    {
+      "field": "vulnerability",
+      "value": 6,
+      "rule": "max 5"
+    },
+    {
+      "field": "source",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "source",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "assessedOn",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "assessedOn",
+      "value": "2999-01-01",
+      "rule": "not future"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "hazard": {
+        "label": "Hazard",
+        "kind": "select",
+        "display": "Heat stress"
+      },
+      "pathway": {
+        "label": "Emissions pathway",
+        "kind": "select",
+        "display": "RCP 4.5"
+      },
+      "horizonYear": {
+        "label": "Horizon",
+        "kind": "select",
+        "display": "2030"
+      },
+      "exposure": {
+        "label": "Exposure",
+        "kind": "select",
+        "display": "3 · Moderate"
+      },
+      "vulnerability": {
+        "label": "Vulnerability",
+        "kind": "select",
+        "display": "2 · Low"
+      },
+      "source": {
+        "label": "Source"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      },
+      "assessedOn": {
+        "label": "Assessed on"
+      }
+    }
+  }
+}

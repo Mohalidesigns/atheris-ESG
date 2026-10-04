@@ -15,7 +15,6 @@ import com.esg.security.TenantContext;
 import com.esg.security.TotpService;
 import com.esg.security.UserAccess;
 import io.jsonwebtoken.Claims;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -53,12 +51,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
-    private final boolean enforceMfa;
+    private final com.esg.security.MfaPolicy mfaPolicy;
 
     public AuthService(UserRepository userRepository, JwtTokenProvider tokenProvider, RefreshTokenService refreshTokens,
                        AccessService accessService, TotpService totp, SecretEncryptor encryptor,
                        PasswordEncoder passwordEncoder, JdbcTemplate jdbc, TransactionTemplate tx,
-                       @Value("${esg.security.mfa.enforce:true}") boolean enforceMfa) {
+                       com.esg.security.MfaPolicy mfaPolicy) {
         this.userRepository = userRepository;
         this.tokenProvider = tokenProvider;
         this.refreshTokens = refreshTokens;
@@ -68,7 +66,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jdbc = jdbc;
         this.tx = tx;
-        this.enforceMfa = enforceMfa;
+        this.mfaPolicy = mfaPolicy;
     }
 
     /** Response body plus the refresh token the controller puts in an HttpOnly cookie (null for MFA challenges). */
@@ -99,10 +97,10 @@ public class AuthService {
             if (user.getMfaEnabled()) {
                 return new AuthResult(AuthResponse.mfaChallenge(mfaToken(user), false), null);
             }
-            if (enforceMfa && requiresMfa(access.roles())) {
+            if (mfaPolicy.required(access)) {
                 return new AuthResult(AuthResponse.mfaChallenge(mfaToken(user), true), null);
             }
-            return completeLogin(user, access, client);
+            return completeLogin(user, access, client, false);
         });
         if (outcome instanceof String error) {
             throw ApiException.unauthorized(error);
@@ -142,7 +140,7 @@ public class AuthService {
                 return "Invalid verification code";
             }
             user.setMfaEnabled(true);
-            return completeLogin(user, accessService.load(user.getId()), client);
+            return completeLogin(user, accessService.load(user.getId()), client, true);
         });
         if (outcome instanceof String error) {
             throw ApiException.unauthorized(error);
@@ -159,7 +157,7 @@ public class AuthService {
             if (user == null || !access.active()) {
                 throw ApiException.unauthorized("Invalid or expired refresh token");
             }
-            return tokensFor(user, access);
+            return tokensFor(user, access, rotation.mfaVerified());
         });
         return new AuthResult(body, rotation.refreshToken());
     }
@@ -176,20 +174,28 @@ public class AuthService {
         return userDto(user, access);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public AuthResponse.UserDto setLanguage(String language) {
+        UserAccess access = CurrentUser.access();
+        User user = userRepository.findById(access.userId()).orElseThrow(() -> ApiException.notFound("User"));
+        user.setPreferredLanguage(language);
+        return userDto(userRepository.saveAndFlush(user), access);
+    }
+
     // ------------------------------------------------------------------ internals
 
-    private AuthResult completeLogin(User user, UserAccess access, ClientInfo client) {
+    private AuthResult completeLogin(User user, UserAccess access, ClientInfo client, boolean mfaVerified) {
         user.setFailedLoginCount(0);
         user.setLockedUntil(null);
         user.setLastLoginAt(Instant.now());
         userRepository.save(user);
-        String refresh = refreshTokens.issue(user.getId(), user.getTenantId(), client.userAgent(), client.ip());
-        return new AuthResult(tokensFor(user, access), refresh);
+        String refresh = refreshTokens.issue(user.getId(), user.getTenantId(), client.userAgent(), client.ip(), mfaVerified);
+        return new AuthResult(tokensFor(user, access, mfaVerified), refresh);
     }
 
-    private AuthResponse tokensFor(User user, UserAccess access) {
+    private AuthResponse tokensFor(User user, UserAccess access, boolean mfaVerified) {
         String accessToken = tokenProvider.generateAccessToken(user.getId().toString(), user.getTenantId().toString(),
-                access.roles(), access.permissions());
+                access.roles(), access.permissions(), mfaVerified);
         return AuthResponse.tokens(accessToken, tokenProvider.getJwtExpirationMs() / 1000, userDto(user, access));
     }
 
@@ -200,7 +206,8 @@ public class AuthService {
                 user.getLastName(), user.getTenantId().toString(), tenantName,
                 access.roles().stream().sorted().toList(), access.permissions().stream().sorted().toList(),
                 access.tenantWide(), access.orgScopeRoots().stream().map(UUID::toString).sorted().toList(),
-                Boolean.TRUE.equals(user.getMfaEnabled()), user.getTimezone(), user.getPreferredLanguage());
+                Boolean.TRUE.equals(user.getMfaEnabled()), user.getTimezone(), user.getPreferredLanguage(),
+                access.modules().stream().sorted().toList());
     }
 
     private void registerFailure(User user) {
@@ -213,14 +220,6 @@ public class AuthService {
 
     private static boolean isLocked(User user) {
         return user.getLockedUntil() != null && user.getLockedUntil().isAfter(Instant.now());
-    }
-
-    private boolean requiresMfa(Set<String> roles) {
-        if (roles.isEmpty()) {
-            return false;
-        }
-        List<String> mfaRoles = jdbc.queryForList("select name from auth.system_roles where mfa_required", String.class);
-        return roles.stream().anyMatch(mfaRoles::contains);
     }
 
     private String mfaToken(User user) {

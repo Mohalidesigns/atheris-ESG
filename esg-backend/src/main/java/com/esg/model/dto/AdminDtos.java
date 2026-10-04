@@ -54,8 +54,9 @@ public final class AdminDtos {
                                Instant lastLoginAt, Instant createdAt, Long version,
                                List<RoleAssignmentResponse> roles) {}
 
+    /** @param assignable the caller holds every permission of this role, so may grant it (S4) */
     public record RoleResponse(UUID id, String name, String description, String scopeType, boolean mfaRequired,
-                               boolean systemRole, List<String> permissions) {}
+                               boolean systemRole, List<String> permissions, boolean assignable) {}
 
     public record OrganisationOption(UUID id, String name, UUID parentOrgId, String orgType) {}
 

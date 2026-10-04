@@ -9,7 +9,10 @@ FROM (VALUES
   ('dashboard:read', 'View the executive dashboard'),
   ('data_points:create', 'Create ESG data points'), ('data_points:read', 'View ESG data points'),
   ('data_points:update', 'Update ESG data points'), ('data_points:delete', 'Delete ESG data points'),
-  ('data_points:approve', 'Validate/approve ESG data points'), ('data_points:export', 'Export ESG data'),
+  ('data_points:approve', 'Approve (and reopen) validated ESG data points'), ('data_points:export', 'Export ESG data'),
+  ('data_points:validate', 'Validate or reject submitted ESG data points'),
+  ('data_sources:read', 'View data sources'), ('data_sources:manage', 'Add and edit data sources'),
+  ('fx_rates:read', 'View exchange rates'), ('fx_rates:manage', 'Add and edit exchange rates'),
   ('carbon_data:create', 'Create emission records'), ('carbon_data:read', 'View emission records'),
   ('carbon_data:update', 'Update emission records'), ('carbon_data:delete', 'Delete emission records'),
   ('carbon_data:approve', 'Approve emission data'), ('carbon_data:export', 'Export emission data'),
@@ -37,6 +40,10 @@ FROM (VALUES
   ('carbon_market:update', 'Update carbon credits'), ('carbon_market:approve', 'Retire carbon credits'),
   ('training:create', 'Create courses'), ('training:read', 'View training'), ('training:update', 'Update courses'),
   ('training:configure', 'Manage training programme'),
+  ('privacy:read', 'View privacy notices, data subject requests and retention (NDPA)'),
+  ('privacy:manage', 'Publish privacy notices, handle data subject requests (export, erasure), set retention (NDPA)'),
+  ('integrations:read', 'View integrations: connector requests, API keys, webhooks and their deliveries'),
+  ('integrations:manage', 'Request connectors, create and revoke API keys, manage webhooks'),
   ('users:create', 'Create users'), ('users:read', 'View users'), ('users:update', 'Update users'),
   ('users:delete', 'Deactivate users'), ('users:read_pii', 'See user contact details (field-level)'),
   ('roles:read', 'View roles and permissions'), ('roles:assign', 'Assign and revoke roles'),
@@ -49,7 +56,10 @@ FROM (VALUES
   ('subscription:read', 'View subscription'), ('subscription:configure', 'Change subscription'),
   ('tenants:create', 'Create tenants (platform)'), ('tenants:read', 'View tenants (platform)'), ('tenants:update', 'Update tenants (platform)'),
   ('audit_logs:read', 'View audit logs'),
-  ('notifications:read', 'View own notifications')
+  ('notifications:read', 'View own notifications'),
+  ('reference_data:read', 'View reference data: metrics, factors, frameworks, catalogues'),
+  ('emission_factors:manage', 'Add and update the tenant''s custom emission factors'),
+  ('framework_content:import', 'Import framework requirement content (platform)')
 ) AS v(p, d)
 ON CONFLICT (resource, action) DO UPDATE SET description = EXCLUDED.description;
 
@@ -67,7 +77,10 @@ INSERT INTO auth.system_roles (name, description, scope_type, mfa_required, sort
   ('CONSULTANT', 'Manage client ESG work (multi-tenant access arrives with the consultant portal)', 'tenant', FALSE, 9),
   ('BOARD_MEMBER', 'Governance reports, board composition, ESG performance, whistleblower summaries', 'module', FALSE, 10),
   ('COMPLIANCE_OFFICER', 'Full compliance module: gap analysis, filings, regulatory change', 'tenant', FALSE, 11),
-  ('TRAINING_ADMIN', 'Courses, enrolments, certifications, learning paths, competencies', 'module', FALSE, 12)
+  ('TRAINING_ADMIN', 'Courses, enrolments, certifications, learning paths, competencies', 'module', FALSE, 12),
+  -- WP-34 (D30): designated investigators of whistleblower cases (TRD §6.5.5 "ethics officers"); the only tenant role
+  -- that can read case content.
+  ('ETHICS_OFFICER', 'Whistleblower case management (restricted), governance read access', 'module', TRUE, 13)
 ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, scope_type = EXCLUDED.scope_type,
   mfa_required = EXCLUDED.mfa_required, sort_order = EXCLUDED.sort_order;
 
@@ -77,12 +90,14 @@ INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT 'SUPER_ADMIN', resource, action FROM auth.permissions;
 INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT 'TENANT_ADMIN', resource, action FROM auth.permissions
-WHERE resource NOT IN ('tenants', 'whistleblower');
+WHERE resource NOT IN ('tenants', 'whistleblower', 'framework_content');
 
 INSERT INTO auth.system_role_permissions (role_name, resource, action)
 SELECT r, split_part(p, ':', 1), split_part(p, ':', 2)
 FROM (VALUES
   ('ESG_DIRECTOR', ARRAY[
+    'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
+    'reference_data:read', 'emission_factors:manage',
     'reporting_periods:create', 'reporting_periods:read', 'reporting_periods:update', 'reporting_periods:approve', 'tenant_settings:read', 'files:create', 'files:read', 'files:delete',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'users:read', 'roles:read', 'audit_logs:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:delete', 'data_points:approve', 'data_points:export',
@@ -92,16 +107,28 @@ FROM (VALUES
     'risk:create', 'risk:read', 'risk:update', 'risk:approve',
     'supply_chain:create', 'supply_chain:read', 'supply_chain:update', 'supply_chain:delete', 'supply_chain:approve',
     'social:create', 'social:read', 'social:update', 'social:approve',
-    'governance:read', 'analytics:create', 'analytics:read', 'investor:read', 'investor:share', 'carbon_market:read']),
+    'governance:create', 'governance:read', 'governance:update', 'governance:approve',
+    -- WP-35: analytics:configure for anomaly sensitivity and benchmark datasets (D34).
+    'analytics:create', 'analytics:read', 'analytics:configure', 'investor:read', 'investor:share',
+    -- WP-40: investor:configure for the scorecard weights (D35).
+    'investor:configure', 'carbon_market:read',
+    -- WP-41: the carbon credit portfolio and retirements (D36).
+    'carbon_market:create', 'carbon_market:update', 'carbon_market:approve']),
   ('ESG_MANAGER', ARRAY[
+    'data_points:validate', 'data_sources:read', 'data_sources:manage', 'fx_rates:read', 'fx_rates:manage',
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
     'carbon_data:create', 'carbon_data:read', 'carbon_data:update', 'carbon_data:export',
     'compliance:read', 'reports:create', 'reports:read', 'reports:update', 'reports:export',
     'risk:create', 'risk:read', 'risk:update', 'supply_chain:create', 'supply_chain:read', 'supply_chain:update',
-    'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read']),
+    'social:create', 'social:read', 'social:update', 'analytics:create', 'analytics:read',
+    -- WP-41 (D36): manages credits and requests retirements; the director approves.
+    'carbon_market:create', 'carbon_market:read', 'carbon_market:update']),
   ('ESG_ANALYST', ARRAY[
+    'data_points:validate', 'data_sources:read', 'fx_rates:read',
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update',
@@ -109,16 +136,23 @@ FROM (VALUES
     'compliance:read', 'reports:create', 'reports:read', 'reports:update',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:read']),
   ('DATA_COLLECTOR', ARRAY[
+    'data_sources:read', 'fx_rates:read',
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'carbon_data:create', 'carbon_data:read']),
   ('AUDITOR', ARRAY[
+    'data_sources:read', 'fx_rates:read',
+    'reference_data:read',
     'reporting_periods:read', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read', 'audit_logs:read',
     'data_points:read', 'carbon_data:read', 'compliance:read', 'reports:read', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'governance:read', 'analytics:read', 'carbon_market:read']),
-  ('INVESTOR_VIEWER', ARRAY['notifications:read', 'investor:read']),
+  ('INVESTOR_VIEWER', ARRAY[
+    'reference_data:read','notifications:read', 'investor:read']),
   ('CONSULTANT', ARRAY[
+    'data_sources:read', 'fx_rates:read',
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'data_points:create', 'data_points:read', 'data_points:update', 'data_points:export',
@@ -126,16 +160,42 @@ FROM (VALUES
     'compliance:read', 'reports:create', 'reports:read', 'reports:update', 'reports:export',
     'risk:read', 'supply_chain:read', 'social:read', 'analytics:create', 'analytics:read']),
   ('BOARD_MEMBER', ARRAY[
+    'reference_data:read',
     'files:read',
-    'dashboard:read', 'notifications:read', 'governance:read', 'reports:read', 'whistleblower:read_summary']),
+    -- WP-23: reports:approve for the board sign-off step of report approval (TRD §6.5.3 'CFO/CEO sign-off', D24).
+    -- WP-34: governance:approve so the board approves governance policies (D30).
+    'dashboard:read', 'notifications:read', 'governance:read', 'governance:approve', 'reports:read', 'reports:approve',
+    'whistleblower:read_summary']),
   ('COMPLIANCE_OFFICER', ARRAY[
+    'data_sources:read', 'fx_rates:read',
+    'reference_data:read',
     'reporting_periods:read', 'files:create', 'files:read',
     'dashboard:read', 'notifications:read', 'org_structure:read',
     'compliance:create', 'compliance:read', 'compliance:update', 'compliance:configure', 'compliance:approve',
-    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'data_points:read', 'carbon_data:read']),
+    -- WP-23: reports:approve for the compliance review step of report approval (TRD §6.5.3, D24).
+    'reports:create', 'reports:read', 'reports:update', 'reports:export', 'reports:approve', 'data_points:read', 'carbon_data:read',
+    -- WP-34: governance register and policies (D30).
+    'governance:create', 'governance:read', 'governance:update']),
   ('TRAINING_ADMIN', ARRAY[
-    'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure'])
+    'reference_data:read',
+    'notifications:read', 'users:read', 'training:create', 'training:read', 'training:update', 'training:configure']),
+  ('ETHICS_OFFICER', ARRAY[
+    'reference_data:read', 'files:read', 'dashboard:read', 'notifications:read', 'governance:read',
+    'whistleblower:read', 'whistleblower:update', 'whistleblower:read_summary'])
 ) AS v(r, perms), unnest(perms) AS p;
+
+-- WP-42 (D37): everyone who works in the platform takes courses and sees their own learning; the director can assign;
+-- the training admin can attach course files and see the organisation tree.
+INSERT INTO auth.system_role_permissions (role_name, resource, action)
+SELECT r, 'training', 'read' FROM unnest(ARRAY['ESG_DIRECTOR', 'ESG_MANAGER', 'ESG_ANALYST', 'DATA_COLLECTOR', 'AUDITOR', 'CONSULTANT',
+  'BOARD_MEMBER', 'COMPLIANCE_OFFICER', 'ETHICS_OFFICER']) AS r
+UNION ALL SELECT 'ESG_DIRECTOR', 'training', 'update'
+UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'create'
+UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'read'
+UNION ALL SELECT 'TRAINING_ADMIN', 'org_structure', 'read'
+-- WP-52 (D40): the compliance officer acts as the data protection officer (TENANT_ADMIN has all permissions).
+UNION ALL SELECT 'COMPLIANCE_OFFICER', 'privacy', 'read'
+UNION ALL SELECT 'COMPLIANCE_OFFICER', 'privacy', 'manage';
 
 -- Re-sync every existing tenant.
 SELECT auth.sync_system_roles(id) FROM auth.tenants;

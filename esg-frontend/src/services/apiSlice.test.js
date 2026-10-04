@@ -36,6 +36,20 @@ describe('baseQuery with re-authentication', () => {
   });
 });
 
+describe('MFA required (S1)', () => {
+  it('signs out without retrying and says why when the role needs an MFA-verified session', async () => {
+    const calls = fakeApi({
+      'GET /admin/roles': () => [401, { status: 401, errorCode: 'ESG-401-MFA-REQUIRED', detail: 'Your role requires two-factor authentication.' }],
+      'POST /auth/logout': () => ok(null),
+    });
+    const store = makeStore(authed);
+    await store.dispatch(apiSlice.endpoints.listRoles.initiate());
+    expect(calls.map((c) => c.key)).toEqual(['GET /admin/roles', 'POST /auth/logout']);
+    expect(store.getState().auth.status).toBe('anonymous');
+    expect(store.getState().auth.notice).toMatch(/requires two-factor authentication/);
+  });
+});
+
 describe('single-flight refresh', () => {
   it('two simultaneous session restores send one refresh request', async () => {
     const calls = fakeApi({ 'POST /auth/refresh': () => ok({ accessToken: 'fresh', user: { permissions: [] } }) });

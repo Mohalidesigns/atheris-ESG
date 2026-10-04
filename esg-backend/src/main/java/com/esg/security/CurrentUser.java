@@ -21,6 +21,12 @@ public final class CurrentUser {
         return principal().getAccess();
     }
 
+    /** The signed-in user's id, or null outside a request (scheduled jobs, report rendering). */
+    public static java.util.UUID userIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof UserPrincipal principal ? principal.getAccess().userId() : null;
+    }
+
     public static boolean hasPermission(String permission) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(permission));

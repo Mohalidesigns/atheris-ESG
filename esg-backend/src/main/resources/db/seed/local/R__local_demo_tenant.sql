@@ -2,7 +2,8 @@
 -- LOCAL PROFILE ONLY (spring.flyway.locations in application-local.yml). Never loaded elsewhere (D10).
 -- Demo tenant "ESG Pro Demo Corp": an org tree (Lagos HQ -> 3 sites), the 12 built-in roles and one user per role.
 -- Role permissions come from R__permission_catalogue.sql (runs after this file and syncs every tenant).
--- Password for every user: LocalDev!2026 (README). MFA is not enforced in the local profile.
+-- Password for every user: LocalDev!2026 (README). MFA is enforced locally too (S1): the three users with MFA-required
+-- roles have known dev-only TOTP secrets, listed in db/seed/README.md.
 -- Idempotent: re-runs whenever this file changes.
 -- ============================================================
 SET LOCAL app.current_tenant = '0a000000-0000-4000-8000-000000000001';
@@ -30,7 +31,8 @@ INSERT INTO auth.roles (id, name, description, is_system_role) VALUES
   ('0c000000-0000-4000-8000-000000000009', 'INVESTOR_VIEWER', 'Built-in role (synced from auth.system_roles)', TRUE),
   ('0c000000-0000-4000-8000-000000000010', 'CONSULTANT', 'Built-in role (synced from auth.system_roles)', TRUE),
   ('0c000000-0000-4000-8000-000000000011', 'BOARD_MEMBER', 'Built-in role (synced from auth.system_roles)', TRUE),
-  ('0c000000-0000-4000-8000-000000000012', 'TRAINING_ADMIN', 'Built-in role (synced from auth.system_roles)', TRUE)
+  ('0c000000-0000-4000-8000-000000000012', 'TRAINING_ADMIN', 'Built-in role (synced from auth.system_roles)', TRUE),
+  ('0c000000-0000-4000-8000-000000000013', 'ETHICS_OFFICER', 'Built-in role (synced from auth.system_roles)', TRUE)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO auth.users (id, email, password_hash, first_name, last_name, timezone) VALUES
@@ -45,16 +47,28 @@ INSERT INTO auth.users (id, email, password_hash, first_name, last_name, timezon
   ('0d000000-0000-4000-8000-000000000009', 'investor@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Ifeoma', 'Investor', 'Africa/Lagos'),
   ('0d000000-0000-4000-8000-000000000010', 'consultant@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Kunle', 'Consultant', 'Africa/Lagos'),
   ('0d000000-0000-4000-8000-000000000011', 'board@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Bisi', 'Board', 'Africa/Lagos'),
-  ('0d000000-0000-4000-8000-000000000012', 'training@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Tunde', 'Training', 'Africa/Lagos')
+  ('0d000000-0000-4000-8000-000000000012', 'training@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Tunde', 'Training', 'Africa/Lagos'),
+  ('0d000000-0000-4000-8000-000000000013', 'ethics@esgpro.ng', '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', 'Funmi', 'Ethics', 'Africa/Lagos')
 ON CONFLICT DO NOTHING;
 
 -- Keep the documented local password even if a developer changed it.
 UPDATE auth.users SET password_hash = '$2a$10$ZttNN/ZvtrBk5LL0kcrmkOyP49KDecsM/iKe42cwb6M6NfDTROJpm', failed_login_count = 0, locked_until = NULL
 WHERE email LIKE '%@esgpro.ng';
 
+-- Dev-only TOTP secrets for the MFA-required roles (S1), encrypted with the local DATA_ENCRYPTION_KEY default
+-- (AES-256-GCM, SecretEncryptor). Plain values are in db/seed/README.md so developers and the E2E suite can sign in.
+UPDATE auth.users SET mfa_enabled = TRUE, mfa_secret = CASE email
+    WHEN 'adaeze.usman@esgpro.ng' THEN '6aVBGOcuH9mGyKRXM6t38Y8203VUlpiKGG3vHnEl5pxNR0HE5drjzdbwNRDr8EMK20596w9SmYIUEw/H'
+    WHEN 'tenant.admin@esgpro.ng' THEN '+JZPa1Vo+tV2vK30TzjuHc8KK90mC9218Dc19BHEUhyn35S5dDKFfQjZyL2xJ0obzeiPsVLcInKciTlt'
+    WHEN 'super.admin@esgpro.ng'  THEN 'QRauxFF98KN9LgxGGRSCCjNeS0J0WvEBxZC3aNUTw0jDuIBzAtLnMk2HW4JYkOTMVOq/MXs5tmln/KIX'
+    WHEN 'ethics@esgpro.ng'       THEN 'M8A/yI4sYm68+UrZGzXuXMc4Bn5q3cKSvKC59dfPxUMkZnIF5AZqSSwrDfukRlmjOh+NwOxG9uae6FZH' END
+WHERE email IN ('adaeze.usman@esgpro.ng', 'tenant.admin@esgpro.ng', 'super.admin@esgpro.ng', 'ethics@esgpro.ng');
+
 INSERT INTO auth.user_roles (user_id, role_id, org_scope_id, granted_by) VALUES
   ('0d000000-0000-4000-8000-000000000001', '0c000000-0000-4000-8000-000000000002', NULL, '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000002', '0c000000-0000-4000-8000-000000000004', '0b000000-0000-4000-8000-000000000003', '0d000000-0000-4000-8000-000000000005'),
+  -- WP-20: the analyst also covers OML 42 Field, where the data collector works (journey 3: collect → validate → approve).
+  ('0d000000-0000-4000-8000-000000000002', '0c000000-0000-4000-8000-000000000004', '0b000000-0000-4000-8000-000000000004', '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000003', '0c000000-0000-4000-8000-000000000003', '0b000000-0000-4000-8000-000000000001', '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000004', '0c000000-0000-4000-8000-000000000005', '0b000000-0000-4000-8000-000000000004', '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000005', '0c000000-0000-4000-8000-000000000001', NULL, '0d000000-0000-4000-8000-000000000005'),
@@ -64,7 +78,8 @@ INSERT INTO auth.user_roles (user_id, role_id, org_scope_id, granted_by) VALUES
   ('0d000000-0000-4000-8000-000000000009', '0c000000-0000-4000-8000-000000000009', NULL, '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000010', '0c000000-0000-4000-8000-000000000010', NULL, '0d000000-0000-4000-8000-000000000005'),
   ('0d000000-0000-4000-8000-000000000011', '0c000000-0000-4000-8000-000000000011', NULL, '0d000000-0000-4000-8000-000000000005'),
-  ('0d000000-0000-4000-8000-000000000012', '0c000000-0000-4000-8000-000000000012', NULL, '0d000000-0000-4000-8000-000000000005')
+  ('0d000000-0000-4000-8000-000000000012', '0c000000-0000-4000-8000-000000000012', NULL, '0d000000-0000-4000-8000-000000000005'),
+  ('0d000000-0000-4000-8000-000000000013', '0c000000-0000-4000-8000-000000000013', NULL, '0d000000-0000-4000-8000-000000000005')
 ON CONFLICT DO NOTHING;
 
 -- Tenant settings and reporting periods (WP-14). FY2025 is locked: data for 2025 can't be changed.

@@ -1,0 +1,98 @@
+{
+  "id": "impact-metric",
+  "forms": [
+    "IRIS+ impact metric"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "INVESTOR_VIEWER",
+  "create": {
+    "method": "POST",
+    "path": "/v1/investor/impact-metrics"
+  },
+  "read": {
+    "path": "/v1/investor/impact-metrics/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/investor/impact-metrics/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Investor Portal"
+  },
+  "values": {
+    "irisCode": "PI{yyyy}",
+    "name": "RT permanent employees {u}",
+    "metricKey": "employees_total",
+    "kpiId": null,
+    "note": "Headcount at year end",
+    "visibleToInvestors": true
+  },
+  "changes": {
+    "irisCode": "PJ{yyyy}",
+    "name": "RT new hires {u}",
+    "metricKey": "new_hires",
+    "note": "Hires in the year",
+    "visibleToInvestors": false
+  },
+  "invalid": [
+    {
+      "field": "irisCode",
+      "value": "PI-1",
+      "rule": "IRIS+ code"
+    },
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "metricKey",
+      "value": "unicorns",
+      "rule": "numeric catalogue metric"
+    },
+    {
+      "field": "metricKey",
+      "value": null,
+      "rule": "a metric or a KPI"
+    },
+    {
+      "field": "note",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "irisCode": {
+        "label": "IRIS+ code"
+      },
+      "name": {
+        "label": "Name"
+      },
+      "metricKey": {
+        "label": "Catalogue metric",
+        "kind": "select",
+        "display": "Total employees"
+      },
+      "kpiId": {
+        "label": "Or a KPI",
+        "kind": "select",
+        "display": "—"
+      },
+      "note": {
+        "label": "Note (optional)"
+      },
+      "visibleToInvestors": {
+        "label": "Visible to investors",
+        "kind": "switch"
+      }
+    }
+  }
+}
