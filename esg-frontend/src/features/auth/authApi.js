@@ -1,5 +1,5 @@
 import { apiSlice, refreshOnce, unwrap } from '../../services/apiSlice';
-import { loggedOut, mfaChallenged, offlineSessionStarted, sessionStarted } from './slices/authSlice';
+import { loggedOut, mfaChallenged, offlineSessionStarted, sessionStarted, userUpdated } from './slices/authSlice';
 
 // WP-43: the offline store is loaded only when needed, so the sign-in page doesn't download it.
 const offline = () => import('../offline/outbox');
@@ -50,6 +50,19 @@ export const authApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       onQueryStarted: (_, { dispatch, queryFulfilled }) => applyAuthResponse(queryFulfilled, dispatch),
     }),
+    // WP-45: the user's interface language, kept on their account.
+    setMyLanguage: build.mutation({
+      query: (preferredLanguage) => ({ url: '/auth/me/language', method: 'PUT', body: { preferredLanguage } }),
+      transformResponse: unwrap,
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(userUpdated({ preferredLanguage: data.preferredLanguage }));
+        } catch {
+          // the choice still applies on this device
+        }
+      },
+    }),
     logout: build.mutation({
       query: () => ({ url: '/auth/logout', method: 'POST' }),
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
@@ -66,5 +79,5 @@ export const authApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useLoginMutation, useRestoreSessionMutation, useSetupMfaMutation, useVerifyMfaMutation, useLogoutMutation,
+  useLoginMutation, useRestoreSessionMutation, useSetupMfaMutation, useVerifyMfaMutation, useLogoutMutation, useSetMyLanguageMutation,
 } = authApi;

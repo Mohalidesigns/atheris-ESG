@@ -12,6 +12,7 @@ import { IncidentDialog } from '../../social/components/SafetyTab';
 import { requestSync, useOnline, useOutbox } from '../hooks';
 import { useResolveConflictMutation, useSyncConflictsQuery } from '../offlineApi';
 import { KINDS, discard, forgetResolvedConflicts } from '../outbox';
+import { tr, formattingLocale } from '../../../i18n';
 
 // no-mock-gate: config — status labels for records on the device
 const STATUS = {
@@ -20,8 +21,8 @@ const STATUS = {
   conflict: { label: 'Needs your decision', color: 'warning' },
 };
 
-const when = (iso) => (iso ? new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
-const value = (dp) => (dp?.numericValue != null ? `${Number(dp.numericValue).toLocaleString('en-GB')}${dp.unit ? ` ${dp.unit}` : ''}`
+const when = (iso) => (iso ? new Date(iso).toLocaleString(formattingLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+const value = (dp) => (dp?.numericValue != null ? `${Number(dp.numericValue).toLocaleString(formattingLocale())}${dp.unit ? ` ${dp.unit}` : ''}`
   : dp?.textValue ?? '—');
 
 function Conflicts({ user }) {
@@ -45,9 +46,9 @@ function Conflicts({ user }) {
   };
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" component="h2" sx={{ mb: 1 }}>Needs your decision</Typography>
+      <Typography variant="h6" component="h2" sx={{ mb: 1 }}>{tr("Needs your decision")}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        The server already had a value for the same metric, organisation and period. Keep the server's value, or replace it with yours.
+        {tr("The server already had a value for the same metric, organisation and period. Keep the server's value, or replace it with yours.")}
       </Typography>
       {failure && <Alert severity="error" sx={{ mb: 2 }}>{failure}</Alert>}
       <Stack spacing={2}>
@@ -61,24 +62,24 @@ function Conflicts({ user }) {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>{c.reason}</Typography>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="caption" color="text.secondary">Yours — captured {when(c.capturedAt)} on {c.deviceId}</Typography>
+                  <Typography variant="caption" color="text.secondary">{tr("Yours — captured")} {when(c.capturedAt)} {tr("on")} {c.deviceId}</Typography>
                   <Typography variant="h6" component="p">{value({ ...c.mine, unit: c.server?.unit })}</Typography>
                   {c.mine?.notes && <Typography variant="body2">{c.mine.notes}</Typography>}
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     {c.server ? `On the server — ${c.server.validationStatus}, saved ${when(c.server.updatedAt)} by ${c.server.createdByName ?? 'someone'}`
-                      : 'On the server — deleted since'}
+                      : tr("On the server — deleted since")}
                   </Typography>
                   <Typography variant="h6" component="p">{c.server ? value(c.server) : '—'}</Typography>
                   {c.server?.notes && <Typography variant="body2">{c.server.notes}</Typography>}
                 </Grid>
               </Grid>
               <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
-                <Button size="small" variant="outlined" disabled={state.isLoading} onClick={() => act(c, 'keep_server')}>Keep server value</Button>
-                <Tooltip title={canOverride ? '' : 'Replacing a saved value needs permission to edit data points'}>
+                <Button size="small" variant="outlined" disabled={state.isLoading} onClick={() => act(c, 'keep_server')}>{tr("Keep server value")}</Button>
+                <Tooltip title={canOverride ? '' : tr("Replacing a saved value needs permission to edit data points")}>
                   <span>
-                    <Button size="small" variant="contained" disabled={state.isLoading || !canOverride} onClick={() => act(c, 'use_mine')}>Use mine</Button>
+                    <Button size="small" variant="contained" disabled={state.isLoading || !canOverride} onClick={() => act(c, 'use_mine')}>{tr("Use mine")}</Button>
                   </span>
                 </Tooltip>
               </Box>
@@ -108,58 +109,58 @@ export default function OfflineTab({ metrics = [], orgs = [], server = true }) {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
         {online ? (
           <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-            Records saved without a connection are kept here and sent automatically when you're online.
+            {tr("Records saved without a connection are kept here and sent automatically when you're online.")}
           </Typography>
         ) : (
           <Alert severity="info" icon={<CloudOff />} sx={{ flex: 1 }}>
-            You're offline. What you save stays on this device and is sent when you're back online.
+            {tr("You're offline. What you save stays on this device and is sent when you're back online.")}
           </Alert>
         )}
         {server && (
-          <Button variant="outlined" size="small" startIcon={<Sync />} disabled={!online || !pending} onClick={requestSync}>Sync now</Button>
+          <Button variant="outlined" size="small" startIcon={<Sync />} disabled={!online || !pending} onClick={requestSync}>{tr("Sync now")}</Button>
         )}
       </Box>
 
       {server && online && <Conflicts user={user} />}
 
-      <Typography variant="h6" component="h2" sx={{ mb: 1 }}>Waiting on this device</Typography>
+      <Typography variant="h6" component="h2" sx={{ mb: 1 }}>{tr("Waiting on this device")}</Typography>
       {!local.length ? (
-        <EmptyState title="Nothing waiting">Everything saved on this device has reached the server.</EmptyState>
+        <EmptyState title={tr("Nothing waiting")}>{tr("Everything saved on this device has reached the server.")}</EmptyState>
       ) : (
         <TableContainer>
-          <Table size="small" aria-label="Waiting on this device">
+          <Table size="small" aria-label={tr("Waiting on this device")}>
             <TableHead>
               <TableRow>
-                <TableCell>Record</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Saved on the device</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell>{tr("Record")}</TableCell>
+                <TableCell>{tr("Type")}</TableCell>
+                <TableCell>{tr("Saved on the device")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell>
+                <TableCell>{tr("Actions")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {local.map((o) => (
                 <TableRow key={o.opId}>
                   <TableCell>
-                    {o.label}
-                    {o.status === 'rejected' && o.message && (
+                    {tr(o.label)}
+                    {o.status === 'rejected' && tr(o.message) && (
                       <Typography variant="caption" color="error" sx={{ display: 'block' }}>
-                        {o.message}{Object.keys(o.errors ?? {}).length ? `: ${Object.entries(o.errors).map(([f, m]) => `${f} ${m}`).join('; ')}` : ''}
+                        {tr(o.message)}{Object.keys(o.errors ?? {}).length ? `: ${Object.entries(o.errors).map(([f, m]) => `${f} ${m}`).join('; ')}` : ''}
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>{KINDS[o.kind]}</TableCell>
+                  <TableCell>{tr(KINDS[o.kind])}</TableCell>
                   <TableCell>{when(o.capturedAt)}</TableCell>
-                  <TableCell><Chip size="small" variant="outlined" color={STATUS[o.status].color} label={STATUS[o.status].label} /></TableCell>
+                  <TableCell><Chip size="small" variant="outlined" color={STATUS[o.status].color} label={tr(STATUS[o.status].label)} /></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
                     <Button size="small" onClick={() => setCorrecting(o)}
                       disabled={o.kind === 'data_point' && !metrics.length} aria-label={`Edit ${o.label}`}>
-                      {o.status === 'rejected' ? 'Correct' : 'Edit'}
+                      {o.status === 'rejected' ? tr("Correct") : tr("Edit")}
                     </Button>
                     <Button size="small" color="error" aria-label={`Discard ${o.label}`}
-                      onClick={async () => (await confirm({ title: 'Discard this record?', item: o.label,
-                        message: "It hasn't reached the server and will be deleted from this device." })) && discard(o.opId)}>
-                      Discard
+                      onClick={async () => (await confirm({ title: tr("Discard this record?"), item: o.label,
+                        message: tr("It hasn't reached the server and will be deleted from this device.") })) && discard(o.opId)}>
+                      {tr("Discard")}
                     </Button>
                   </TableCell>
                 </TableRow>

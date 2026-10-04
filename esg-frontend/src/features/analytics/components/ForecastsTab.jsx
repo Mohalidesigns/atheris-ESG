@@ -16,6 +16,7 @@ import { StepDialog } from '../../social/components/shared';
 import { useAiStatusQuery, useCreatePredictionMutation, useDismissPredictionMutation, usePredictionsQuery } from '../aiApi';
 import { FREQUENCIES, LEVELS, TARGETS, emptyForecast, forecastSchema, toForecastBody } from '../aiSchemas';
 import { fmt, problemText } from '../schemas';
+import { tr } from '../../../i18n';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
@@ -24,7 +25,7 @@ export function AiServiceStatus() {
   const { data } = useAiStatusQuery();
   if (!data) return null;
   if (data.reachable) return null;
-  return <Alert severity="warning" sx={{ mb: 2 }} aria-label="AI service">{data.detail}. AI features are unavailable until it is running; nothing is estimated in its place.</Alert>;
+  return <Alert severity="warning" sx={{ mb: 2 }} aria-label={tr("AI service")}>{tr(data.detail)}{tr(". AI features are unavailable until it is running; nothing is estimated in its place.")}</Alert>;
 }
 
 function ForecastChart({ run }) {
@@ -35,14 +36,14 @@ function ForecastChart({ run }) {
   const data = [...history.slice(0, -1), last ? { ...last, forecast: last.actual, band: [last.actual, last.actual] } : null, ...ahead].filter(Boolean);
   const bt = run.output?.backtest;
   return (
-    <Card aria-label="Forecast chart">
+    <Card aria-label={tr("Forecast chart")}>
       <CardContent>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>
-            {run.inputSummary?.metricName ?? TARGETS[run.inputSummary?.target]} · {run.parameters?.horizon} {run.parameters?.frequency === 'year' ? 'years' : 'months'} ahead
+            {run.inputSummary?.metricName ?? tr(TARGETS[run.inputSummary?.target])} · {run.parameters?.horizon} {run.parameters?.frequency === 'year' ? 'years' : 'months'} {tr("ahead")}
           </Typography>
           <AiChip engine={run.engine} />
-          {run.reviewStatus === 'dismissed' && <Chip size="small" label="Dismissed" />}
+          {run.reviewStatus === 'dismissed' && <Chip size="small" label={tr("Dismissed")} />}
         </Box>
         <Box sx={{ height: 300 }}>
           <ResponsiveContainer>
@@ -58,14 +59,13 @@ function ForecastChart({ run }) {
             </ComposedChart>
           </ResponsiveContainer>
         </Box>
-        <Typography variant="body2" sx={{ mt: 1 }} aria-label="Forecast basis">
-          {run.output?.model} on {run.inputSummary?.points} {run.parameters?.frequency === 'year' ? 'years' : 'months'} ({run.inputSummary?.from} to {run.inputSummary?.to})
-          of {run.inputSummary?.source} in {run.inputSummary?.scope}.
-          {bt ? ` Back-test: the same method missed the last ${bt.holdout} known periods by ${fmt(bt.mape)}% on average.` : ' Too little history to back-test.'}
+        <Typography variant="body2" sx={{ mt: 1 }} aria-label={tr("Forecast basis")}>
+          {run.output?.model} {tr("on")} {run.inputSummary?.points} {run.parameters?.frequency === 'year' ? 'years' : 'months'} ({run.inputSummary?.from} {tr("to")} {run.inputSummary?.to}{tr(") of")} {run.inputSummary?.source} {tr("in")} {run.inputSummary?.scope}.
+          {bt ? ` Back-test: the same method missed the last ${bt.holdout} known periods by ${fmt(bt.mape)}% on average.` : tr(" Too little history to back-test.")}
           {unit && ` Values in ${unit}.`}
         </Typography>
-        {(run.output?.warnings ?? []).map((w) => <Typography key={w} variant="caption" display="block" color="text.secondary">Note: {w}.</Typography>)}
-        {run.reviewNote && <Alert severity="info" sx={{ mt: 1 }}>Dismissed by {run.reviewedByName}: {run.reviewNote}</Alert>}
+        {(run.output?.warnings ?? []).map((w) => <Typography key={w} variant="caption" display="block" color="text.secondary">{tr("Note:")} {w}.</Typography>)}
+        {run.reviewNote && <Alert severity="info" sx={{ mt: 1 }}>{tr("Dismissed by")} {run.reviewedByName}: {run.reviewNote}</Alert>}
       </CardContent>
     </Card>
   );
@@ -99,45 +99,45 @@ export default function ForecastsTab() {
       <AiServiceStatus />
       <Can permission="analytics:create">
         <Card sx={{ mb: 2 }}>
-          <CardContent component="form" onSubmit={submit} noValidate aria-label="New forecast">
+          <CardContent component="form" onSubmit={submit} noValidate aria-label={tr("New forecast")}>
             {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
             <Grid container spacing={2} alignItems="flex-start">
-              <Grid size={{ xs: 12, md: 3 }}><FormSelect control={control} name="target" label="Forecast" options={options(TARGETS)} /></Grid>
+              <Grid size={{ xs: 12, md: 3 }}><FormSelect control={control} name="target" label={tr("Forecast")} options={options(TARGETS)} /></Grid>
               {target === 'metric' && (
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <FormSelect control={control} name="metricKey" label="Metric" options={numeric.map((m) => ({ value: m.metricKey, label: `${m.name} (${m.unit})` }))} />
+                  <FormSelect control={control} name="metricKey" label={tr("Metric")} options={numeric.map((m) => ({ value: m.metricKey, label: `${m.name} (${m.unit})` }))} />
                 </Grid>
               )}
-              <Grid size={{ xs: 6, md: 2 }}><FormSelect control={control} name="frequency" label="By" options={options(FREQUENCIES)} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><FormSelect control={control} name="frequency" label={tr("By")} options={options(FREQUENCIES)} /></Grid>
               <Grid size={{ xs: 6, md: 2 }}>
-                <FormSelect control={control} name="horizon" label="Periods ahead" options={Array.from({ length: 36 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
+                <FormSelect control={control} name="horizon" label={tr("Periods ahead")} options={Array.from({ length: 36 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
               </Grid>
-              <Grid size={{ xs: 6, md: 1 }}><FormSelect control={control} name="levelPct" label="Interval" options={options(LEVELS)} /></Grid>
+              <Grid size={{ xs: 6, md: 1 }}><FormSelect control={control} name="levelPct" label={tr("Interval")} options={options(LEVELS)} /></Grid>
               <Grid size={{ xs: 6, md: 1 }}>
-                <Button type="submit" variant="contained" startIcon={<AutoGraph />} disabled={c.isLoading} sx={{ mt: 0.25 }}>Forecast</Button>
+                <Button type="submit" variant="contained" startIcon={<AutoGraph />} disabled={c.isLoading} sx={{ mt: 0.25 }}>{tr("Forecast")}</Button>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
       </Can>
-      {runs.length === 0 ? <Card><CardContent><EmptyState title="No forecasts yet">A forecast fits a statistical model (ARIMA, or a linear trend for short histories) to your recorded data and shows its uncertainty.</EmptyState></CardContent></Card> : (
+      {runs.length === 0 ? <Card><CardContent><EmptyState title={tr("No forecasts yet")}>{tr("A forecast fits a statistical model (ARIMA, or a linear trend for short histories) to your recorded data and shows its uncertainty.")}</EmptyState></CardContent></Card> : (
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, lg: 8 }}>{shown && <ForecastChart run={shown} />}</Grid>
           <Grid size={{ xs: 12, lg: 4 }}>
             <Card>
               <TableContainer>
-                <Table size="small" aria-label="Forecast runs">
-                  <TableHead><TableRow><TableCell>Forecast</TableCell><TableCell>Run</TableCell><TableCell /></TableRow></TableHead>
+                <Table size="small" aria-label={tr("Forecast runs")}>
+                  <TableHead><TableRow><TableCell>{tr("Forecast")}</TableCell><TableCell>{tr("Run")}</TableCell><TableCell /></TableRow></TableHead>
                   <TableBody>
                     {runs.map((r) => (
                       <TableRow key={r.id} hover selected={shown?.id === r.id} onClick={() => setSelected(r.id)} sx={{ cursor: 'pointer' }}>
-                        <TableCell>{r.inputSummary?.metricName ?? TARGETS[r.inputSummary?.target]}
-                          <Typography variant="caption" display="block" color="text.secondary">{r.output?.model}{r.reviewStatus === 'dismissed' ? ' · dismissed' : ''}</Typography></TableCell>
+                        <TableCell>{r.inputSummary?.metricName ?? tr(TARGETS[r.inputSummary?.target])}
+                          <Typography variant="caption" display="block" color="text.secondary">{r.output?.model}{r.reviewStatus === 'dismissed' ? tr(" · dismissed") : ''}</Typography></TableCell>
                         <TableCell><Typography variant="caption">{r.createdAt?.slice(0, 10)} · {r.createdByName}</Typography></TableCell>
                         <TableCell align="right">
                           {r.reviewStatus !== 'dismissed' && (
                             <Can permission="analytics:create">
-                              <Button size="small" onClick={(e) => { e.stopPropagation(); setDismissing(r); }} aria-label={`Dismiss forecast of ${r.createdAt?.slice(0, 16)}`}>Dismiss</Button>
+                              <Button size="small" onClick={(e) => { e.stopPropagation(); setDismissing(r); }} aria-label={`Dismiss forecast of ${r.createdAt?.slice(0, 16)}`}>{tr("Dismiss")}</Button>
                             </Can>
                           )}
                         </TableCell>
@@ -151,9 +151,9 @@ export default function ForecastsTab() {
         </Grid>
       )}
       {dismissing && (
-        <StepDialog title="Dismiss this forecast" confirmLabel="Dismiss" fields={[{ name: 'note', label: 'Why it should not be relied on', required: true, max: 1000 }]}
+        <StepDialog title={tr("Dismiss this forecast")} confirmLabel={tr("Dismiss")} fields={[{ name: 'note', label: 'Why it should not be relied on', required: true, max: 1000 }]}
           onCancel={() => setDismissing(null)} onConfirm={async (v) => { await dismiss({ id: dismissing.id, note: v.note, version: dismissing.version }).unwrap(); setDismissing(null); }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>It stays on record, marked as dismissed.</Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>{tr("It stays on record, marked as dismissed.")}</Typography>
         </StepDialog>
       )}
       {c.isError && !formError && <Alert severity="error" sx={{ mt: 2 }}>{problemText(c.error)}</Alert>}

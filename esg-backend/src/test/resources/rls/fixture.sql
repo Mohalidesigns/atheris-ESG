@@ -277,3 +277,14 @@ insert into auth.user_roles (user_id, role_id)
 
 select set_config('app.current_tenant', '', false);
 select set_config('app.current_user', '', false);
+-- WP-46 integrations (one row per tenant table for the RLS suite).
+select set_config('app.current_tenant', '11111111-1111-4111-8111-111111111111', false);
+insert into integrations.integration_requests (id, reference, connector_key, system_details, data_needed, frequency, contact_name, contact_email)
+  values ('a0000000-0000-4000-8000-000000000b01', 'INT-2026-0001', 'sap_business_one', 'Fixture SAP B1 10.0, on-premise', '{energy_fuel}',
+          'monthly', 'Fixture User', 'fixture@fixture.test');
+insert into integrations.api_keys (id, name, key_prefix, key_hash, scopes, created_by)
+  values ('a0000000-0000-4000-8000-000000000b02', 'Fixture key', 'fxkey1', repeat('0', 64), '{data_points:read}', 'a0000000-0000-4000-8000-0000000000a1');
+insert into integrations.webhook_endpoints (id, name, url, events, secret_encrypted, is_active)
+  values ('a0000000-0000-4000-8000-000000000b03', 'Fixture hook', 'https://hooks.fixture.test/esg', '{data_point.approved}', 'not-a-real-secret', false);
+insert into integrations.webhook_deliveries (endpoint_id, event_id, event_type, payload, status)
+  values ('a0000000-0000-4000-8000-000000000b03', gen_random_uuid(), 'data_point.approved', '{}', 'delivered');

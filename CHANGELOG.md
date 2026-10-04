@@ -3,6 +3,24 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-45 Languages (D45)
+
+- The interface is available in English, French, Portuguese, Arabic, Swahili, Hausa and Yoruba: choose it on the sign-in page or in the account menu. Signed in, the choice is kept on your account for every device.
+- Arabic is shown right to left.
+- Numbers, amounts (₦, KSh, R, GH₵, $, €), percentages and dates follow the chosen language.
+- The six translations are drafts that have not yet been reviewed by a professional translator; the language list says so. Messages from the server, catalogue names and generated reports stay in English for now.
+- The product is now called **Atheris ESG** everywhere in the app (browser title, sign-in page, menu); it was "ESG Pro". The demo tenant keeps its name.
+- Filled information messages (toasts) are darker so their text meets WCAG AA contrast.
+
+## Unreleased — WP-46 Integrations (D44)
+
+- Administration › Integrations now has Connectors, API keys, Webhooks, File templates and a Developer guide.
+- Connectors on request: ERP, accounting, HR and utility connectors (SAP, Oracle, Dynamics, QuickBooks, Sage, SeamlessHR, Workday and others) are listed and can be requested by a client's administrator; the Atheris team reviews, schedules and activates each one (Administration › Integration requests). Nothing is connected until a request is active.
+- API keys let a client's own systems — IoT gateways, meters, scripts, BI tools — read data and send readings as drafts, limited to chosen permissions and to what their creator may do; keys expire and can be revoked.
+- Webhooks tell a client's systems when data or a report is approved, an approved value is reopened or an incident is recorded — signed, retried for about a day, with a delivery log, test button and redelivery.
+- File templates for each source system (energy and fuel, utilities, workforce, waste).
+- SMS/USSD data entry (WP-44) is deferred by the product owner.
+
 ## Unreleased — WP-43 Offline capture (D43)
 
 - The web app can be installed on a phone or tablet and opens without a connection; pages load from the device after the first visit.

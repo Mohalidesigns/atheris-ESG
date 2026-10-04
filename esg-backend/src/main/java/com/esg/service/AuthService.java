@@ -174,6 +174,14 @@ public class AuthService {
         return userDto(user, access);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public AuthResponse.UserDto setLanguage(String language) {
+        UserAccess access = CurrentUser.access();
+        User user = userRepository.findById(access.userId()).orElseThrow(() -> ApiException.notFound("User"));
+        user.setPreferredLanguage(language);
+        return userDto(userRepository.saveAndFlush(user), access);
+    }
+
     // ------------------------------------------------------------------ internals
 
     private AuthResult completeLogin(User user, UserAccess access, ClientInfo client, boolean mfaVerified) {

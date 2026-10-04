@@ -6,6 +6,7 @@ import BoardTab from './BoardTab';
 import CodeCheckTab from './CodeCheckTab';
 import PoliciesTab from './PoliciesTab';
 import WhistleblowingTab from './WhistleblowingTab';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — tabs and their ?tab= keys
 const TABS = [['board', 'Board'], ['code-check', 'Code check'], ['policies', 'Policies'], ['whistleblowing', 'Whistleblowing']];
@@ -16,7 +17,7 @@ export default function GovernancePage() {
   const [tab, setTab] = useState(Math.max(0, TABS.findIndex(([k]) => k === params.get('tab'))));
   return (
     <Box>
-      <PageHeader title="Governance & Ethics" subtitle="Board composition, governance codes, policies and whistleblowing" />
+      <PageHeader title={tr("Governance & Ethics")} subtitle={tr("Board composition, governance codes, policies and whistleblowing")} />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
         {TABS.map(([k, l]) => <Tab key={k} label={l} />)}
       </Tabs>

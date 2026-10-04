@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, List, ListItem, TextField, Typography } from '@mui/material';
 import { applyProblem } from '../../../services/formErrors';
 import { useRecalculateMutation } from '../carbonApi';
+import { tr } from '../../../i18n';
 
 /**
  * Re-runs factor selection for every calculator and Data Hub record in a period (TRD §6.4.2 POST /carbon/calculate).
@@ -34,34 +35,33 @@ export default function RecalculateDialog({ onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>Recalculate emissions</DialogTitle>
+        <DialogTitle>{tr("Recalculate emissions")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Picks the current best factor and GWP set for every record in the period and updates those whose result changes.
-            Verified records and flaring are left as they are.
+            {tr("Picks the current best factor and GWP set for every record in the period and updates those whose result changes. Verified records and flaring are left as they are.")}
           </Typography>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2}>
             <Grid size={6}>
-              <TextField fullWidth size="small" type="date" label="From" value={from} onChange={(e) => setFrom(e.target.value)}
+              <TextField fullWidth size="small" type="date" label={tr("From")} value={from} onChange={(e) => setFrom(e.target.value)}
                 error={!!errors.from} helperText={errors.from} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
             <Grid size={6}>
-              <TextField fullWidth size="small" type="date" label="To" value={to} onChange={(e) => setTo(e.target.value)}
+              <TextField fullWidth size="small" type="date" label={tr("To")} value={to} onChange={(e) => setTo(e.target.value)}
                 error={!!errors.to} helperText={errors.to} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
           </Grid>
           {result && (
-            <Alert severity="success" sx={{ mt: 2 }} aria-label="Recalculation result">
-              Checked {result.checked} records, updated {result.updated}.
+            <Alert severity="success" sx={{ mt: 2 }} aria-label={tr("Recalculation result")}>
+              {tr("Checked")} {result.checked} {tr("records, updated")} {result.updated}.
               {result.changes.length > 0 && <List dense>{result.changes.map((c) => <ListItem key={c} disableGutters>{c}</ListItem>)}</List>}
               {result.updated > result.changes.length && ` The first ${result.changes.length} changes are listed.`}
             </Alert>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Close</Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>Recalculate</Button>
+          <Button onClick={onClose}>{tr("Close")}</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>{tr("Recalculate")}</Button>
         </DialogActions>
       </form>
     </Dialog>

@@ -211,5 +211,21 @@
   ],
   "Sync conflict decision": [
     "com.esg.offline.OfflineSyncApiTest#twoDevicesConflictOnTheSameMetricAndPeriodAndThePersonDecides"
+  ],
+  "Connector request": [
+    "com.esg.integrations.IntegrationsApiTest#aClientRequestsAConnectorAndThePlatformTeamActivatesIt"
+  ],
+  "API key": [
+    "com.esg.integrations.IntegrationsApiTest#anApiKeyActsWithinItsScopesAsItsCreatorAndCanBeRevoked"
+  ],
+  "Webhook": [
+    "com.esg.integrations.IntegrationsApiTest#anApprovedDataPointIsSentSignedToTheSubscribedEndpoint",
+    "com.esg.integrations.IntegrationsApiTest#anEndpointThatKeepsFailingIsSwitchedOff"
+  ],
+  "Integration request status": [
+    "com.esg.integrations.IntegrationsApiTest#aClientRequestsAConnectorAndThePlatformTeamActivatesIt"
+  ],
+  "Account menu / sign-in: language": [
+    "com.esg.controller.LanguagePreferenceTest#aUserChoosesTheirOwnLanguage"
   ]
 }

@@ -21,6 +21,7 @@ import {
   toGrievanceForm, problemText,
 } from '../schemas';
 import { ActionBar, StepDialog } from './shared';
+import { tr, formattingLocale } from '../../../i18n';
 
 const opts = (map, empty) => [...(empty !== undefined ? [{ value: '', label: empty }] : []), ...Object.entries(map).map(([value, label]) => ({ value, label }))];
 const SEVERITY_COLOR = { low: 'default', medium: 'info', high: 'warning', critical: 'error' };
@@ -52,55 +53,55 @@ export function GrievanceDialog({ grievance, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${grievance.reference}` : 'Record a grievance'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${grievance.reference}` : tr("Record a grievance")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Organisation" size="small" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} size="small" fullWidth error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
               )} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="projectId" label="Community project (optional)"
+              <FormSelect control={control} name="projectId" label={tr("Community project (optional)")}
                 options={[{ value: '', label: 'Not about a project' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="community" label="Community (optional)" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="receivedOn" label="Received on" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="community" label={tr("Community (optional)")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="receivedOn" label={tr("Received on")} /></Grid>
             <Grid size={12}>
               <Controller name="anonymous" control={control} render={({ field, fieldState }) => (
                 <Box>
-                  <FormControlLabel label="Anonymous" control={<Switch checked={field.value} onChange={(e) => {
+                  <FormControlLabel label={tr("Anonymous")} control={<Switch checked={field.value} onChange={(e) => {
                     field.onChange(e.target.checked);
                     if (e.target.checked) { setValue('complainantName', ''); setValue('complainantContact', ''); }
                   }} />} />
-                  {fieldState.error && <Typography variant="caption" color="error" display="block">{fieldState.error.message}</Typography>}
+                  {fieldState.error && <Typography variant="caption" color="error" display="block">{tr(fieldState.error.message)}</Typography>}
                 </Box>
               )} />
             </Grid>
             {!anonymous && (
               <>
-                <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="complainantName" label="Complainant name" helperText="Stored encrypted; never sent in notifications" /></Grid>
-                <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="complainantContact" label="Complainant contact (optional)" /></Grid>
+                <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="complainantName" label={tr("Complainant name")} helperText={tr("Stored encrypted; never sent in notifications")} /></Grid>
+                <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="complainantContact" label={tr("Complainant contact (optional)")} /></Grid>
               </>
             )}
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="channel" label="Channel" options={opts(CHANNELS)} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="category" label="Category" options={opts(GRIEVANCE_CATEGORIES)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="channel" label={tr("Channel")} options={opts(CHANNELS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="category" label={tr("Category")} options={opts(GRIEVANCE_CATEGORIES)} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="severity" label="Severity" options={opts(SEVERITIES)}
-                helperText="Sets the due date: critical 7 days, high 14, medium 30, low 45" />
+              <FormSelect control={control} name="severity" label={tr("Severity")} options={opts(SEVERITIES)}
+                helperText={tr("Sets the due date: critical 7 days, high 14, medium 30, low 45")} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="title" label="Title" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description" multiline minRows={3} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="title" label={tr("Title")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description")} multiline minRows={3} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="assignedTo" label="Assigned to (optional)"
+              <FormSelect control={control} name="assignedTo" label={tr("Assigned to (optional)")}
                 options={[{ value: '', label: 'Not assigned' }, ...people.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Record grievance'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Record grievance")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -132,47 +133,47 @@ function GrievanceDrawer({ id, onClose, onEdit }) {
   return (
     <Drawer anchor="right" open={Boolean(id)} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 620 } } }}>
       {isLoading || !g ? <LoadingState /> : (
-        <Box sx={{ p: 3 }} role="region" aria-label="Grievance details">
+        <Box sx={{ p: 3 }} role="region" aria-label={tr("Grievance details")}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography variant="overline">{g.reference}</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>{g.title}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>{tr(g.title)}</Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                <Chip size="small" color={GRIEVANCE_STATUS[g.status].color} label={GRIEVANCE_STATUS[g.status].label} aria-label="Grievance status" />
-                <Chip size="small" color={SEVERITY_COLOR[g.severity]} label={SEVERITIES[g.severity]} />
-                {g.escalationLevel > 0 && <Chip size="small" color="error" label={`Escalated · level ${g.escalationLevel}`} aria-label="Escalation level" />}
-                {g.overdue && <Chip size="small" color="error" variant="outlined" label="Overdue" />}
+                <Chip size="small" color={GRIEVANCE_STATUS[g.status].color} label={tr(GRIEVANCE_STATUS[g.status].label)} aria-label={tr("Grievance status")} />
+                <Chip size="small" color={SEVERITY_COLOR[g.severity]} label={tr(SEVERITIES[g.severity])} />
+                {g.escalationLevel > 0 && <Chip size="small" color="error" label={`Escalated · level ${g.escalationLevel}`} aria-label={tr("Escalation level")} />}
+                {g.overdue && <Chip size="small" color="error" variant="outlined" label={tr("Overdue")} />}
               </Box>
             </Box>
-            <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+            <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
           </Box>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
             <ActionBar actions={g.actions} blocked={g.blockedActions} labels={GRIEVANCE_ACTIONS} primary={['resolve', 'close']} busy={a.isLoading}
               onAction={(x) => (dialogs[x] ? setAsking(x) : run(x))} />
-            {g.status !== 'closed' && <Can permission="social:update"><Button size="small" onClick={() => onEdit(g)}>Edit</Button></Can>}
+            {g.status !== 'closed' && <Can permission="social:update"><Button size="small" onClick={() => onEdit(g)}>{tr("Edit")}</Button></Can>}
           </Box>
           <Divider sx={{ my: 2 }} />
           <Typography variant="body2">
-            {g.orgName}{g.community ? ` · ${g.community}` : ''}{g.projectName ? ` · ${g.projectName}` : ''} · {CHANNELS[g.channel]} · {GRIEVANCE_CATEGORIES[g.category]}
+            {g.orgName}{g.community ? ` · ${g.community}` : ''}{g.projectName ? ` · ${g.projectName}` : ''} · {tr(CHANNELS[g.channel])} · {tr(GRIEVANCE_CATEGORIES[g.category])}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Received {g.receivedOn} · due {g.dueOn} · {g.assignedToName ? `assigned to ${g.assignedToName}` : 'not assigned'}
+            {tr("Received")} {g.receivedOn} {tr("· due")} {g.dueOn} · {g.assignedToName ? `assigned to ${g.assignedToName}` : tr("not assigned")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {g.anonymous ? 'Anonymous complainant' : `${g.complainantName}${g.complainantContact ? ` · ${g.complainantContact}` : ''}`}
+            {g.anonymous ? tr("Anonymous complainant") : `${g.complainantName}${g.complainantContact ? ` · ${g.complainantContact}` : ''}`}
           </Typography>
-          <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{g.description}</Typography>
-          {g.resolution && <Alert severity="success" sx={{ mt: 2 }}>Resolution ({g.resolvedOn}{g.resolvedByName ? `, ${g.resolvedByName}` : ''}): {g.resolution}</Alert>}
-          {g.complainantSatisfied && <Typography variant="body2" sx={{ mt: 1 }}>Complainant satisfied: {g.complainantSatisfied}</Typography>}
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>History</Typography>
-          <Table size="small" aria-label="Grievance history">
+          <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{tr(g.description)}</Typography>
+          {g.resolution && <Alert severity="success" sx={{ mt: 2 }}>{tr("Resolution (")}{g.resolvedOn}{g.resolvedByName ? `, ${g.resolvedByName}` : ''}): {g.resolution}</Alert>}
+          {g.complainantSatisfied && <Typography variant="body2" sx={{ mt: 1 }}>{tr("Complainant satisfied:")} {g.complainantSatisfied}</Typography>}
+          <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("History")}</Typography>
+          <Table size="small" aria-label={tr("Grievance history")}>
             <TableBody>
               {g.updates.map((u, i) => (
                 <TableRow key={i}>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{new Date(u.at).toLocaleString()}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{new Date(u.at).toLocaleString(formattingLocale())}</TableCell>
                   <TableCell>{u.action.replaceAll('_', ' ')}{u.escalationLevel ? ` (level ${u.escalationLevel})` : ''}</TableCell>
-                  <TableCell>{u.byName ?? 'System'}</TableCell>
+                  <TableCell>{u.byName ?? tr("System")}</TableCell>
                   <TableCell>{u.note}</TableCell>
                 </TableRow>
               ))}
@@ -181,11 +182,11 @@ function GrievanceDrawer({ id, onClose, onEdit }) {
         </Box>
       )}
       {asking && (
-        <StepDialog title={GRIEVANCE_ACTIONS[asking]} fields={dialogs[asking].fields} onCancel={() => setAsking(null)}
+        <StepDialog title={tr(GRIEVANCE_ACTIONS[asking])} fields={dialogs[asking].fields} onCancel={() => setAsking(null)}
           onConfirm={(v) => run(asking, { ...v, ...(dialogs[asking].extra?.() ?? {}) })}>
           {asking === 'close' && (
-            <TextField select fullWidth size="small" label="Is the complainant satisfied?" value={satisfied} onChange={(e) => setSatisfied(e.target.value)} sx={{ mt: 1 }}>
-              <MenuItem value="yes">Yes</MenuItem><MenuItem value="no">No</MenuItem><MenuItem value="unknown">Not known</MenuItem>
+            <TextField select fullWidth size="small" label={tr("Is the complainant satisfied?")} value={satisfied} onChange={(e) => setSatisfied(e.target.value)} sx={{ mt: 1 }}>
+              <MenuItem value="yes">{tr("Yes")}</MenuItem><MenuItem value="no">{tr("No")}</MenuItem><MenuItem value="unknown">{tr("Not known")}</MenuItem>
             </TextField>
           )}
         </StepDialog>
@@ -208,19 +209,19 @@ export default function GrievancesTab({ initialGrievance }) {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Show" value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ minWidth: 180 }}>
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="overdue">Overdue</MenuItem>
-          {Object.entries(GRIEVANCE_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{v.label}</MenuItem>)}
+        <TextField select size="small" label={tr("Show")} value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ minWidth: 180 }}>
+          <MenuItem value="">{tr("All")}</MenuItem>
+          <MenuItem value="overdue">{tr("Overdue")}</MenuItem>
+          {Object.entries(GRIEVANCE_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{tr(v.label)}</MenuItem>)}
         </TextField>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Can permission="social:approve">
             <Button size="small" disabled={e.isLoading} onClick={async () => {
               try { setChecked((await escalate().unwrap()).escalated); } catch (err) { setChecked(problemText(err)); }
-            }}>Check overdue now</Button>
+            }}>{tr("Check overdue now")}</Button>
           </Can>
           <Can permission="social:create">
-            <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Record grievance</Button>
+            <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Record grievance")}</Button>
           </Can>
         </Box>
       </Box>
@@ -230,26 +231,26 @@ export default function GrievancesTab({ initialGrievance }) {
         </Alert>
       )}
       <Card>
-        {data.length === 0 ? <EmptyState title="No grievances">Record concerns raised by community members, whatever the channel, and track them to resolution.</EmptyState> : (
+        {data.length === 0 ? <EmptyState title={tr("No grievances")}>{tr("Record concerns raised by community members, whatever the channel, and track them to resolution.")}</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Grievances" data-sticky-actions>
+            <Table size="small" aria-label={tr("Grievances")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Reference</TableCell><TableCell>Grievance</TableCell><TableCell>Severity</TableCell><TableCell>Due</TableCell>
-                <TableCell>Status</TableCell><TableCell>Assigned to</TableCell><TableCell />
+                <TableCell>{tr("Reference")}</TableCell><TableCell>{tr("Grievance")}</TableCell><TableCell>{tr("Severity")}</TableCell><TableCell>{tr("Due")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell><TableCell>{tr("Assigned to")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((g) => (
                   <TableRow key={g.id}>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{g.reference}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{g.title}<Typography variant="caption" display="block" color="text.secondary">{g.orgName}{g.projectName ? ` · ${g.projectName}` : ''}</Typography></TableCell>
-                    <TableCell><Chip size="small" color={SEVERITY_COLOR[g.severity]} label={SEVERITIES[g.severity]} /></TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{g.dueOn}{g.overdue && <Chip size="small" color="error" label="Overdue" sx={{ ml: 1 }} />}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{tr(g.title)}<Typography variant="caption" display="block" color="text.secondary">{g.orgName}{g.projectName ? ` · ${g.projectName}` : ''}</Typography></TableCell>
+                    <TableCell><Chip size="small" color={SEVERITY_COLOR[g.severity]} label={tr(SEVERITIES[g.severity])} /></TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{g.dueOn}{g.overdue && <Chip size="small" color="error" label={tr("Overdue")} sx={{ ml: 1 }} />}</TableCell>
                     <TableCell>
-                      <Chip size="small" color={GRIEVANCE_STATUS[g.status].color} label={GRIEVANCE_STATUS[g.status].label} />
+                      <Chip size="small" color={GRIEVANCE_STATUS[g.status].color} label={tr(GRIEVANCE_STATUS[g.status].label)} />
                       {g.escalationLevel > 0 && <Chip size="small" color="error" variant="outlined" label={`L${g.escalationLevel}`} sx={{ ml: 0.5 }} />}
                     </TableCell>
                     <TableCell>{g.assignedToName ?? '—'}</TableCell>
-                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(g.id)} aria-label={`Open ${g.reference}`}>Open</Button></TableCell>
+                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(g.id)} aria-label={`Open ${g.reference}`}>{tr("Open")}</Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

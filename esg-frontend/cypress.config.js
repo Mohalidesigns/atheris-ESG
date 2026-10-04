@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
 import { defineConfig } from 'cypress';
 
 /** RFC 6238 TOTP (SHA-1, 30 s, 6 digits) — the same as TotpService.java — for the seeded dev-only MFA secrets. */
@@ -13,6 +14,22 @@ function totp(base32Secret, now = Date.now()) {
   const offset = hmac[hmac.length - 1] & 0x0f;
   const code = (hmac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000;
   return String(code).padStart(6, '0');
+}
+
+/** WP-46: a local receiver for webhook deliveries (the backend's local profile allows http://localhost). */
+const received = [];
+let receiver = null;
+function startReceiver() {
+  if (receiver) return Promise.resolve(`http://127.0.0.1:${receiver.address().port}/hook`);
+  receiver = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      received.push({ body, event: req.headers['x-atheris-event'], delivery: req.headers['x-atheris-delivery'], signature: req.headers['x-atheris-signature'] });
+      res.writeHead(200).end();
+    });
+  });
+  return new Promise((resolve) => receiver.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${receiver.address().port}/hook`)));
 }
 
 /**
@@ -44,7 +61,12 @@ export default defineConfig({
       },
     },
     setupNodeEvents(on) {
-      on('task', { totp: (secret) => totp(secret) });
+      on('task', {
+        totp: (secret) => totp(secret),
+        startWebhookReceiver: () => startReceiver(),
+        webhooksReceived: () => received,
+        hmac: ({ secret, message }) => createHmac('sha256', secret).update(message).digest('hex'),
+      });
     },
   },
 });

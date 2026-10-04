@@ -7,6 +7,7 @@ import DataPointDialog from '../../dataHub/components/DataPointDialog';
 import { IncidentDialog } from '../../social/components/SafetyTab';
 import { cachedList } from '../outbox';
 import OfflineTab from './OfflineTab';
+import { tr } from '../../../i18n';
 
 /**
  * WP-43 (D43): what the app shows when it opens without a connection for someone who signed in on this device before.
@@ -43,25 +44,23 @@ export default function OfflineCapturePage() {
     <Box sx={{ minHeight: '100vh', bgcolor: '#F7FAFC' }}>
       <AppBar position="static" elevation={0} sx={{ bgcolor: '#1A365D' }}>
         <Toolbar sx={{ gap: 1 }}>
-          <Typography variant="h6" component="p" sx={{ flex: 1, color: '#FFFFFF', fontWeight: 700 }}>Atheris ESG</Typography>
-          <Chip icon={<CloudOff />} label="Offline" size="small" sx={{ bgcolor: '#FFFFFF', color: '#1A365D' }} />
+          <Typography variant="h6" component="p" sx={{ flex: 1, color: '#FFFFFF', fontWeight: 700 }}>{tr("Atheris ESG")}</Typography>
+          <Chip icon={<CloudOff />} label={tr("Offline")} size="small" sx={{ bgcolor: '#FFFFFF', color: '#1A365D' }} />
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" component="main" sx={{ py: 3 }}>
-        <Typography variant="h1" sx={{ fontSize: '1.5rem', mb: 1 }}>Offline capture</Typography>
+        <Typography variant="h1" sx={{ fontSize: '1.5rem', mb: 1 }}>{tr("Offline capture")}</Typography>
         <Alert severity="info" sx={{ mb: 2 }}>
-          You're offline, working as {user?.firstName} {user?.lastName} on this device. What you save here stays on this device and is
-          sent when you're back online and signed in.
+          {tr("You're offline, working as")} {user?.firstName} {user?.lastName} {tr("on this device. What you save here stays on this device and is sent when you're back online and signed in.")}
         </Alert>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-          {canData && <Button variant="contained" startIcon={<Add />} onClick={() => setAdding('data_point')}>Add data point</Button>}
-          {canIncident && <Button variant="outlined" startIcon={<Add />} onClick={() => setAdding('incident')}>Record an incident</Button>}
-          <Button startIcon={<Refresh />} onClick={() => restoreSession()} disabled={restoring.isLoading}>Try to reconnect</Button>
+          {canData && <Button variant="contained" startIcon={<Add />} onClick={() => setAdding('data_point')}>{tr("Add data point")}</Button>}
+          {canIncident && <Button variant="outlined" startIcon={<Add />} onClick={() => setAdding('incident')}>{tr("Record an incident")}</Button>}
+          <Button startIcon={<Refresh />} onClick={() => restoreSession()} disabled={restoring.isLoading}>{tr("Try to reconnect")}</Button>
         </Box>
         {lists.loaded && !canData && !canIncident && (
           <Alert severity="warning" sx={{ mb: 3 }}>
-            The forms aren't available on this device yet. Open the app once while online so it can keep the organisations and metrics
-            you need offline.
+            {tr("The forms aren't available on this device yet. Open the app once while online so it can keep the organisations and metrics you need offline.")}
           </Alert>
         )}
         <OfflineTab metrics={metrics} orgs={lists.orgs} server={false} />
