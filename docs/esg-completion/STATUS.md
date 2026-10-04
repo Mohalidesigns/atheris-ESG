@@ -378,7 +378,7 @@ Branch `feature/wp-54-release` (stacked on WP-53, PR #28). Design: D42. Release 
 
 Results: backend `mvn verify` 1,216 tests, 0 failures (1 skip: S3 test without Docker locally), 88.8% lines, 0 Checkstyle; frontend 460 tests; Cypress 35 specs / 90 tests on a fresh database, all on the first attempt. Images not built locally (Docker Desktop down after the disk filled); CI builds them.
 
-Found: a fresh production database had no way to create the first administrator (fixed, D42); analysts can only read analytics (Q54-1, OPEN); the app still shows the name "ESG Pro" in the title, sign-in page and sidebar (product owner: rename to Atheris ESG?).
+Found: a fresh production database had no way to create the first administrator (fixed, D42); analysts can only read analytics (Q54-1, OPEN); the app showed the name "ESG Pro" in the title, sign-in page and sidebar (renamed to Atheris ESG by the product owner on 4 Oct 2026, D46).
 
 ---
 

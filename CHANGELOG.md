@@ -9,6 +9,7 @@ One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs
 - Arabic is shown right to left.
 - Numbers, amounts (₦, KSh, R, GH₵, $, €), percentages and dates follow the chosen language.
 - The six translations are drafts that have not yet been reviewed by a professional translator; the language list says so. Messages from the server, catalogue names and generated reports stay in English for now.
+- The product is now called **Atheris ESG** everywhere in the app (browser title, sign-in page, menu); it was "ESG Pro". The demo tenant keeps its name.
 - Filled information messages (toasts) are darker so their text meets WCAG AA contrast.
 
 ## Unreleased — WP-46 Integrations (D44)

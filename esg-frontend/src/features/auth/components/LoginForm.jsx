@@ -99,7 +99,7 @@ export default function LoginForm() {
             }}>
               <Shield sx={{ fontSize: 36, color: '#D4AF37' }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A365D' }}>{tr("ESG Pro")}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A365D' }}>{tr("Atheris ESG")}</Typography>
             <Typography variant="body2" sx={{ color: '#5F6B7A', mt: 0.5 }}>
               {tr("Africa's Premier ESG Management Platform")}
             </Typography>

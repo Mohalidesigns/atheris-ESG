@@ -14,7 +14,7 @@
     <groupId>com.esg</groupId>
     <artifactId>esg-platform</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>ESG Pro Platform</name>
+    <name>Atheris ESG Platform</name>
     <description>ESG Management Software for Nigeria and Africa</description>
 
     <properties>

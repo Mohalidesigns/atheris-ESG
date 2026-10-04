@@ -43,7 +43,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
         <Shield sx={{ fontSize: 32, color: '#D4AF37' }} />
         <Box>
           <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem' }}>
-            {tr("ESG Pro")}
+            {tr("Atheris ESG")}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }}>
             {tr("Africa Edition")}
