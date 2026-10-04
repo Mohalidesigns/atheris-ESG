@@ -168,7 +168,7 @@ Log these only if they block a persona's job; otherwise they are already recorde
 and `DECISIONS.md`.
 
 - Registry, exchange, satellite, climate-hazard, virus-scanner and SMS adapters are **Sandbox** only (D4, D22, D36).
-- Offline capture (WP-43), SMS/USSD entry (WP-44) and automated ERP connectors are later work packages.
+- SMS/USSD entry (WP-44) and automated ERP connectors are later work packages. Offline capture (WP-43) arrived after release candidate 1: test it with journey 26 in `docs/esg-completion/`.
 - Framework content packs, governance code rules, scorecard bands and maturity thresholds are **pending ESG SME
   verification** and say so on screen (D23, D28, D30, D34, D35).
 - No self-service password reset; no CAPTCHA on the whistleblower form (D17, D30).

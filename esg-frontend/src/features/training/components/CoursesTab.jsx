@@ -17,6 +17,7 @@ import {
 } from '../trainingApi';
 import { CATEGORIES, COURSE_STATUS, ENROLMENT_STATUS, assignSchema, attendanceSchema, fmt, lagosToday, problemText } from '../schemas';
 import { CourseDialog } from './CourseDialog';
+import { tr } from '../../../i18n';
 
 const ACTION_LABELS = { publish: 'Publish', retire: 'Retire', copy: 'Copy as new draft' };
 
@@ -27,10 +28,10 @@ export function PeopleField({ control, name = 'userIds', label = 'People', helpe
   return (
     <Controller name={name} control={control} render={({ field, fieldState }) => (
       <TextField select fullWidth size="small" label={label} value={field.value} inputRef={field.ref} onBlur={field.onBlur}
-        onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={fieldState.error?.message ?? helperText}
+        onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={tr(fieldState.error?.message) ?? helperText}
         SelectProps={{ multiple: true, displayEmpty: true, renderValue: (sel) => (sel.length ? sel.map((id) => names[id] ?? 'Person').join(', ') : 'Nobody chosen') }}
         slotProps={{ inputLabel: { shrink: true } }}>
-        {people.map((p) => <MenuItem key={p.id} value={p.id}>{p.name} · {p.roles.join(', ').replace(/_/g, ' ') || 'no role'}</MenuItem>)}
+        {people.map((p) => <MenuItem key={p.id} value={p.id}>{p.name} · {p.roles.join(', ').replace(/_/g, ' ') || tr("no role")}</MenuItem>)}
       </TextField>
     )} />
   );
@@ -53,23 +54,23 @@ export function AssignDialog({ course, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>Assign {course.title}</DialogTitle>
+        <DialogTitle>{tr("Assign")} {tr(course.title)}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           {result ? (
-            <Alert severity="success" aria-label="Assignment result">
-              {result.enrolled} enrolled{result.alreadyEnrolled ? `; ${result.alreadyEnrolled} already enrolled` : ''}. They have been notified.
+            <Alert severity="success" aria-label={tr("Assignment result")}>
+              {result.enrolled} {tr("enrolled")}{result.alreadyEnrolled ? `; ${result.alreadyEnrolled} already enrolled` : ''}{tr(". They have been notified.")}
             </Alert>
           ) : (
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
               <Grid size={12}><PeopleField control={control} /></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="dueOn" label="Due by (optional)" /></Grid>
+              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="dueOn" label={tr("Due by (optional)")} /></Grid>
             </Grid>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>{result ? 'Close' : 'Cancel'}</Button>
-          {!result && <Button type="submit" variant="contained" disabled={a.isLoading}>Assign</Button>}
+          <Button onClick={onClose}>{result ? tr("Close") : tr("Cancel")}</Button>
+          {!result && <Button type="submit" variant="contained" disabled={a.isLoading}>{tr("Assign")}</Button>}
         </DialogActions>
       </form>
     </Dialog>
@@ -96,23 +97,23 @@ function AttendanceDialog({ enrollment, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>Record attendance: {enrollment.userName}</DialogTitle>
+        <DialogTitle>{tr("Record attendance:")} {enrollment.userName}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="completedOn" label="Attended on" helperText="Hours count in this date's period" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="hours" label="Hours" inputMode="decimal" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="score" label="Score % (optional)" inputMode="numeric" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="completedOn" label={tr("Attended on")} helperText={tr("Hours count in this date's period")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="hours" label={tr("Hours")} inputMode="decimal" /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="score" label={tr("Score % (optional)")} inputMode="numeric" /></Grid>
             <Grid size={12}>
               <Controller name="passed" control={control} render={({ field }) => (
-                <FormControlLabel control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} label="Passed (issues a certificate)" />
+                <FormControlLabel control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} label={tr("Passed (issues a certificate)")} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={r.isLoading}>Record</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={r.isLoading}>{tr("Record")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -127,30 +128,30 @@ function EnrolmentsDialog({ course, onClose }) {
   const [failure, setFailure] = useState('');
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>People on {course.title}</DialogTitle>
+      <DialogTitle>{tr("People on")} {tr(course.title)}</DialogTitle>
       <DialogContent>
         {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
-        {isLoading ? <LoadingState /> : data.length === 0 ? <EmptyState title="Nobody enrolled yet" /> : (
-          <Table size="small" aria-label="Enrolments">
-            <TableHead><TableRow><TableCell>Person</TableCell><TableCell>Status</TableCell><TableCell>Due</TableCell><TableCell align="right">Best score</TableCell>
-              <TableCell align="right">Hours</TableCell><TableCell /></TableRow></TableHead>
+        {isLoading ? <LoadingState /> : data.length === 0 ? <EmptyState title={tr("Nobody enrolled yet")} /> : (
+          <Table size="small" aria-label={tr("Enrolments")}>
+            <TableHead><TableRow><TableCell>{tr("Person")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell>{tr("Due")}</TableCell><TableCell align="right">{tr("Best score")}</TableCell>
+              <TableCell align="right">{tr("Hours")}</TableCell><TableCell /></TableRow></TableHead>
             <TableBody>
               {data.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell>{e.userName}</TableCell>
-                  <TableCell><Chip size="small" color={ENROLMENT_STATUS[e.status].color} label={ENROLMENT_STATUS[e.status].label} />
-                    {e.overdue && <Chip size="small" color="error" label="Overdue" sx={{ ml: 1 }} />}</TableCell>
+                  <TableCell><Chip size="small" color={ENROLMENT_STATUS[e.status].color} label={tr(ENROLMENT_STATUS[e.status].label)} />
+                    {e.overdue && <Chip size="small" color="error" label={tr("Overdue")} sx={{ ml: 1 }} />}</TableCell>
                   <TableCell>{e.dueOn ?? '—'}</TableCell>
                   <TableCell align="right">{e.bestScore == null ? '—' : `${e.bestScore}%`}</TableCell>
                   <TableCell align="right">{fmt(e.hours)}</TableCell>
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     {course.delivery === 'classroom' && e.status !== 'passed' && (
-                      <Button size="small" onClick={() => setAttending(e)} aria-label={`Record attendance for ${e.userName}`}>Record attendance</Button>
+                      <Button size="small" onClick={() => setAttending(e)} aria-label={`Record attendance for ${e.userName}`}>{tr("Record attendance")}</Button>
                     )}
                     {e.status !== 'passed' && (
                       <Button size="small" color="inherit" onClick={async () => {
                         try { await withdraw({ id: e.id, version: e.version }).unwrap(); } catch (err) { setFailure(problemText(err)); }
-                      }}>Withdraw</Button>
+                      }}>{tr("Withdraw")}</Button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -159,7 +160,7 @@ function EnrolmentsDialog({ course, onClose }) {
           </Table>
         )}
       </DialogContent>
-      <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
+      <DialogActions><Button onClick={onClose}>{tr("Close")}</Button></DialogActions>
       {attending && <AttendanceDialog enrollment={attending} onClose={() => setAttending(null)} />}
     </Dialog>
   );
@@ -187,33 +188,33 @@ export default function CoursesTab() {
     try { await act({ id: c.id, action, version: c.version }).unwrap(); } catch (err) { setFailure(problemText(err)); }
   };
   const onDelete = async (c) => {
-    if (!(await confirm({ title: 'Delete this course?', item: c.title }))) return;
+    if (!(await confirm({ title: tr("Delete this course?"), item: c.title }))) return;
     try { await remove(c.id).unwrap(); } catch (err) { setFailure(problemText(err)); }
   };
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New course</Button>
+        <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New course")}</Button>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
       <Card>
-        {data.length === 0 ? <CardContent><EmptyState title="No courses yet">Create your organisation's first course: modules, a quiz and the pass mark.</EmptyState></CardContent> : (
+        {data.length === 0 ? <CardContent><EmptyState title={tr("No courses yet")}>{tr("Create your organisation's first course: modules, a quiz and the pass mark.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Courses">
-              <TableHead><TableRow><TableCell>Course</TableCell><TableCell>Category</TableCell><TableCell>Delivery</TableCell><TableCell align="right">Hours</TableCell>
-                <TableCell align="right">Enrolled</TableCell><TableCell align="right">Passed</TableCell><TableCell>Status</TableCell><TableCell /></TableRow></TableHead>
+            <Table size="small" aria-label={tr("Courses")}>
+              <TableHead><TableRow><TableCell>{tr("Course")}</TableCell><TableCell>{tr("Category")}</TableCell><TableCell>{tr("Delivery")}</TableCell><TableCell align="right">{tr("Hours")}</TableCell>
+                <TableCell align="right">{tr("Enrolled")}</TableCell><TableCell align="right">{tr("Passed")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell /></TableRow></TableHead>
               <TableBody>
                 {data.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{c.title}<Typography variant="caption" display="block" color="text.secondary">{c.code} · {c.modules.length} modules · {c.questions.length} questions</Typography></TableCell>
-                    <TableCell>{CATEGORIES[c.category]}</TableCell>
-                    <TableCell>{c.delivery === 'online' ? 'Online' : 'Classroom'}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{tr(c.title)}<Typography variant="caption" display="block" color="text.secondary">{c.code} · {c.modules.length} {tr("modules ·")} {c.questions.length} {tr("questions")}</Typography></TableCell>
+                    <TableCell>{tr(CATEGORIES[c.category])}</TableCell>
+                    <TableCell>{c.delivery === 'online' ? tr("Online") : tr("Classroom")}</TableCell>
                     <TableCell align="right">{fmt(c.durationHours)}</TableCell>
                     <TableCell align="right">{c.enrolled}</TableCell>
                     <TableCell align="right">{c.passed}</TableCell>
-                    <TableCell><Chip size="small" color={COURSE_STATUS[c.status].color} label={COURSE_STATUS[c.status].label} /></TableCell>
+                    <TableCell><Chip size="small" color={COURSE_STATUS[c.status].color} label={tr(COURSE_STATUS[c.status].label)} /></TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                      {c.actions.map((a) => <Button key={a} size="small" onClick={() => run(c, a)} aria-label={`${ACTION_LABELS[a]} ${c.title}`}>{ACTION_LABELS[a]}</Button>)}
+                      {c.actions.map((a) => <Button key={a} size="small" onClick={() => run(c, a)} aria-label={`${tr(ACTION_LABELS[a])} ${c.title}`}>{tr(ACTION_LABELS[a])}</Button>)}
                       <Can permission="training:update">
                         {c.status === 'published' && <IconButton size="small" aria-label={`Assign ${c.title}`} onClick={() => setAssigning(c)}><GroupAdd fontSize="small" /></IconButton>}
                         {c.status !== 'draft' && <IconButton size="small" aria-label={`People on ${c.title}`} onClick={() => setViewing(c)}><People fontSize="small" /></IconButton>}

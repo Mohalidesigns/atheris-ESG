@@ -4,12 +4,15 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar, { DRAWER_WIDTH } from './Sidebar';
 import TopBar from './TopBar';
 import PrivacyNoticeGate from '../../features/privacy/components/PrivacyNoticeGate';
+import OfflineAgent from '../../features/offline/components/OfflineAgent';
+import useAccountLanguage from '../i18n/useAccountLanguage';
 
 /**
  * App shell. From 900 px (md) the sidebar is always shown; below that it is a drawer opened from the top bar's menu
  * button (Phase 2, item 9).
  */
 export default function MainLayout() {
+  useAccountLanguage();
   // The drawer belongs to the page it was opened on: choosing a page closes it.
   const { pathname } = useLocation();
   const [openOn, setOpenOn] = useState(null);
@@ -25,6 +28,7 @@ export default function MainLayout() {
           <Outlet />
         </Box>
         <PrivacyNoticeGate />
+        <OfflineAgent />
       </Box>
     </Box>
   );

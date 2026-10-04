@@ -22,15 +22,16 @@ import {
   toSnapshotBody, toSnapshotForm, problemText,
 } from '../schemas';
 import { ActionBar, Stat, StepDialog } from './shared';
+import { tr } from '../../../i18n';
 
 const cellSelect = (field, fieldState, label, map) => (
-  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fieldState.error} helperText={fieldState.error?.message}
+  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fieldState.error} helperText={tr(fieldState.error?.message)}
     SelectProps={{ SelectDisplayProps: { 'aria-label': label } }}>
-    {Object.entries(map).map(([k, l]) => <MenuItem key={k} value={k}>{l}</MenuItem>)}
+    {Object.entries(map).map(([k, l]) => <MenuItem key={k} value={k}>{tr(l)}</MenuItem>)}
   </TextField>
 );
 const cellNumber = (field, fieldState, label) => (
-  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fieldState.error} helperText={fieldState.error?.message}
+  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fieldState.error} helperText={tr(fieldState.error?.message)}
     slotProps={{ htmlInput: { 'aria-label': label, inputMode: 'decimal' } }} />
 );
 
@@ -58,40 +59,40 @@ export function WorkforceDialog({ snapshot, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="lg" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit workforce figures · ${snapshot.orgName}` : 'Add workforce figures'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit workforce figures · ${snapshot.orgName}` : tr("Add workforce figures")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
-          <Alert severity="info" sx={{ mb: 2 }}>Enter totals only — headcount and pay per group, never names or individual salaries.</Alert>
+          <Alert severity="info" sx={{ mb: 2 }}>{tr("Enter totals only — headcount and pay per group, never names or individual salaries.")}</Alert>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 4 }}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Organisation" size="small" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} size="small" fullWidth error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
               )} />
             </Grid>
-            <Grid size={{ xs: 6, md: 4 }}><FormDateField control={control} name="reportingPeriodStart" label="Period start" /></Grid>
-            <Grid size={{ xs: 6, md: 4 }}><FormDateField control={control} name="reportingPeriodEnd" label="Period end" /></Grid>
-            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="hoursWorked" label="Hours worked (optional)" helperText="For LTIFR and TRIR" /></Grid>
-            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="newHires" label="New hires (optional)" /></Grid>
-            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="leavers" label="Leavers (optional)" /></Grid>
+            <Grid size={{ xs: 6, md: 4 }}><FormDateField control={control} name="reportingPeriodStart" label={tr("Period start")} /></Grid>
+            <Grid size={{ xs: 6, md: 4 }}><FormDateField control={control} name="reportingPeriodEnd" label={tr("Period end")} /></Grid>
+            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="hoursWorked" label={tr("Hours worked (optional)")} helperText={tr("For LTIFR and TRIR")} /></Grid>
+            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="newHires" label={tr("New hires (optional)")} /></Grid>
+            <Grid size={{ xs: 6, md: 3 }}><FormNumberField control={control} name="leavers" label={tr("Leavers (optional)")} /></Grid>
             <Grid size={{ xs: 6, md: 3 }}>
-              <FormSelect control={control} name="payCurrency" label="Pay currency" options={[{ value: '', label: 'No pay data' }, ...CURRENCIES.map((x) => ({ value: x, label: x }))]} />
+              <FormSelect control={control} name="payCurrency" label={tr("Pay currency")} options={[{ value: '', label: 'No pay data' }, ...CURRENCIES.map((x) => ({ value: x, label: x }))]} />
             </Grid>
           </Grid>
-          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Headcount by level, gender and age band</Typography>
-          {errors.lines?.message && <Alert severity="error" sx={{ mb: 1 }}>{errors.lines.message}</Alert>}
-          {errors.lines?.root?.message && <Alert severity="error" sx={{ mb: 1 }}>{errors.lines.root.message}</Alert>}
+          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>{tr("Headcount by level, gender and age band")}</Typography>
+          {tr(errors.lines?.message) && <Alert severity="error" sx={{ mb: 1 }}>{tr(errors.lines.message)}</Alert>}
+          {tr(errors.lines?.root?.message) && <Alert severity="error" sx={{ mb: 1 }}>{tr(errors.lines.root.message)}</Alert>}
           <TableContainer>
-            <Table size="small" aria-label="Headcount lines">
+            <Table size="small" aria-label={tr("Headcount lines")}>
               <TableHead><TableRow>
-                <TableCell>Level</TableCell><TableCell>Gender</TableCell><TableCell>Age band</TableCell><TableCell>Headcount</TableCell>
-                <TableCell>With disability</TableCell><TableCell>Total annual pay</TableCell><TableCell />
+                <TableCell>{tr("Level")}</TableCell><TableCell>{tr("Gender")}</TableCell><TableCell>{tr("Age band")}</TableCell><TableCell>{tr("Headcount")}</TableCell>
+                <TableCell>{tr("With disability")}</TableCell><TableCell>{tr("Total annual pay")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {lines.fields.map((row, i) => (
                   <TableRow key={row.id}>
                     <TableCell sx={{ minWidth: 170 }}>
                       <Controller name={`lines.${i}.level`} control={control} render={({ field, fieldState }) => cellSelect(field, fieldState, `Level, line ${i + 1}`, LEVELS)} />
-                      {errors.lines?.[i]?.message && <Typography variant="caption" color="error">{errors.lines[i].message}</Typography>}
+                      {tr(errors.lines?.[i]?.message) && <Typography variant="caption" color="error">{tr(errors.lines[i].message)}</Typography>}
                     </TableCell>
                     <TableCell sx={{ minWidth: 130 }}>
                       <Controller name={`lines.${i}.gender`} control={control} render={({ field, fieldState }) => cellSelect(field, fieldState, `Gender, line ${i + 1}`, GENDERS)} />
@@ -116,12 +117,12 @@ export function WorkforceDialog({ snapshot, onClose }) {
               </TableBody>
             </Table>
           </TableContainer>
-          <Button size="small" startIcon={<Add />} sx={{ mt: 1 }} disabled={lines.fields.length >= 60} onClick={() => lines.append({ ...emptyLine })}>Add line</Button>
-          <Box sx={{ mt: 2 }}><FormTextField control={control} name="notes" label="Notes (optional)" multiline minRows={2} /></Box>
+          <Button size="small" startIcon={<Add />} sx={{ mt: 1 }} disabled={lines.fields.length >= 60} onClick={() => lines.append({ ...emptyLine })}>{tr("Add line")}</Button>
+          <Box sx={{ mt: 2 }}><FormTextField control={control} name="notes" label={tr("Notes (optional)")} multiline minRows={2} /></Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Save draft'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Save draft")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -130,29 +131,29 @@ export function WorkforceDialog({ snapshot, onClose }) {
 
 /** DEI figures for one snapshot (TRD §8.7 DEIMetricsAggregator). */
 export function WorkforceMetricsView({ metrics: m }) {
-  if (!m || m.headcount === 0) return <Typography color="text.secondary">No headcount entered.</Typography>;
+  if (!m || m.headcount === 0) return <Typography color="text.secondary">{tr("No headcount entered.")}</Typography>;
   return (
     <>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Headcount" value={fmt(m.headcount, 0)} caption={`${m.female} women · ${m.male} men`} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Women" value={pct(m.femalePct)} caption={`Senior roles: ${pct(m.womenInSeniorPct)}`} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Women in management" value={pct(m.womenInManagementPct)} caption={`${m.management} managers`} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Pay gap (mean)" value={pct(m.payGapPct)} caption={m.payGapNote ?? 'men’s mean pay above women’s'} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="With disability" value={pct(m.disabledPct)} caption={`${m.disabled} people`} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Turnover" value={pct(m.turnoverPct)} caption={m.turnoverBasis ?? 'no leavers recorded'} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Headcount")} value={fmt(m.headcount, 0)} caption={`${m.female} women · ${m.male} men`} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Women")} value={pct(m.femalePct)} caption={`Senior roles: ${pct(m.womenInSeniorPct)}`} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Women in management")} value={pct(m.womenInManagementPct)} caption={`${m.management} managers`} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Pay gap (mean)")} value={pct(m.payGapPct)} caption={m.payGapNote ?? tr("men’s mean pay above women’s")} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("With disability")} value={pct(m.disabledPct)} caption={`${m.disabled} people`} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Turnover")} value={pct(m.turnoverPct)} caption={m.turnoverBasis ?? tr("no leavers recorded")} /></Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Stat label="Age bands" value={Object.entries(m.ageBands).map(([k, n]) => `${AGE_BANDS[k]}: ${n}`).join(' · ')} />
+          <Stat label={tr("Age bands")} value={Object.entries(m.ageBands).map(([k, n]) => `${tr(AGE_BANDS[k])}: ${n}`).join(' · ')} />
         </Grid>
       </Grid>
       <TableContainer sx={{ mt: 2 }}>
-        <Table size="small" aria-label="By level">
+        <Table size="small" aria-label={tr("By level")}>
           <TableHead><TableRow>
-            <TableCell>Level</TableCell><TableCell align="right">Headcount</TableCell><TableCell align="right">Women</TableCell><TableCell align="right">Pay gap</TableCell>
+            <TableCell>{tr("Level")}</TableCell><TableCell align="right">{tr("Headcount")}</TableCell><TableCell align="right">{tr("Women")}</TableCell><TableCell align="right">{tr("Pay gap")}</TableCell>
           </TableRow></TableHead>
           <TableBody>
             {m.levels.map((l) => (
               <TableRow key={l.level}>
-                <TableCell>{LEVELS[l.level]}</TableCell><TableCell align="right">{l.headcount}</TableCell>
+                <TableCell>{tr(LEVELS[l.level])}</TableCell><TableCell align="right">{l.headcount}</TableCell>
                 <TableCell align="right">{pct(l.femalePct)}</TableCell>
                 <TableCell align="right">{l.payGapPct == null ? <Typography variant="caption" color="text.secondary">{l.payGapNote}</Typography> : pct(l.payGapPct)}</TableCell>
               </TableRow>
@@ -184,14 +185,14 @@ function SnapshotDrawer({ id, onClose, onEdit }) {
   return (
     <Drawer anchor="right" open={Boolean(id)} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', md: 760 } } }}>
       {isLoading || !s ? <LoadingState /> : (
-        <Box sx={{ p: 3 }} role="region" aria-label="Workforce figures">
+        <Box sx={{ p: 3 }} role="region" aria-label={tr("Workforce figures")}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>{s.orgName}</Typography>
-              <Typography variant="body2" color="text.secondary">{s.reportingPeriodStart} to {s.reportingPeriodEnd}</Typography>
-              <Chip size="small" sx={{ mt: 0.5 }} color={SNAPSHOT_STATUS[s.status].color} label={SNAPSHOT_STATUS[s.status].label} aria-label="Workforce status" />
+              <Typography variant="body2" color="text.secondary">{s.reportingPeriodStart} {tr("to")} {s.reportingPeriodEnd}</Typography>
+              <Chip size="small" sx={{ mt: 0.5 }} color={SNAPSHOT_STATUS[s.status].color} label={tr(SNAPSHOT_STATUS[s.status].label)} aria-label={tr("Workforce status")} />
             </Box>
-            <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+            <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
           </Box>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           {s.statusReason && <Alert severity="info" sx={{ mt: 2 }}>{s.statusReason}</Alert>}
@@ -200,17 +201,17 @@ function SnapshotDrawer({ id, onClose, onEdit }) {
               onAction={(x) => (['return', 'reopen'].includes(x) ? setAsking(x) : run(x))} />
             {s.status === 'draft' && (
               <Can permission="social:update">
-                <Button size="small" onClick={() => onEdit(s)}>Edit</Button>
+                <Button size="small" onClick={() => onEdit(s)}>{tr("Edit")}</Button>
                 <Button size="small" color="error" onClick={async () => {
-                  if (await confirm({ title: 'Delete these figures?', item: `${s.orgName} ${s.reportingPeriodEnd}`, destructive: true, confirmLabel: 'Delete' })) {
+                  if (await confirm({ title: tr("Delete these figures?"), item: `${s.orgName} ${s.reportingPeriodEnd}`, destructive: true, confirmLabel: tr("Delete") })) {
                     try { await remove({ id: s.id, version: s.version }).unwrap(); onClose(); } catch (err) { setError(problemText(err)); }
                   }
-                }}>Delete</Button>
+                }}>{tr("Delete")}</Button>
               </Can>
             )}
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Hours worked: {fmt(s.hoursWorked)} · New hires: {s.newHires ?? '—'} · Leavers: {s.leavers ?? '—'}
+            {tr("Hours worked:")} {fmt(s.hoursWorked)} {tr("· New hires:")} {s.newHires ?? '—'} {tr("· Leavers:")} {s.leavers ?? '—'}
             {s.submittedByName ? ` · Submitted by ${s.submittedByName}` : ''}{s.approvedByName ? ` · Approved by ${s.approvedByName}` : ''}
           </Typography>
           <Divider sx={{ my: 2 }} />
@@ -218,7 +219,7 @@ function SnapshotDrawer({ id, onClose, onEdit }) {
         </Box>
       )}
       {asking && (
-        <StepDialog title={SNAPSHOT_ACTIONS[asking]} fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
+        <StepDialog title={tr(SNAPSHOT_ACTIONS[asking])} fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
           onCancel={() => setAsking(null)} onConfirm={(v) => run(asking, v)} />
       )}
     </Drawer>
@@ -236,23 +237,23 @@ export default function WorkforceTab({ initialSnapshot }) {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
-          <MenuItem value="">All</MenuItem>
-          {Object.entries(SNAPSHOT_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{v.label}</MenuItem>)}
+        <TextField select size="small" label={tr("Status")} value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
+          <MenuItem value="">{tr("All")}</MenuItem>
+          {Object.entries(SNAPSHOT_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{tr(v.label)}</MenuItem>)}
         </TextField>
         <Can permission="social:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Add workforce figures</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Add workforce figures")}</Button>
         </Can>
       </Box>
       <Card>
         {data.length === 0 ? (
-          <EmptyState title="No workforce figures yet">Add each site's headcount by level, gender and age band for a period. Approved figures feed CBN NSBP Principle 4 and GRI 405.</EmptyState>
+          <EmptyState title={tr("No workforce figures yet")}>{tr("Add each site's headcount by level, gender and age band for a period. Approved figures feed CBN NSBP Principle 4 and GRI 405.")}</EmptyState>
         ) : (
           <TableContainer>
-            <Table size="small" aria-label="Workforce figures" data-sticky-actions>
+            <Table size="small" aria-label={tr("Workforce figures")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Organisation</TableCell><TableCell>Period</TableCell><TableCell align="right">Headcount</TableCell><TableCell align="right">Women</TableCell>
-                <TableCell align="right">Women in management</TableCell><TableCell align="right">Pay gap</TableCell><TableCell>Status</TableCell><TableCell />
+                <TableCell>{tr("Organisation")}</TableCell><TableCell>{tr("Period")}</TableCell><TableCell align="right">{tr("Headcount")}</TableCell><TableCell align="right">{tr("Women")}</TableCell>
+                <TableCell align="right">{tr("Women in management")}</TableCell><TableCell align="right">{tr("Pay gap")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((s) => (
@@ -263,8 +264,8 @@ export default function WorkforceTab({ initialSnapshot }) {
                     <TableCell align="right">{pct(s.metrics.femalePct)}</TableCell>
                     <TableCell align="right">{pct(s.metrics.womenInManagementPct)}</TableCell>
                     <TableCell align="right">{pct(s.metrics.payGapPct)}</TableCell>
-                    <TableCell><Chip size="small" color={SNAPSHOT_STATUS[s.status].color} label={SNAPSHOT_STATUS[s.status].label} /></TableCell>
-                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(s.id)} aria-label={`Open ${s.orgName} ${s.reportingPeriodEnd}`}>Open</Button></TableCell>
+                    <TableCell><Chip size="small" color={SNAPSHOT_STATUS[s.status].color} label={tr(SNAPSHOT_STATUS[s.status].label)} /></TableCell>
+                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(s.id)} aria-label={`Open ${s.orgName} ${s.reportingPeriodEnd}`}>{tr("Open")}</Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

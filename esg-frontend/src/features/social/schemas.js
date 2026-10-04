@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Social Impact form rules. Mirror the server exactly: SocialDtos (Bean Validation) + WorkforceService.check,
@@ -55,7 +56,7 @@ export const SDGS = Array.from({ length: 17 }, (_, i) => i + 1);
 
 const optionalInt = (max, label = 'a whole number') => z.string().trim()
   .refine((v) => v === '' || /^\d+$/.test(v), `Must be ${label} (0 or more)`)
-  .refine((v) => v === '' || Number(v) <= max, `At most ${max.toLocaleString()}`);
+  .refine((v) => v === '' || Number(v) <= max, `At most ${max.toLocaleString(formattingLocale())}`);
 const optionalDecimal = (fraction, intDigits) => z.string().trim()
   .refine((v) => v === '' || new RegExp(`^\\d{1,${intDigits}}(\\.\\d{1,${fraction}})?$`).test(v), `A number of 0 or more, up to ${fraction} decimal${fraction > 1 ? 's' : ''}`);
 const num = (v) => (v === '' || v == null ? null : Number(v));
@@ -272,7 +273,7 @@ export const toGrievanceBody = (v) => ({
 export const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
 
 /** "1234567.5" → "1,234,567.5" */
-export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const pct = (v) => (v == null ? '—' : `${fmt(v)}%`);
 
 /** The server's explanation of a refused step, for an alert. */

@@ -8,6 +8,7 @@ import { useCreateUserMutation, useUpdateUserMutation } from '../adminApi';
 import { createUserSchema, LANGUAGES, toUserBody, updateUserSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { tr } from '../../../i18n';
 
 const LANGUAGE_LABELS = { en: 'English', fr: 'French', pt: 'Portuguese', ar: 'Arabic', sw: 'Swahili', ha: 'Hausa', yo: 'Yoruba' };
 
@@ -56,13 +57,13 @@ export default function UserFormDialog({ open, user, onClose }) {
   const busy = createState.isLoading || updateState.isLoading;
   const field = (name, label, props = {}) => (
     <TextField fullWidth size="small" label={label} {...register(name)} error={!!errors[name]}
-      helperText={errors[name]?.message} {...props} />
+      helperText={tr(errors[name]?.message)} {...props} />
   );
 
   return (
     <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>{editing ? `Edit ${user.firstName} ${user.lastName}` : 'New user'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${user.firstName} ${user.lastName}` : tr("New user")}</DialogTitle>
         <DialogContent>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -72,9 +73,9 @@ export default function UserFormDialog({ open, user, onClose }) {
             <Grid size={6}>{field('phone', 'Phone (optional)', { placeholder: '+2348012345678' })}</Grid>
             <Grid size={6}>
               <Controller name="preferredLanguage" control={control} render={({ field: f }) => (
-                <TextField select fullWidth size="small" label="Language" {...f}
-                  error={!!errors.preferredLanguage} helperText={errors.preferredLanguage?.message}>
-                  {LANGUAGES.map((l) => <MenuItem key={l} value={l}>{LANGUAGE_LABELS[l]}</MenuItem>)}
+                <TextField select fullWidth size="small" label={tr("Language")} {...f}
+                  error={!!errors.preferredLanguage} helperText={tr(errors.preferredLanguage?.message)}>
+                  {LANGUAGES.map((l) => <MenuItem key={l} value={l}>{tr(LANGUAGE_LABELS[l])}</MenuItem>)}
                 </TextField>
               )} />
             </Grid>
@@ -91,8 +92,8 @@ export default function UserFormDialog({ open, user, onClose }) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose(false)}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={busy}>{editing ? 'Save changes' : 'Create user'}</Button>
+          <Button onClick={() => onClose(false)}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={busy}>{editing ? tr("Save changes") : tr("Create user")}</Button>
         </DialogActions>
       </form>
     </Dialog>

@@ -10,14 +10,15 @@ import CoursesTab from './CoursesTab';
 import { Catalogue, MyLearning } from './LearningTab';
 import PathsTab from './PathsTab';
 import { Certificates, TeamProgress } from './TeamTab';
+import { tr } from '../../../i18n';
 
 function Overview() {
   const { data: o } = useTrainingOverviewQuery();
   if (!o) return null;
   return (
-    <Grid container spacing={2} sx={{ mb: 2 }} aria-label="Training overview">
-      <Grid size={{ xs: 6, md: 2.4 }}><Stat label="Published courses" value={o.published} /></Grid>
-      <Grid size={{ xs: 6, md: 2.4 }}><Stat label="Learning now" value={o.enrolled} caption="open enrolments" /></Grid>
+    <Grid container spacing={2} sx={{ mb: 2 }} aria-label={tr("Training overview")}>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("Published courses")} value={o.published} /></Grid>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("Learning now")} value={o.enrolled} caption={tr("open enrolments")} /></Grid>
       <Grid size={{ xs: 6, md: 2.4 }}><Stat label={`Completion ${o.year}`} value={o.completionRate == null ? '—' : `${fmt(o.completionRate)}%`} /></Grid>
       <Grid size={{ xs: 6, md: 2.4 }}><Stat label={`Hours ${o.year}`} value={fmt(o.hours)} caption={o.hoursPerEmployee == null ? '' : `${fmt(o.hoursPerEmployee)} per person`} /></Grid>
       <Grid size={{ xs: 12, md: 2.4 }}><Stat label={`Certificates ${o.year}`} value={o.certificatesIssued} /></Grid>
@@ -38,7 +39,7 @@ export default function TrainingPage() {
   const key = tabs[tab]?.[0];
   return (
     <Box>
-      <PageHeader title="Training & Capacity Building" subtitle="ESG courses, learning paths for each role, progress and verifiable certificates" />
+      <PageHeader title={tr("Training & Capacity Building")} subtitle={tr("ESG courses, learning paths for each role, progress and verifiable certificates")} />
       {can('training:update') && <Overview />}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
         {tabs.map(([k, l]) => <Tab key={k} label={l} />)}
