@@ -1,0 +1,52 @@
+{
+  "id": "organisation",
+  "forms": ["Admin: organisation"],
+  "actor": "TENANT_ADMIN",
+  "readOnlyRole": "AUDITOR",
+  "create": { "method": "POST", "path": "/v1/organisations" },
+  "read": { "path": "/v1/organisations/{id}" },
+  "update": { "method": "PUT", "path": "/v1/organisations/{id}", "versioned": true },
+  "isolation": { "status": 404 },
+  "values": {
+    "name": "RT Org {u}",
+    "parentOrgId": "{ORG_HQ}",
+    "orgType": "facility",
+    "countryCode": "GH",
+    "stateRegion": "Greater Accra",
+    "address": "12 Independence Avenue, Accra",
+    "latitude": 5.6037,
+    "longitude": -0.187
+  },
+  "changes": {
+    "name": "RT Org {u} renamed",
+    "parentOrgId": "{ORG_SITE_2}",
+    "orgType": "site",
+    "countryCode": "KE",
+    "stateRegion": "Nairobi",
+    "address": "Kenyatta Avenue, Nairobi",
+    "latitude": -1.2921,
+    "longitude": 36.8219
+  },
+  "invalid": [
+    { "field": "name", "value": "", "rule": "required" },
+    { "field": "name", "value": { "$repeat": ["x", 256] }, "rule": "max 255" },
+    { "field": "orgType", "value": "planet", "rule": "enum" },
+    { "field": "countryCode", "value": "ng", "rule": "ISO pattern" },
+    { "field": "stateRegion", "value": { "$repeat": ["x", 101] }, "rule": "max 100" },
+    { "field": "address", "value": { "$repeat": ["x", 501] }, "rule": "max 500" },
+    { "field": "latitude", "value": 90.5, "rule": "-90..90" },
+    { "field": "longitude", "value": -181, "rule": "-180..180" }
+  ],
+  "ui": {
+    "fields": {
+      "name": { "label": "Name" },
+      "parentOrgId": { "label": "Parent", "kind": "select", "display": "A HQ" },
+      "orgType": { "label": "Type", "kind": "select", "display": "Facility" },
+      "countryCode": { "label": "Country (ISO)" },
+      "stateRegion": { "label": "State / region" },
+      "address": { "label": "Address" },
+      "latitude": { "label": "Latitude", "display": "5.6037" },
+      "longitude": { "label": "Longitude", "display": "-0.187" }
+    }
+  }
+}

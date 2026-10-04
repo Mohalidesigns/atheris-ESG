@@ -11,6 +11,22 @@ export const auditApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       providesTags: ['Audit'],
     }),
+    /** Audited tables with friendly names, for the Table filter (S2). */
+    auditResources: build.query({
+      query: () => '/audit/resources',
+      transformResponse: unwrap,
+    }),
+    /** People in the trail, for the User filter (Phase 3). */
+    auditUsers: build.query({ query: () => '/audit/users', transformResponse: unwrap, providesTags: ['Audit'] }),
+    /** The filtered trail as CSV (Phase 3); fetched as text and saved by the browser. */
+    exportAuditLogs: build.mutation({
+      query: (params) => ({
+        url: '/audit/logs/export',
+        params: Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null)),
+        responseHandler: (r) => r.text(),
+        cache: 'no-store',
+      }),
+    }),
     lineage: build.query({
       query: ({ type, id }) => ({ url: '/audit/lineage', params: { type, id } }),
       transformResponse: unwrap,
@@ -18,4 +34,6 @@ export const auditApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useListAuditLogsQuery, useLineageQuery } = auditApi;
+export const {
+  useListAuditLogsQuery, useAuditResourcesQuery, useAuditUsersQuery, useExportAuditLogsMutation, useLineageQuery,
+} = auditApi;

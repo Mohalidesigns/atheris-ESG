@@ -1,0 +1,174 @@
+{
+  "id": "platform-tenant",
+  "forms": [
+    "Admin: tenant (platform)"
+  ],
+  "actor": "SUPER_ADMIN",
+  "readOnlyRole": "TENANT_ADMIN",
+  "create": {
+    "method": "POST",
+    "path": "/v1/platform/tenants"
+  },
+  "read": {
+    "path": "/v1/platform/tenants",
+    "list": true
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/platform/tenants/{id}",
+    "versioned": true,
+    "fields": [
+      "name",
+      "industrySector",
+      "subscriptionTier",
+      "maxUsers",
+      "active"
+    ]
+  },
+  "isolation": {
+    "status": 403,
+    "why": "tenants are platform data: other tenants' admins lack tenants:read"
+  },
+  "inventoryAliases": {
+    "adminEmail": "admin.email",
+    "adminFirstName": "admin.firstName",
+    "adminLastName": "admin.lastName",
+    "adminPassword": "admin.password"
+  },
+  "writeOnly": {
+    "admin.email": "first TENANT_ADMIN user, not part of the tenant record (TenancyApiTest#superAdminCreatesTenantWithFirstAdmin logs in as it)",
+    "admin.firstName": "as above",
+    "admin.lastName": "as above",
+    "admin.password": "as above"
+  },
+  "values": {
+    "name": "RT Tenant {u}",
+    "slug": "rt-{u}",
+    "countryCode": "GH",
+    "industrySector": "Banking",
+    "subscriptionTier": "professional",
+    "billingCurrency": "GHS",
+    "maxUsers": 25,
+    "active": true,
+    "admin.email": "rt.admin.{u}@fixture.test",
+    "admin.firstName": "Kofi",
+    "admin.lastName": "Mensah",
+    "admin.password": "Str0ng!Passw0rd"
+  },
+  "changes": {
+    "name": "RT Tenant {u} renamed",
+    "industrySector": "Insurance",
+    "subscriptionTier": "enterprise",
+    "maxUsers": 40,
+    "active": false
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "slug",
+      "value": "Bad Slug",
+      "rule": "pattern"
+    },
+    {
+      "field": "slug",
+      "value": "tenant-a",
+      "rule": "unique"
+    },
+    {
+      "field": "countryCode",
+      "value": "gh",
+      "rule": "ISO pattern"
+    },
+    {
+      "field": "industrySector",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "subscriptionTier",
+      "value": "gold",
+      "rule": "enum"
+    },
+    {
+      "field": "billingCurrency",
+      "value": "BTC",
+      "rule": "enum"
+    },
+    {
+      "field": "maxUsers",
+      "value": 0,
+      "rule": "1..100000"
+    },
+    {
+      "field": "maxUsers",
+      "value": 100001,
+      "rule": "1..100000"
+    },
+    {
+      "field": "admin.email",
+      "value": "nope",
+      "rule": "email"
+    },
+    {
+      "field": "admin.email",
+      "value": "user.a@fixture.test",
+      "rule": "globally unique"
+    },
+    {
+      "field": "admin.firstName",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "admin.lastName",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "admin.password",
+      "value": "weakpassword",
+      "rule": "password policy"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Organisation name"
+      },
+      "industrySector": {
+        "label": "Industry sector"
+      },
+      "subscriptionTier": {
+        "label": "Tier",
+        "kind": "select",
+        "display": "professional"
+      },
+      "maxUsers": {
+        "label": "Max users",
+        "display": "25"
+      },
+      "active": {
+        "label": "Active",
+        "kind": "switch"
+      }
+    },
+    "notInEditForm": {
+      "admin.email": "create only",
+      "admin.firstName": "create only",
+      "admin.lastName": "create only",
+      "admin.password": "create only",
+      "slug": "fixed after creation",
+      "countryCode": "fixed after creation",
+      "billingCurrency": "fixed after creation"
+    }
+  }
+}

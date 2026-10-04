@@ -30,9 +30,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * File service (TRD §6.6.4): upload with type/size checks and virus-scan hook, immutable versions, downloads
+ * File service (TRD §6.6.4): upload with type/size checks and virus scan, immutable versions, downloads
  * (streamed or pre-signed), soft delete, and an access log of every upload/download. Metadata is tenant data
  * under RLS; bytes go to {@link FileStorage} under a tenant-prefixed key.
+ *
+ * <p>Virus scanning (S6): every upload is scanned before it is accepted. Clean files are stored {@code clean};
+ * infected files are stored under a {@code quarantine/} key only, recorded in the audit trail and refused (422
+ * ESG-422-MALWARE); if the scanner can't be reached the file is stored {@code pending_scan} and {@link VirusScanService}
+ * retries. Only clean files (and files the platform generated itself) can be downloaded or read by imports:
+ * pending ones answer 409 ESG-409-SCAN-PENDING, quarantined ones 409 ESG-409-QUARANTINED.
  */
 @Service
 public class FileService {
@@ -42,22 +48,24 @@ public class FileService {
     private final JdbcTemplate jdbc;
     private final FileStorage storage;
     private final VirusScanner scanner;
+    private final QuarantineLog quarantine;
     private final long maxBytes;
     private final Duration presignTtl;
 
-    public FileService(JdbcTemplate jdbc, FileStorage storage, VirusScanner scanner,
+    public FileService(JdbcTemplate jdbc, FileStorage storage, VirusScanner scanner, QuarantineLog quarantine,
                        @Value("${esg.files.max-bytes}") long maxBytes,
                        @Value("${esg.files.presign-ttl}") Duration presignTtl) {
         this.jdbc = jdbc;
         this.storage = storage;
         this.scanner = scanner;
+        this.quarantine = quarantine;
         this.maxBytes = maxBytes;
         this.presignTtl = presignTtl;
     }
 
     public StorageInfo info() {
-        return new StorageInfo(storage.description(), maxBytes, FileTypePolicy.ALLOWED_EXTENSIONS,
-                scanner instanceof VirusScanner.NotConfigured ? "Not configured: files are stored unscanned" : "Enabled");
+        return new StorageInfo(storage.description(), maxBytes, FileTypePolicy.ALLOWED_EXTENSIONS, scanner.description(),
+                scanner.sandbox());
     }
 
     @Transactional
@@ -66,7 +74,7 @@ public class FileService {
             throw FieldValidationException.of("resourceType", "lower-case letters and underscores only");
         }
         UUID fileId = UUID.randomUUID();
-        Stored stored = store(file, fileId, 1);
+        Stored stored = store(file, fileId, 1, false);
         jdbc.update("insert into files.file_metadata (id, original_name, content_type, size_bytes, sha256, resource_type, resource_id) "
                         + "values (?, ?, ?, ?, ?, ?, ?)", fileId, stored.name(), stored.contentType(), stored.size(), stored.sha256(),
                 blankToNull(resourceType), resourceId);
@@ -75,11 +83,36 @@ public class FileService {
         return get(fileId);
     }
 
+    /** Stores a file the platform produced (e.g. a report export) through the same checks, scan and storage as uploads. */
+    @Transactional
+    public FileInfo storeGenerated(byte[] content, String fileName, String contentType, String resourceType, UUID resourceId) {
+        UUID fileId = UUID.randomUUID();
+        Stored stored = store(new GeneratedFile(content, fileName, contentType), fileId, 1, true);
+        jdbc.update("insert into files.file_metadata (id, original_name, content_type, size_bytes, sha256, resource_type, resource_id) "
+                        + "values (?, ?, ?, ?, ?, ?, ?)", fileId, stored.name(), stored.contentType(), stored.size(), stored.sha256(),
+                blankToNull(resourceType), resourceId);
+        insertVersion(fileId, 1, stored);
+        logAccess(fileId, 1, "upload");
+        return get(fileId);
+    }
+
+    /** Minimal in-memory MultipartFile for generated content. */
+    private record GeneratedFile(byte[] content, String fileName, String type) implements MultipartFile {
+        @Override public String getName() { return "file"; }
+        @Override public String getOriginalFilename() { return fileName; }
+        @Override public String getContentType() { return type; }
+        @Override public boolean isEmpty() { return content.length == 0; }
+        @Override public long getSize() { return content.length; }
+        @Override public byte[] getBytes() { return content.clone(); }
+        @Override public InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
+        @Override public void transferTo(java.io.File dest) throws IOException { Files.write(dest.toPath(), content); }
+    }
+
     @Transactional
     public FileInfo addVersion(UUID fileId, MultipartFile file) {
         FileInfo current = get(fileId);
         int next = current.currentVersion() + 1;
-        Stored stored = store(file, fileId, next);
+        Stored stored = store(file, fileId, next, false);
         jdbc.update("update files.file_metadata set original_name = ?, content_type = ?, size_bytes = ?, sha256 = ?, "
                 + "current_version = ?, version = version + 1 where id = ?", stored.name(), stored.contentType(), stored.size(),
                 stored.sha256(), next, fileId);
@@ -91,9 +124,16 @@ public class FileService {
     @Transactional(readOnly = true)
     public FileInfo get(UUID id) {
         List<FileInfo> rows = jdbc.query("select * from files.file_metadata where id = ? and deleted_at is null",
-                (rs, i) -> new FileInfo(rs.getObject("id", UUID.class), rs.getString("original_name"), rs.getString("content_type"),
-                        rs.getLong("size_bytes"), rs.getString("sha256"), rs.getInt("current_version"), rs.getString("resource_type"),
-                        rs.getObject("resource_id", UUID.class), rs.getTimestamp("created_at").toInstant(), versions(id)), id);
+                (rs, i) -> {
+                    List<FileVersion> versions = versions(id);
+                    int current = rs.getInt("current_version");
+                    String scanStatus = versions.stream().filter(v -> v.version() == current).map(FileVersion::scanStatus)
+                            .findFirst().orElse("pending_scan");
+                    return new FileInfo(rs.getObject("id", UUID.class), rs.getString("original_name"), rs.getString("content_type"),
+                            rs.getLong("size_bytes"), rs.getString("sha256"), current, rs.getString("resource_type"),
+                            rs.getObject("resource_id", UUID.class), rs.getTimestamp("created_at").toInstant(), versions,
+                            scanStatus);
+                }, id);
         if (rows.isEmpty()) {
             throw ApiException.notFound("File");
         }
@@ -115,6 +155,7 @@ public class FileService {
         int v = version == null ? info.currentVersion() : version;
         FileVersion fv = info.versions().stream().filter(x -> x.version() == v).findFirst()
                 .orElseThrow(() -> ApiException.notFound("File version"));
+        requireReadable(fv);
         logAccess(id, v, "download");
         return new Download(storage.open(storageKey(id, v)), info.originalName(), fv.contentType(), fv.sizeBytes());
     }
@@ -125,6 +166,7 @@ public class FileService {
         int v = version == null ? info.currentVersion() : version;
         FileVersion fv = info.versions().stream().filter(x -> x.version() == v).findFirst()
                 .orElseThrow(() -> ApiException.notFound("File version"));
+        requireReadable(fv);
         logAccess(id, v, "download_url");
         Optional<URI> direct = storage.presignedDownload(storageKey(id, v), info.originalName(), fv.contentType(), presignTtl);
         return direct.map(uri -> new DownloadUrl(uri.toString(), Instant.now().plus(presignTtl), true))
@@ -147,9 +189,25 @@ public class FileService {
 
     // ------------------------------------------------------------------ internals
 
-    private record Stored(String name, String contentType, long size, String sha256, String scanStatus) {}
+    private record Stored(String name, String contentType, long size, String sha256, String scanStatus, String scanner,
+                          String scanDetail) {}
 
-    private Stored store(MultipartFile file, UUID fileId, int version) {
+    /** Only scanned-clean or platform-generated versions may leave storage (S6). */
+    private static void requireReadable(FileVersion fv) {
+        switch (fv.scanStatus()) {
+            case "clean", "generated" -> { }
+            case "infected" -> throw ApiException.conflict("ESG-409-QUARANTINED",
+                    "This file failed the virus scan and is quarantined; it can't be downloaded");
+            default -> throw ApiException.conflict("ESG-409-SCAN-PENDING",
+                    "This file is waiting for its virus scan; try again in a few minutes");
+        }
+    }
+
+    /**
+     * Checks, scans and stores one version. {@code generated}: content the platform produced itself (report exports),
+     * which isn't scanned. Infected uploads go to a quarantine key, are audited, and are refused.
+     */
+    private Stored store(MultipartFile file, UUID fileId, int version, boolean generated) {
         if (file == null || file.isEmpty()) {
             throw FieldValidationException.of("file", "Choose a file to upload");
         }
@@ -171,13 +229,22 @@ public class FileService {
                 read = in.readNBytes(head, 0, head.length);
             }
             String contentType = FileTypePolicy.check(name, java.util.Arrays.copyOf(head, read));
+            String sha256 = HexFormat.of().formatHex(digest.digest());
+            if (generated) {
+                storage.put(storageKey(fileId, version), temp, size, contentType);
+                return new Stored(name, contentType, size, sha256, "generated", "platform", null);
+            }
             VirusScanner.Result scan = scanner.scan(temp);
-            if (scan == VirusScanner.Result.INFECTED) {
-                throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "ESG-422-MALWARE", "The file failed the virus scan and was not stored");
+            if (scan.verdict() == VirusScanner.Verdict.INFECTED) {
+                storage.put("quarantine/" + storageKey(fileId, version), temp, size, contentType);
+                quarantine.record(fileId, version, name, sha256, size, scanner.name(), scan.signature(), "upload");
+                throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "ESG-422-MALWARE",
+                        "The file failed the virus scan (" + scan.signature() + ") and was quarantined, not stored");
             }
             storage.put(storageKey(fileId, version), temp, size, contentType);
-            return new Stored(name, contentType, size, HexFormat.of().formatHex(digest.digest()),
-                    scan == VirusScanner.Result.CLEAN ? "clean" : "not_scanned");
+            boolean clean = scan.verdict() == VirusScanner.Verdict.CLEAN;
+            return new Stored(name, contentType, size, sha256, clean ? "clean" : "pending_scan", scanner.name(),
+                    clean ? null : truncate(scan.signature()));
         } catch (IOException e) {
             throw new IllegalStateException("Could not store the file", e);
         } catch (NoSuchAlgorithmException e) {
@@ -194,16 +261,18 @@ public class FileService {
     }
 
     private void insertVersion(UUID fileId, int version, Stored s) {
-        jdbc.update("insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256, scan_status) "
-                + "values (?, ?, ?, ?, ?, ?, ?)", fileId, version, storageKey(fileId, version), s.contentType(), s.size(), s.sha256(),
-                s.scanStatus());
+        jdbc.update("insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256, scan_status, "
+                + "scanned_at, scanner, scan_detail) values (?, ?, ?, ?, ?, ?, ?, case when ? = 'pending_scan' then null else now() end, ?, ?)",
+                fileId, version, storageKey(fileId, version), s.contentType(), s.size(), s.sha256(), s.scanStatus(), s.scanStatus(),
+                s.scanner(), s.scanDetail());
     }
 
     private List<FileVersion> versions(UUID fileId) {
-        return jdbc.query("select version_no, content_type, size_bytes, sha256, scan_status, created_at, created_by "
-                        + "from files.file_versions where file_id = ? order by version_no desc",
+        return jdbc.query("select version_no, content_type, size_bytes, sha256, scan_status, created_at, created_by, scanned_at, scanner, "
+                        + "scan_detail from files.file_versions where file_id = ? order by version_no desc",
                 (rs, i) -> new FileVersion(rs.getInt(1), rs.getString(2), rs.getLong(3), rs.getString(4), rs.getString(5),
-                        rs.getTimestamp(6).toInstant(), rs.getObject(7, UUID.class)), fileId);
+                        rs.getTimestamp(6).toInstant(), rs.getObject(7, UUID.class),
+                        rs.getTimestamp(8) == null ? null : rs.getTimestamp(8).toInstant(), rs.getString(9), rs.getString(10)), fileId);
     }
 
     private void logAccess(UUID fileId, Integer version, String action) {
@@ -227,5 +296,9 @@ public class FileService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String truncate(String value) {
+        return value == null ? null : value.length() > 255 ? value.substring(0, 255) : value;
     }
 }

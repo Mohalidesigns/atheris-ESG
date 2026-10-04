@@ -52,15 +52,25 @@ describe('OrganisationsTab', () => {
 });
 
 describe('PeriodsTab', () => {
-  it('locks a period after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('locks a period after confirming in the app dialog, and confirms with a toast (Phase 2)', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
     const calls = fakeApi({
       'GET /reporting-periods': () => ok([{ id: 'p1', name: 'Q1 2026', periodType: 'quarterly', startDate: '2026-01-01', endDate: '2026-03-31', status: 'open', version: 0 }]),
-      'POST /reporting-periods/p1/lock': () => ok({}),
+      'POST /reporting-periods/p1/lock': () => [200, { success: true, data: {}, message: 'Period locked' }],
     });
     renderWithStore(<PeriodsTab />, { preloadedState: authenticated(['reporting_periods:read', 'reporting_periods:approve']) });
     await userEvent.click(await screen.findByRole('button', { name: 'Lock' }));
+    // The app's own dialog, naming the period; Cancel does nothing.
+    const dialog = await screen.findByRole('dialog', { name: 'Lock this reporting period?' });
+    expect(within(dialog).getByText('Q1 2026')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(calls.some((c) => c.key === 'POST /reporting-periods/p1/lock')).toBe(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Lock' }));
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Lock' }));
     await waitFor(() => expect(calls.some((c) => c.key === 'POST /reporting-periods/p1/lock')).toBe(true));
+    expect(await screen.findByRole('status')).toHaveTextContent('Period locked');
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -68,7 +78,7 @@ describe('SettingsTab', () => {
   it('loads saved settings and sends them back with the version', async () => {
     const calls = fakeApi({
       'GET /settings': () => ok({ tenantName: 'Demo', baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi',
-        defaultFrameworkCodes: ['GRI'], version: 5 }),
+        defaultFrameworkCodes: ['GRI'], gwpSet: 'AR5', provisionalFactorPolicy: 'block', version: 5 }),
       'GET /compliance/frameworks': () => ok([{ code: 'GRI' }, { code: 'ISSB_S2' }]),
       'PUT /settings': (body) => ok({ tenantName: 'Demo', ...body, version: 6 }),
     });
@@ -78,7 +88,8 @@ describe('SettingsTab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save settings' }));
     await waitFor(() => expect(calls.some((c) => c.key === 'PUT /settings')).toBe(true));
     expect(calls.find((c) => c.key === 'PUT /settings').body).toEqual({
-      baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi', defaultFrameworkCodes: ['GRI', 'ISSB_S2'], version: 5,
+      baseCurrency: 'KES', fiscalYearStartMonth: 7, reportingTimezone: 'Africa/Nairobi', defaultFrameworkCodes: ['GRI', 'ISSB_S2'], gwpSet: 'AR5',
+      provisionalFactorPolicy: 'block', version: 5,
     });
   });
 

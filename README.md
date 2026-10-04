@@ -48,7 +48,7 @@ One user per built-in role, all with the password `LocalDev!2026`:
 | `board@esgpro.ng` | BOARD_MEMBER | governance |
 | `training@esgpro.ng` | TRAINING_ADMIN | training |
 
-These come from `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. **MFA is not enforced in the local profile**, so you can sign in without an authenticator; every other profile requires TOTP for SUPER_ADMIN, TENANT_ADMIN and ESG_DIRECTOR. After pulling WP-12/13, run `./scripts/dev.sh reset-db` once to get the new users.
+These come from `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. **MFA is enforced in every profile, including local**: SUPER_ADMIN, TENANT_ADMIN and ESG_DIRECTOR need a TOTP code. Their dev-only authenticator secrets are in [`db/seed/README.md`](esg-backend/src/main/resources/db/seed/README.md); add one to any authenticator app. `MFA_DEV_BYPASS=true` turns enforcement off for local experiments (startup warning; refused under staging/prod). After pulling WP-12/13, run `./scripts/dev.sh reset-db` once to get the new users.
 
 ## Profiles and configuration
 
@@ -103,7 +103,14 @@ cd esg-frontend && npm run lint && npm test && npm run build
 cd esg-frontend && npm run check:no-mocks
 ```
 
+End-to-end journeys (Cypress, WP-18). This builds both apps, starts them on a fresh `esg_e2e` database seeded with the demo tenant, runs every journey and stops everything:
+
+```bash
+./scripts/e2e.sh
+```
+
 - `mvnw verify` runs tests, the JaCoCo coverage report and Checkstyle (Google style, warnings ratcheted up per module).
-- `check:no-mocks` lists hard-coded data in production pages. It's in REPORT mode now and becomes a failing gate at the end of WP-16. Current report: [`NO_MOCK_REPORT.md`](docs/esg-completion/NO_MOCK_REPORT.md).
+- `check:no-mocks` fails the build on hard-coded data in production pages (ENFORCE since WP-16). Current report: [`NO_MOCK_REPORT.md`](docs/esg-completion/NO_MOCK_REPORT.md).
+- **Field round-trip tests** (master plan §7.2) are generated from one JSON spec per form in [`testing/roundtrip/`](testing/roundtrip/README.md): `FieldRoundTripTest` (API: create-all, update-each, validation matrix, permission, tenant isolation) and `roundTripReload.test.jsx` (the edit form shows every saved value). Adding a field to `FIELD_INVENTORY.csv` without a spec value fails the build.
 
 API docs (local): http://localhost:8080/api/v1/swagger-ui.html

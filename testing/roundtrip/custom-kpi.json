@@ -1,0 +1,221 @@
+{
+  "id": "custom-kpi",
+  "forms": [
+    "Custom KPI"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/analytics/kpis"
+  },
+  "read": {
+    "path": "/v1/analytics/kpis/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/analytics/kpis/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include ESG Analytics"
+  },
+  "values": {
+    "code": "rt_{u}",
+    "name": "RT water intensity {u}",
+    "description": "Litres of water per unit produced",
+    "pillar": "E",
+    "orgId": "{ORG_SITE_2}",
+    "metricA": "water_consumption_m3",
+    "operator": "divide",
+    "metricB": "production_output",
+    "multiplier": 1000,
+    "unit": "litres per unit",
+    "decimals": 2,
+    "direction": "lower_better",
+    "baselineYear": 2024,
+    "targetValue": 150,
+    "targetYear": 2030,
+    "sdgGoals": [
+      6,
+      12
+    ],
+    "status": "active"
+  },
+  "changes": {
+    "code": "rt_{u}_b",
+    "name": "RT energy per unit {u}",
+    "description": "Energy per unit produced",
+    "pillar": "S",
+    "orgId": "{ORG_HQ}",
+    "metricA": "energy_total_gj",
+    "operator": "multiply",
+    "metricB": "revenue",
+    "multiplier": 0.5,
+    "unit": "GJ per unit",
+    "decimals": 3,
+    "direction": "higher_better",
+    "baselineYear": 2023,
+    "targetValue": 90,
+    "targetYear": 2035,
+    "sdgGoals": [
+      7
+    ],
+    "status": "archived"
+  },
+  "invalid": [
+    {
+      "field": "code",
+      "value": "Bad-Code",
+      "rule": "a-z, 0-9 and _"
+    },
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "pillar",
+      "value": "X",
+      "rule": "enum"
+    },
+    {
+      "field": "metricA",
+      "value": "unicorns",
+      "rule": "numeric catalogue metric"
+    },
+    {
+      "field": "operator",
+      "value": "power",
+      "rule": "enum"
+    },
+    {
+      "field": "metricB",
+      "value": null,
+      "rule": "required with an operation"
+    },
+    {
+      "field": "multiplier",
+      "value": 0,
+      "rule": "not zero"
+    },
+    {
+      "field": "unit",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "decimals",
+      "value": 5,
+      "rule": "0 to 4"
+    },
+    {
+      "field": "direction",
+      "value": "neutral",
+      "rule": "enum"
+    },
+    {
+      "field": "baselineYear",
+      "value": 1999,
+      "rule": "2000 to 2100"
+    },
+    {
+      "field": "targetValue",
+      "value": null,
+      "rule": "both target fields or neither",
+      "errorField": "targetValue"
+    },
+    {
+      "field": "targetYear",
+      "value": 2020,
+      "rule": "after the baseline year"
+    },
+    {
+      "field": "status",
+      "value": "deleted",
+      "rule": "enum"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "code": {
+        "label": "Code (for reports)"
+      },
+      "name": {
+        "label": "Name"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "pillar": {
+        "label": "Pillar",
+        "kind": "select",
+        "display": "Environmental"
+      },
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "metricA": {
+        "label": "Metric",
+        "kind": "select",
+        "display": "Water consumption (m3)"
+      },
+      "operator": {
+        "label": "Combine with",
+        "kind": "select",
+        "display": "÷ divided by"
+      },
+      "metricB": {
+        "label": "Second metric",
+        "kind": "select",
+        "display": "Production output (unit)"
+      },
+      "multiplier": {
+        "label": "Multiplier"
+      },
+      "unit": {
+        "label": "Unit"
+      },
+      "decimals": {
+        "label": "Decimal places"
+      },
+      "direction": {
+        "label": "Better when",
+        "kind": "select",
+        "display": "Lower"
+      },
+      "baselineYear": {
+        "label": "Baseline year (optional)"
+      },
+      "targetValue": {
+        "label": "Target value (optional)"
+      },
+      "targetYear": {
+        "label": "Target year (optional)"
+      },
+      "sdgGoals": {
+        "label": "SDG goals (optional)",
+        "kind": "select",
+        "display": "SDG 6, SDG 12"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      }
+    }
+  }
+}

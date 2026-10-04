@@ -28,16 +28,23 @@ INSERT INTO reference.metrics (metric_key, pillar, category, name, description, 
   ('work_related_fatalities', 'S', 'Health and safety', 'Fatalities from work-related injury', 'Number of fatalities as a result of work-related injury.', 'count', 'integer', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 22),
   ('hours_worked', 'S', 'Health and safety', 'Hours worked', 'Total hours worked, the denominator for injury rates.', 'hours', 'decimal', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 23),
   ('women_in_management_pct', 'S', 'Diversity', 'Women in management', 'Share of management positions held by women.', '%', 'percentage', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 24),
-  ('community_investment', 'S', 'Community', 'Community investment', 'Spend on community projects in the reporting currency.', 'NGN', 'currency', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 25),
+  ('community_investment', 'S', 'Community', 'Community investment', 'Spend on community projects, stored in the tenant base currency (other currencies are converted with a dated rate).', 'currency', 'currency', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 25),
   ('board_size', 'G', 'Board', 'Board size', 'Members of the highest governance body.', 'count', 'integer', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 26),
   ('board_independent_pct', 'G', 'Board', 'Independent board members', 'Share of independent members of the highest governance body.', '%', 'percentage', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 27),
   ('board_female_pct', 'G', 'Board', 'Women on the board', 'Share of women on the highest governance body.', '%', 'percentage', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 28),
   ('corruption_incidents', 'G', 'Ethics', 'Confirmed incidents of corruption', 'Confirmed incidents of corruption in the period.', 'count', 'integer', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 29),
   ('whistleblowing_reports', 'G', 'Ethics', 'Whistleblowing reports received', 'Concerns raised through grievance and whistleblowing mechanisms.', 'count', 'integer', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 30),
-  ('compensation_ratio', 'G', 'Remuneration', 'Annual total compensation ratio', 'Highest-paid individual to the median employee.', 'ratio', 'decimal', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 31)
+  ('compensation_ratio', 'G', 'Remuneration', 'Annual total compensation ratio', 'Highest-paid individual to the median employee.', 'ratio', 'decimal', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 31),
+  ('revenue', 'G', 'Economic', 'Revenue', 'Total revenue in the period, in the tenant base currency; denominator for carbon intensity (BRD-5.2.2-07).', 'currency', 'currency', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 40),
+  ('production_output', 'E', 'Production', 'Production output', 'Units produced in the period (the organisation defines the unit); denominator for carbon intensity (BRD-5.2.2-07).', 'unit', 'decimal', 'Atheris metric catalogue v1; definitions follow the mapped framework requirements; pending ESG SME verification', TRUE, 41)
 ON CONFLICT (metric_key) DO UPDATE SET pillar = EXCLUDED.pillar, category = EXCLUDED.category, name = EXCLUDED.name,
   description = EXCLUDED.description, unit = EXCLUDED.unit, data_type = EXCLUDED.data_type, source = EXCLUDED.source,
   is_active = EXCLUDED.is_active, sort_order = EXCLUDED.sort_order;
+
+-- How each metric adds up over a report period (WP-23, D24): stocks take the latest value, everything else sums.
+UPDATE reference.metrics SET aggregation = CASE WHEN metric_key IN ('employees_total', 'employees_female', 'employee_turnover_pct',
+  'training_hours_per_employee', 'women_in_management_pct', 'board_size', 'board_independent_pct', 'board_female_pct', 'compensation_ratio')
+  THEN 'latest' ELSE 'sum' END;
 
 DELETE FROM reference.metric_requirements;
 INSERT INTO reference.metric_requirements (metric_key, requirement_id)

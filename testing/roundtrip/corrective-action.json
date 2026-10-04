@@ -1,0 +1,134 @@
+{
+  "id": "corrective-action",
+  "forms": [
+    "Corrective action"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/supply-chain/actions"
+  },
+  "read": {
+    "path": "/v1/supply-chain/actions/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/supply-chain/actions/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Supply Chain ESG"
+  },
+  "values": {
+    "supplierId": "{SUPPLIER_A}",
+    "questionnaireId": "{QUESTIONNAIRE_A}",
+    "questionId": "{QUESTION_A}",
+    "title": "RT action {u}",
+    "description": "Install sub-meters",
+    "severity": "high",
+    "ownerUserId": "{USER_DIRECTOR}",
+    "dueDate": "2027-01-31"
+  },
+  "changes": {
+    "title": "RT action {u} revised",
+    "description": "Install meters and log monthly",
+    "severity": "low",
+    "ownerUserId": "{USER_MANAGER}",
+    "dueDate": "2027-03-31",
+    "questionId": null,
+    "questionnaireId": null
+  },
+  "invalid": [
+    {
+      "field": "supplierId",
+      "value": "a0000000-0000-4000-8000-0000000009ff",
+      "rule": "must be a supplier"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    },
+    {
+      "field": "severity",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "dueDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "questionnaireId",
+      "value": null,
+      "rule": "a question needs its questionnaire",
+      "errorField": "questionId"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "{USER_COMPLIANCE}",
+      "rule": "must hold supply_chain:update"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "supplierId": {
+        "label": "Supplier",
+        "kind": "select",
+        "display": "Supplier A"
+      },
+      "questionnaireId": {
+        "label": "Questionnaire (optional)",
+        "kind": "select",
+        "display": "ESG survey"
+      },
+      "questionId": {
+        "label": "Question (optional)",
+        "kind": "select",
+        "display": "Do you measure energy use?"
+      },
+      "title": {
+        "label": "Title"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "severity": {
+        "label": "Severity",
+        "kind": "select",
+        "display": "High"
+      },
+      "ownerUserId": {
+        "label": "Owner (optional)",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      },
+      "dueDate": {
+        "label": "Due date"
+      }
+    }
+  }
+}

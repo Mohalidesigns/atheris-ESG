@@ -23,6 +23,15 @@ describe('route guards', () => {
     expect(screen.getByRole('alert')).toHaveTextContent("You don't have access to this page");
   });
 
+  it("says the module isn't in the subscription when the tenant lacks it", () => {
+    renderWithStore(
+      <Routes><Route path="/risk" element={<ProtectedRoute anyOf={['risk:read']} module="risk"><span>risk page</span></ProtectedRoute>} /></Routes>,
+      { preloadedState: authenticated(['risk:read'], { modules: ['platform', 'data_hub'] }), route: '/risk' },
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent("This module isn't part of your subscription");
+    expect(screen.queryByText('risk page')).not.toBeInTheDocument();
+  });
+
   it('renders the page with the permission', () => {
     renderWithStore(guarded, { preloadedState: authenticated(['users:read']), route: '/admin' });
     expect(screen.getByText('admin page')).toBeInTheDocument();

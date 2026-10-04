@@ -46,5 +46,6 @@ public class AuthResponse {
     /** The signed-in user as returned by login, refresh and GET /auth/me. */
     public record UserDto(String id, String email, String firstName, String lastName, String tenantId,
                           String tenantName, List<String> roles, List<String> permissions, boolean tenantWide,
-                          List<String> orgScopeIds, boolean mfaEnabled, String timezone, String preferredLanguage) {}
+                          List<String> orgScopeIds, boolean mfaEnabled, String timezone, String preferredLanguage,
+                          List<String> modules) {}
 }

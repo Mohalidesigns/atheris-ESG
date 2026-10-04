@@ -142,6 +142,8 @@ export const settingsSchema = z.object({
   fiscalYearStartMonth: z.coerce.number().int().min(1, '1-12').max(12, '1-12'),
   reportingTimezone: z.string().trim().min(1, 'Time zone is required').max(50, 'At most 50 characters'),
   defaultFrameworkCodes: z.array(z.string()).max(20, 'At most 20 frameworks'),
+  gwpSet: z.enum(['AR5', 'AR6'], { message: 'Choose AR5 or AR6' }),
+  provisionalFactorPolicy: z.enum(['allow_flagged', 'block'], { message: 'Choose allow (flagged) or block' }),
 });
 
 export const setPasswordSchema = (email) => z
@@ -189,3 +191,13 @@ export const toCreateTenantBody = (v) => ({
 export const TENANT_SERVER_FIELDS = {
   'admin.email': 'adminEmail', 'admin.firstName': 'adminFirstName', 'admin.lastName': 'adminLastName', 'admin.password': 'adminPassword',
 };
+
+// ---------------------------------------------------------------- module entitlements (WP-19)
+// Mirrors SubscriptionDtos.OverrideRequest: reason @NotBlank @Size(max=500).
+export const moduleOverrideSchema = z.object({
+  enabled: z.enum(['plan', 'on', 'off']),
+  reason: z.string().trim().min(1, 'Required').max(500, 'At most 500 characters'),
+});
+
+/** 'plan' clears the override (null), 'on' adds the module, 'off' removes it. */
+export const toOverrideBody = (v) => ({ enabled: v.enabled === 'plan' ? null : v.enabled === 'on', reason: v.reason.trim() });

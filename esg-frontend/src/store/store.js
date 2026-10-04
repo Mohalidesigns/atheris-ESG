@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/slices/authSlice';
+import uiReducer from './uiSlice';
 import { apiSlice } from '../services/apiSlice';
 
 export function makeStore(preloadedState) {
   return configureStore({
     reducer: {
       auth: authReducer,
+      ui: uiReducer,
       [apiSlice.reducerPath]: apiSlice.reducer,
     },
     middleware: (getDefault) => getDefault().concat(apiSlice.middleware),
