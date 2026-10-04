@@ -180,8 +180,8 @@ public class DashboardService {
             where.append(" and p.org_id = any(?::uuid[])");
             args.add(scope.orgIds().stream().map(UUID::toString).toArray(String[]::new));
         }
-        Set<String> evidenced = new TreeSet<>(jdbc.queryForList("select distinct p.metric_key from data_hub.data_points p " + where,
-                String.class, args.toArray()));
+        Set<String> evidenced = new TreeSet<>(jdbc.queryForList("select m.metric_key from reference.metrics m where exists (select 1 "
+                + "from data_hub.data_points p " + where + " and p.metric_key = m.metric_key)", String.class, args.toArray()));
         Map<Integer, Sdg> goals = new LinkedHashMap<>();
         Map<Integer, List<String[]>> links = new LinkedHashMap<>();
         jdbc.query("select g.goal, g.title, ms.metric_key, m.name from reference.sdgs g "

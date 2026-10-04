@@ -16,6 +16,7 @@ import {
   useSupplyActionsQuery, useSupplyPeopleQuery, useUpdateSupplyActionMutation,
 } from '../supplyApi';
 import { ACTION_STATUS, ACTION_STEPS, SEVERITY, actionSchema, emptyAction, problemText, toActionBody, toActionForm } from '../schemas';
+import { tr } from '../../../i18n';
 
 /** Raise or edit a corrective action; `action` without an id pre-fills a new one (e.g. raised from a questionnaire gap). */
 export function ActionDialog({ action, onClose }) {
@@ -43,32 +44,32 @@ export function ActionDialog({ action, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${action.title}` : 'Raise corrective action'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${action.title}` : tr("Raise corrective action")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="supplierId" label="Supplier" options={suppliers.map((s) => ({ value: s.id, label: s.name }))} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="supplierId" label={tr("Supplier")} options={suppliers.map((s) => ({ value: s.id, label: s.name }))} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="questionnaireId" label="Questionnaire (optional)"
+              <FormSelect control={control} name="questionnaireId" label={tr("Questionnaire (optional)")}
                 options={[{ value: '', label: 'None' }, ...questionnaires.map((q) => ({ value: q.id, label: q.title }))]} />
             </Grid>
             <Grid size={12}>
-              <FormSelect control={control} name="questionId" label="Question (optional)"
+              <FormSelect control={control} name="questionId" label={tr("Question (optional)")}
                 options={[{ value: '', label: 'None' }, ...(questionnaire?.questions ?? []).map((q) => ({ value: q.id, label: q.question }))]} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="title" label="Title" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="severity" label="Severity" options={Object.entries(SEVERITY).map(([value, label]) => ({ value, label }))} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="title" label={tr("Title")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="severity" label={tr("Severity")} options={Object.entries(SEVERITY).map(([value, label]) => ({ value, label }))} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="ownerUserId" label="Owner (optional)"
+              <FormSelect control={control} name="ownerUserId" label={tr("Owner (optional)")}
                 options={[{ value: '', label: 'Not assigned' }, ...people.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormDateField control={control} name="dueDate" label="Due date" /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormDateField control={control} name="dueDate" label={tr("Due date")} /></Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Raise action'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Raise action")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -93,31 +94,31 @@ function ActionDrawer({ action: a, onClose, onEdit }) {
   const needsNote = { implement: 'What was done', reject: 'Why the fix isn’t accepted', verify: 'Verification note (optional)' };
   return (
     <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
-      <Box sx={{ p: 3 }} role="region" aria-label="Corrective action">
+      <Box sx={{ p: 3 }} role="region" aria-label={tr("Corrective action")}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>{a.title}</Typography>
-            <Typography variant="body2" color="text.secondary">{a.supplierName} · due {a.dueDate} · {SEVERITY[a.severity]} severity</Typography>
-            <Chip size="small" sx={{ mt: 0.5 }} color={ACTION_STATUS[a.status].color} label={ACTION_STATUS[a.status].label} aria-label="Action status" />
-            {a.overdue && <Chip size="small" color="error" label="Overdue" sx={{ mt: 0.5, ml: 1 }} />}
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>{tr(a.title)}</Typography>
+            <Typography variant="body2" color="text.secondary">{a.supplierName} {tr("· due")} {a.dueDate} · {tr(SEVERITY[a.severity])} {tr("severity")}</Typography>
+            <Chip size="small" sx={{ mt: 0.5 }} color={ACTION_STATUS[a.status].color} label={tr(ACTION_STATUS[a.status].label)} aria-label={tr("Action status")} />
+            {a.overdue && <Chip size="small" color="error" label={tr("Overdue")} sx={{ mt: 0.5, ml: 1 }} />}
           </Box>
-          <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+          <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
         </Box>
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
           <ActionBar actions={a.actions} blocked={a.blockedActions} labels={ACTION_STEPS} primary={['verify', 'close', 'implement']} busy={s.isLoading}
             onAction={(x) => (needsNote[x] ? setAsking(x) : run(x))} />
-          {!['verified', 'closed'].includes(a.status) && <Can permission="supply_chain:update"><Button size="small" onClick={() => onEdit(a)}>Edit</Button></Can>}
+          {!['verified', 'closed'].includes(a.status) && <Can permission="supply_chain:update"><Button size="small" onClick={() => onEdit(a)}>{tr("Edit")}</Button></Can>}
         </Box>
         <Divider sx={{ my: 2 }} />
-        {a.questionText && <Typography variant="body2">Question: {a.questionText}</Typography>}
-        {a.description && <Typography variant="body2" sx={{ mt: 1 }}>{a.description}</Typography>}
-        <Typography variant="body2" sx={{ mt: 1 }}>Owner: {a.ownerName ?? 'not assigned'}</Typography>
-        {a.implementationNote && <Typography variant="body2" sx={{ mt: 1 }}>Fix: {a.implementationNote}{a.implementedByName ? ` (${a.implementedByName})` : ''}</Typography>}
-        {a.verificationNote && <Typography variant="body2" sx={{ mt: 1 }}>Verification: {a.verificationNote}{a.verifiedByName ? ` (${a.verifiedByName})` : ''}</Typography>}
+        {a.questionText && <Typography variant="body2">{tr("Question:")} {a.questionText}</Typography>}
+        {tr(a.description) && <Typography variant="body2" sx={{ mt: 1 }}>{tr(a.description)}</Typography>}
+        <Typography variant="body2" sx={{ mt: 1 }}>{tr("Owner:")} {a.ownerName ?? tr("not assigned")}</Typography>
+        {a.implementationNote && <Typography variant="body2" sx={{ mt: 1 }}>{tr("Fix:")} {a.implementationNote}{a.implementedByName ? ` (${a.implementedByName})` : ''}</Typography>}
+        {a.verificationNote && <Typography variant="body2" sx={{ mt: 1 }}>{tr("Verification:")} {a.verificationNote}{a.verifiedByName ? ` (${a.verifiedByName})` : ''}</Typography>}
       </Box>
       {asking && (
-        <StepDialog title={ACTION_STEPS[asking]} fields={[{ name: 'note', label: needsNote[asking], required: asking !== 'verify' }]}
+        <StepDialog title={tr(ACTION_STEPS[asking])} fields={[{ name: 'note', label: needsNote[asking], required: asking !== 'verify' }]}
           onCancel={() => setAsking(null)} onConfirm={(v) => run(asking, v)} />
       )}
     </Drawer>
@@ -135,31 +136,31 @@ export default function ActionsTab() {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
-          <MenuItem value="">All</MenuItem>
-          {Object.entries(ACTION_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{v.label}</MenuItem>)}
+        <TextField select size="small" label={tr("Status")} value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
+          <MenuItem value="">{tr("All")}</MenuItem>
+          {Object.entries(ACTION_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{tr(v.label)}</MenuItem>)}
         </TextField>
         <Can permission="supply_chain:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Raise action</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Raise action")}</Button>
         </Can>
       </Box>
       <Card>
-        {data.length === 0 ? <CardContent><EmptyState title="No corrective actions">Raise one from a questionnaire gap or directly for a supplier.</EmptyState></CardContent> : (
+        {data.length === 0 ? <CardContent><EmptyState title={tr("No corrective actions")}>{tr("Raise one from a questionnaire gap or directly for a supplier.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Corrective actions" data-sticky-actions>
+            <Table size="small" aria-label={tr("Corrective actions")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Action</TableCell><TableCell>Supplier</TableCell><TableCell>Severity</TableCell><TableCell>Due</TableCell><TableCell>Status</TableCell><TableCell>Owner</TableCell><TableCell />
+                <TableCell>{tr("Action")}</TableCell><TableCell>{tr("Supplier")}</TableCell><TableCell>{tr("Severity")}</TableCell><TableCell>{tr("Due")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell>{tr("Owner")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((a) => (
                   <TableRow key={a.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{a.title}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{tr(a.title)}</TableCell>
                     <TableCell>{a.supplierName}</TableCell>
-                    <TableCell>{SEVERITY[a.severity]}</TableCell>
-                    <TableCell>{a.dueDate}{a.overdue && <Chip size="small" color="error" label="Overdue" sx={{ ml: 1 }} />}</TableCell>
-                    <TableCell><Chip size="small" color={ACTION_STATUS[a.status].color} label={ACTION_STATUS[a.status].label} /></TableCell>
+                    <TableCell>{tr(SEVERITY[a.severity])}</TableCell>
+                    <TableCell>{a.dueDate}{a.overdue && <Chip size="small" color="error" label={tr("Overdue")} sx={{ ml: 1 }} />}</TableCell>
+                    <TableCell><Chip size="small" color={ACTION_STATUS[a.status].color} label={tr(ACTION_STATUS[a.status].label)} /></TableCell>
                     <TableCell>{a.ownerName ?? '—'}</TableCell>
-                    <TableCell align="right"><Button size="small" onClick={() => setOpen(a)} aria-label={`Open ${a.title}`}>Open</Button></TableCell>
+                    <TableCell align="right"><Button size="small" onClick={() => setOpen(a)} aria-label={`Open ${a.title}`}>{tr("Open")}</Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

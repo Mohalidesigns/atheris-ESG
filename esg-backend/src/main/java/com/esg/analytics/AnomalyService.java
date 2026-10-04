@@ -249,8 +249,9 @@ public class AnomalyService {
     /** On-demand scan of the year, over the caller's organisations. */
     @Transactional
     public ScanResult scan(int year) {
-        StringBuilder where = new StringBuilder("and extract(year from d.reporting_period_end) = ?");
-        List<Object> args = new ArrayList<>(List.of(year));
+        // Date bounds, not extract(year …): under RLS only leakproof comparisons on the column can use its index (WP-51).
+        StringBuilder where = new StringBuilder("and d.reporting_period_end between ? and ?");
+        List<Object> args = new ArrayList<>(List.of(java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31))));
         support.scope(where, args, "d.org_id");
         return run(where.toString(), args, false);
     }
@@ -277,8 +278,8 @@ public class AnomalyService {
                 TenantContext.setTenantId(tenant.toString());
                 TenantContext.setUserId(null);
                 try {
-                    ScanResult r = tx.execute(s -> run("and extract(year from d.reporting_period_end) between ? and ?",
-                            new ArrayList<>(List.of(thisYear - 1, thisYear)), false));
+                    ScanResult r = tx.execute(s -> run("and d.reporting_period_end between ? and ?",
+                            new ArrayList<>(List.of(java.sql.Date.valueOf(java.time.LocalDate.of(thisYear - 1, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(thisYear, 12, 31)))), false));
                     flags += r == null ? 0 : r.newFlags();
                 } catch (RuntimeException e) {
                     log.warn("Anomaly scan for tenant {} failed: {}", tenant, e.getMessage());

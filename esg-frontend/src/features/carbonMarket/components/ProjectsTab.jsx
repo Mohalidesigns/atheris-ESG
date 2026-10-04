@@ -14,6 +14,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../../components/states
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateOffsetProjectMutation, useDeleteOffsetProjectMutation, useListingsQuery, useOffsetProjectsQuery, useUpdateOffsetProjectMutation } from '../carbonMarketApi';
 import { PROJECT_TYPES, STANDARDS, STATUS, emptyProject, fmt, problemText, projectSchema, toProjectBody, toProjectForm } from '../schemas';
+import { tr } from '../../../i18n';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
@@ -36,25 +37,25 @@ export function ProjectDialog({ project, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${project.name}` : 'Add an offset project'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${project.name}` : tr("Add an offset project")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label="Project name" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label="Status" options={options(STATUS)} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="standard" label="Standard" options={options(STANDARDS)} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="registry" label="Registry" helperText="e.g. Verra Registry" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="registryProjectId" label="Registry project ID" /></Grid>
-            <Grid size={{ xs: 12, sm: 5 }}><FormSelect control={control} name="projectType" label="Project type" options={options(PROJECT_TYPES)} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="countryCode" label="Country code" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="methodology" label="Methodology (optional)" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="registryUrl" label="Registry link (optional)" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label={tr("Project name")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label={tr("Status")} options={options(STATUS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="standard" label={tr("Standard")} options={options(STANDARDS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="registry" label={tr("Registry")} helperText={tr("e.g. Verra Registry")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="registryProjectId" label={tr("Registry project ID")} /></Grid>
+            <Grid size={{ xs: 12, sm: 5 }}><FormSelect control={control} name="projectType" label={tr("Project type")} options={options(PROJECT_TYPES)} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="countryCode" label={tr("Country code")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="methodology" label={tr("Methodology (optional)")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="registryUrl" label={tr("Registry link (optional)")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Add project'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Add project")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -65,9 +66,9 @@ function Listings({ onClose }) {
   const { data } = useListingsQuery('');
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Exchange listings <SandboxChip sx={{ ml: 1 }} /></DialogTitle>
-      <DialogContent>{data && <Alert severity="warning" aria-label="Exchange listings">{data.message}</Alert>}</DialogContent>
-      <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
+      <DialogTitle>{tr("Exchange listings")} <SandboxChip sx={{ ml: 1 }} /></DialogTitle>
+      <DialogContent>{data && <Alert severity="warning" aria-label={tr("Exchange listings")}>{tr(data.message)}</Alert>}</DialogContent>
+      <DialogActions><Button onClick={onClose}>{tr("Close")}</Button></DialogActions>
     </Dialog>
   );
 }
@@ -83,22 +84,22 @@ export default function ProjectsTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const onDelete = async (p) => {
-    if (!(await confirm({ title: 'Delete this project?', item: p.name }))) return;
+    if (!(await confirm({ title: tr("Delete this project?"), item: p.name }))) return;
     try { await remove(p.id).unwrap(); } catch (err) { setFailure(problemText(err)); }
   };
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
-        <Button size="small" startIcon={<Search />} onClick={() => setBrowsing(true)}>Exchange listings</Button>
-        <Can permission="carbon_market:create"><Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Add project</Button></Can>
+        <Button size="small" startIcon={<Search />} onClick={() => setBrowsing(true)}>{tr("Exchange listings")}</Button>
+        <Can permission="carbon_market:create"><Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Add project")}</Button></Can>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
       <Card>
-        {data.length === 0 ? <CardContent><EmptyState title="No projects yet">Add the offset projects you buy credits from, with their registry ID.</EmptyState></CardContent> : (
+        {data.length === 0 ? <CardContent><EmptyState title={tr("No projects yet")}>{tr("Add the offset projects you buy credits from, with their registry ID.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Offset projects">
-              <TableHead><TableRow><TableCell>Project</TableCell><TableCell>Standard</TableCell><TableCell>Type</TableCell><TableCell>Country</TableCell>
-                <TableCell align="right">Held</TableCell><TableCell align="right">Retired</TableCell><TableCell /></TableRow></TableHead>
+            <Table size="small" aria-label={tr("Offset projects")}>
+              <TableHead><TableRow><TableCell>{tr("Project")}</TableCell><TableCell>{tr("Standard")}</TableCell><TableCell>{tr("Type")}</TableCell><TableCell>{tr("Country")}</TableCell>
+                <TableCell align="right">{tr("Held")}</TableCell><TableCell align="right">{tr("Retired")}</TableCell><TableCell /></TableRow></TableHead>
               <TableBody>
                 {data.map((p) => (
                   <TableRow key={p.id}>
@@ -106,13 +107,13 @@ export default function ProjectsTab() {
                       {p.registryUrl ? <Link href={p.registryUrl} target="_blank" rel="noopener">{p.name}</Link> : p.name}
                       <Typography variant="caption" display="block" color="text.secondary">{p.registry} · {p.registryProjectId}</Typography>
                     </TableCell>
-                    <TableCell>{STANDARDS[p.standard]}</TableCell>
-                    <TableCell>{PROJECT_TYPES[p.projectType]}{p.natureBased && <Chip size="small" color="success" variant="outlined" label="Nature-based" sx={{ ml: 1 }} />}</TableCell>
+                    <TableCell>{tr(STANDARDS[p.standard])}</TableCell>
+                    <TableCell>{tr(PROJECT_TYPES[p.projectType])}{p.natureBased && <Chip size="small" color="success" variant="outlined" label={tr("Nature-based")} sx={{ ml: 1 }} />}</TableCell>
                     <TableCell>{p.countryCode}</TableCell>
                     <TableCell align="right">{fmt(p.held, 0)}</TableCell>
                     <TableCell align="right">{fmt(p.retired, 0)}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                      {p.status === 'archived' && <Chip size="small" label="Archived" sx={{ mr: 1 }} />}
+                      {p.status === 'archived' && <Chip size="small" label={tr("Archived")} sx={{ mr: 1 }} />}
                       <Can permission="carbon_market:update">
                         <IconButton size="small" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><Edit fontSize="small" /></IconButton>
                         <IconButton size="small" aria-label={`Delete ${p.name}`} onClick={() => onDelete(p)}><Delete fontSize="small" /></IconButton>

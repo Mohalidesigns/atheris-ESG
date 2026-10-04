@@ -13,6 +13,7 @@ import ForecastsTab from './ForecastsTab';
 import KpisTab from './KpisTab';
 import MaturityTab from './MaturityTab';
 import SdgTab from './SdgTab';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — tabs and their ?tab= keys
 const TABS = [['anomalies', 'Anomalies'], ['kpis', 'KPIs'], ['benchmarks', 'Benchmarks'], ['maturity', 'Maturity'], ['sdg', 'SDG alignment'],
@@ -22,10 +23,10 @@ function Overview({ year }) {
   const { data: o } = useAnalyticsOverviewQuery(year);
   if (!o) return null;
   return (
-    <Grid container spacing={2} sx={{ mb: 2 }} aria-label="Analytics overview">
-      <Grid size={{ xs: 6, md: 4 }}><Stat label="ESG maturity" value={`${o.maturity} of 5`} caption={`Level ${o.maturityLevel}: ${o.maturityLevelName}`} /></Grid>
-      <Grid size={{ xs: 6, md: 4 }}><Stat label="Flags to explain" value={o.anomaliesOpen} caption={`${o.anomaliesExplained} explained, awaiting review`} /></Grid>
-      <Grid size={{ xs: 12, md: 4 }}><Stat label="KPIs on track" value={o.kpisWithTarget ? `${o.kpisOnTrack} of ${o.kpisWithTarget}` : '—'} caption={`${o.kpis} active KPIs`} /></Grid>
+    <Grid container spacing={2} sx={{ mb: 2 }} aria-label={tr("Analytics overview")}>
+      <Grid size={{ xs: 6, md: 4 }}><Stat label={tr("ESG maturity")} value={`${o.maturity} of 5`} caption={`Level ${o.maturityLevel}: ${o.maturityLevelName}`} /></Grid>
+      <Grid size={{ xs: 6, md: 4 }}><Stat label={tr("Flags to explain")} value={o.anomaliesOpen} caption={`${o.anomaliesExplained} explained, awaiting review`} /></Grid>
+      <Grid size={{ xs: 12, md: 4 }}><Stat label={tr("KPIs on track")} value={o.kpisWithTarget ? `${o.kpisOnTrack} of ${o.kpisWithTarget}` : '—'} caption={`${o.kpis} active KPIs`} /></Grid>
     </Grid>
   );
 }
@@ -42,15 +43,14 @@ export default function AnalyticsPage() {
   const years = Array.from({ length: 8 }, (_, i) => thisYear - i);
   return (
     <Box>
-      <PageHeader title="Analytics" subtitle="Anomaly flags and variance explanations, KPIs, benchmarks, ESG maturity and SDG alignment"
+      <PageHeader title={tr("Analytics")} subtitle={tr("Anomaly flags and variance explanations, KPIs, benchmarks, ESG maturity and SDG alignment")}
         actions={(
-          <TextField select size="small" label="Year" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
+          <TextField select size="small" label={tr("Year")} value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
             {years.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </TextField>
         )} />
       <Alert severity="info" sx={{ mb: 2 }}>
-        Figures are calculated from your own records with published statistical rules. Forecasts, machine-learning flags and values read from reports are
-        marked AI-generated, show what produced them, and are only used once a person has checked them.
+        {tr("Figures are calculated from your own records with published statistical rules. Forecasts, machine-learning flags and values read from reports are marked AI-generated, show what produced them, and are only used once a person has checked them.")}
       </Alert>
       <Overview year={year} />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>

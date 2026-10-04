@@ -6,6 +6,7 @@ import { FormDateField, FormSelect, FormTextField } from '../../../components/fo
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateReportMutation, useReportTemplatesQuery, useUpdateReportMutation } from '../reportingApi';
 import { detailsSchema, emptyReport, reportSchema, toDetailsBody, toReportBody, toReportForm } from '../schemas';
+import { tr } from '../../../i18n';
 
 /**
  * Create a report from a template (FIELD_INVENTORY "Create New Report"), or edit a draft's details. The template brings
@@ -39,30 +40,30 @@ export default function ReportDialog({ report, onClose, onCreated }) {
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? 'Edit report details' : 'Create new report'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit report details") : tr("Create new report")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             {!editing && (
               <Grid size={12}>
-                <FormSelect control={control} name="templateId" label="Template"
+                <FormSelect control={control} name="templateId" label={tr("Template")}
                   options={templates.map((t) => ({ value: t.id, label: `${t.name}${t.frameworkCode ? ` (${t.frameworkCode})` : ''}${t.platform ? '' : ' · yours'}` }))} />
               </Grid>
             )}
-            <Grid size={12}><FormTextField control={control} name="title" label="Report title" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label="Reporting period start" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label="Reporting period end" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="title" label={tr("Report title")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label={tr("Reporting period start")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label={tr("Reporting period end")} /></Grid>
           </Grid>
-          {editing && <Typography variant="caption" color="text.secondary">Changing the period captures the data for the new period.</Typography>}
+          {editing && <Typography variant="caption" color="text.secondary">{tr("Changing the period captures the data for the new period.")}</Typography>}
           {template && (
-            <Box sx={{ mt: 2 }} aria-label="Template preview">
+            <Box sx={{ mt: 2 }} aria-label={tr("Template preview")}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 <Typography variant="subtitle2">{template.name}</Typography>
                 {template.frameworkCode && <Chip size="small" label={template.frameworkCode} />}
-                {template.contentStatus === 'pending_sme' && <Chip size="small" variant="outlined" label="Pending SME review" />}
+                {template.contentStatus === 'pending_sme' && <Chip size="small" variant="outlined" label={tr("Pending SME review")} />}
               </Box>
-              <Typography variant="caption" color="text.secondary">{template.description}</Typography>
+              <Typography variant="caption" color="text.secondary">{tr(template.description)}</Typography>
               <List dense>
                 {template.sections.map((s, i) => (
                   <ListItem key={s.title} disableGutters>
@@ -74,8 +75,8 @@ export default function ReportDialog({ report, onClose, onCreated }) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save details' : 'Create report'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save details") : tr("Create report")}</Button>
         </DialogActions>
       </form>
     </Dialog>

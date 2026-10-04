@@ -33,6 +33,13 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
+    /**
+     * WP-46 (D44): the OpenAPI description. Public in development (and the Swagger UI with it); in production it is
+     * served only to signed-in integrators (integrations:read) — the developer guide links to it — and the UI is off.
+     */
+    @Value("${esg.api-docs.public:true}")
+    private boolean apiDocsPublic;
+
     @Value("${esg.cors.allowed-origins}")
     private String allowedOrigins;
 
@@ -42,11 +49,24 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // WP-52: the API serves JSON and files, never pages — nothing may be framed, scripted or embedded from it
+            // (the Swagger UI, off in production, keeps Spring's defaults). HSTS applies when served over HTTPS.
+            .headers(h -> h
+                .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter(
+                    request -> !request.getRequestURI().contains("/swagger-ui"),
+                    new org.springframework.security.web.header.writers.StaticHeadersWriter("Content-Security-Policy",
+                        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints; each is marked @PublicEndpoint (see ControllerSecurityArchTest).
                 .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/logout",
                         "/v1/auth/mfa/setup", "/v1/auth/mfa/verify").permitAll()
-                .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui.html", "/v1/swagger-ui/**").permitAll()
+                .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui.html", "/v1/swagger-ui/**").access((authentication, context) ->
+                        new org.springframework.security.authorization.AuthorizationDecision(apiDocsPublic || authentication.get().getAuthorities()
+                                .stream().anyMatch(a -> "integrations:read".equals(a.getAuthority()))))
                 // WP-34: the anonymous whistleblower channel (submit, status) needs no sign-in (TRD §6.5.5).
                 .requestMatchers(HttpMethod.POST, "/v1/public/whistleblower/*", "/v1/public/whistleblower/*/status").permitAll()
                 // WP-31: a supplier answers a questionnaire through its tokenised link, with no account.

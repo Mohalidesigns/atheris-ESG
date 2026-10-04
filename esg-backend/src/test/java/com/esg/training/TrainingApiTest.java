@@ -178,11 +178,7 @@ class TrainingApiTest extends ApiTestSupport {
     try (PDDocument doc = Loader.loadPDF(pdf)) {
       String text = new PDFTextStripper().getText(doc);
       assertThat(text).contains("Esg Analyst Fixture").contains("Course ESG-" + tag).contains(code).contains("with a score of 100%");
-      BufferedImage page = new PDFRenderer(doc).renderImage(0, 2f);
-      int[] pixels = page.getRGB(0, 0, page.getWidth(), page.getHeight(), null, 0, page.getWidth());
-      String qr = new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(page.getWidth(), page.getHeight(), pixels))))
-          .getText();
-      assertThat(qr).isEqualTo(cert.path("verifyUrl").asText());
+      assertThat(decodeQr(doc)).isEqualTo(cert.path("verifyUrl").asText());
     }
     // Other learners can't fetch it.
     mvc.perform(get("/v1/training/certificates/" + cert.path("id").asText() + "/pdf").header("Authorization", bearerForRole("DATA_COLLECTOR")))
@@ -326,6 +322,31 @@ class TrainingApiTest extends ApiTestSupport {
     // Another tenant's admin sees none of tenant A's courses.
     assertThat(read("/v1/training/courses", bearer(USER_B_ADMIN, PostgresTestDatabase.TENANT_B)).toString()).doesNotContain(tag);
     mvc.perform(get("/v1/training/progress")).andExpect(status().isUnauthorized());
+  }
+
+  /**
+   * The QR code drawn at the bottom right of the certificate (CertificateService: 120 pt square, 60 pt from the right
+   * and bottom edges), rendered at 300 dpi and decoded. Cropping and try-harder keep this independent of how the
+   * platform's renderer anti-aliases the rest of the page (it failed on Linux CI decoding the whole page at 144 dpi).
+   */
+  private static String decodeQr(PDDocument doc) throws Exception {
+    float dpi = 300f;
+    float scale = dpi / 72f;
+    BufferedImage page = new PDFRenderer(doc).renderImageWithDPI(0, dpi, org.apache.pdfbox.rendering.ImageType.GRAY);
+    float pageWidth = doc.getPage(0).getMediaBox().getWidth();
+    float pageHeight = doc.getPage(0).getMediaBox().getHeight();
+    int x = Math.round((pageWidth - 60 - 120 - 20) * scale);
+    int y = Math.round((pageHeight - 60 - 120 - 20) * scale);
+    int size = Math.round(160 * scale);
+    BufferedImage qr = page.getSubimage(x, y, Math.min(size, page.getWidth() - x), Math.min(size, page.getHeight() - y));
+    int[] pixels = qr.getRGB(0, 0, qr.getWidth(), qr.getHeight(), null, 0, qr.getWidth());
+    RGBLuminanceSource source = new RGBLuminanceSource(qr.getWidth(), qr.getHeight(), pixels);
+    java.util.Map<com.google.zxing.DecodeHintType, Object> hints = java.util.Map.of(com.google.zxing.DecodeHintType.TRY_HARDER, Boolean.TRUE);
+    try {
+      return new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(source)), hints).getText();
+    } catch (com.google.zxing.NotFoundException e) {
+      return new QRCodeReader().decode(new BinaryBitmap(new com.google.zxing.common.GlobalHistogramBinarizer(source)), hints).getText();
+    }
   }
 
   private static void owner(String... sql) throws SQLException {

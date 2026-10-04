@@ -10,31 +10,32 @@ import CreditsTab from './CreditsTab';
 import PricingTab from './PricingTab';
 import ProjectsTab from './ProjectsTab';
 import RetirementsTab from './RetirementsTab';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — tabs and their ?tab= keys
 const TABS = [['credits', 'Credits'], ['retirements', 'Retirements'], ['projects', 'Projects'], ['pricing', 'Internal pricing']];
 
 function Offsetting({ o }) {
   return (
-    <Card aria-label="Offsetting">
+    <Card aria-label={tr("Offsetting")}>
       <CardContent>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Offsetting, {o.year}</Typography>
-        <Alert severity={o.overReliance ? 'warning' : 'success'} sx={{ my: 1 }} aria-label="Offset check">{o.message}</Alert>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{tr("Offsetting,")} {o.year}</Typography>
+        <Alert severity={o.overReliance ? 'warning' : 'success'} sx={{ my: 1 }} aria-label={tr("Offset check")}>{tr(o.message)}</Alert>
         <Table size="small">
           <TableBody>
-            <TableRow><TableCell>Gross Scope 1 + 2 (location-based)</TableCell><TableCell align="right">{fmt(Number(o.grossScope1) + Number(o.grossScope2), 1)} tCO2e</TableCell></TableRow>
-            <TableRow><TableCell>Credits retired against Scope 1 + 2</TableCell><TableCell align="right">{fmt(Number(o.creditsScope1) + Number(o.creditsScope2), 0)} tCO2e</TableCell></TableRow>
-            <TableRow><TableCell>Net Scope 1 + 2 (shown beside the gross inventory)</TableCell><TableCell align="right">{fmt(o.netScope12, 1)} tCO2e</TableCell></TableRow>
-            <TableRow><TableCell>Offset share (ceiling {fmt(o.ceilingPct)}%)</TableCell><TableCell align="right">{o.offsetShare == null ? '—' : `${fmt(o.offsetShare)}%`}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Gross Scope 1 + 2 (location-based)")}</TableCell><TableCell align="right">{fmt(Number(o.grossScope1) + Number(o.grossScope2), 1)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Credits retired against Scope 1 + 2")}</TableCell><TableCell align="right">{fmt(Number(o.creditsScope1) + Number(o.creditsScope2), 0)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Net Scope 1 + 2 (shown beside the gross inventory)")}</TableCell><TableCell align="right">{fmt(o.netScope12, 1)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Offset share (ceiling")} {fmt(o.ceilingPct)}%)</TableCell><TableCell align="right">{o.offsetShare == null ? '—' : `${fmt(o.offsetShare)}%`}</TableCell></TableRow>
             <TableRow>
-              <TableCell>Reductions achieved<Typography variant="caption" display="block" color="text.secondary">against {o.baselineBasis}</Typography></TableCell>
+              <TableCell>{tr("Reductions achieved")}<Typography variant="caption" display="block" color="text.secondary">{tr("against")} {o.baselineBasis}</Typography></TableCell>
               <TableCell align="right">{o.reductions == null ? '—' : `${fmt(o.reductions, 1)} tCO2e`}</TableCell>
             </TableRow>
-            <TableRow><TableCell>Offset-to-reduction ratio</TableCell><TableCell align="right">{o.offsetToReduction == null ? '—' : fmt(o.offsetToReduction, 2)}</TableCell></TableRow>
-            <TableRow><TableCell>Scope 3 / voluntary credits</TableCell><TableCell align="right">{fmt(o.creditsScope3, 0)} / {fmt(o.creditsVoluntary, 0)} tCO2e</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Offset-to-reduction ratio")}</TableCell><TableCell align="right">{o.offsetToReduction == null ? '—' : fmt(o.offsetToReduction, 2)}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Scope 3 / voluntary credits")}</TableCell><TableCell align="right">{fmt(o.creditsScope3, 0)} / {fmt(o.creditsVoluntary, 0)} {tr("tCO2e")}</TableCell></TableRow>
           </TableBody>
         </Table>
-        <Typography variant="caption" color="text.secondary">Reported emissions stay gross (GHG Protocol); credits are disclosed separately.</Typography>
+        <Typography variant="caption" color="text.secondary">{tr("Reported emissions stay gross (GHG Protocol); credits are disclosed separately.")}</Typography>
       </CardContent>
     </Card>
   );
@@ -49,24 +50,24 @@ export default function CarbonMarketPage() {
   const { data: o } = useCarbonMarketOverviewQuery(year);
   return (
     <Box>
-      <PageHeader title="Carbon Market" subtitle="Carbon credits you hold, retirements against your emissions, offset projects and internal carbon pricing"
+      <PageHeader title={tr("Carbon Market")} subtitle={tr("Carbon credits you hold, retirements against your emissions, offset projects and internal carbon pricing")}
         actions={(
-          <TextField select size="small" label="Year" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
+          <TextField select size="small" label={tr("Year")} value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
             {Array.from({ length: 6 }, (_, i) => thisYear - i).map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </TextField>
         )} />
       {o && (o.registry.sandbox || o.exchange.sandbox) && (
-        <Alert severity="info" sx={{ mb: 2 }} aria-label="Integrations">
-          Registry <SandboxChip /> and exchange <SandboxChip />: nothing is checked or bought automatically. Record credits from your registry account and attach its statements.
+        <Alert severity="info" sx={{ mb: 2 }} aria-label={tr("Integrations")}>
+          {tr("Registry")} <SandboxChip /> {tr("and exchange")} <SandboxChip />{tr(": nothing is checked or bought automatically. Record credits from your registry account and attach its statements.")}
         </Alert>
       )}
       {o && (
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Grid container spacing={2} aria-label="Carbon market overview">
-              <Grid size={6}><Stat label="Credits held" value={fmt(o.held, 0)} caption="tCO2e across all lots" /></Grid>
-              <Grid size={6}><Stat label="Available" value={fmt(o.available, 0)} caption="not retired or reserved" /></Grid>
-              <Grid size={12}><Stat label={`Retired against ${year}`} value={fmt(o.retiredThisYear, 0)} caption="tCO2e, all purposes" /></Grid>
+            <Grid container spacing={2} aria-label={tr("Carbon market overview")}>
+              <Grid size={6}><Stat label={tr("Credits held")} value={fmt(o.held, 0)} caption={tr("tCO2e across all lots")} /></Grid>
+              <Grid size={6}><Stat label={tr("Available")} value={fmt(o.available, 0)} caption={tr("not retired or reserved")} /></Grid>
+              <Grid size={12}><Stat label={`Retired against ${year}`} value={fmt(o.retiredThisYear, 0)} caption={tr("tCO2e, all purposes")} /></Grid>
             </Grid>
           </Grid>
           <Grid size={{ xs: 12, md: 7 }}><Offsetting o={o.offsetting} /></Grid>

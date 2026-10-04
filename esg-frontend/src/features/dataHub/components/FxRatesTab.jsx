@@ -15,6 +15,7 @@ import { CURRENCIES } from '../../admin/schemas';
 import { useCreateFxRateMutation, useDeleteFxRateMutation, useFxRatesQuery, useUpdateFxRateMutation } from '../dataHubApi';
 import { emptyRate, fxRateSchema, toRateBody } from '../schemas';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr } from '../../../i18n';
 
 const currencyOptions = CURRENCIES.map((c) => ({ value: c, label: c }));
 
@@ -41,22 +42,22 @@ export function FxRateDialog({ rate, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? 'Edit exchange rate' : 'New exchange rate'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit exchange rate") : tr("New exchange rate")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="fromCurrency" label="From" options={currencyOptions} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="toCurrency" label="To" options={currencyOptions} /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="rate" label="Rate" helperText="1 unit of From in To" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="rateDate" label="Rate date" /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="fromCurrency" label={tr("From")} options={currencyOptions} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="toCurrency" label={tr("To")} options={currencyOptions} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="rate" label={tr("Rate")} helperText={tr("1 unit of From in To")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="rateDate" label={tr("Rate date")} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField control={control} name="source" label="Source" helperText="e.g. CBN official rate, bank statement" />
+              <FormTextField control={control} name="source" label={tr("Source")} helperText={tr("e.g. CBN official rate, bank statement")} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Add rate'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Add rate")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -76,7 +77,7 @@ export default function FxRatesTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const onDelete = async (r) => {
-    if (!(await confirm({ title: 'Delete this exchange rate?', item: `${r.fromCurrency} → ${r.toCurrency} · ${r.rateDate}`, message: 'Data already converted keeps its rate.' }))) return;
+    if (!(await confirm({ title: tr("Delete this exchange rate?"), item: `${r.fromCurrency} → ${r.toCurrency} · ${r.rateDate}`, message: tr("Data already converted keeps its rate.") }))) return;
     setActionError('');
     try {
       await remove(r.id).unwrap();
@@ -88,20 +89,20 @@ export default function FxRatesTab() {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="fx_rates:manage">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New exchange rate</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New exchange rate")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       <Card>
         {rates.length === 0 ? (
-          <EmptyState title="No exchange rates yet">
-            Add the rates your finance team uses (with their source) before entering amounts in other currencies.
+          <EmptyState title={tr("No exchange rates yet")}>
+            {tr("Add the rates your finance team uses (with their source) before entering amounts in other currencies.")}
           </EmptyState>
         ) : (
           <TableContainer>
-            <Table size="small" aria-label="Exchange rates" data-sticky-actions>
+            <Table size="small" aria-label={tr("Exchange rates")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Pair</TableCell><TableCell align="right">Rate</TableCell><TableCell>Date</TableCell><TableCell>Source</TableCell><TableCell />
+                <TableCell>{tr("Pair")}</TableCell><TableCell align="right">{tr("Rate")}</TableCell><TableCell>{tr("Date")}</TableCell><TableCell>{tr("Source")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {rates.map((r) => (

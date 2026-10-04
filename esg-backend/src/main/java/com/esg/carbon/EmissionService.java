@@ -291,8 +291,11 @@ public class EmissionService {
                     result.n2oTonnes(), id);
             lineage.record("emission_factor", resolved.factor().id(), "emission_record", id, "recalculated_from",
                     Map.of("from", row.get("co2e_tonnes"), "to", result.co2eTonnes()));
-            changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
-                    + " → " + result.co2eTonnes() + " t");
+            // WP-51: a 10,000-record batch returned every line (~0.5 MB); the first 50 are listed, the count is exact.
+            if (changes.size() < Recalculation.LISTED) {
+                changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
+                        + " → " + result.co2eTonnes() + " t");
+            }
             updated++;
         }
         return new Recalculation(rows.size(), updated, changes);

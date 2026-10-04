@@ -52,13 +52,13 @@ public class MlAnomalyService {
         double contamination = r.contaminationPct() / 100.0;
         List<Point> all = jdbc.query("select d.id, d.org_id, d.metric_key, d.reporting_period_start, d.reporting_period_end, d.numeric_value "
                 + "from data_hub.data_points d where d.deleted_at is null and d.numeric_value is not null "
-                + "and d.validation_status in ('submitted', 'validated', 'approved') and extract(year from d.reporting_period_end) between ? and ? "
+                + "and d.validation_status in ('submitted', 'validated', 'approved') and d.reporting_period_end between ? and ? "
                 + "order by d.metric_key, d.reporting_period_start", (rs, i) -> new Point(rs.getObject(1, UUID.class), rs.getObject(2, UUID.class),
-                rs.getString(3), rs.getObject(4, LocalDate.class), rs.getObject(5, LocalDate.class), rs.getBigDecimal(6)), year - YEARS + 1, year);
+                rs.getString(3), rs.getObject(4, LocalDate.class), rs.getObject(5, LocalDate.class), rs.getBigDecimal(6)), Date.valueOf(LocalDate.of(year - YEARS + 1, 1, 1)), Date.valueOf(LocalDate.of(year, 12, 31)));
         Map<String, List<Point>> byMetric = new LinkedHashMap<>();
         all.forEach(p -> byMetric.computeIfAbsent(p.metric(), k -> new ArrayList<>()).add(p));
-        List<UUID> open = jdbc.queryForList("select d.id from data_hub.data_points d where extract(year from d.reporting_period_end) = ?" + OPEN_PERIOD,
-                UUID.class, year);
+        List<UUID> open = jdbc.queryForList("select d.id from data_hub.data_points d where d.reporting_period_end between ? and ?" + OPEN_PERIOD,
+                UUID.class, Date.valueOf(LocalDate.of(year, 1, 1)), Date.valueOf(LocalDate.of(year, 12, 31)));
         java.util.Set<UUID> inYear = new java.util.HashSet<>(open);
 
         UUID run = runs.start("isolation_forest", Map.of("year", year, "contaminationPct", r.contaminationPct(), "yearsOfHistory", YEARS),

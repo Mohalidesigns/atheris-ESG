@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Analytics form rules. Mirror the server exactly: AnalyticsDtos (Bean Validation) + KpiService.check and
@@ -145,6 +146,6 @@ export const toSettingsBody = (v) => ({ zscoreThreshold: Number(v.zscoreThreshol
 
 export const explainSchema = z.object({ note: z.string().trim().min(1, 'Write the explanation').max(2000, 'At most 2000 characters') });
 export const prioritySchema = z.object({ rationale: z.string().trim().min(1, 'Say why this goal is a priority').max(1000, 'At most 1000 characters') });
-export const fmt = (v, digits = 2) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 2) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const lagosYear = () => Number(new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }).slice(0, 4));
 export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';

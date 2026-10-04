@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Training form rules. Mirror the server exactly: TrainingDtos (Bean Validation) + CourseService.check / checkPath and
@@ -135,7 +136,7 @@ export const attendanceSchema = (today) => z.object({
 export const revokeSchema = z.object({ note: z.string().trim().min(1, 'say why the certificate is revoked').max(1000, 'At most 1000 characters') });
 
 export const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
-export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';
 export const saveBlob = (blobData, name) => {
   const href = URL.createObjectURL(blobData);

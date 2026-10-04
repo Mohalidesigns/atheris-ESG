@@ -32,3 +32,4 @@ var/
 esg-ai/.venv/
 esg-ai/**/__pycache__/
 esg-ai/.pytest_cache/
+perf/results/*/backend.log

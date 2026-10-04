@@ -3,6 +3,60 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-45 Languages (D45)
+
+- The interface is available in English, French, Portuguese, Arabic, Swahili, Hausa and Yoruba: choose it on the sign-in page or in the account menu. Signed in, the choice is kept on your account for every device.
+- Arabic is shown right to left.
+- Numbers, amounts (₦, KSh, R, GH₵, $, €), percentages and dates follow the chosen language.
+- The six translations are drafts that have not yet been reviewed by a professional translator; the language list says so. Messages from the server, catalogue names and generated reports stay in English for now.
+- The product is now called **Atheris ESG** everywhere in the app (browser title, sign-in page, menu); it was "ESG Pro". The demo tenant keeps its name.
+- Filled information messages (toasts) are darker so their text meets WCAG AA contrast.
+
+## Unreleased — WP-46 Integrations (D44)
+
+- Administration › Integrations now has Connectors, API keys, Webhooks, File templates and a Developer guide.
+- Connectors on request: ERP, accounting, HR and utility connectors (SAP, Oracle, Dynamics, QuickBooks, Sage, SeamlessHR, Workday and others) are listed and can be requested by a client's administrator; the Atheris team reviews, schedules and activates each one (Administration › Integration requests). Nothing is connected until a request is active.
+- API keys let a client's own systems — IoT gateways, meters, scripts, BI tools — read data and send readings as drafts, limited to chosen permissions and to what their creator may do; keys expire and can be revoked.
+- Webhooks tell a client's systems when data or a report is approved, an approved value is reopened or an incident is recorded — signed, retried for about a day, with a delivery log, test button and redelivery.
+- File templates for each source system (energy and fuel, utilities, workforce, waste).
+- SMS/USSD data entry (WP-44) is deferred by the product owner.
+
+## Unreleased — WP-43 Offline capture (D43)
+
+- The web app can be installed on a phone or tablet and opens without a connection; pages load from the device after the first visit.
+- Data points and incident reports saved without a connection are kept on the device and sent automatically when the connection returns (also at sign-in, every minute while something waits, and with "Sync now"); the top bar shows when you're offline and what is waiting.
+- Someone who signed in on the device before can open the app offline to capture data; nothing is sent until they are signed in again.
+- If the server already has a value for the same metric, organisation and period, a newer offline value replaces an older draft; otherwise Data Hub → On this device shows both and the person who captured it decides. Values in the approval workflow are never replaced from a device.
+- New: `POST /api/v1/data/sync`, `GET /api/v1/data/sync/conflicts`, `POST /api/v1/data/sync/conflicts/{id}/resolve`. 500 records sync in about 3 seconds.
+
+## Unreleased — WP-54 UAT and release, 1.0 release candidate 1 (D42)
+
+- Release candidate 1 for pilots: release notes, user manual, UAT scripts for five personas, a pilot onboarding kit and an evidence-based re-score of the benchmark (115 of 265).
+- Container images for the backend, web app and AI service, a single-host pilot setup and a deployment guide; the web server sends exactly the security headers the app is tested with.
+- A new installation creates its first platform administrator from start-up settings, once; afterwards the setting has no effect.
+
+## Unreleased — WP-53 Accessibility and slow networks (D41)
+
+- Every module page, key tabs, the public pages and dialogs are checked against WCAG 2.1 AA (axe-core) in the end-to-end suite.
+- Text that was too faint to read for many people now meets the contrast standard: secondary text, sidebar captions, Sandbox labels, warning and info chips, the user avatar and status chips; progress bars are announced by screen readers; Administration has a page heading.
+- The sign-in page downloads less before it appears (entry bundle 140 → 86 KB compressed): first paint 1.8 s on a fast-3G profile; a size budget in CI keeps it that way.
+
+## Unreleased — WP-52 Security and NDPA 2023 (D40)
+
+- Privacy notice: the organisation publishes it (with its data protection officer's contact) under Administration › Privacy; everyone is shown each new version when they sign in until they confirm they have read it.
+- Data subject requests (access, correction, erasure, objection, portability) are recorded with a 30-day deadline and flagged when overdue; the DPO can export a person's data or erase it. Erasure anonymises the account (name, contact details, sign-in secrets, roles, sessions, notifications, message logs; certificates anonymised and revoked) and keeps the audit trail and approved records as the law requires.
+- Anyone can download a copy of their own data from the account menu.
+- Retention settings: read notifications, sent email/SMS logs, ended sessions and IP addresses in file logs are removed after each organisation's chosen periods, every night.
+- Fix: the certificate QR test decodes the code from where it is drawn at 300 dpi (it failed on Linux CI); intentional development values in the secrets policy and its test are marked for the secrets scanner.
+- Security: patched Tomcat (three critical CVEs), Netty, Jackson, HttpCore and the PostgreSQL driver in the backend and pypdf/python-multipart in the AI service; secrets and dependency scans run in CI; production refuses to start with development secrets; strict security headers on the API and web app; fonts are served by the platform instead of Google.
+
+## Unreleased — WP-51 Performance (D39)
+
+- Performance suite (k6) for the TRD targets on a throwaway database with a million data points: `./scripts/perf.sh`; results and method in docs/esg-completion/PERFORMANCE.md.
+- Executive dashboard over a million data points: 6.97 s → 1.56 s (P95, 10 concurrent viewers). Year filters on data points and emissions now use indexes under Row-Level Security; "which metrics have data" questions use per-metric index lookups; recent activity has its own audit-log index.
+- Recalculating emissions lists the first 50 changes (with the full count) instead of every record.
+- Secrets scanning configuration (gitleaks); performance summaries no longer keep the sign-in token.
+
 ## Unreleased — WP-50 Grounded AI (D38)
 
 - AI service (Python, FastAPI) behind an adapter; IBM Granite through Ollama reads reports. When it isn't running, AI features say so and nothing is estimated instead (ESG-503-AI-UNAVAILABLE).

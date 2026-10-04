@@ -7,6 +7,7 @@ import Can from '../../../components/rbac/Can';
 import { ErrorState, LoadingState } from '../../../components/states/States';
 import { StepDialog } from '../../social/components/shared';
 import { useAssessMaturityMutation, useMaturityHistoryQuery, useMaturityQuery } from '../analyticsApi';
+import { tr } from '../../../i18n';
 
 /** ESG maturity index (TRD ESGMaturityScorer; D34 (6)): six dimensions scored from what the platform holds. */
 export default function MaturityTab({ year }) {
@@ -23,10 +24,10 @@ export default function MaturityTab({ year }) {
       <Grid size={{ xs: 12, md: 5 }}>
         <Card sx={{ height: '100%' }}>
           <CardContent>
-            <Typography variant="caption" color="text.secondary">ESG maturity, {year}</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }} aria-label="Maturity score">
+            <Typography variant="caption" color="text.secondary">{tr("ESG maturity,")} {year}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }} aria-label={tr("Maturity score")}>
               <Typography variant="h3" sx={{ fontWeight: 700 }}>{m.overall}</Typography>
-              <Typography variant="h6" color="text.secondary">of 5 · level {m.level}, {m.levelName}</Typography>
+              <Typography variant="h6" color="text.secondary">{tr("of 5 · level")} {m.level}, {m.levelName}</Typography>
             </Box>
             <Box sx={{ height: 260 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -39,12 +40,12 @@ export default function MaturityTab({ year }) {
               </ResponsiveContainer>
             </Box>
             <Typography variant="caption" color="text.secondary" display="block">
-              Levels: 1 Initial · 2 Awareness · 3 Compliance · 4 Strategic · 5 Transformative. Scored from your records; thresholds pending expert review.
+              {tr("Levels: 1 Initial · 2 Awareness · 3 Compliance · 4 Strategic · 5 Transformative. Scored from your records; thresholds pending expert review.")}
             </Typography>
             {saved && <Alert severity="success" sx={{ mt: 1 }} onClose={() => setSaved('')}>{saved}</Alert>}
             <Can permission="analytics:create">
-              <Button size="small" variant="outlined" sx={{ mt: 1 }} disabled={m.periodLocked} onClick={() => setAsking(true)}>Save a snapshot</Button>
-              {m.periodLocked && <Typography variant="caption" color="text.secondary" display="block">{year} is locked: no new snapshots.</Typography>}
+              <Button size="small" variant="outlined" sx={{ mt: 1 }} disabled={m.periodLocked} onClick={() => setAsking(true)}>{tr("Save a snapshot")}</Button>
+              {m.periodLocked && <Typography variant="caption" color="text.secondary" display="block">{year} {tr("is locked: no new snapshots.")}</Typography>}
             </Can>
           </CardContent>
         </Card>
@@ -61,7 +62,7 @@ export default function MaturityTab({ year }) {
                   </Box>
                   <LinearProgress variant="determinate" value={d.score * 20} sx={{ my: 1 }} aria-label={`${d.name} score`} />
                   {d.evidence.map((e) => <Typography key={e} variant="body2">✓ {e}</Typography>)}
-                  {d.nextStep && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Next: {d.nextStep}</Typography>}
+                  {d.nextStep && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{tr("Next:")} {d.nextStep}</Typography>}
                 </CardContent>
               </Card>
             </Grid>
@@ -71,8 +72,8 @@ export default function MaturityTab({ year }) {
       {history.length > 0 && (
         <Grid size={12}>
           <Card>
-            <CardHeader title="Snapshots" titleTypographyProps={{ variant: 'subtitle1', fontWeight: 700 }} />
-            <List dense aria-label="Maturity snapshots">
+            <CardHeader title={tr("Snapshots")} titleTypographyProps={{ variant: 'subtitle1', fontWeight: 700 }} />
+            <List dense aria-label={tr("Maturity snapshots")}>
               {history.map((h) => (
                 <ListItem key={h.id}>
                   <ListItemText primary={`${h.year}: ${h.overall} of 5 (${h.levelName})`}
@@ -84,7 +85,7 @@ export default function MaturityTab({ year }) {
         </Grid>
       )}
       {asking && (
-        <StepDialog title={`Save the ${year} maturity snapshot`} confirmLabel="Save snapshot" fields={[{ name: 'note', label: 'Note (optional)', max: 1000 }]}
+        <StepDialog title={`Save the ${year} maturity snapshot`} confirmLabel={tr("Save snapshot")} fields={[{ name: 'note', label: 'Note (optional)', max: 1000 }]}
           onCancel={() => setAsking(false)} onConfirm={async (v) => {
             const s = await assess({ year, note: v.note }).unwrap();
             setAsking(false);

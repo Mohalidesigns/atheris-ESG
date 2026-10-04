@@ -6,6 +6,7 @@ import { Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogCon
 import BlockedAction from '../../../components/feedback/BlockedAction';
 import { FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
+import { tr } from '../../../i18n';
 
 export function Stat({ label, value, caption, ariaLabel }) {
   return (
@@ -48,12 +49,12 @@ export function StepDialog({ title, fields, confirmLabel, onCancel, onConfirm, c
           {children}
           {fields.map((f, i) => (
             <Box key={f.name} sx={{ mt: i === 0 ? 1 : 2 }}>
-              <FormTextField control={control} name={f.name} label={f.label} multiline minRows={2} autoFocus={i === 0} />
+              <FormTextField control={control} name={f.name} label={tr(f.label)} multiline minRows={2} autoFocus={i === 0} />
             </Box>
           ))}
         </DialogContent>
         <DialogActions>
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel}>{tr("Cancel")}</Button>
           <Button type="submit" variant="contained">{confirmLabel ?? title}</Button>
         </DialogActions>
       </form>
@@ -67,10 +68,10 @@ export function ActionBar({ actions = [], blocked = {}, labels, primary = [], bu
     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
       {actions.map((a) => (
         <Button key={a} size="small" variant={primary.includes(a) ? 'contained' : 'outlined'} disabled={busy} onClick={() => onAction(a)}>
-          {labels[a] ?? a}
+          {tr(labels[a]) ?? a}
         </Button>
       ))}
-      {Object.entries(blocked).map(([a, why]) => <BlockedAction key={a} label={labels[a] ?? a} reason={why} />)}
+      {Object.entries(blocked).map(([a, why]) => <BlockedAction key={a} label={tr(labels[a]) ?? a} reason={why} />)}
     </Box>
   );
 }
