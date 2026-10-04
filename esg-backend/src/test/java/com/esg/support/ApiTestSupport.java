@@ -34,7 +34,7 @@ public abstract class ApiTestSupport {
   /** Fixture role users in tenant A (fixture.sql): role name → user id. */
   public static final List<String> ROLES = List.of("SUPER_ADMIN", "TENANT_ADMIN", "ESG_DIRECTOR", "ESG_MANAGER",
       "ESG_ANALYST", "DATA_COLLECTOR", "AUDITOR", "INVESTOR_VIEWER", "CONSULTANT", "BOARD_MEMBER",
-      "COMPLIANCE_OFFICER", "TRAINING_ADMIN");
+      "COMPLIANCE_OFFICER", "TRAINING_ADMIN", "ETHICS_OFFICER");
 
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) {
@@ -55,8 +55,14 @@ public abstract class ApiTestSupport {
     return bearer(roleUserId(role), PostgresTestDatabase.TENANT_A);
   }
 
+  /** A token from an MFA-verified session (users with MFA-required roles need one; S1). */
   protected String bearer(String userId, String tenantId) {
-    return "Bearer " + tokens.generateAccessToken(userId, tenantId, List.of(), List.of());
+    return "Bearer " + tokens.generateAccessToken(userId, tenantId, List.of(), List.of(), true);
+  }
+
+  /** A token from a password-only session (no TOTP step). */
+  protected String bearerWithoutMfa(String userId, String tenantId) {
+    return "Bearer " + tokens.generateAccessToken(userId, tenantId, List.of(), List.of(), false);
   }
 
   /** Runs SQL as the schema owner inside tenant A (for test setup and clean-up). */

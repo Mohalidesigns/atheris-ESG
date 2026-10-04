@@ -61,15 +61,19 @@ public class ImportService {
     private static final List<DateTimeFormatter> DATE_FORMATS = List.of(DateTimeFormatter.ISO_LOCAL_DATE,
             DateTimeFormatter.ofPattern("d/M/yyyy"), DateTimeFormatter.ofPattern("d-M-yyyy"),
             DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH));
-    // no-mock-gate: config — header synonyms used to suggest a column mapping
-    private static final Map<String, List<String>> SYNONYMS = Map.of(
-            "organisation", List.of("organisation", "organization", "org", "site", "facility", "entity"),
-            "metric", List.of("metric", "metric key", "metric_key", "indicator", "kpi"),
-            "value", List.of("value", "amount", "quantity", "reading"),
-            "currency", List.of("currency", "ccy"),
-            "periodStart", List.of("period start", "period_start", "start", "from", "start date"),
-            "periodEnd", List.of("period end", "period_end", "end", "to", "end date"),
-            "subCategory", List.of("sub category", "sub_category", "subcategory", "description"));
+    // no-mock-gate: config — header synonyms used to suggest a column mapping. Headers are compared case-insensitively
+    // with '_', '-' and repeated spaces read as one space (F3), so "metric_code", "Metric-Code" and "METRIC CODE" match.
+    private static final Map<String, List<String>> SYNONYMS = Map.ofEntries(
+            Map.entry("organisation", List.of("organisation", "organization", "org", "site", "facility", "entity", "organisation name")),
+            Map.entry("metric", List.of("metric", "metric key", "metric code", "metric id", "metric name", "indicator", "kpi", "kpi code")),
+            Map.entry("value", List.of("value", "amount", "quantity", "reading")),
+            Map.entry("currency", List.of("currency", "ccy", "currency code")),
+            Map.entry("periodStart", List.of("period start", "start", "from", "start date", "date from")),
+            Map.entry("periodEnd", List.of("period end", "end", "to", "end date", "date to")),
+            Map.entry("subCategory", List.of("sub category", "subcategory", "description")),
+            Map.entry("notes", List.of("notes", "note", "comment", "comments", "remark", "remarks")),
+            // Phase 3 (8): the responsible person, by email or full name.
+            Map.entry("owner", List.of("owner", "owner email", "responsible", "responsible person", "data owner", "accountable")));
 
     private final JdbcTemplate jdbc;
     private final FileService files;
@@ -79,10 +83,14 @@ public class ImportService {
     private final ObjectMapper json;
     private final Executor executor;
     private final TransactionTemplate rowTransaction;
+    private final com.esg.security.OrgScopeService orgScope;
+    private final java.time.Clock clock;
 
     public ImportService(JdbcTemplate jdbc, FileService files, DataPointService points, ReferenceService reference,
                          AccessService access, ObjectMapper json, @Qualifier("importExecutor") Executor executor,
-                         PlatformTransactionManager transactions) {
+                         PlatformTransactionManager transactions, com.esg.security.OrgScopeService orgScope, java.time.Clock clock) {
+        this.orgScope = orgScope;
+        this.clock = clock;
         this.jdbc = jdbc;
         this.files = files;
         this.points = points;
@@ -200,15 +208,17 @@ public class ImportService {
         }
         String tenant = TenantContext.getTenantId();
         UUID user = CurrentUser.access().userId();
-        executor.execute(() -> runAs(tenant, user, () -> process(id, mapping, r)));
+        String testRun = TenantContext.getTestRun(); // Phase 3 (7): drafts from a test import are test data too
+        executor.execute(() -> runAs(tenant, user, testRun, () -> process(id, mapping, r)));
         return get(id);
     }
 
     /** Runs {@code work} on a worker thread with the importing user's tenant, identity and permissions. */
-    private void runAs(String tenant, UUID user, Runnable work) {
+    private void runAs(String tenant, UUID user, String testRun, Runnable work) {
         try {
             TenantContext.setTenantId(tenant);
             TenantContext.setUserId(user.toString());
+            TenantContext.setTestRun(testRun);
             UserPrincipal principal = new UserPrincipal(access.load(user));
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
@@ -236,6 +246,7 @@ public class ImportService {
             mapping.forEach((field, name) -> column.put(field, header.indexOf(name)));
             Map<String, UUID> orgs = organisations();
             Map<String, Metric> metrics = metrics();
+            Map<String, UUID> people = people();
 
             for (int i = 1; i < rows.size(); i++) {
                 List<String> row = rows.get(i);
@@ -245,6 +256,14 @@ public class ImportService {
                 int rowNumber = i + 1; // spreadsheet row number, header = row 1
                 List<RowError> errors = new ArrayList<>();
                 DataPointDto dto = toDto(row, column, mapping, r, orgs, metrics, rowNumber, errors);
+                String ownerText = cell(row, column, "owner");
+                if (ownerText != null) {
+                    UUID owner = people.get(ownerText.toLowerCase(Locale.ROOT));
+                    if (owner == null) {
+                        errors.add(new RowError(rowNumber, mapping.get("owner"), "owner", "No active user '" + ownerText + "'"));
+                    }
+                    dto.setOwnerUserId(owner);
+                }
                 if (errors.isEmpty()) {
                     try {
                         rowTransaction.executeWithoutResult(status -> points.create(dto, id));
@@ -312,6 +331,7 @@ public class ImportService {
 
         dto.setCurrency(upper(cell(row, column, "currency")));
         dto.setSubCategory(cell(row, column, "subCategory"));
+        dto.setNotes(cell(row, column, "notes"));
         dto.setReportingPeriodStart(date(row, column, mapping, "periodStart", r.defaultPeriodStart(), rowNumber, errors));
         dto.setReportingPeriodEnd(date(row, column, mapping, "periodEnd", r.defaultPeriodEnd(), rowNumber, errors));
         dto.setSourceId(r.sourceId());
@@ -361,8 +381,22 @@ public class ImportService {
             case "reportingPeriodStart" -> mapping.get("periodStart");
             case "reportingPeriodEnd" -> mapping.get("periodEnd");
             case "subCategory" -> mapping.get("subCategory");
+            case "notes" -> mapping.get("notes");
+            case "ownerUserId" -> mapping.get("owner");
             default -> null;
         };
+    }
+
+    /** Active users of the tenant by lower-case email and full name (the responsible person column). */
+    private Map<String, UUID> people() {
+        Map<String, UUID> people = new HashMap<>();
+        jdbc.query("select id, email, first_name || ' ' || last_name from auth.users where is_active and deleted_at is null "
+                + "and not auth.is_platform_user(id)", rs -> {
+                    UUID id = rs.getObject(1, UUID.class);
+                    people.put(rs.getString(2).toLowerCase(Locale.ROOT), id);
+                    people.putIfAbsent(rs.getString(3).toLowerCase(Locale.ROOT), id);
+                });
+        return people;
     }
 
     /** Organisations by lower-case name and by id. */
@@ -403,19 +437,126 @@ public class ImportService {
         Map<String, String> suggestion = new LinkedHashMap<>();
         for (String field : ImportDtos.FIELDS) {
             Optional<String> match = columns.stream()
-                    .filter(c -> SYNONYMS.get(field).contains(c.trim().toLowerCase(Locale.ROOT).replace('-', ' ')))
+                    .filter(c -> SYNONYMS.get(field).contains(normalise(c)))
                     .findFirst();
             match.ifPresent(c -> suggestion.put(field, c));
         }
         return suggestion;
     }
 
-    /** CSV template: the columns the importer understands and one example row per pillar. */
+    static String normalise(String header) {
+        return header.trim().toLowerCase(Locale.ROOT).replaceAll("[_\\-\\s]+", " ");
+    }
+
+    /**
+     * CSV template (F1): the columns the importer understands, with example rows that import as they are for the user
+     * downloading it — an organisation they can enter data for, the current quarter, metrics from the catalogue and
+     * the tenant's base currency (no exchange rate needed). Headers match the automatic column mapping.
+     */
+    // no-mock-gate: config — WP-46 (D44): which catalogue metrics each source system's template lists, and where the figure comes from
+    static final Map<String, List<String[]>> SOURCE_TEMPLATES = Map.of(
+            "energy", List.of(new String[] {"diesel_litres", "ERP fuel purchases or generator logs"},
+                    new String[] {"petrol_litres", "ERP fuel purchases or fleet cards"}, new String[] {"lpg_kg", "ERP purchases"},
+                    new String[] {"natural_gas_m3", "Gas supplier invoices or meters"}),
+            "utilities", List.of(new String[] {"electricity_kwh", "Electricity bills or meter readings"},
+                    new String[] {"water_withdrawal_m3", "Water bills or meters"}, new String[] {"water_consumption_m3", "Water meters"}),
+            "workforce", List.of(new String[] {"employees_total", "HR system headcount at period end"},
+                    new String[] {"employees_female", "HR system headcount at period end"}, new String[] {"new_hires", "HR system joiners"},
+                    new String[] {"employee_turnover_pct", "HR system leavers ÷ average headcount × 100"},
+                    new String[] {"training_hours_per_employee", "Learning system hours ÷ headcount"},
+                    new String[] {"hours_worked", "Payroll or time and attendance"},
+                    new String[] {"women_in_management_pct", "HR system"}),
+            "waste", List.of(new String[] {"waste_generated_t", "Waste contractor manifests"},
+                    new String[] {"waste_diverted_t", "Recycling and reuse certificates"},
+                    new String[] {"waste_disposed_t", "Landfill and incineration manifests"}));
+
+    /**
+     * WP-46 (D44): a template for one source system's export (ERP fuel, utility bills, HRIS, waste contractors) — one row
+     * per metric for the current quarter, the value left for the system's figure, the note saying where it comes from.
+     */
+    public String template(String kind) {
+        if (kind == null || kind.isBlank() || "general".equals(kind)) {
+            return template();
+        }
+        List<String[]> rows = SOURCE_TEMPLATES.get(kind);
+        if (rows == null) {
+            throw com.esg.exception.FieldValidationException.of("kind", "must be one of general, " + String.join(", ",
+                    new java.util.TreeSet<>(SOURCE_TEMPLATES.keySet())));
+        }
+        String org = csv(firstOrganisation());
+        String period = quarter();
+        StringBuilder out = new StringBuilder("organisation,metric,value,currency,period_start,period_end,sub_category,notes,owner\n");
+        for (String[] r : rows) {
+            out.append(org).append(',').append(r[0]).append(",,,").append(period).append(",,").append(csv("From " + r[1])).append(",\n");
+        }
+        return out.toString();
+    }
+
+    private String firstOrganisation() {
+        return jdbc.queryForList("select id, name from auth.organisations where is_active order by parent_org_id nulls first, name")
+                .stream().filter(o -> orgScope.canAccess((UUID) o.get("id"))).map(o -> (String) o.get("name"))
+                .findFirst().orElse("Your organisation");
+    }
+
+    private String quarter() {
+        LocalDate today = LocalDate.now(clock);
+        LocalDate start = today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+        return start + "," + start.plusMonths(3).minusDays(1);
+    }
+
     public String template() {
-        return "organisation,metric,value,currency,period_start,period_end,sub_category\n"
-                + "Lagos HQ,diesel_litres,1250.5,,2026-01-01,2026-03-31,Generators\n"
-                + "Lagos HQ,employees_total,120,,2026-01-01,2026-03-31,\n"
-                + "Lagos HQ,community_investment,5000,USD,2026-01-01,2026-03-31,School project\n";
+        String org = jdbc.queryForList("select id, name from auth.organisations where is_active order by parent_org_id nulls first, name")
+                .stream().filter(o -> orgScope.canAccess((UUID) o.get("id"))).map(o -> (String) o.get("name"))
+                .findFirst().orElse("Your organisation");
+        LocalDate today = LocalDate.now(clock);
+        LocalDate start = today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+        LocalDate end = start.plusMonths(3).minusDays(1);
+        String period = start + "," + end;
+        String name = csv(org);
+        String me = csv(jdbc.queryForObject("select email from auth.users where id = ?", String.class,
+                CurrentUser.access().userId()));
+        return "organisation,metric,value,currency,period_start,period_end,sub_category,notes,owner\n"
+                + name + ",diesel_litres,1250.5,," + period + ",Generators,Example row: replace with your data," + me + "\n"
+                + name + ",electricity_kwh,48000,," + period + ",,From the utility bill," + me + "\n"
+                + name + ",employees_total,120,," + period + ",,Headcount at the end of the quarter," + me + "\n";
+    }
+
+    /** Failed rows as CSV: the original columns plus why each row failed, to fix and import again (F3). */
+    public String failedRows(UUID id) {
+        ImportJobResponse job = get(id);
+        if (job.rowErrors() == null || job.rowErrors().isEmpty()) {
+            throw ApiException.conflict("ESG-409-STATE", "This import has no failed rows");
+        }
+        Map<Integer, List<String>> reasons = new java.util.TreeMap<>();
+        job.rowErrors().forEach(e -> reasons.computeIfAbsent(e.path("row").asInt(), k -> new ArrayList<>())
+                .add((e.path("column").isMissingNode() || e.path("column").isNull() ? "" : e.path("column").asText() + ": ")
+                        + e.path("message").asText()));
+        List<List<String>> rows;
+        try (InputStream in = files.open(fileId(id), null).stream()) {
+            rows = TabularReader.read(in, job.fileFormat());
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read the import file", e);
+        }
+        StringBuilder out = new StringBuilder();
+        List<String> header = new ArrayList<>(rows.get(0));
+        header.add("error");
+        out.append(String.join(",", header.stream().map(ImportService::csv).toList())).append('\n');
+        reasons.forEach((row, why) -> {
+            List<String> cells = new ArrayList<>(row - 1 < rows.size() ? rows.get(row - 1) : List.of());
+            while (cells.size() < rows.get(0).size()) {
+                cells.add("");
+            }
+            cells.add(String.join("; ", why));
+            out.append(String.join(",", cells.stream().map(ImportService::csv).toList())).append('\n');
+        });
+        return out.toString();
+    }
+
+    private static String csv(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.contains(",") || value.contains("\"") || value.contains("\n") ? "\"" + value.replace("\"", "\"\"") + "\"" : value;
     }
 
     private ImportJobResponse response(ResultSet rs) throws SQLException {

@@ -38,7 +38,8 @@ const lightTheme = createTheme({
     },
     text: {
       primary: '#2D3748',
-      secondary: '#718096',
+      // WP-53: 5.4:1 on white (WCAG AA needs 4.5:1; the former #718096 was 4.0:1).
+      secondary: '#5F6B7A',
     },
     divider: '#E2E8F0',
   },
@@ -52,14 +53,34 @@ const lightTheme = createTheme({
     h6: { fontWeight: 600, fontSize: '0.875rem', color: '#2D3748' },
     body1: { fontFamily: '"Inter", "SF Pro Text", sans-serif', fontSize: '0.875rem' },
     body2: { fontFamily: '"Inter", "SF Pro Text", sans-serif', fontSize: '0.8125rem' },
-    caption: { fontSize: '0.75rem', color: '#718096' },
+    caption: { fontSize: '0.75rem', color: '#5F6B7A' },
     mono: { fontFamily: '"Roboto Mono", monospace' },
   },
   shape: {
     borderRadius: 8,
   },
   components: {
+    // WP-53: outlined chips and text buttons draw text in the palette's main colour; gold (2.2:1) and teal (3.5:1) fail
+    // WCAG AA on white, so their text uses darker shades (≥ 5.4:1). Filled chips already get dark text from MUI.
+    MuiChip: {
+      styleOverrides: {
+        root: { fontWeight: 500 },
+      },
+      variants: [
+        { props: { variant: 'outlined', color: 'warning' }, style: { color: '#7A5B00', borderColor: '#D4AF37' } },
+        { props: { variant: 'outlined', color: 'info' }, style: { color: '#237574' } },
+      ],
+    },
+    // White on the info teal is 3.5:1; filled info alerts (toasts) use the darker shade (5.4:1, WCAG AA). Found by journey 28.
+    MuiAlert: {
+      styleOverrides: { filledInfo: { backgroundColor: '#237574' } },
+    },
     MuiButton: {
+      variants: [
+        { props: { variant: 'text', color: 'warning' }, style: { color: '#7A5B00' } },
+        { props: { variant: 'outlined', color: 'warning' }, style: { color: '#7A5B00' } },
+        { props: { variant: 'text', color: 'info' }, style: { color: '#237574' } },
+      ],
       styleOverrides: {
         root: {
           textTransform: 'none',
@@ -86,9 +107,36 @@ const lightTheme = createTheme({
         },
       },
     },
-    MuiChip: {
+    // Phase 2 (item 8): tables scroll sideways inside their card rather than being cut off at 1024–1280 px, cells are a
+    // little tighter on narrower screens, and a table marked data-sticky-actions keeps its last (Actions) column pinned.
+    MuiTableContainer: {
       styleOverrides: {
-        root: { fontWeight: 500 },
+        root: { overflowX: 'auto', maxWidth: '100%' },
+      },
+    },
+    MuiTable: {
+      styleOverrides: {
+        root: {
+          '&[data-sticky-actions] tr > *:last-child': {
+            position: 'sticky', right: 0, zIndex: 1, background: '#FFFFFF', boxShadow: '-6px 0 6px -6px rgba(0,0,0,0.15)',
+          },
+          '&[data-sticky-actions] thead tr > *:last-child': { background: '#F7FAFC', zIndex: 2 },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          '@media (max-width: 1280px)': { paddingLeft: 8, paddingRight: 8 },
+        },
+      },
+    },
+    // Phase 2 (item 9): below 600 px every dialog fills the screen.
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          '@media (max-width: 599.95px)': { margin: 0, width: '100%', maxWidth: '100%', height: '100%', maxHeight: '100%', borderRadius: 0 },
+        },
       },
     },
     MuiTableHead: {

@@ -32,7 +32,6 @@
     "reportingPeriodEnd": "{yyyy}-06-30"
   },
   "changes": {
-    "scope3Category": 2,
     "spendAmount": 3000
   },
   "derived": {
@@ -76,7 +75,7 @@
       "scope": {
         "label": "Scope",
         "kind": "select",
-        "display": "Scope 3 — value chain"
+        "display": "Scope 3 \u2014 value chain"
       },
       "scope3Category": {
         "label": "Scope 3 category",

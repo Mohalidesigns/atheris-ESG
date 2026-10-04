@@ -2,11 +2,22 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CircularProgress, Box, Typography } from '@mui/material';
 import { useSelector } from 'react-redux';
-import MainLayout from '../components/layout/MainLayout';
 import { useRestoreSessionMutation } from '../features/auth/authApi';
 import { allNavItems, firstAllowedPath, moduleEnabled } from './navigation';
+import { tr } from '../i18n';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
+// WP-53: the app shell loads after sign-in, so the sign-in page downloads only what it needs (3G target).
+const MainLayout = lazy(() => import('../components/layout/MainLayout'));
+// WP-34: the public whistleblower portal (no session) and everyone's policy acknowledgements.
+const WhistleblowerPortal = lazy(() => import('../features/governance/components/WhistleblowerPortal'));
+const MyPoliciesPage = lazy(() => import('../features/governance/components/MyPoliciesPage'));
+// WP-31: a supplier answers a questionnaire through its link (no session).
+const SupplierQuestionnairePortal = lazy(() => import('../features/supplyChain/components/SupplierQuestionnairePortal'));
+// WP-42: anyone checks a training certificate by its code or QR code (no session).
+const VerifyCertificatePage = lazy(() => import('../features/training/components/VerifyCertificatePage'));
+// WP-43: opened without a connection by someone who signed in on this device before — offline capture only.
+const OfflineCapturePage = lazy(() => import('../features/offline/components/OfflineCapturePage'));
 const pages = {
   '/dashboard': lazy(() => import('../features/dashboard/components/DashboardPage')),
   '/data-hub': lazy(() => import('../features/dataHub/components/DataHubPage')),
@@ -33,8 +44,8 @@ const Loading = () => (
 export function Forbidden() {
   return (
     <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>You don't have access to this page</Typography>
-      <Typography color="text.secondary">Ask your administrator if you need it.</Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{tr("You don't have access to this page")}</Typography>
+      <Typography color="text.secondary">{tr("Ask your administrator if you need it.")}</Typography>
     </Box>
   );
 }
@@ -43,8 +54,8 @@ export function Forbidden() {
 export function NotInPlan() {
   return (
     <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>This module isn't part of your subscription</Typography>
-      <Typography color="text.secondary">Your administrator can see your plan under Administration → Subscription.</Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{tr("This module isn't part of your subscription")}</Typography>
+      <Typography color="text.secondary">{tr("Your administrator can see your plan under Administration → Subscription.")}</Typography>
     </Box>
   );
 }
@@ -75,13 +86,19 @@ export default function AppRoutes() {
   }, [status, restoreSession]);
 
   if (status === 'unknown') return <Loading />;
+  if (status === 'offline') return <Suspense fallback={<Loading />}><OfflineCapturePage /></Suspense>;
 
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route path="/login" element={status === 'authenticated' ? <Landing /> : <LoginForm />} />
+        <Route path="/whistleblower/:tenant" element={<WhistleblowerPortal />} />
+        <Route path="/supplier-questionnaire/:token" element={<SupplierQuestionnairePortal />} />
+        <Route path="/verify-certificate" element={<VerifyCertificatePage />} />
+        <Route path="/verify-certificate/:code" element={<VerifyCertificatePage />} />
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route index element={<Landing />} />
+          <Route path="my-policies" element={<MyPoliciesPage />} />
           {allNavItems.map(({ path, anyOf, module }) => {
             const Page = pages[path];
             return (

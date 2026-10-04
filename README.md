@@ -48,7 +48,7 @@ One user per built-in role, all with the password `LocalDev!2026`:
 | `board@esgpro.ng` | BOARD_MEMBER | governance |
 | `training@esgpro.ng` | TRAINING_ADMIN | training |
 
-These come from `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. **MFA is not enforced in the local profile**, so you can sign in without an authenticator; every other profile requires TOTP for SUPER_ADMIN, TENANT_ADMIN and ESG_DIRECTOR. After pulling WP-12/13, run `./scripts/dev.sh reset-db` once to get the new users.
+These come from `esg-backend/src/main/resources/db/seed/local/`, which only the `local` profile loads. **MFA is enforced in every profile, including local**: SUPER_ADMIN, TENANT_ADMIN and ESG_DIRECTOR need a TOTP code. Their dev-only authenticator secrets are in [`db/seed/README.md`](esg-backend/src/main/resources/db/seed/README.md); add one to any authenticator app. `MFA_DEV_BYPASS=true` turns enforcement off for local experiments (startup warning; refused under staging/prod). After pulling WP-12/13, run `./scripts/dev.sh reset-db` once to get the new users.
 
 ## Profiles and configuration
 

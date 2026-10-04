@@ -34,7 +34,7 @@ public final class ReferenceDtos {
 
     public record Framework(UUID id, String code, String name, String jurisdiction, String frameworkType,
                             LocalDate effectiveDate, String version, String contentStatus, String source,
-                            String description, int requirementCount) {}
+                            String description, int requirementCount, int assessableCount, int headingCount) {}
 
     public record Requirement(UUID id, String code, String title, String category, String dataType, String parentCode,
                               String source, String verificationStatus, List<String> metricKeys,
@@ -69,17 +69,40 @@ public final class ReferenceDtos {
             @NotBlank @Size(max = 100) @Pattern(regexp = CATEGORY_REGEX, message = "lower-case letters, digits and underscores") String category,
             @Size(max = 200) String subCategory,
             @NotNull @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000") @Digits(integer = 10, fraction = 10) BigDecimal factorValue,
-            @NotBlank @Size(max = 50) String unit,
+            /** Activity factors: kgCO2e per activity unit. Spend factors: optional, always kgCO2e/{spendCurrency}. */
+            @Size(max = 50) String unit,
             @NotBlank @Size(max = 255) String source,
             @NotNull LocalDate validFrom,
             LocalDate validTo,
             Long version,
             @Pattern(regexp = FACTOR_METHOD_REGEX, message = "must be activity or spend") String factorMethod,
-            @Pattern(regexp = CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") String spendCurrency) {
+            @Pattern(regexp = CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") String spendCurrency,
+            /** A new activity (category not yet known, F11): its name and GHG scope; ignored for existing categories. */
+            @Size(max = 150) String activityLabel,
+            @Pattern(regexp = "^scope_[123]$", message = "must be scope_1, scope_2 or scope_3") String activityScope,
+            @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(15) Integer activityScope3Category) {
 
         /** "activity" unless "spend" is given. */
         public String method() {
             return factorMethod == null || factorMethod.isBlank() ? "activity" : factorMethod;
         }
+
+        /** The stored unit: a spend factor's is set by its currency (F11). */
+        public String effectiveUnit() {
+            if ("spend".equals(method()) && spendCurrency != null && !spendCurrency.isBlank()) {
+                return "kgCO2e/" + spendCurrency;
+            }
+            return unit == null ? "" : unit.trim();
+        }
     }
+
+    /**
+     * What a factor category measures (WP-52b F5/F11): its GHG scope, Scope 3 category, method and the unit of the
+     * activity data. Platform activities plus the tenant's own ({@code custom}).
+     */
+    public record EmissionActivity(String category, String label, String scope, Integer scope3Category, String factorMethod,
+                                   String activityUnit, String source, boolean custom) {}
+
+    /** An ISO 3166 country or an emission-factor region, for the custom factor's Country/region picker (F11). */
+    public record FactorRegion(String code, String name, String kind) {}
 }

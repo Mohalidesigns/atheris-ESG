@@ -24,7 +24,7 @@
     "reportingYear": 2026,
     "assetClass": "project_finance",
     "counterparty": "Solar IPP {u}",
-    "sector": "Power",
+    "sector": "D",
     "outstandingAmount": 5000000,
     "denominatorValue": 20000000,
     "currency": "USD",
@@ -36,7 +36,7 @@
     "reportingYear": 2025,
     "assetClass": "commercial_real_estate",
     "counterparty": "Office tower {u}",
-    "sector": "Real estate",
+    "sector": "L",
     "outstandingAmount": 6000000,
     "denominatorValue": 24000000,
     "currency": "NGN",
@@ -93,6 +93,11 @@
       "field": "reportingYear",
       "value": 1999,
       "rule": "2000..2100"
+    },
+    {
+      "field": "sector",
+      "value": "Power",
+      "rule": "sector taxonomy code"
     }
   ],
   "ui": {
@@ -109,7 +114,8 @@
         "label": "Counterparty"
       },
       "sector": {
-        "label": "Sector (optional)"
+        "label": "Sector (optional)",
+        "display": "Electricity, gas, steam and air conditioning supply (ISIC D)"
       },
       "outstandingAmount": {
         "label": "Outstanding"
@@ -128,7 +134,7 @@
       "dataQualityScore": {
         "label": "PCAF data quality",
         "kind": "select",
-        "display": "3 — physical activity based"
+        "display": "3 \u2014 physical activity based"
       },
       "emissionsSource": {
         "label": "Emissions source"

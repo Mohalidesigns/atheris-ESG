@@ -1,0 +1,45 @@
+time="2026-10-03T15:33:28+01:00" level=warning msg="The test has generated metrics with 100244 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{step:create}
+    ✓ 'p(95)<500' p(95)=95.31ms
+
+    http_req_duration{step:submit}
+    ✓ 'p(95)<500' p(95)=94.8ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 36001   598.378645/s
+    checks_succeeded...: 100.00% 36001 out of 36001
+    checks_failed......: 0.00%   0 out of 36001
+
+    ✓ signed in
+    ✓ created 201
+    ✓ submitted 200
+
+    HTTP
+    http_req_duration..............: avg=28.76ms min=6.36ms  med=17.41ms max=447.45ms p(90)=61.97ms  p(95)=95.05ms 
+      { expected_response:true }...: avg=28.76ms min=6.36ms  med=17.41ms max=447.45ms p(90)=61.97ms  p(95)=95.05ms 
+      { step:create }..............: avg=28.41ms min=6.36ms  med=16.92ms max=447.45ms p(90)=62.07ms  p(95)=95.31ms 
+      { step:submit }..............: avg=29.1ms  min=6.91ms  med=17.84ms max=401.66ms p(90)=61.9ms   p(95)=94.8ms  
+    http_req_failed................: 0.00% 0 out of 36001
+    http_reqs......................: 36001 598.378645/s
+
+    EXECUTION
+    iteration_duration.............: avg=57.87ms min=14.28ms med=35.83ms max=648.8ms  p(90)=126.32ms p(95)=194.73ms
+    iterations.....................: 18000 299.181012/s
+    vus............................: 6     min=5          max=88 
+    vus_max........................: 600   min=600        max=600
+
+    NETWORK
+    data_received..................: 53 MB 879 kB/s
+    data_sent......................: 59 MB 987 kB/s
+
+
+

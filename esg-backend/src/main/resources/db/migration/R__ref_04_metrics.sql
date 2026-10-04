@@ -41,6 +41,11 @@ ON CONFLICT (metric_key) DO UPDATE SET pillar = EXCLUDED.pillar, category = EXCL
   description = EXCLUDED.description, unit = EXCLUDED.unit, data_type = EXCLUDED.data_type, source = EXCLUDED.source,
   is_active = EXCLUDED.is_active, sort_order = EXCLUDED.sort_order;
 
+-- How each metric adds up over a report period (WP-23, D24): stocks take the latest value, everything else sums.
+UPDATE reference.metrics SET aggregation = CASE WHEN metric_key IN ('employees_total', 'employees_female', 'employee_turnover_pct',
+  'training_hours_per_employee', 'women_in_management_pct', 'board_size', 'board_independent_pct', 'board_female_pct', 'compensation_ratio')
+  THEN 'latest' ELSE 'sum' END;
+
 DELETE FROM reference.metric_requirements;
 INSERT INTO reference.metric_requirements (metric_key, requirement_id)
 SELECT m.metric_key, r.id

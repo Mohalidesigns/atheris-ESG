@@ -56,12 +56,22 @@ public class ImportController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(service.start(id, request), "Import started"));
     }
 
+    /** The failed rows with their reasons, as CSV (F3). */
+    @GetMapping(value = "/{id}/failed-rows", produces = "text/csv")
+    @PreAuthorize("hasAuthority('data_points:read')")
+    public ResponseEntity<byte[]> failedRows(@org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"failed-rows.csv\"")
+                .body(service.failedRows(id).getBytes(StandardCharsets.UTF_8));
+    }
+
     @GetMapping(value = "/template", produces = "text/csv")
     @PreAuthorize("hasAuthority('data_points:create')")
-    public ResponseEntity<byte[]> template() {
+    public ResponseEntity<byte[]> template(@org.springframework.web.bind.annotation.RequestParam(required = false) String kind) {
+        String name = kind == null || kind.isBlank() || "general".equals(kind) ? "esg-data-import-template.csv" : "esg-import-" + kind + ".csv";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"esg-data-import-template.csv\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
-                .body(service.template().getBytes(StandardCharsets.UTF_8));
+                .body(service.template(kind).getBytes(StandardCharsets.UTF_8));
     }
 }

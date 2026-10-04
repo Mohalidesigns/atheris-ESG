@@ -25,7 +25,9 @@
     "sourceId": "{SOURCE_A}",
     "evidenceFileIds": [
       "{FILE_A}"
-    ]
+    ],
+    "notes": "Read from meter G-2 on site",
+    "ownerUserId": "{USER_DIRECTOR}"
   },
   "derived": {
     "category": "E",
@@ -99,6 +101,21 @@
       "field": "reportingPeriodEnd",
       "value": "{yyyy}-03-31",
       "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "b0000000-0000-4000-8000-0000000000b1",
+      "rule": "active user of the tenant"
     }
   ],
   "update": {
@@ -114,7 +131,9 @@
     "reportingPeriodStart": "{yyyy}-04-02",
     "reportingPeriodEnd": "{yyyy}-06-29",
     "sourceId": null,
-    "evidenceFileIds": []
+    "evidenceFileIds": [],
+    "notes": "Corrected after the supplier invoice",
+    "ownerUserId": "{USER_COMPLIANCE}"
   },
   "ui": {
     "fields": {
@@ -141,13 +160,21 @@
         "label": "Period end"
       },
       "sourceId": {
-        "label": "Data source (optional)",
+        "label": "Source system (optional)",
         "kind": "select",
         "display": "Manual"
       },
       "evidenceFileIds": {
         "kind": "text",
         "display": "evidence.pdf"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      },
+      "ownerUserId": {
+        "label": "Responsible person",
+        "kind": "select",
+        "display": "Esg Director Fixture"
       }
     }
   }
