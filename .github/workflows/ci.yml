@@ -60,8 +60,13 @@ jobs:
           cache-dependency-path: esg-frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run i18n:check
       - run: npm test
       - run: npm run build
+      - name: Bundle budget (WP-53)
+        run: node ../scripts/check-bundle-size.mjs
+      - name: Production headers match the tested ones (WP-54)
+        run: node ../scripts/check-security-headers.mjs
       - name: No-mock gate (ENFORCE since WP-16)
         run: |
           npm run -s check:no-mocks -- --report no-mock-report.md
@@ -209,6 +214,25 @@ jobs:
           ./trivy rootfs $opts esg-backend/target/esg-platform-1.0.0-SNAPSHOT.jar
           ./trivy fs $opts esg-frontend/package-lock.json
           ./trivy fs $opts esg-ai/requirements.txt
+          ./trivy config --quiet --severity HIGH,CRITICAL --exit-code 1 deploy
+
+  images:
+    name: Container images build (WP-54)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build backend, frontend and AI images
+        run: |
+          docker build -q -f deploy/backend.Dockerfile -t atheris-esg-backend:ci .
+          docker build -q -f deploy/frontend.Dockerfile -t atheris-esg-frontend:ci .
+          docker build -q -f deploy/ai.Dockerfile -t atheris-esg-ai:ci .
+      - name: Frontend image serves the app with its headers
+        run: |
+          docker run -d --name web -p 8088:8080 --add-host backend:127.0.0.1 atheris-esg-frontend:ci
+          sleep 3
+          curl -sf -o /dev/null localhost:8088/login
+          curl -sI localhost:8088/login | grep -i "content-security-policy: default-src 'self'"
+          curl -sI localhost:8088/login | grep -i "strict-transport-security"
 
   openapi:
     name: OpenAPI spec + breaking-change diff

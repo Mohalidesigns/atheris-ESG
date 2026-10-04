@@ -12,6 +12,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../../components/states
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateDataSourceMutation, useDataOwnersQuery, useDataSourcesQuery, useUpdateDataSourceMutation } from '../dataHubApi';
 import { SOURCE_TYPES, dataSourceSchema, emptySource, toSourceBody } from '../schemas';
+import { tr } from '../../../i18n';
 
 export function DataSourceDialog({ source, onClose }) {
   const editing = Boolean(source?.id);
@@ -39,33 +40,33 @@ export function DataSourceDialog({ source, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${source.name}` : 'New data source'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${source.name}` : tr("New data source")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 7 }}>
-              <FormTextField control={control} name="name" label="System name" helperText="e.g. Generator meter #2, SAP S/4HANA export" />
+              <FormTextField control={control} name="name" label={tr("System name")} helperText={tr("e.g. Generator meter #2, SAP S/4HANA export")} />
             </Grid>
             <Grid size={{ xs: 12, sm: 5 }}>
-              <FormSelect control={control} name="sourceType" label="Type"
+              <FormSelect control={control} name="sourceType" label={tr("Type")}
                 options={Object.entries(SOURCE_TYPES).map(([value, label]) => ({ value, label }))} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description")} /></Grid>
             <Grid size={12}>
-              <FormSelect control={control} name="ownerUserId" label="Owner (responsible person)"
-                helperText="Data points from this system are assigned to this person unless someone else is named"
+              <FormSelect control={control} name="ownerUserId" label={tr("Owner (responsible person)")}
+                helperText={tr("Data points from this system are assigned to this person unless someone else is named")}
                 options={[{ value: '', label: 'No owner' }, ...people.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
             <Grid size={12}>
               <Controller name="active" control={control} render={({ field }) => (
-                <FormControlLabel label="Active" control={<Switch checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />} />
+                <FormControlLabel label={tr("Active")} control={<Switch checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Add data source'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Add data source")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -82,26 +83,26 @@ export default function DataSourcesTab() {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="data_sources:manage">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New data source</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New data source")}</Button>
         </Can>
       </Box>
       <Card>
-        {sources.length === 0 ? <EmptyState title="No data sources yet">Record the systems your data comes from: a meter, an ERP export, an IoT feed. People are recorded as owners, not sources.</EmptyState> : (
+        {sources.length === 0 ? <EmptyState title={tr("No data sources yet")}>{tr("Record the systems your data comes from: a meter, an ERP export, an IoT feed. People are recorded as owners, not sources.")}</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Data sources" data-sticky-actions>
+            <Table size="small" aria-label={tr("Data sources")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>System</TableCell><TableCell>Type</TableCell><TableCell>Owner</TableCell><TableCell>Description</TableCell>
-                <TableCell align="right">Data points</TableCell><TableCell>Status</TableCell><TableCell />
+                <TableCell>{tr("System")}</TableCell><TableCell>{tr("Type")}</TableCell><TableCell>{tr("Owner")}</TableCell><TableCell>{tr("Description")}</TableCell>
+                <TableCell align="right">{tr("Data points")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {sources.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell sx={{ fontWeight: 600 }}>{s.name}</TableCell>
-                    <TableCell>{SOURCE_TYPES[s.sourceType] ?? s.sourceType}</TableCell>
+                    <TableCell>{tr(SOURCE_TYPES[s.sourceType]) ?? s.sourceType}</TableCell>
                     <TableCell>{s.ownerName ?? '—'}</TableCell>
-                    <TableCell>{s.description ?? '—'}</TableCell>
+                    <TableCell>{tr(s.description) ?? '—'}</TableCell>
                     <TableCell align="right">{s.dataPoints}</TableCell>
-                    <TableCell><Chip size="small" label={s.active ? 'Active' : 'Inactive'} /></TableCell>
+                    <TableCell><Chip size="small" label={s.active ? tr("Active") : tr("Inactive")} /></TableCell>
                     <TableCell align="right">
                       <Can permission="data_sources:manage">
                         <IconButton size="small" aria-label={`Edit ${s.name}`} onClick={() => setEditing(s)}><Edit fontSize="small" /></IconButton>

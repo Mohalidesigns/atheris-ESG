@@ -30,7 +30,7 @@ public final class PostgresTestDatabase {
 
   private static final String[] SCHEMAS = {
     "auth", "data_hub", "carbon", "compliance", "reporting", "risk", "supply_chain", "social",
-    "governance", "analytics", "investor", "carbon_market", "training", "ai", "audit", "files", "notifications", "reference"
+    "governance", "analytics", "investor", "carbon_market", "training", "ai", "integrations", "audit", "files", "notifications", "reference"
   };
 
   private static String url;

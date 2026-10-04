@@ -10,7 +10,7 @@ Volume: 1,000,000 approved data points in the current year (200 sites × 20 metr
 | Dashboard with 1M data points < 3 s | Executive dashboard + first data page, 10 concurrent viewers: P95 1.56 s (was 6.97 s before the fixes below) | **Met** |
 | PDF report with 50,000 points < 60 s | ≈52,000 points: variables resolved and PDF rendered, max 0.77 s | **Met** |
 | Emission batch of 10,000 records < 5 min | Recalculation of 10,000 records: 17.8 s | **Met** |
-| Offline sync of 500 records < 30 s | Not measurable: the offline queue is WP-43, not built | **Open** |
+| Offline sync of 500 records < 30 s | 3.3 s for 500 data points in one request (`OfflineSyncApiTest#fiveHundredRecordsSyncInUnderThirtySeconds`, one instance, WP-43) | **Met** |
 
 ## What the runs found and fixed
 
@@ -29,4 +29,4 @@ Volume: 1,000,000 approved data points in the current year (200 sites × 20 metr
 ## Not measured
 
 Multi-instance throughput, production database sizing, and browser rendering time (the dashboard figure is the API;
-the page renders aggregated series). Offline sync waits for WP-43. Browser load time on 3G is WP-53.
+the page renders aggregated series). Offline sync: 500 records in 3.3 s (WP-43). Browser load time on 3G is WP-53.

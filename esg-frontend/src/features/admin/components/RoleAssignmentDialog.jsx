@@ -11,6 +11,7 @@ import { toFormError } from '../../../services/apiSlice';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { applyServerFieldErrors } from '../../../services/formErrors';
 import { roleLabel } from '../../../services/labels';
+import { tr } from '../../../i18n';
 
 
 
@@ -59,11 +60,11 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
   return (
     <Dialog open={open} onClose={() => onClose(false)} maxWidth="md" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>Roles for {user?.firstName} {user?.lastName}</DialogTitle>
+        <DialogTitle>{tr("Roles for")} {user?.firstName} {user?.lastName}</DialogTitle>
         <DialogContent>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           {fields.length === 0 && (
-            <Typography variant="body2" color="text.secondary" sx={{ my: 2 }}>No roles: this user can sign in but can&apos;t do anything.</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ my: 2 }}>{tr("No roles: this user can sign in but can't do anything.")}</Typography>
           )}
           {fields.map((f, index) => {
             const rowErrors = errors.assignments?.[index] ?? {};
@@ -71,43 +72,43 @@ export default function RoleAssignmentDialog({ open, user, onClose }) {
             return (
               <Box key={f.id} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', mt: 2 }}>
                 <Controller name={`assignments.${index}.roleId`} control={control} render={({ field }) => (
-                  <TextField select size="small" label="Role" sx={{ flex: 2 }} {...field}
+                  <TextField select size="small" label={tr("Role")} sx={{ flex: 2 }} {...field}
                     onChange={(e) => {
                       // F12: a new choice clears the previous refusal for this row.
                       field.onChange(e);
                       clearErrors(`assignments.${index}`);
                       setServerError('');
                     }}
-                    error={!!rowErrors.roleId} helperText={rowErrors.roleId?.message}>
+                    error={!!rowErrors.roleId} helperText={tr(rowErrors.roleId?.message)}>
                     {roles.map((r) => <MenuItem key={r.id} value={r.id}>{roleLabel(r.name)}</MenuItem>)}
                     {held.map((a) => (
                       <MenuItem key={a.roleId} value={a.roleId} disabled>
-                        {roleLabel(a.roleName)} (you can&apos;t assign this role)
+                        {roleLabel(a.roleName)} {tr("(you can't assign this role)")}
                       </MenuItem>
                     ))}
                   </TextField>
                 )} />
                 <Controller name={`assignments.${index}.orgScopeId`} control={control} render={({ field }) => (
-                  <OrgTreeSelect size="small" label={isOrgRole ? 'Organisation (required)' : 'Organisation'} sx={{ flex: 2 }}
+                  <OrgTreeSelect size="small" label={isOrgRole ? tr("Organisation (required)") : tr("Organisation")} sx={{ flex: 2 }}
                     orgs={orgs} emptyLabel="All organisations"
-                    {...field} error={!!rowErrors.orgScopeId} helperText={rowErrors.orgScopeId?.message} />
+                    {...field} error={!!rowErrors.orgScopeId} helperText={tr(rowErrors.orgScopeId?.message)} />
                 )} />
                 <Controller name={`assignments.${index}.expiresAt`} control={control} render={({ field }) => (
-                  <TextField type="datetime-local" size="small" label="Expires (optional)" sx={{ flex: 2 }}
+                  <TextField type="datetime-local" size="small" label={tr("Expires (optional)")} sx={{ flex: 2 }}
                     InputLabelProps={{ shrink: true }} {...field}
-                    error={!!rowErrors.expiresAt} helperText={rowErrors.expiresAt?.message} />
+                    error={!!rowErrors.expiresAt} helperText={tr(rowErrors.expiresAt?.message)} />
                 )} />
-                <IconButton aria-label="Remove role" onClick={() => remove(index)} sx={{ mt: 0.5 }}><DeleteOutline /></IconButton>
+                <IconButton aria-label={tr("Remove role")} onClick={() => remove(index)} sx={{ mt: 0.5 }}><DeleteOutline /></IconButton>
               </Box>
             );
           })}
           <Button startIcon={<Add />} sx={{ mt: 2 }} onClick={() => append({ roleId: '', orgScopeId: '', expiresAt: '' })}>
-            Add role
+            {tr("Add role")}
           </Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose(false)}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>Save roles</Button>
+          <Button onClick={() => onClose(false)}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>{tr("Save roles")}</Button>
         </DialogActions>
       </form>
     </Dialog>

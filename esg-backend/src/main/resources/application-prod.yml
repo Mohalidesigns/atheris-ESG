@@ -4,8 +4,13 @@ springdoc:
   swagger-ui:
     enabled: false
   api-docs:
-    enabled: false   # WP-52: the API description isn't published from production (CI exports it from a test build)
+    # WP-46 (D44): served to signed-in integrators only (esg.api-docs.public=false); never public (WP-52).
+    enabled: true
 
 logging:
   level:
     com.esg: INFO
+
+esg:
+  api-docs:
+    public: false

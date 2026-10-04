@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import { useAcknowledgeNoticeMutation, useMyNoticeQuery } from '../privacyApi';
-import { problemText } from '../schemas';
+import { problemText } from '../../../services/download';
+import { tr } from '../../../i18n';
 
 /**
  * NDPA 2023 (D40 (1)): the organisation's privacy notice in force, shown once per version until the person
@@ -13,19 +14,19 @@ export default function PrivacyNoticeGate() {
   const n = data.notice;
   return (
     <Dialog open maxWidth="md" fullWidth aria-labelledby="privacy-notice-title">
-      <DialogTitle id="privacy-notice-title">{n.title}</DialogTitle>
+      <DialogTitle id="privacy-notice-title">{tr(n.title)}</DialogTitle>
       <DialogContent dividers>
         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{n.body}</Typography>
         <Box sx={{ mt: 2 }}>
           <Typography variant="caption" color="text.secondary" display="block">
-            Version {n.version}, published {n.publishedAt?.slice(0, 10)}. Data protection officer: {n.dpoContact}.
+            {tr("Version")} {n.version}{tr(", published")} {n.publishedAt?.slice(0, 10)}{tr(". Data protection officer:")} {n.dpoContact}.
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">You can download a copy of your data from the account menu at any time.</Typography>
+          <Typography variant="caption" color="text.secondary" display="block">{tr("You can download a copy of your data from the account menu at any time.")}</Typography>
         </Box>
         {a.isError && <Alert severity="error" sx={{ mt: 2 }}>{problemText(a.error)}</Alert>}
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" disabled={a.isLoading} onClick={() => acknowledge(n.version)}>I have read this notice</Button>
+        <Button variant="contained" disabled={a.isLoading} onClick={() => acknowledge(n.version)}>{tr("I have read this notice")}</Button>
       </DialogActions>
     </Dialog>
   );

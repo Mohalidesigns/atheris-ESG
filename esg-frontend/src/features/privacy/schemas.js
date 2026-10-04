@@ -32,13 +32,4 @@ export const retentionSchema = z.object({
 });
 
 export const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
-export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';
-export const saveBlob = (blobData, name) => {
-  const href = URL.createObjectURL(blobData);
-  const a = document.createElement('a');
-  a.href = href;
-  a.download = name;
-  a.rel = 'noopener';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(href), 10_000);
-};
+export { problemText, saveBlob } from '../../services/download';

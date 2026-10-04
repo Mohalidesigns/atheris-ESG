@@ -36,8 +36,8 @@ insert into data_hub.approval_workflows (id, workflow_type, total_steps, initiat
   values ('a0000000-0000-4000-8000-0000000000d1', 'data_validation', 2, 'a0000000-0000-4000-8000-0000000000a1');
 insert into data_hub.approval_steps (workflow_id, step_number, approver_id)
   values ('a0000000-0000-4000-8000-0000000000d1', 1, 'a0000000-0000-4000-8000-0000000000a1');
-insert into data_hub.offline_sync_queue (user_id, device_id, payload)
-  values ('a0000000-0000-4000-8000-0000000000a1', 'device-1', '{}');
+insert into data_hub.offline_sync_queue (op_id, client_id, kind, user_id, device_id, captured_at, payload, status)
+  values (gen_random_uuid(), gen_random_uuid(), 'data_point', 'a0000000-0000-4000-8000-0000000000a1', 'device-1', now(), '{}', 'applied');
 
 insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from, is_custom, tenant_id, verification_status)
   values ('NG', 'custom_fuel', 1.5, 'kgCO2e/litre', 'Supplier fuel certificate 2026', '2026-01-01', true,
@@ -277,3 +277,14 @@ insert into auth.user_roles (user_id, role_id)
 
 select set_config('app.current_tenant', '', false);
 select set_config('app.current_user', '', false);
+-- WP-46 integrations (one row per tenant table for the RLS suite).
+select set_config('app.current_tenant', '11111111-1111-4111-8111-111111111111', false);
+insert into integrations.integration_requests (id, reference, connector_key, system_details, data_needed, frequency, contact_name, contact_email)
+  values ('a0000000-0000-4000-8000-000000000b01', 'INT-2026-0001', 'sap_business_one', 'Fixture SAP B1 10.0, on-premise', '{energy_fuel}',
+          'monthly', 'Fixture User', 'fixture@fixture.test');
+insert into integrations.api_keys (id, name, key_prefix, key_hash, scopes, created_by)
+  values ('a0000000-0000-4000-8000-000000000b02', 'Fixture key', 'fxkey1', repeat('0', 64), '{data_points:read}', 'a0000000-0000-4000-8000-0000000000a1');
+insert into integrations.webhook_endpoints (id, name, url, events, secret_encrypted, is_active)
+  values ('a0000000-0000-4000-8000-000000000b03', 'Fixture hook', 'https://hooks.fixture.test/esg', '{data_point.approved}', 'not-a-real-secret', false);
+insert into integrations.webhook_deliveries (endpoint_id, event_id, event_type, payload, status)
+  values ('a0000000-0000-4000-8000-000000000b03', gen_random_uuid(), 'data_point.approved', '{}', 'delivered');

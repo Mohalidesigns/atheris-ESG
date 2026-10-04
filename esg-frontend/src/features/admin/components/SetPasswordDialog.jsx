@@ -6,6 +6,7 @@ import { useSetUserPasswordMutation } from '../adminApi';
 import { setPasswordSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { tr } from '../../../i18n';
 
 /** Administrator sets a new password for a user (account recovery until self-service reset arrives with email). */
 export default function SetPasswordDialog({ open, user, onClose }) {
@@ -27,16 +28,16 @@ export default function SetPasswordDialog({ open, user, onClose }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>Set password for {user?.firstName} {user?.lastName}</DialogTitle>
+        <DialogTitle>{tr("Set password for")} {user?.firstName} {user?.lastName}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>The account is unlocked and all of the user&apos;s sessions end.</Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>{tr("The account is unlocked and all of the user's sessions end.")}</Typography>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
-          <TextField fullWidth size="small" type="password" label="New password" autoComplete="new-password" {...register('password')}
-            error={!!errors.password} helperText={errors.password?.message ?? 'At least 12 characters with upper and lower case, a digit and a symbol'} />
+          <TextField fullWidth size="small" type="password" label={tr("New password")} autoComplete="new-password" {...register('password')}
+            error={!!errors.password} helperText={tr(errors.password?.message) ?? tr("At least 12 characters with upper and lower case, a digit and a symbol")} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>Set password</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>{tr("Set password")}</Button>
         </DialogActions>
       </form>
     </Dialog>
