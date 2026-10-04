@@ -59,7 +59,8 @@ public class SubscriptionService {
         Map<String, Object> tenant = jdbc.queryForMap(
                 "select subscription_tier, billing_currency, max_users from auth.tenants where id = ?", tenantId);
         long users = jdbc.queryForObject(
-                "select count(*) from auth.users where is_active and deleted_at is null", Long.class);
+                "select count(*) from auth.users u where is_active and deleted_at is null and not auth.is_platform_user(u.id)",
+                Long.class);
         List<Entitlement> modules = jdbc.query(
                 "select tm.module_code, tm.source from auth.tenant_modules(?) tm "
                         + "join reference.modules m on m.code = tm.module_code order by m.sort_order",

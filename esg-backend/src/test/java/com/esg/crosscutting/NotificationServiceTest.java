@@ -66,7 +66,7 @@ class NotificationServiceTest extends ApiTestSupport {
 
     assertThat(sql("select status from notifications.delivery_log where user_id = '" + target
         + "' and notification_type = 'ROLES_CHANGED' order by created_at desc limit 1")).isEqualTo("pending");
-    dispatcher.runOnce();
+    drain();
     assertThat(sql("select status from notifications.delivery_log where user_id = '" + target
         + "' and notification_type = 'ROLES_CHANGED' order by created_at desc limit 1")).isEqualTo("sent");
   }
@@ -76,14 +76,14 @@ class NotificationServiceTest extends ApiTestSupport {
     String target = roleUserId("CONSULTANT");
     when(email.send(anyString(), anyString(), anyString())).thenReturn(SendResult.failed("SMTP down"));
     changeRoles(target, "CONSULTANT");
-    dispatcher.runOnce();
+    drain();
     String row = sql("select status || '|' || attempts || '|' || (next_attempt_at > now()) || '|' || last_error from notifications.delivery_log "
         + "where user_id = '" + target + "' order by created_at desc limit 1");
     assertThat(row).isEqualTo("pending|1|true|SMTP down");
 
     when(email.send(anyString(), anyString(), anyString())).thenReturn(SendResult.notConfigured("Email is not configured"));
     changeRoles(target, "CONSULTANT");
-    dispatcher.runOnce();
+    drain();
     assertThat(sql("select status from notifications.delivery_log where user_id = '" + target
         + "' order by created_at desc limit 1")).isEqualTo("skipped");
   }
@@ -112,5 +112,12 @@ class NotificationServiceTest extends ApiTestSupport {
     }
     mvc.perform(put("/v1/notifications/read-all").header("Authorization", bearer)).andExpect(status().isOk());
     mvc.perform(get("/v1/notifications/unread-count").header("Authorization", bearer)).andExpect(jsonPath("$.data.unread").value(0));
+  }
+
+  /** Runs the dispatcher until nothing is due: other tests may have queued more than one batch (50) of deliveries. */
+  private void drain() {
+    for (int i = 0; i < 100 && dispatcher.runOnce() > 0; i++) {
+      // keep going
+    }
   }
 }

@@ -31,16 +31,22 @@ public class AccessService {
                 (rs, i) -> rs.getBoolean(1), userId);
         UUID tenantId = TenantContext.requireTenantId();
         if (active.isEmpty() || !active.get(0)) {
-            return new UserAccess(userId, tenantId, false, Set.of(), Set.of(), false, Set.of(), Set.of());
+            return new UserAccess(userId, tenantId, false, Set.of(), Set.of(), false, Set.of(), Set.of(), false, false);
         }
 
         Set<String> roles = new HashSet<>();
         Set<UUID> scopes = new HashSet<>();
         boolean[] tenantWide = {false};
-        jdbc.query("select r.name, ur.org_scope_id from auth.user_roles ur join auth.roles r on r.id = ur.role_id "
+        boolean[] mfaRequired = {false};
+        boolean[] platform = {false};
+        jdbc.query("select r.name, ur.org_scope_id, coalesce(sr.mfa_required, false), sr.scope_type = 'platform' "
+                        + "from auth.user_roles ur join auth.roles r on r.id = ur.role_id "
+                        + "left join auth.system_roles sr on sr.name = r.name and r.is_system_role "
                         + "where ur.user_id = ? and (ur.expires_at is null or ur.expires_at > now())",
                 rs -> {
                     roles.add(rs.getString(1));
+                    mfaRequired[0] |= rs.getBoolean(3);
+                    platform[0] |= rs.getBoolean(4);
                     UUID scope = rs.getObject(2, UUID.class);
                     if (scope == null) {
                         tenantWide[0] = true;
@@ -58,7 +64,8 @@ public class AccessService {
                         + "where ur.user_id = ? and (ur.expires_at is null or ur.expires_at > now())",
                 String.class, tenantId, userId));
 
-        return new UserAccess(userId, tenantId, true, roles, permissions, tenantWide[0], scopes, modules(tenantId));
+        return new UserAccess(userId, tenantId, true, roles, permissions, tenantWide[0], scopes, modules(tenantId),
+                mfaRequired[0], platform[0]);
     }
 
     /** The tenant's enabled modules (WP-19). */

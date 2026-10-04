@@ -5,8 +5,8 @@
 --     add a row with a new factor_version (and set valid_to on the old one), so past calculations keep their factor;
 --   * every row names its source and how the value was derived; all rows stay 'pending_sme' until an ESG SME signs
 --     them off (master plan §10, before Gate G2).
--- DEFRA transport and EEIO spend-based factors are not loaded yet: they need the licensed/published datasets
--- supplied and checked by the SME (STATUS.md, WP-17).
+-- DEFRA transport factors are not loaded yet (the SME supplies them). EEIO spend-based factors (US EPA v1.3) are in
+-- R__ref_10_spend_factors.sql (WP-52b F4).
 -- ============================================================
 
 CREATE TEMP TABLE ef_seed (

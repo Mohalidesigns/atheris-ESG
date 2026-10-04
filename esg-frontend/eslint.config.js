@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import i18next from 'eslint-plugin-i18next'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -27,8 +28,22 @@ export default defineConfig([
     },
   },
   {
+    // WP-45 (D45): no hard-coded text in the interface — wrap it in tr() (npm run i18n:wrap does it) so it can be translated.
+    files: ['src/**/*.jsx'],
+    ignores: ['src/**/*.test.jsx', 'src/test/**'],
+    plugins: { i18next },
+    rules: {
+      'i18next/no-literal-string': ['error', {
+        mode: 'jsx-text-only',
+        // Code samples, header names and error codes stay as they are; so do numbers and symbols.
+        'jsx-components': { exclude: ['code', 'pre', 'kbd', 'Trans'] },
+        words: { exclude: ['^[\\d\\s/·%.,:;+()×=—–\\-~−→“”‘’✓…_]*$', '^ESG-[0-9A-Z-]+$'] },
+      }],
+    },
+  },
+  {
     // Build tooling runs in Node, not the browser
-    files: ['*.config.js'],
+    files: ['*.config.js', 'scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
   {

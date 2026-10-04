@@ -28,7 +28,9 @@
     "unit": "kgCO2e/L",
     "source": "Supplier certificate RT-{u}",
     "validFrom": "2026-01-01",
-    "validTo": "2026-12-31"
+    "validTo": "2026-12-31",
+    "activityLabel": "Round-trip fuel {u}",
+    "activityScope": "scope_1"
   },
   "changes": {
     "region": "WEST_AFRICA",
@@ -100,12 +102,33 @@
       "field": "validTo",
       "value": "2025-12-31",
       "rule": "to >= from (cross-field)"
+    },
+    {
+      "field": "region",
+      "value": "ZZ",
+      "rule": "ISO 3166 country or factor region"
+    },
+    {
+      "field": "unit",
+      "value": "litres",
+      "rule": "kgCO2e per unit"
+    },
+    {
+      "field": "activityLabel",
+      "value": "",
+      "rule": "required for a new activity"
+    },
+    {
+      "field": "activityScope",
+      "value": "scope_9",
+      "rule": "scope_1|2|3"
     }
   ],
   "ui": {
     "fields": {
       "region": {
-        "label": "Country or region"
+        "label": "Country or region",
+        "display": "Nigeria (NG)"
       },
       "category": {
         "label": "Category"
@@ -129,6 +152,14 @@
       "validTo": {
         "label": "Valid to (optional)"
       }
+    },
+    "notInEditForm": {
+      "activityLabel": "Only asked when the category is new; the edit form shows the existing activity",
+      "activityScope": "Only asked when the category is new"
     }
+  },
+  "writeOnly": {
+    "activityLabel": "names a new activity (F11); stored on the activity, not the factor",
+    "activityScope": "scope of a new activity (F11); stored on the activity"
   }
 }

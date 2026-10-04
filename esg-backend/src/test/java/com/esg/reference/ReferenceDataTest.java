@@ -131,8 +131,13 @@ class ReferenceDataTest extends ApiTestSupport {
         .andExpect(jsonPath("$.errors.region").exists())
         .andExpect(jsonPath("$.errors.category").exists())
         .andExpect(jsonPath("$.errors.factorValue").exists())
-        .andExpect(jsonPath("$.errors.unit").exists())
         .andExpect(jsonPath("$.errors.source").exists());
+    // F11: an activity factor needs its unit (kgCO2e per unit); checked once the fields are well-formed.
+    mvc.perform(post("/v1/carbon/factors").header("Authorization", director).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"region\":\"NG\",\"category\":\"diesel_generator\",\"factorValue\":1,\"unit\":\"\",\"source\":\"s\","
+                + "\"validFrom\":\"2026-01-01\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.unit").value("is required"));
     mvc.perform(post("/v1/carbon/factors").header("Authorization", director).contentType(MediaType.APPLICATION_JSON)
             .content("{\"region\":\"NG\",\"category\":\"x\",\"factorValue\":1,\"unit\":\"kg\",\"source\":\"s\","
                 + "\"validFrom\":\"2026-01-01\",\"validTo\":\"2025-01-01\"}"))
@@ -154,7 +159,7 @@ class ReferenceDataTest extends ApiTestSupport {
         .andExpect(status().isForbidden());
 
     String body = "{\"region\":\"NG\",\"category\":\"test_fuel\",\"factorValue\":1.5,\"unit\":\"kgCO2e/litre\","
-        + "\"source\":\"Lab test\",\"validFrom\":\"2026-01-01\"}";
+        + "\"source\":\"Lab test\",\"validFrom\":\"2026-01-01\",\"activityLabel\":\"Test fuel\",\"activityScope\":\"scope_1\"}";
     JsonNode f = data(mvc.perform(post("/v1/carbon/factors").header("Authorization", director)
         .contentType(MediaType.APPLICATION_JSON).content(body)).andReturn().getResponse().getContentAsString());
     String id = f.path("id").asText();
@@ -250,7 +255,8 @@ class ReferenceDataTest extends ApiTestSupport {
     }
     assertThat(scope1.path("unit").asText()).isEqualTo("tCO2e");
     assertThat(scope1.path("dataType").asText()).isEqualTo("decimal");
-    assertThat(scope1.path("requirements").findValuesAsText("code")).containsExactlyInAnyOrder("305-1", "S2-29(a)(i)(1)", "MT-b");
+    // Seeded links plus the bundled content packs' (Phase 3), e.g. SASB EM-EP-110a.1.
+    assertThat(scope1.path("requirements").findValuesAsText("code")).contains("305-1", "S2-29(a)(i)(1)", "MT-b", "EM-EP-110a.1");
     mvc.perform(get("/v1/reference/metrics?pillar=G").header("Authorization", analyst))
         .andExpect(jsonPath("$.data[*].pillar", everyItem(is("G"))));
     mvc.perform(get("/v1/reference/metrics?framework=CBN_NSBP").header("Authorization", analyst))
@@ -267,8 +273,18 @@ class ReferenceDataTest extends ApiTestSupport {
         .andExpect(jsonPath("$.data[?(@.code=='ISSB_S2')].requirementCount").value(23))
         .andExpect(jsonPath("$.data[?(@.code=='TCFD')].requirementCount").value(15))
         .andExpect(jsonPath("$.data[?(@.code=='CBN_NSBP')].requirementCount").value(9))
-        .andExpect(jsonPath("$.data[?(@.code=='SEC_NG')].requirementCount").value(0))
-        .andExpect(jsonPath("$.data[?(@.code=='SEC_NG')].contentStatus").value("pending_sme"));
+        // Phase 3 (5): bundled packs (framework-content/manifest.json), pending SME verification.
+        .andExpect(jsonPath("$.data[?(@.code=='NGX')].requirementCount").value(50))
+        .andExpect(jsonPath("$.data[?(@.code=='SEC_NG')].requirementCount").value(35))
+        .andExpect(jsonPath("$.data[?(@.code=='PENCOM')].requirementCount").value(24))
+        .andExpect(jsonPath("$.data[?(@.code=='CDP')].requirementCount").value(82))
+        .andExpect(jsonPath("$.data[?(@.code=='GHG_PROTOCOL')].requirementCount").value(40))
+        .andExpect(jsonPath("$.data[?(@.code=='SASB')].requirementCount").value(42))
+        .andExpect(jsonPath("$.data[?(@.code=='SEC_NG')].contentStatus").value("pending_sme"))
+        .andExpect(jsonPath("$.data[?(@.code=='SEC_NG')].version").value("2026-09"))
+        // No issued NAICOM instrument was found (D28): still no content, and it says so.
+        .andExpect(jsonPath("$.data[?(@.code=='NAICOM')].requirementCount").value(0))
+        .andExpect(jsonPath("$.data[?(@.code=='NAICOM')].contentStatus").value("pending_sme"));
   }
 
   @Test
@@ -314,5 +330,20 @@ class ReferenceDataTest extends ApiTestSupport {
     mvc.perform(get("/v1/carbon/emissions?scope=scope_2&size=200").header("Authorization", director))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.content[*].id", not(hasItem(id))));
+  }
+
+  @Test
+  void referenceEndpointsAreNeverEmpty() throws Exception {
+    // Definition of done (Phase 1, F9): every catalogue a form picks from has content.
+    for (String path : java.util.List.of("sectors", "countries", "currencies", "scope3-categories", "metrics", "timezones")) {
+      mvc.perform(get("/v1/reference/" + path).header("Authorization", bearerForRole("ESG_ANALYST")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+    }
+    for (String path : java.util.List.of("activities", "regions")) {
+      mvc.perform(get("/v1/carbon/factors/" + path).header("Authorization", bearerForRole("ESG_ANALYST")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThan(0)));
+    }
   }
 }

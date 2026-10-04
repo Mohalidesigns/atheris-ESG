@@ -6,7 +6,7 @@ describe('Journey 5: Scope 2 grid electricity', () => {
     cy.uniqueDay().then((day) => {
       cy.login(roles.ESG_DIRECTOR.email);
       cy.carbonTab('Emission records', day.slice(0, 4));
-      cy.calculateEmission({ scope: 'Scope 2 — purchased energy', activity: 'Electricity grid', org: 'Lagos HQ', day, amount: 10000 });
+      cy.calculateEmission({ scope: 'Scope 2 — purchased energy', activity: 'Grid electricity', org: 'Lagos HQ', day, amount: 10000 });
       // 10,000 kWh × 0.43 kgCO2e/kWh ÷ 1000 = 4.3 tCO2e, from the country (NG) factor with its source and version.
       cy.get('[aria-label="Calculation result"]').within(() => {
         cy.contains('h3', /^4\.3\s*tCO2e$/);
@@ -16,7 +16,7 @@ describe('Journey 5: Scope 2 grid electricity', () => {
       cy.get('[role="dialog"]').contains('button', 'Save record').click();
       cy.get('[role="dialog"]').should('not.exist');
       cy.get('table[aria-label="Emission records"]').contains('tr', day).within(() => {
-        cy.contains('Electricity grid');
+        cy.contains('Grid electricity');
         cy.contains('4.3');
         cy.contains('Calculator');
       });

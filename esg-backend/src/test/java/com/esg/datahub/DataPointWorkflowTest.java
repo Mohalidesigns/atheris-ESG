@@ -74,6 +74,21 @@ class DataPointWorkflowTest extends ApiTestSupport {
   }
 
   @Test
+  void stepsForbiddenBySegregationOfDutiesComeWithTheReason() throws Exception {
+    // Phase 2: the analyst may validate in general, but not data they submitted; the validator may not approve.
+    JsonNode draft = create(analyst(), "{\"orgId\":\"" + ORG_SITE_1 + "\",\"metricKey\":\"diesel_litres\",\"numericValue\":12," + period() + "}");
+    JsonNode submitted = data(step(analyst(), "submit", draft, null).andExpect(status().isOk()));
+    assertThat(submitted.path("actions").toString()).doesNotContain("validate");
+    assertThat(submitted.path("blockedActions").path("validate").asText()).contains("another person must validate it");
+    JsonNode validated = data(step(director(), "validate", submitted, null).andExpect(status().isOk()));
+    assertThat(validated.path("blockedActions").path("approve").asText()).isEqualTo("You validated this — another approver must approve it");
+    // Someone else sees nothing blocked.
+    String id = draft.path("id").asText();
+    JsonNode other = data(mvc.perform(get("/v1/data/points/" + id).header("Authorization", bearerForRole("TENANT_ADMIN"))));
+    assertThat(other.path("blockedActions").size()).isZero();
+  }
+
+  @Test
   void journey3CollectorSubmitsAnalystValidatesDirectorApproves() throws Exception {
     JsonNode draft = diesel(collector());
     assertThat(draft.path("validationStatus").asText()).isEqualTo("draft");

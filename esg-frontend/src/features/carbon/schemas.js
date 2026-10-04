@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { humanize } from '../../services/labels';
 import { CURRENCIES } from '../admin/schemas';
 
 /**
@@ -57,7 +58,7 @@ export const ASSET_CLASSES = {
 
 export const emptyFactor = {
   region: 'NG', category: '', subCategory: '', factorValue: '', unit: '', source: '', validFrom: '', validTo: '',
-  factorMethod: 'activity', spendCurrency: '',
+  factorMethod: 'activity', spendCurrency: '', newActivity: false, activityLabel: '', activityScope: '', activityScope3Category: '',
 };
 
 export const customFactorSchema = z
@@ -70,16 +71,32 @@ export const customFactorSchema = z
       .regex(FACTOR, 'Enter a positive number with up to 10 decimal places')
       .refine((v) => Number(v) > 0, 'Must be greater than 0')
       .refine((v) => Number(v) <= 1000000, 'At most 1,000,000'),
-    unit: z.string().trim().min(1, 'Unit is required').max(50, 'At most 50 characters'),
+    unit: z.string().trim().max(50, 'At most 50 characters'),
     source: z.string().trim().min(1, 'Say where this value comes from').max(255, 'At most 255 characters'),
     validFrom: z.string().min(1, 'Start date is required'),
     validTo: z.string(),
     factorMethod: z.enum(['activity', 'spend'], { message: 'Activity or spend' }),
     spendCurrency: z.string(),
+    // A new activity (F11): only when the category isn't one of the known activities.
+    newActivity: z.boolean().optional(),
+    activityLabel: z.string().trim().max(150, 'At most 150 characters').optional(),
+    activityScope: z.string().optional(),
+    activityScope3Category: z.string().optional(),
   })
   .superRefine((v, ctx) => {
     const issue = (path, message) => ctx.addIssue({ code: 'custom', path: [path], message });
     if (v.validTo && v.validFrom && v.validTo < v.validFrom) issue('validTo', 'Must be on or after the start date');
+    // Mirrors EmissionFactorService.checkActivity (F11).
+    // A spend factor's unit is kgCO2e per its currency, set by the server; an activity factor's is required.
+    if (v.factorMethod !== 'spend') {
+      if (!v.unit.trim()) issue('unit', 'Unit is required');
+      else if (!/^kgCO2e\/.+/.test(v.unit.trim())) issue('unit', 'Must be kgCO2e per unit, e.g. kgCO2e/litre');
+    }
+    if (v.newActivity) {
+      if (!v.activityLabel?.trim()) issue('activityLabel', 'Name the new activity');
+      if (!v.activityScope) issue('activityScope', 'Choose the GHG scope of the new activity');
+      else if (v.activityScope === 'scope_3' && !v.activityScope3Category) issue('activityScope3Category', 'Choose the Scope 3 category');
+    }
     if (v.factorMethod === 'spend' && !v.spendCurrency) issue('spendCurrency', 'Choose the currency the factor is per');
     if (v.factorMethod !== 'spend' && v.spendCurrency) issue('spendCurrency', 'Only for spend-based factors');
     if (v.spendCurrency && !CURRENCIES.includes(v.spendCurrency)) issue('spendCurrency', `Must be one of ${CURRENCIES.join(', ')}`);
@@ -90,22 +107,26 @@ export const toFactorBody = (v) => ({
   category: v.category.trim(),
   subCategory: v.subCategory.trim() || null,
   factorValue: Number(v.factorValue),
-  unit: v.unit.trim(),
+  unit: v.factorMethod === 'spend' ? null : v.unit.trim(),
   source: v.source.trim(),
   validFrom: v.validFrom,
   validTo: v.validTo || null,
   factorMethod: v.factorMethod,
   spendCurrency: v.factorMethod === 'spend' ? v.spendCurrency : null,
+  activityLabel: v.newActivity ? v.activityLabel.trim() : null,
+  activityScope: v.newActivity ? v.activityScope : null,
+  activityScope3Category: v.newActivity && v.activityScope === 'scope_3' ? Number(v.activityScope3Category) : null,
 });
 
 export const toFactorForm = (f) => ({
   region: f.region, category: f.category, subCategory: f.subCategory ?? '', factorValue: String(f.factorValue),
   unit: f.unit, source: f.source, validFrom: f.validFrom, validTo: f.validTo ?? '',
   factorMethod: f.factorMethod ?? 'activity', spendCurrency: f.spendCurrency ?? '',
+  newActivity: false, activityLabel: '', activityScope: '', activityScope3Category: '',
 });
 
 /** "diesel_generator" → "Diesel generator". */
-export const activityLabel = (category) => (category ?? '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+export const activityLabel = (category) => humanize(category);
 
 /** "kgCO2e/litre" → "litre": the unit the activity data must be in. */
 export const factorActivityUnit = (unit) => (unit?.includes('/') ? unit.slice(unit.indexOf('/') + 1) : unit ?? '');

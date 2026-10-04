@@ -1,0 +1,121 @@
+{
+  "id": "bond-sukuk",
+  "forms": [
+    "Sustainable finance instrument"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "INVESTOR_VIEWER",
+  "create": {
+    "method": "POST",
+    "path": "/v1/investor/bonds"
+  },
+  "read": {
+    "path": "/v1/investor/bonds/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/investor/bonds/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Investor Portal"
+  },
+  "values": {
+    "name": "RT bond {u}",
+    "isin": "NGFGN0000012",
+    "issueDate": "2025-01-15",
+    "maturityDate": "2032-01-15",
+    "amount": 5000000,
+    "currency": "NGN",
+    "frameworkReference": "ICMA Green Bond Principles (2021)",
+    "externalReviewer": "Second-opinion provider",
+    "visibleToInvestors": true,
+    "status": "active",
+    "instrument": "green_sukuk",
+    "shariahReviewer": "Shariah Advisory Board",
+    "shariahPronouncementOn": "2025-01-02",
+    "kpiId": null,
+    "sptValue": null,
+    "sptObservationYear": null,
+    "couponStepUpBps": null
+  },
+  "changes": {
+    "instrument": "sustainability_sukuk",
+    "shariahReviewer": "Another Shariah board",
+    "shariahPronouncementOn": "2025-01-10"
+  },
+  "invalid": [
+    {
+      "field": "shariahReviewer",
+      "value": null,
+      "rule": "a sukuk needs its Shariah reviewer"
+    },
+    {
+      "field": "instrument",
+      "value": "bond",
+      "rule": "enum"
+    },
+    {
+      "field": "kpiId",
+      "value": "{KPI_A}",
+      "rule": "only an SLB has a KPI"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Name"
+      },
+      "isin": {
+        "label": "ISIN (optional)"
+      },
+      "issueDate": {
+        "label": "Issue date"
+      },
+      "maturityDate": {
+        "label": "Maturity date"
+      },
+      "amount": {
+        "label": "Amount raised"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "NGN"
+      },
+      "frameworkReference": {
+        "label": "Framework"
+      },
+      "externalReviewer": {
+        "label": "External reviewer (optional)"
+      },
+      "visibleToInvestors": {
+        "label": "Visible to investors",
+        "kind": "switch"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      },
+      "instrument": {
+        "label": "Instrument",
+        "kind": "select",
+        "display": "Green sukuk"
+      },
+      "shariahReviewer": {
+        "label": "Shariah reviewer"
+      },
+      "shariahPronouncementOn": {
+        "label": "Shariah pronouncement date (optional)"
+      }
+    },
+    "notInEditForm": {
+      "kpiId": "shown only for sustainability-linked bonds",
+      "sptValue": "shown only for sustainability-linked bonds",
+      "sptObservationYear": "shown only for sustainability-linked bonds",
+      "couponStepUpBps": "shown only for sustainability-linked bonds"
+    }
+  }
+}
