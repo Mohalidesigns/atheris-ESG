@@ -67,7 +67,7 @@ class AuditTrailTest extends ApiTestSupport {
   private static final List<String> NOT_CHANGE_LOGGED = List.of("auth.login_identities", "auth.user_sessions",
       "auth.role_permissions", "data_hub.offline_sync_queue", "notifications.notification_queue",
       "notifications.delivery_log", "files.file_access_log", "files.file_versions", "audit.audit_logs",
-      "audit.data_lineage");
+      "audit.data_lineage", "integrations.api_key_identities", "integrations.webhook_deliveries");
 
   /** Guards new migrations (WP-18): a tenant table without the change-log trigger would be silently unaudited. */
   @Test

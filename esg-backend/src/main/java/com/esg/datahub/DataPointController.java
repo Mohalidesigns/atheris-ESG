@@ -41,10 +41,12 @@ public class DataPointController {
 
     private final DataPointService service;
     private final DataValidationService validation;
+    private final DataPointBulkService bulk;
 
-    public DataPointController(DataPointService service, DataValidationService validation) {
+    public DataPointController(DataPointService service, DataValidationService validation, DataPointBulkService bulk) {
         this.service = service;
         this.validation = validation;
+        this.bulk = bulk;
     }
 
     @GetMapping("/points")
@@ -115,6 +117,17 @@ public class DataPointController {
     @PreAuthorize("hasAnyAuthority('data_points:validate', 'data_points:approve')")
     public ResponseEntity<ApiResponse<DataPointResponse>> reject(@PathVariable UUID id, @Valid @RequestBody TransitionRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(service.reject(id, body.version(), body.reason()), "Rejected"));
+    }
+
+    /**
+     * Phase 3 (2): one workflow step on many points. 200 with a result per point (each checked like the single call);
+     * the step's own permission is checked by the service.
+     */
+    @PostMapping("/points/bulk")
+    @PreAuthorize("hasAnyAuthority('data_points:create', 'data_points:update', 'data_points:validate', 'data_points:approve')")
+    public ResponseEntity<ApiResponse<DataHubDtos.BulkActionResponse>> bulk(@Valid @RequestBody DataHubDtos.BulkActionRequest body) {
+        DataHubDtos.BulkActionResponse result = bulk.run(body);
+        return ResponseEntity.ok(ApiResponse.ok(result, result.succeeded() + " of " + result.requested() + " done"));
     }
 
     @PutMapping("/points/{id}/reopen")

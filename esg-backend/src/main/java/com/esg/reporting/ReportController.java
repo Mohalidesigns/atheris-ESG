@@ -124,6 +124,20 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.ok(reports.version(id, versionId)));
     }
 
+    /** Phase 3 (3): watermarked DRAFT PDF of the working version, for review before approval. Not stored. */
+    @GetMapping("/{id}/preview")
+    @PreAuthorize("hasAuthority('reports:read')")
+    public ResponseEntity<byte[]> preview(@PathVariable UUID id) {
+        ReportingDtos.ReportDetail report = reports.get(id);
+        byte[] pdf = exports.draftPreview(id);
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        com.esg.files.ContentDisposition.inline(ExportService.draftFileName(report.title(), report.versionLabel())))
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(pdf);
+    }
+
     /** TRD: "Generate PDF/XBRL export" (PDF and Excel; XBRL is WP-30). */
     @PostMapping("/{id}/generate")
     @PreAuthorize("hasAuthority('reports:export')")

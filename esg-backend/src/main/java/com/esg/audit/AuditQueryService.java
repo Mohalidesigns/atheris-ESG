@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -84,8 +85,65 @@ public class AuditQueryService {
                             int page, int size) {
         int safeSize = Math.min(Math.max(size, 1), 200);
         int safePage = Math.max(page, 0);
-        StringBuilder where = new StringBuilder(" where 1 = 1");
         List<Object> args = new ArrayList<>();
+        String where = where(resource, action, userId, resourceId, from, to, args);
+        Long total = jdbc.queryForObject("select count(*) from audit.audit_logs a" + where, Long.class, args.toArray());
+        List<Object> pageArgs = new ArrayList<>(args);
+        pageArgs.add(safeSize);
+        pageArgs.add((long) safePage * safeSize);
+        List<AuditEntry> rows = jdbc.query(SELECT + where + " order by a.created_at desc, a.id limit ? offset ?",
+                (rs, i) -> entry(rs), pageArgs.toArray());
+        long count = total == null ? 0 : total;
+        return new AuditPage(rows, safePage, safeSize, count, (int) Math.ceil(count / (double) safeSize));
+    }
+
+    /** Most rows one CSV export holds; narrow the filters for more. */
+    static final int EXPORT_MAX = 50_000;
+    private static final String SELECT = "select a.*, u.first_name || ' ' || u.last_name as user_name, u.email as user_email "
+            + "from audit.audit_logs a left join auth.users u on u.id = a.user_id";
+
+    /**
+     * Phase 3 (6): the filtered trail as CSV (newest first, at most {@link #EXPORT_MAX} rows), one line per entry with
+     * its before → after values. Cells that a spreadsheet would run as a formula are prefixed with an apostrophe.
+     */
+    @Transactional(readOnly = true)
+    public String exportCsv(String resource, String action, UUID userId, UUID resourceId, Instant from, Instant to) {
+        List<Object> args = new ArrayList<>();
+        String where = where(resource, action, userId, resourceId, from, to, args);
+        Long total = jdbc.queryForObject("select count(*) from audit.audit_logs a" + where, Long.class, args.toArray());
+        if (total != null && total > EXPORT_MAX) {
+            throw com.esg.exception.ApiException.badRequest("ESG-400-EXPORT-TOO-LARGE",
+                    total + " entries match; narrow the filters to at most " + EXPORT_MAX + " for one export");
+        }
+        Map<String, String> labels = new java.util.HashMap<>();
+        resources().forEach(r -> labels.put(r.value(), r.label()));
+        StringBuilder out = new StringBuilder("When (UTC),User,User email,Action,Table,Record ID,Changes,Error code,Client IP,User agent\r\n");
+        jdbc.query(SELECT + where + " order by a.created_at desc, a.id", rs -> {
+            AuditEntry e = entry(rs);
+            String table = labels.getOrDefault(e.resource(), labels.getOrDefault(e.resource().replaceAll("_(\\d{4}|default)$", ""), e.resource()));
+            String code = e.newValue() != null && e.newValue().has("errorCode") ? e.newValue().get("errorCode").asText() : "";
+            out.append(String.join(",", cell(e.createdAt().toString()), cell(e.userName() == null ? (e.userId() == null ? "System" : e.userId().toString()) : e.userName()),
+                    cell(rs.getString("user_email")), cell(ACTION_LABELS.getOrDefault(e.action(), e.action())), cell(table),
+                    cell(e.resourceId() == null ? "" : e.resourceId().toString()), cell(changes(e)), cell(code),
+                    cell(e.ipAddress()), cell(e.userAgent()))).append("\r\n");
+        }, args.toArray());
+        return out.toString();
+    }
+
+    /** People in the tenant's trail, by name (the User filter). */
+    @Transactional(readOnly = true)
+    public List<AuditDtos.AuditUser> users() {
+        return jdbc.query("select u.id, u.first_name || ' ' || u.last_name, u.email from auth.users u "
+                        + "where exists (select 1 from audit.audit_logs a where a.user_id = u.id) order by u.first_name, u.last_name",
+                (rs, i) -> new AuditDtos.AuditUser(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3)));
+    }
+
+    // no-mock-gate: config — audit action names (audit.log_change, DeniedActionAuditor, QuarantineLog) → labels
+    private static final Map<String, String> ACTION_LABELS = Map.of("insert", "Created", "update", "Changed", "delete", "Deleted",
+            "denied", "Refused", "quarantined", "Quarantined");
+
+    private static String where(String resource, String action, UUID userId, UUID resourceId, Instant from, Instant to, List<Object> args) {
+        StringBuilder where = new StringBuilder(" where 1 = 1");
         if (resource != null && !resource.isBlank()) {
             // Rows written before V019 carry the partition name (data_hub.data_points_2026): same table for the reader.
             where.append(" and (a.resource = ? or a.resource like ?)");
@@ -97,16 +155,47 @@ public class AuditQueryService {
         if (resourceId != null) { where.append(" and a.resource_id = ?"); args.add(resourceId); }
         if (from != null) { where.append(" and a.created_at >= ?"); args.add(Timestamp.from(from)); }
         if (to != null) { where.append(" and a.created_at < ?"); args.add(Timestamp.from(to)); }
+        return where.toString();
+    }
 
-        Long total = jdbc.queryForObject("select count(*) from audit.audit_logs a" + where, Long.class, args.toArray());
-        List<Object> pageArgs = new ArrayList<>(args);
-        pageArgs.add(safeSize);
-        pageArgs.add((long) safePage * safeSize);
-        List<AuditEntry> rows = jdbc.query("select a.*, u.first_name || ' ' || u.last_name as user_name "
-                + "from audit.audit_logs a left join auth.users u on u.id = a.user_id" + where
-                + " order by a.created_at desc, a.id limit ? offset ?", (rs, i) -> entry(rs), pageArgs.toArray());
-        long count = total == null ? 0 : total;
-        return new AuditPage(rows, safePage, safeSize, count, (int) Math.ceil(count / (double) safeSize));
+    /** "field: before → after" for each recorded field (updates hold only the changed fields, V014). */
+    static String changes(AuditEntry e) {
+        java.util.TreeSet<String> keys = new java.util.TreeSet<>();
+        if (e.oldValue() != null) {
+            e.oldValue().fieldNames().forEachRemaining(keys::add);
+        }
+        if (e.newValue() != null) {
+            e.newValue().fieldNames().forEachRemaining(keys::add);
+        }
+        List<String> parts = new ArrayList<>();
+        for (String k : keys) {
+            JsonNode before = e.oldValue() == null ? null : e.oldValue().get(k);
+            JsonNode after = e.newValue() == null ? null : e.newValue().get(k);
+            if ("insert".equals(e.action()) || "denied".equals(e.action()) || "quarantined".equals(e.action())) {
+                parts.add(k + ": " + show(after));
+            } else if ("delete".equals(e.action())) {
+                parts.add(k + ": " + show(before));
+            } else {
+                parts.add(k + ": " + show(before) + " → " + show(after));
+            }
+        }
+        return String.join("; ", parts);
+    }
+
+    private static String show(JsonNode v) {
+        return v == null || v.isNull() ? "—" : v.isTextual() ? v.asText() : v.toString();
+    }
+
+    /** RFC 4180 quoting; a leading = + - @ (or tab/CR) is neutralised so the cell can't run as a formula. */
+    static String cell(String v) {
+        if (v == null) {
+            return "";
+        }
+        String s = v;
+        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) {
+            s = "'" + s;
+        }
+        return "\"" + s.replace("\"", "\"\"") + "\"";
     }
 
     @Transactional(readOnly = true)

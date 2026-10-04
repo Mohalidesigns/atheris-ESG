@@ -15,6 +15,9 @@ public final class AuditDtos {
     /** An audited table for the Audit log screen's filter: {@code value} is what the filter sends. */
     public record AuditResource(String value, String label, String module) {}
 
+    /** Someone who appears in the tenant's audit trail (Phase 3: the User filter). */
+    public record AuditUser(UUID id, String name, String email) {}
+
     public record AuditPage(List<AuditEntry> content, int page, int size, long totalElements, int totalPages) {}
 
     public record LineageEdge(UUID id, String sourceType, UUID sourceId, String targetType, UUID targetId, String relation,

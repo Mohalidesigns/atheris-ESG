@@ -55,6 +55,35 @@ const choose = async (container, label, option) => {
 const openTab = async (name) => userEvent.click(await screen.findByRole('tab', { name }));
 
 describe('CarbonPage overview and records', () => {
+  it('guides the user to the missing intensity data: add it, or review what is waiting (Phase 3)', async () => {
+    fakeApi(routes({
+      'GET /carbon/emissions/summary': () => ok({
+        ...summary, intensity: [],
+        intensityGaps: [
+          { denominator: 'revenue', metricKey: 'revenue', metricName: 'Revenue', unit: 'currency', awaitingApproval: 0 },
+          { denominator: 'employees', metricKey: 'employees_total', metricName: 'Total employees', unit: 'headcount', awaitingApproval: 2 },
+        ],
+      }),
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated([...READ, 'data_points:create', 'data_points:approve']) });
+    const gaps = await screen.findByRole('list', { name: 'Missing intensity data' });
+    expect(within(gaps).getByRole('link', { name: 'Add revenue' }))
+      .toHaveAttribute('href', `/data-hub?add=revenue&from=${YEAR}-01-01&to=${YEAR}-12-31`);
+    expect(within(gaps).getByText(/2 entered and waiting for approval/)).toBeInTheDocument();
+    expect(within(gaps).getByRole('link', { name: 'Review 2 waiting' })).toHaveAttribute('href', '/data-hub?tab=review');
+  });
+
+  it('shows no intensity prompt to someone who can only read', async () => {
+    fakeApi(routes({
+      'GET /carbon/emissions/summary': () => ok({ ...summary, intensity: [], intensityGaps: [
+        { denominator: 'revenue', metricKey: 'revenue', metricName: 'Revenue', unit: 'currency', awaitingApproval: 0 }] }),
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated(READ) });
+    const gaps = await screen.findByRole('list', { name: 'Missing intensity data' });
+    expect(within(gaps).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(gaps).getByText('Not entered yet (currency)')).toBeInTheDocument();
+  });
+
   it('shows location- and market-based totals, breakdowns and intensity for the selected year', async () => {
     const calls = fakeApi(routes());
     renderWithStore(<CarbonPage />, { preloadedState: authenticated(READ) });

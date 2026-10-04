@@ -188,6 +188,48 @@ public class EmissionService {
         }
     }
 
+    /**
+     * WP-31: the Scope 3 record behind a supplier spend line, created or recalculated with the spend-based method
+     * (record_source 'supply_chain', so it's edited through the spend line, not here). Returns its id.
+     */
+    @Transactional
+    public UUID upsertForSupplierSpend(UUID spendId, EmissionRequest r) {
+        Calculation c = calculate(r);
+        List<UUID> existing = jdbc.queryForList("select id from carbon.emission_records where supplier_spend_id = ? and deleted_at is null",
+                UUID.class, spendId);
+        UUID id = existing.isEmpty() ? UUID.randomUUID() : existing.get(0);
+        if (existing.isEmpty()) {
+            jdbc.update("insert into carbon.emission_records (id, org_id, scope, scope3_category, source_activity, activity_data, "
+                            + "activity_unit, emission_factor_id, factor_version, factor_value, factor_unit, factor_level, gwp_set, "
+                            + "co2e_tonnes, co2_tonnes, ch4_tonnes, n2o_tonnes, reporting_period_start, reporting_period_end, "
+                            + "calculation_method, spend_amount, spend_currency, fx_rate, notes, record_source, supplier_spend_id, calculated_at) "
+                            + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'supply_chain', ?, now())",
+                    id, r.orgId(), r.scope(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(),
+                    c.factor().factorVersion(), c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(),
+                    c.result().co2eTonnes(), c.result().co2Tonnes(), c.result().ch4Tonnes(), c.result().n2oTonnes(),
+                    Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()), r.method(), c.spendAmount(),
+                    c.spendCurrency(), c.fxRate(), blank(r.notes()), spendId);
+        } else {
+            jdbc.update("update carbon.emission_records set org_id = ?, scope3_category = ?, source_activity = ?, activity_data = ?, activity_unit = ?, "
+                            + "emission_factor_id = ?, factor_version = ?, factor_value = ?, factor_unit = ?, factor_level = ?, gwp_set = ?, co2e_tonnes = ?, "
+                            + "co2_tonnes = ?, ch4_tonnes = ?, n2o_tonnes = ?, reporting_period_start = ?, reporting_period_end = ?, spend_amount = ?, "
+                            + "spend_currency = ?, fx_rate = ?, notes = ?, calculated_at = now(), version = version + 1 where id = ?",
+                    r.orgId(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(), c.factor().factorVersion(),
+                    c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(), c.result().co2eTonnes(), c.result().co2Tonnes(),
+                    c.result().ch4Tonnes(), c.result().n2oTonnes(), Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()),
+                    c.spendAmount(), c.spendCurrency(), c.fxRate(), blank(r.notes()), id);
+        }
+        recordLineage(id, c);
+        return id;
+    }
+
+    /** A removed spend line no longer backs a Scope 3 record. */
+    @Transactional
+    public void removeForSupplierSpend(UUID spendId) {
+        jdbc.update("update carbon.emission_records set deleted_at = now(), version = version + 1 where supplier_spend_id = ? and deleted_at is null",
+                spendId);
+    }
+
     /** Marks a record verified (carbon_data:approve): recalculation then leaves it alone. */
     @Transactional
     public EmissionResponse verify(UUID id, Long version) {
@@ -249,8 +291,11 @@ public class EmissionService {
                     result.n2oTonnes(), id);
             lineage.record("emission_factor", resolved.factor().id(), "emission_record", id, "recalculated_from",
                     Map.of("from", row.get("co2e_tonnes"), "to", result.co2eTonnes()));
-            changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
-                    + " → " + result.co2eTonnes() + " t");
+            // WP-51: a 10,000-record batch returned every line (~0.5 MB); the first 50 are listed, the count is exact.
+            if (changes.size() < Recalculation.LISTED) {
+                changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
+                        + " → " + result.co2eTonnes() + " t");
+            }
             updated++;
         }
         return new Recalculation(rows.size(), updated, changes);
@@ -287,6 +332,10 @@ public class EmissionService {
         }
         BigDecimal amount = (BigDecimal) p.get("numeric_value");
         EmissionEngine.Result result = EmissionEngine.calculate(amount, resolved.factor(), gwp());
+        // Phase 3 (1): a corrected point (reopened, edited, approved again) gets a new record; the one it replaces is
+        // kept (soft-deleted) and linked to it, so the record's history is traceable.
+        List<UUID> previous = jdbc.queryForList("select id from carbon.emission_records where data_point_id = ? "
+                + "order by created_at desc limit 1", UUID.class, dataPointId);
         removeForDataPoint(dataPointId);
         UUID id = UUID.randomUUID();
         jdbc.update("insert into carbon.emission_records (id, org_id, scope, scope3_category, source_activity, activity_data, activity_unit, "
@@ -301,6 +350,10 @@ public class EmissionService {
         lineage.record("data_point", dataPointId, "emission_record", id, "calculated_from", Map.of("activityData", amount));
         lineage.record("emission_factor", resolved.factor().id(), "emission_record", id, "calculated_from",
                 Map.of("factorVersion", resolved.factor().factorVersion(), "co2eTonnes", result.co2eTonnes()));
+        if (!previous.isEmpty()) {
+            lineage.record("emission_record", previous.get(0), "emission_record", id, "superseded_by",
+                    Map.of("dataPointId", dataPointId, "activityData", amount));
+        }
     }
 
     /** A reopened data point no longer backs an emission record. */
@@ -350,7 +403,7 @@ public class EmissionService {
                 (rs, i) -> new Bucket(rs.getString(1), rs.getString(2), scale(rs.getBigDecimal(3))), args.toArray());
         BigDecimal total = s1.add(s2).add(s3);
         return new Summary(year, scale(s1), scale(s2), scale(s2Market), scale(s3), scale(total), scale(s1.add(s2Market).add(s3)),
-                scale(flaring), byMonth, bySource, byOrg, byCat, intensity(year, total), count == null ? 0 : count);
+                scale(flaring), byMonth, bySource, byOrg, byCat, intensity(year, total), count == null ? 0 : count, intensityGaps(year));
     }
 
     /**
@@ -372,6 +425,62 @@ public class EmissionService {
         return scopes;
     }
 
+    /** One period of the executive trend (WP-24): tonnes by scope, location-based Scope 2. */
+    public record TrendPoint(String period, BigDecimal scope1, BigDecimal scope2Location, BigDecimal scope3, BigDecimal total) {}
+
+    /**
+     * WP-24: emissions per year or quarter between {@code from} and {@code to} (inclusive), in the caller's org scope.
+     * A record spanning several months is split pro rata by days, as on the Carbon Overview (F15), so periods add up.
+     */
+    public List<TrendPoint> trend(LocalDate from, LocalDate to, boolean quarterly) {
+        return trend(from, to, quarterly ? "quarter" : "year");
+    }
+
+    /** WP-50: the same split by {@code month}, {@code quarter} or {@code year} (months are "YYYY-MM"). */
+    public List<TrendPoint> trend(LocalDate from, LocalDate to, String granularity) {
+        boolean quarterly = "quarter".equals(granularity);
+        boolean monthly = "month".equals(granularity);
+        StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_end >= ? and r.reporting_period_start <= ?");
+        List<Object> args = new ArrayList<>(List.of(Date.valueOf(from), Date.valueOf(to)));
+        appendOrgScope(where, args, "r.org_id");
+        args.add(Date.valueOf(from.withDayOfMonth(1)));
+        args.add(Date.valueOf(to));
+        String bucket = monthly ? "to_char(m, 'YYYY-MM')" : quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
+        Map<String, Map<String, BigDecimal>> byPeriod = new java.util.TreeMap<>();
+        jdbc.query("select " + bucket + " as period, r.scope, sum(r.co2e_tonnes * "
+                + "((least(r.reporting_period_end, (m + interval '1 month' - interval '1 day')::date) - greatest(r.reporting_period_start, m::date) + 1)::numeric "
+                + "/ (r.reporting_period_end - r.reporting_period_start + 1))) from carbon.emission_records r "
+                + "cross join lateral generate_series(date_trunc('month', r.reporting_period_start), date_trunc('month', r.reporting_period_end), "
+                + "interval '1 month') m " + where + " and m >= ? and m <= ? group by period, r.scope", rs -> {
+                    byPeriod.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>()).put(rs.getString(2), rs.getBigDecimal(3));
+                }, args.toArray());
+        List<TrendPoint> out = new ArrayList<>();
+        for (String period : monthly ? months(from, to) : periods(from, to, quarterly)) {
+            Map<String, BigDecimal> s = byPeriod.getOrDefault(period, Map.of());
+            BigDecimal s1 = s.getOrDefault("scope_1", BigDecimal.ZERO);
+            BigDecimal s2 = s.getOrDefault("scope_2", BigDecimal.ZERO);
+            BigDecimal s3 = s.getOrDefault("scope_3", BigDecimal.ZERO);
+            out.add(new TrendPoint(period, scale(s1), scale(s2), scale(s3), scale(s1.add(s2).add(s3))));
+        }
+        return out;
+    }
+
+    private static List<String> months(LocalDate from, LocalDate to) {
+        List<String> out = new ArrayList<>();
+        for (LocalDate d = from.withDayOfMonth(1); !d.isAfter(to); d = d.plusMonths(1)) {
+            out.add(String.format("%04d-%02d", d.getYear(), d.getMonthValue()));
+        }
+        return out;
+    }
+
+    private static List<String> periods(LocalDate from, LocalDate to, boolean quarterly) {
+        List<String> out = new ArrayList<>();
+        for (LocalDate d = from.withDayOfMonth(1); !d.isAfter(to); d = d.plusMonths(quarterly ? 3 : 12)) {
+            out.add(quarterly ? d.getYear() + "-Q" + ((d.getMonthValue() - 1) / 3 + 1) : String.valueOf(d.getYear()));
+        }
+        return out;
+    }
+
     /** BRD-5.2.2-07: carbon intensity by revenue, headcount and production, from approved Data Hub points of the year. */
     List<Intensity> intensity(int year, BigDecimal tonnes) {
         List<Intensity> out = new ArrayList<>();
@@ -391,6 +500,32 @@ public class EmissionService {
             out.add(new Intensity("production", production, "units", tonnes.divide(production, 6, RoundingMode.HALF_UP), "per unit produced"));
         }
         return out;
+    }
+
+    // no-mock-gate: config — the Data Hub metric behind each intensity denominator (as in denominators())
+    private static final Map<String, String> DENOMINATOR_METRICS = new LinkedHashMap<>(Map.of(
+            "revenue", "revenue", "employees", "employees_total", "production", "production_output"));
+
+    /** Phase 3 (4): denominators without an approved value this year, with the points still awaiting approval. */
+    List<CarbonDtos.IntensityGap> intensityGaps(int year) {
+        Map<String, BigDecimal> have = denominators(year);
+        List<CarbonDtos.IntensityGap> gaps = new ArrayList<>();
+        for (String denominator : List.of("revenue", "employees", "production")) {
+            BigDecimal v = have.get(denominator);
+            if (v != null && v.signum() > 0) {
+                continue;
+            }
+            String key = DENOMINATOR_METRICS.get(denominator);
+            StringBuilder where = new StringBuilder("where p.metric_key = ? and p.deleted_at is null "
+                    + "and p.validation_status in ('submitted', 'validated') and extract(year from p.reporting_period_start) = ?");
+            List<Object> args = new ArrayList<>(List.of(key, year));
+            appendOrgScope(where, args, "p.org_id");
+            Integer waiting = jdbc.queryForObject("select count(*) from data_hub.data_points p " + where, Integer.class, args.toArray());
+            Map<String, Object> m = jdbc.queryForMap("select name, unit from reference.metrics where metric_key = ?", key);
+            gaps.add(new CarbonDtos.IntensityGap(denominator, key, (String) m.get("name"), (String) m.get("unit"),
+                    waiting == null ? 0 : waiting));
+        }
+        return gaps;
     }
 
     /** Revenue and production summed over the year; headcount = average of the year's values. Approved points only. */
@@ -519,7 +654,8 @@ public class EmissionService {
         EmissionResponse r = get(id);
         if (!"manual".equals(r.recordSource())) {
             throw ApiException.conflict("ESG-409-STATE", "This record comes from " + ("data_hub".equals(r.recordSource())
-                    ? "an approved Data Hub point; reopen the point to change it" : "a flaring record; edit that instead"));
+                    ? "an approved Data Hub point; reopen the point to change it" : "supply_chain".equals(r.recordSource())
+                    ? "supplier spend; edit the spend line in Supply Chain instead" : "a flaring record; edit that instead"));
         }
         if (r.verified()) {
             throw ApiException.conflict("ESG-409-STATE", "A verified record can't be changed");

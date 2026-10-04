@@ -81,14 +81,18 @@ describe('Hardening Phase 1: functional fixes', () => {
     cy.login(roles.TENANT_ADMIN.email);
     cy.visit('/admin');
     cy.contains('[role="tab"]', 'Settings').click();
-    cy.field('Reporting time zone').should('have.value', 'Africa/Lagos').clear().type('Africa/Ac');
-    cy.contains('[role="option"]', 'Africa/Accra').click();
-    cy.contains('button', 'Save settings').click();
-    cy.contains('Settings saved');
-    cy.field('Reporting time zone').clear().type('Africa/Lag');
-    cy.contains('[role="option"]', 'Africa/Lagos').click();
-    cy.contains('button', 'Save settings').click();
-    cy.contains('Settings saved');
+    // Doesn't assume the starting zone (a retry may start from Accra); each save is checked after a reload.
+    const pick = (typed, zone) => {
+      cy.field('Reporting time zone').should('not.have.value', '').clear().type(typed);
+      cy.contains('[role="option"]', zone).click();
+      cy.contains('button', 'Save settings').click();
+      cy.contains('Settings saved');
+      cy.reload();
+      cy.contains('[role="tab"]', 'Settings').click();
+      cy.field('Reporting time zone').should('have.value', zone);
+    };
+    pick('Africa/Ac', 'Africa/Accra');
+    pick('Africa/Lag', 'Africa/Lagos');
   });
 
   it('F13/F14: the review card opens the queues; deleting a draft closes it without refetching', () => {
