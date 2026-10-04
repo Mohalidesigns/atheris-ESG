@@ -67,10 +67,15 @@ public final class TenancyDtos {
             @NotNull @Min(1) @Max(12) Integer fiscalYearStartMonth,
             @NotBlank @Size(max = 50) String reportingTimezone,
             @NotNull @Size(max = 20) List<@NotBlank @Size(max = 50) String> defaultFrameworkCodes,
-            @NotNull Long version) {}
+            @NotNull Long version,
+            /** GWP-100 set for per-gas emission factors (WP-21); null keeps the current one. */
+            @Pattern(regexp = "^(AR5|AR6)$", message = "must be AR5 or AR6") String gwpSet,
+            /** Emission factors still pending SME review (S7): allow_flagged (used, marked provisional) or block; null keeps it. */
+            @Pattern(regexp = "^(allow_flagged|block)$", message = "must be allow_flagged or block") String provisionalFactorPolicy) {}
 
     public record SettingsResponse(String tenantName, String baseCurrency, int fiscalYearStartMonth,
-                                   String reportingTimezone, List<String> defaultFrameworkCodes, Long version) {}
+                                   String reportingTimezone, List<String> defaultFrameworkCodes, Long version, String gwpSet,
+                                   String provisionalFactorPolicy) {}
 
     // ---------------------------------------------------------------- platform tenants (SUPER_ADMIN)
 

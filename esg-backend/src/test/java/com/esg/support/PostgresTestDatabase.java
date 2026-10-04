@@ -30,20 +30,34 @@ public final class PostgresTestDatabase {
 
   private static final String[] SCHEMAS = {
     "auth", "data_hub", "carbon", "compliance", "reporting", "risk", "supply_chain", "social",
-    "governance", "analytics", "investor", "carbon_market", "training", "audit", "files", "notifications", "reference"
+    "governance", "analytics", "investor", "carbon_market", "training", "ai", "integrations", "audit", "files", "notifications", "reference"
   };
 
   private static String url;
   private static String ownerPassword;
   private static String appPassword;
   private static PostgreSQLContainer<?> container;
+  private static RuntimeException failure;
 
   private PostgresTestDatabase() {}
 
   /** Starts (once) and returns the JDBC URL; skips the calling test if no database is available. */
   public static synchronized String url() {
+    if (failure != null) {
+      // Every later test class fails with the original cause instead of running against a half-built database.
+      throw new IllegalStateException("Test database setup failed earlier", failure);
+    }
     if (url == null) {
-      start();
+      try {
+        start();
+      } catch (org.opentest4j.TestAbortedException e) {
+        url = null; // no database available: skip, and let the next class check again
+        throw e;
+      } catch (RuntimeException e) {
+        url = null;
+        failure = e;
+        throw e;
+      }
     }
     return url;
   }

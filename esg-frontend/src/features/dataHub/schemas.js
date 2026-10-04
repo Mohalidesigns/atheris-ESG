@@ -20,15 +20,15 @@ export const STATUS = {
   rejected: { label: 'Rejected', color: '#C53030', bg: '#FEE2E2' },
 };
 
-// no-mock-gate: config — data source type labels (enum mirrors DataHubDtos.SOURCE_TYPE_REGEX)
+// no-mock-gate: config — source system kinds (enum mirrors DataHubDtos.SOURCE_TYPE_REGEX). A person is never a source (Phase 3).
 export const SOURCE_TYPES = {
   manual: 'Manual entry', csv: 'CSV file', excel: 'Excel workbook', api: 'API', erp: 'ERP system',
-  mobile: 'Mobile app', iot: 'IoT sensor', sms: 'SMS / USSD',
+  mobile: 'Mobile app', iot: 'IoT sensor', sms: 'SMS / USSD', meter: 'Meter',
 };
 
 export const emptyDataPoint = {
-  orgId: '', metricKey: '', subCategory: '', value: '', currency: '', sourceId: '', evidenceFileIds: [],
-  reportingPeriodStart: '', reportingPeriodEnd: '',
+  orgId: '', metricKey: '', subCategory: '', value: '', currency: '', sourceId: '', ownerUserId: '', evidenceFileIds: [],
+  reportingPeriodStart: '', reportingPeriodEnd: '', notes: '',
 };
 
 /** Server field → form field. */
@@ -44,9 +44,11 @@ export const toDataPointForm = (dp) => ({
     : dp.numericValue != null ? String(Number(dp.numericValue)) : dp.textValue ?? '',
   currency: dp.originalCurrency ?? '',
   sourceId: dp.sourceId ?? '',
+  ownerUserId: dp.ownerUserId ?? '',
   evidenceFileIds: dp.evidenceFileIds ?? [],
   reportingPeriodStart: dp.reportingPeriodStart ?? '',
   reportingPeriodEnd: dp.reportingPeriodEnd ?? '',
+  notes: dp.notes ?? '',
 });
 
 /** @param rules GET /data/rules — only severity "error" range rules block saving (warnings are server-side). */
@@ -58,15 +60,19 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
     value: z.string().trim(),
     currency: z.string(),
     sourceId: z.string(),
+    ownerUserId: z.string().optional(),
     evidenceFileIds: z.array(z.string()).max(MAX_EVIDENCE, `At most ${MAX_EVIDENCE} evidence files`),
     reportingPeriodStart: z.string().min(1, 'Start date is required'),
     reportingPeriodEnd: z.string().min(1, 'End date is required'),
+    notes: z.string().trim().max(1000, 'At most 1000 characters').optional(),
   })
   .superRefine((v, ctx) => {
     const issue = (path, message) => ctx.addIssue({ code: 'custom', path: [path], message });
     if (v.reportingPeriodStart && v.reportingPeriodEnd && v.reportingPeriodEnd < v.reportingPeriodStart) {
       issue('reportingPeriodEnd', 'Must be on or after the start date');
     }
+    // Phase 2: an empty value is flagged on the first submit, before a metric is chosen too.
+    if (v.value === '') issue('value', 'A value is required');
     const metric = metricsByKey[v.metricKey];
     if (v.metricKey && !metric) {
       issue('metricKey', 'Is not in the metric catalogue');
@@ -76,7 +82,7 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
     if (v.currency && metric.dataType !== 'currency') issue('currency', 'Only applies to currency metrics');
     if (v.currency && !CURRENCIES.includes(v.currency)) issue('currency', `Must be one of ${CURRENCIES.join(', ')}`);
     if (NUMERIC_TYPES.includes(metric.dataType)) {
-      if (v.value === '') return issue('value', 'A value is required');
+      if (v.value === '') return undefined;
       if (v.value.startsWith('-')) return issue('value', 'Must be zero or more');
       if (!DECIMAL.test(v.value)) return issue('value', 'Enter a number with up to 6 decimal places');
       const n = Number(v.value);
@@ -86,7 +92,7 @@ export const dataPointSchema = (metricsByKey, rules = []) => z
         && ((r.minValue != null && n < Number(r.minValue)) || (r.maxValue != null && n > Number(r.maxValue))));
       if (broken) return issue('value', broken.message);
     } else if (metric.dataType === 'text') {
-      if (v.value === '') return issue('value', 'A value is required');
+      if (v.value === '') return undefined;
       if (v.value.length > 2000) return issue('value', 'At most 2000 characters');
     }
     return undefined;
@@ -102,9 +108,12 @@ export function toDataPointBody(v, metric) {
     textValue: numeric ? null : v.value.trim(),
     currency: metric.dataType === 'currency' && v.currency ? v.currency : null,
     sourceId: v.sourceId || null,
+    // Empty: the server uses the source system's owner, else the person saving it (Phase 3).
+    ownerUserId: v.ownerUserId || null,
     evidenceFileIds: v.evidenceFileIds,
     reportingPeriodStart: v.reportingPeriodStart,
     reportingPeriodEnd: v.reportingPeriodEnd,
+    notes: (v.notes ?? '').trim() || null,
   };
 }
 
@@ -115,16 +124,22 @@ export const reasonSchema = z.object({
 
 // ---------------------------------------------------------------- data sources (DataSourceRequest)
 
-export const emptySource = { name: '', sourceType: 'manual', description: '', active: true };
+export const emptySource = { name: '', sourceType: 'manual', description: '', ownerUserId: '', active: true };
 
-export const dataSourceSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(255, 'At most 255 characters'),
+/** @param people GET /data/owners — a name that is a colleague's full name is refused, as on the server. */
+export const dataSourceSchema = (people = []) => z.object({
+  name: z.string().trim().min(1, 'Name is required').max(255, 'At most 255 characters')
+    .refine((n) => !people.some((p) => p.name.toLowerCase() === n.toLowerCase()),
+      'This is a person\'s name. Name the system (e.g. "Generator meter #2") and choose the person as the owner'),
   sourceType: z.enum(Object.keys(SOURCE_TYPES), { message: 'Choose a type' }),
   description: z.string().trim().max(500, 'At most 500 characters'),
+  ownerUserId: z.string().optional(),
   active: z.boolean(),
 });
 
-export const toSourceBody = (v) => ({ ...v, name: v.name.trim(), description: v.description.trim() || null });
+export const toSourceBody = (v) => ({
+  ...v, name: v.name.trim(), description: v.description.trim() || null, ownerUserId: v.ownerUserId || null,
+});
 
 // ---------------------------------------------------------------- exchange rates (FxRateRequest)
 
@@ -160,6 +175,8 @@ export const IMPORT_FIELDS = [
   { key: 'periodStart', label: 'Period start' },
   { key: 'periodEnd', label: 'Period end' },
   { key: 'subCategory', label: 'Sub-category' },
+  { key: 'notes', label: 'Notes', hint: 'comment or remark' },
+  { key: 'owner', label: 'Responsible person', hint: 'email or full name' },
 ];
 
 export const importStartSchema = z

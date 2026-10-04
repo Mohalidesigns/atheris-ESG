@@ -1,0 +1,162 @@
+{
+  "id": "safety-incident",
+  "forms": [
+    "Safety incident"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/social/incidents"
+  },
+  "read": {
+    "path": "/v1/social/incidents/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/social/incidents/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Social Impact"
+  },
+  "values": {
+    "orgId": "{ORG_SITE_2}",
+    "title": "RT incident {u}",
+    "incidentType": "injury",
+    "outcome": "lost_time",
+    "personType": "employee",
+    "occurredAt": "2025-04-01T08:30",
+    "lostDays": 3,
+    "location": "Pump house",
+    "description": "Hand caught in a valve wheel"
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "title": "RT incident {u} revised",
+    "incidentType": "illness",
+    "lostDays": 5,
+    "outcome": "restricted_work",
+    "personType": "contractor",
+    "occurredAt": "2025-04-02T10:15",
+    "location": "Tank farm",
+    "description": "Heat stress during tank cleaning"
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "incidentType",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "outcome",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "outcome",
+      "value": "none",
+      "rule": "an injury needs an outcome"
+    },
+    {
+      "field": "personType",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "occurredAt",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "lostDays",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "lostDays",
+      "value": 0,
+      "rule": "lost time ≥ 1 day"
+    },
+    {
+      "field": "location",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "title": {
+        "label": "Title"
+      },
+      "incidentType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Injury"
+      },
+      "outcome": {
+        "label": "Outcome",
+        "kind": "select",
+        "display": "Lost time"
+      },
+      "personType": {
+        "label": "Person affected",
+        "kind": "select",
+        "display": "Employee"
+      },
+      "occurredAt": {
+        "label": "Date and time"
+      },
+      "lostDays": {
+        "label": "Days lost or restricted"
+      },
+      "location": {
+        "label": "Location (optional)"
+      },
+      "description": {
+        "label": "Description (optional)"
+      }
+    }
+  }
+}

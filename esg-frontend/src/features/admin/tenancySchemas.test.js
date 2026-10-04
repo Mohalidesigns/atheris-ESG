@@ -32,9 +32,10 @@ describe('periodSchema', () => {
 });
 
 describe('settingsSchema', () => {
-  it('rejects unknown currency and month 13', () => {
-    const e = issues(settingsSchema, { baseCurrency: 'BTC', fiscalYearStartMonth: 13, reportingTimezone: 'x', defaultFrameworkCodes: [] });
-    expect(Object.keys(e).sort()).toEqual(['baseCurrency', 'fiscalYearStartMonth']);
+  it('rejects unknown currency, month 13, a GWP set other than AR5/AR6 and an unknown factor policy', () => {
+    const e = issues(settingsSchema, { baseCurrency: 'BTC', fiscalYearStartMonth: 13, reportingTimezone: 'x', defaultFrameworkCodes: [], gwpSet: 'AR4',
+      provisionalFactorPolicy: 'maybe' });
+    expect(Object.keys(e).sort()).toEqual(['baseCurrency', 'fiscalYearStartMonth', 'gwpSet', 'provisionalFactorPolicy']);
   });
 });
 

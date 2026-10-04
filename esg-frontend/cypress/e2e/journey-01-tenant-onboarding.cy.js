@@ -62,8 +62,9 @@ describe('Journey 1: tenant admin onboards org tree, users and roles', () => {
       cy.contains('button', 'Create user').click();
     });
     cy.get('[role="dialog"]').should('not.exist');
-    cy.get('input[placeholder="Search name or email"]').type(email);
-    cy.contains('td', email).should('be.visible');
+    // The new user is shown straight away: the search is set to their email and the row highlighted (Phase 2).
+    cy.get('input[placeholder="Search name or email"]').should('have.value', email);
+    cy.contains('td', email).should('be.visible').closest('tr').should('have.attr', 'aria-current', 'true');
 
     // 3. An org-scoped role: DATA_COLLECTOR limited to the new site.
     cy.contains("tr", email).find(`[aria-label="Roles for ${email}"]`).click();
@@ -77,7 +78,7 @@ describe('Journey 1: tenant admin onboards org tree, users and roles', () => {
 
     // 4. The new user signs in and sees only the collector's menus; the Data Hub offers only their site.
     cy.login(email, password);
-    cy.menu().should('deep.equal', ['Data Hub', 'Carbon Accounting']);
+    cy.menu().should('deep.equal', ['Data Hub', 'Carbon Accounting', 'Training']);
     cy.visit('/admin');
     cy.contains("You don't have access to this page").should('be.visible');
     cy.visit('/data-hub');

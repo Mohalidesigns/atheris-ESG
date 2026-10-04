@@ -44,9 +44,13 @@ public class JwtTokenProvider {
         this.jwtExpirationMs = jwtExpirationMs;
     }
 
-    /** JWT payload per TRD §5.4.1: sub, tenant_id, roles[], permissions[] (informational; the server re-checks). */
+    /**
+     * JWT payload per TRD §5.4.1: sub, tenant_id, roles[], permissions[] (informational; the server re-checks), and
+     * {@code mfa}: true when the session was started with a verified TOTP code. Users holding an MFA-required role
+     * are refused without it ({@link JwtAuthenticationFilter}).
+     */
     public String generateAccessToken(String userId, String tenantId, Collection<String> roles,
-                                      Collection<String> permissions) {
+                                      Collection<String> permissions, boolean mfa) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(userId)
@@ -54,7 +58,8 @@ public class JwtTokenProvider {
                         "typ", TYPE_ACCESS,
                         "tenant_id", tenantId,
                         "roles", List.copyOf(roles),
-                        "permissions", List.copyOf(permissions)))
+                        "permissions", List.copyOf(permissions),
+                        "mfa", mfa))
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + jwtExpirationMs))
                 .signWith(key)

@@ -61,6 +61,9 @@ public class PlatformTenantService {
         String callerTenant = TenantContext.getTenantId();
         try {
             TenantContext.setTenantId(tenantId.toString());
+            // F10: the reporting time zone follows the tenant's country (Africa/Lagos when the country has none).
+            jdbc.update("update auth.tenant_settings set reporting_timezone = coalesce((select default_timezone "
+                    + "from reference.countries where code = ?), 'Africa/Lagos')", r.countryCode());
             AdminDtos.UserResponse admin = userAdmin.create(new AdminDtos.CreateUserRequest(r.admin().email(),
                     r.admin().firstName(), r.admin().lastName(), null, r.admin().password(), "en", null));
             UUID tenantAdminRole = jdbc.queryForObject("select id from auth.roles where name = 'TENANT_ADMIN'", UUID.class);

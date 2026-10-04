@@ -142,6 +142,8 @@ export const settingsSchema = z.object({
   fiscalYearStartMonth: z.coerce.number().int().min(1, '1-12').max(12, '1-12'),
   reportingTimezone: z.string().trim().min(1, 'Time zone is required').max(50, 'At most 50 characters'),
   defaultFrameworkCodes: z.array(z.string()).max(20, 'At most 20 frameworks'),
+  gwpSet: z.enum(['AR5', 'AR6'], { message: 'Choose AR5 or AR6' }),
+  provisionalFactorPolicy: z.enum(['allow_flagged', 'block'], { message: 'Choose allow (flagged) or block' }),
 });
 
 export const setPasswordSchema = (email) => z
