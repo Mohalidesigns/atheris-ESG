@@ -1,85 +1,53 @@
-import { Box, Typography, Card, CardContent, Grid, Chip, LinearProgress, Button } from '@mui/material';
-import { People, Add, HealthAndSafety } from '@mui/icons-material';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useState } from 'react';
+import { Box, Grid, Tab, Tabs } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import { PageHeader } from '../../../components/states/States';
+import { useSocialOverviewQuery } from '../socialApi';
+import { fmt, pct } from '../schemas';
+import CommunityTab from './CommunityTab';
+import GrievancesTab from './GrievancesTab';
+import SafetyTab from './SafetyTab';
+import WorkforceTab from './WorkforceTab';
+import { Stat } from './shared';
+import { tr } from '../../../i18n';
 
-const deiData = [
-  { category: 'Board', male: 58, female: 42 },
-  { category: 'Executive', male: 65, female: 35 },
-  { category: 'Management', male: 55, female: 45 },
-  { category: 'Staff', male: 52, female: 48 },
-];
+// no-mock-gate: config — tabs and their ?tab= keys
+const TABS = [['workforce', 'Workforce'], ['safety', 'Health & safety'], ['community', 'Community'], ['grievances', 'Grievances']];
 
-const communityProjects = [
-  { name: 'Niger Delta Youth Skills Programme', location: 'Bayelsa, Rivers', beneficiaries: 2400, spent: '₦180M', status: 'Active' },
-  { name: 'Host Community Clean Water Initiative', location: 'Delta State', beneficiaries: 8500, spent: '₦320M', status: 'Active' },
-  { name: 'Lagos STEM Education Partnership', location: 'Lagos', beneficiaries: 1200, spent: '₦45M', status: 'Active' },
-  { name: 'Abuja Women Entrepreneurship Fund', location: 'FCT Abuja', beneficiaries: 340, spent: '₦28M', status: 'Planning' },
-];
+/** This year's headline figures, from approved workforce figures, the incident register, project spend and grievances. */
+function Overview() {
+  const { data: o } = useSocialOverviewQuery();
+  if (!o) return null;
+  const w = o.workforce.metrics;
+  return (
+    <Grid container spacing={2} sx={{ mb: 2 }} aria-label={tr("Social overview")}>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("Headcount")} value={w ? fmt(w.headcount, 0) : '—'} caption={w ? `${o.workforce.snapshots} site(s), approved` : tr("no approved figures this year")} /></Grid>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("Women in management")} value={pct(w?.womenInManagementPct)} caption={`Women overall: ${pct(w?.femalePct)}`} /></Grid>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("LTIFR")} value={o.safety.ltifr == null ? '—' : Number(o.safety.ltifr).toFixed(2)} caption={`TRIR ${o.safety.trir == null ? '—' : Number(o.safety.trir).toFixed(2)}`} /></Grid>
+      <Grid size={{ xs: 6, md: 2.4 }}><Stat label={tr("Open grievances")} value={o.grievances.open} caption={`${o.grievances.overdue} overdue · ${o.grievances.escalated} escalated`} /></Grid>
+      <Grid size={{ xs: 12, md: 2.4 }}>
+        <Stat label={tr("Community investment")} value={`${o.community.baseCurrency} ${fmt(o.community.investmentBase, 0)}`}
+          caption={`${o.community.activeProjects} active project(s) · ${fmt(o.community.beneficiaries, 0)} beneficiaries`} />
+      </Grid>
+    </Grid>
+  );
+}
 
+/** M7 Social Impact (WP-33): workforce diversity, health and safety, community projects and grievances. */
 export default function SocialPage() {
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(Math.max(0, TABS.findIndex(([k]) => k === params.get('tab'))));
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Social Impact Module</Typography>
-          <Typography variant="body2" color="text.secondary">DEI tracking, community development, health & safety</Typography>
-        </Box>
-        <Button variant="contained" size="small" startIcon={<Add />}>Add Project</Button>
-      </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          { label: 'Total Employees', value: '2,845', color: '#1A365D' },
-          { label: 'Gender Diversity', value: '44% F', color: '#2D7D46' },
-          { label: 'LTIFR', value: '0.42', color: '#D4AF37' },
-          { label: 'Community Investment', value: '₦573M', color: '#319795' },
-        ].map(s => (
-          <Grid size={{ xs: 6, md: 3 }} key={s.label}>
-            <Card><CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: s.color }}>{s.value}</Typography>
-            </CardContent></Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Gender Diversity by Level</Typography>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={deiData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis dataKey="category" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="male" fill="#1A365D" name="Male %" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="female" fill="#D4AF37" name="Female %" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Community Development Projects</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>PIA 2021 Host Community Trust Fund aligned</Typography>
-              {communityProjects.map(p => (
-                <Box key={p.name} sx={{ p: 1.5, mb: 1.5, bgcolor: '#F7FAFC', borderRadius: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
-                    <Chip size="small" label={p.status} sx={{ bgcolor: p.status === 'Active' ? '#E6F4EA' : '#FEF9E7', color: p.status === 'Active' ? '#2D7D46' : '#D4AF37', fontSize: '0.6rem' }} />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">{p.location} &middot; {p.beneficiaries.toLocaleString()} beneficiaries &middot; {p.spent}</Typography>
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <PageHeader title={tr("Social Impact")} subtitle={tr("Workforce diversity, health and safety, community projects and grievances")} />
+      <Overview />
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
+        {TABS.map(([k, l]) => <Tab key={k} label={l} />)}
+      </Tabs>
+      {tab === 0 && <WorkforceTab initialSnapshot={params.get('snapshot')} />}
+      {tab === 1 && <SafetyTab initialIncident={params.get('incident')} />}
+      {tab === 2 && <CommunityTab />}
+      {tab === 3 && <GrievancesTab initialGrievance={params.get('grievance')} />}
     </Box>
   );
 }

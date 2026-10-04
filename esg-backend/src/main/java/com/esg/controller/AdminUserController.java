@@ -7,6 +7,7 @@ import com.esg.model.dto.AdminDtos.RoleAssignmentResponse;
 import com.esg.model.dto.AdminDtos.UpdateUserRequest;
 import com.esg.model.dto.AdminDtos.UserResponse;
 import com.esg.model.dto.ApiResponse;
+import com.esg.model.dto.TenancyDtos;
 import com.esg.service.UserAdminService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -38,9 +39,11 @@ public class AdminUserController {
     @PreAuthorize("hasAuthority('users:read')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> list(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(service.list(search, page, size)));
+        return ResponseEntity.ok(ApiResponse.ok(service.list(search, role, status, page, size)));
     }
 
     @GetMapping("/{id}")
@@ -66,6 +69,19 @@ public class AdminUserController {
     @PreAuthorize("hasAuthority('users:delete')")
     public ResponseEntity<ApiResponse<UserResponse>> deactivate(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(service.deactivate(id), "User deactivated"));
+    }
+
+    @PostMapping("/{id}/reset-mfa")
+    @PreAuthorize("hasAuthority('users:update')")
+    public ResponseEntity<ApiResponse<UserResponse>> resetMfa(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.resetMfa(id), "MFA reset; the user enrols again at next sign-in"));
+    }
+
+    @PostMapping("/{id}/password")
+    @PreAuthorize("hasAuthority('users:update')")
+    public ResponseEntity<ApiResponse<UserResponse>> setPassword(@PathVariable UUID id,
+                                                                 @Valid @RequestBody TenancyDtos.SetPasswordRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(service.setPassword(id, request.password()), "Password set; all sessions ended"));
     }
 
     @GetMapping("/{id}/roles")

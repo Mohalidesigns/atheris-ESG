@@ -1,26 +1,33 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Divider, Collapse, Avatar,
+  Typography, Divider, Avatar, useMediaQuery, useTheme,
 } from '@mui/material';
 import { Shield, Logout } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { visibleSections } from '../../routes/navigation';
+import { roleLabel } from '../../services/labels';
+import { tr } from '../../i18n';
 
-const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH = 260;
 
-
-export default function Sidebar() {
+/** Permanent from 900 px; below that a temporary drawer that closes when a page is chosen (Phase 2, item 9). */
+export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const sections = visibleSections(user?.permissions ?? []);
+  const sections = visibleSections(user?.permissions ?? [], user?.modules);
+  const theme = useTheme();
+  const narrow = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
     <Drawer
-      variant="permanent"
+      variant={narrow ? 'temporary' : 'permanent'}
+      open={narrow ? mobileOpen : true}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
       sx={{
-        width: DRAWER_WIDTH,
+        width: narrow ? 0 : DRAWER_WIDTH,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
@@ -36,10 +43,10 @@ export default function Sidebar() {
         <Shield sx={{ fontSize: 32, color: '#D4AF37' }} />
         <Box>
           <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem' }}>
-            ESG Pro
+            {tr("Atheris ESG")}
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }}>
-            Africa Edition
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }}>
+            {tr("Africa Edition")}
           </Typography>
         </Box>
       </Box>
@@ -47,14 +54,14 @@ export default function Sidebar() {
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
       {/* Navigation */}
-      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         {sections.map((section) => (
           <Box key={section.label}>
             <Typography
               variant="caption"
-              sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
+              sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
             >
-              {section.label}
+              {tr(section.label)}
             </Typography>
             <List disablePadding>
               {section.items.map((item) => {
@@ -84,7 +91,7 @@ export default function Sidebar() {
                       }}
                     >
                       <ListItemIcon>{item.icon}</ListItemIcon>
-                      <ListItemText primary={item.text} />
+                      <ListItemText primary={tr(item.text)} />
                     </ListItemButton>
                   </ListItem>
                 );
@@ -98,22 +105,22 @@ export default function Sidebar() {
 
       {/* User Profile */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ width: 36, height: 36, bgcolor: '#D4AF37', fontSize: '0.8rem', fontWeight: 700 }}>
+        <Avatar sx={{ width: 36, height: 36, bgcolor: '#D4AF37', color: '#1A365D', fontSize: '0.8rem', fontWeight: 700 }}>
           {user?.firstName?.[0]}{user?.lastName?.[0]}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600, fontSize: '0.78rem', lineHeight: 1.3 }} noWrap>
             {user?.firstName} {user?.lastName}
           </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem' }} noWrap>
-            {(user?.roles ?? []).map((r) => r.replace(/_/g, ' ')).join(', ')}
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }} noWrap>
+            {(user?.roles ?? []).map(roleLabel).join(', ')}
           </Typography>
         </Box>
         <Logout
           role="button"
-          aria-label="Sign out"
+          aria-label={tr("Sign out")}
           onClick={logout}
-          sx={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
+          sx={{ color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
         />
       </Box>
     </Drawer>

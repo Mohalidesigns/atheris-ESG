@@ -42,14 +42,16 @@ public class RefreshTokenService {
         this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    public record Rotation(UUID userId, String refreshToken) {}
+    /** @param mfaVerified the session was started with a verified TOTP code; carried over on every rotation */
+    public record Rotation(UUID userId, String refreshToken, boolean mfaVerified) {}
 
     /** Creates a session for an authenticated user (tenant context must already be set). */
-    public String issue(UUID userId, UUID tenantId, String userAgent, String ip) {
+    public String issue(UUID userId, UUID tenantId, String userAgent, String ip, boolean mfaVerified) {
         String token = tenantId + "." + randomSecret();
-        jdbc.update("insert into auth.user_sessions (user_id, refresh_token_hash, device_info, ip_address, expires_at) "
-                        + "values (?, ?, jsonb_build_object('userAgent', ?::text), ?::inet, ?)",
-                userId, hash(token), truncate(userAgent), ip, Timestamp.from(Instant.now().plusMillis(refreshExpirationMs)));
+        jdbc.update("insert into auth.user_sessions (user_id, refresh_token_hash, device_info, ip_address, expires_at, mfa_verified) "
+                        + "values (?, ?, jsonb_build_object('userAgent', ?::text), ?::inet, ?, ?)",
+                userId, hash(token), truncate(userAgent), ip, Timestamp.from(Instant.now().plusMillis(refreshExpirationMs)),
+                mfaVerified);
         return token;
     }
 
@@ -59,9 +61,10 @@ public class RefreshTokenService {
         TenantContext.setTenantId(tenantId.toString());
         Rotation rotation = tx.execute(status -> {
             List<Object[]> rows = jdbc.query(
-                    "select id, user_id, expires_at, revoked_at from auth.user_sessions where refresh_token_hash = ? for update",
+                    "select id, user_id, expires_at, revoked_at, mfa_verified from auth.user_sessions "
+                            + "where refresh_token_hash = ? for update",
                     (rs, i) -> new Object[] {rs.getObject(1, UUID.class), rs.getObject(2, UUID.class),
-                        rs.getTimestamp(3), rs.getTimestamp(4)},
+                        rs.getTimestamp(3), rs.getTimestamp(4), rs.getBoolean(5)},
                     hash(token));
             if (rows.isEmpty()) {
                 return null;
@@ -74,14 +77,15 @@ public class RefreshTokenService {
                     // Replay of an old rotated/revoked token: assume theft, end every session of this user.
                     revokeAllSessions(userId);
                 }
-                return new Rotation(userId, null);
+                return new Rotation(userId, null, false);
             }
             if (((Timestamp) rows.get(0)[2]).toInstant().isBefore(Instant.now())) {
                 return null;
             }
             jdbc.update("update auth.user_sessions set revoked_at = now() where id = ?", sessionId);
             TenantContext.setUserId(userId.toString());
-            return new Rotation(userId, issue(userId, tenantId, userAgent, ip));
+            boolean mfa = (Boolean) rows.get(0)[4];
+            return new Rotation(userId, issue(userId, tenantId, userAgent, ip, mfa), mfa);
         });
         if (rotation == null || rotation.refreshToken() == null) {
             throw ApiException.unauthorized("Invalid or expired refresh token");

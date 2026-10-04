@@ -1,0 +1,165 @@
+{
+  "id": "custom-emission-factor",
+  "forms": [
+    "Custom emission factor"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/factors"
+  },
+  "read": {
+    "path": "/v1/carbon/factors/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/factors/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "region": "NG",
+    "category": "rt_fuel_{u}",
+    "subCategory": "Round-trip test fuel",
+    "factorValue": 2.345678,
+    "unit": "kgCO2e/L",
+    "source": "Supplier certificate RT-{u}",
+    "validFrom": "2026-01-01",
+    "validTo": "2026-12-31",
+    "activityLabel": "Round-trip fuel {u}",
+    "activityScope": "scope_1"
+  },
+  "changes": {
+    "region": "WEST_AFRICA",
+    "category": "rt_fuel_{u}_b",
+    "subCategory": "Renamed fuel",
+    "factorValue": 3.1,
+    "unit": "kgCO2e/kg",
+    "source": "Lab report RT-{u}",
+    "validFrom": "2026-02-01",
+    "validTo": "2027-01-31"
+  },
+  "invalid": [
+    {
+      "field": "region",
+      "value": "ng",
+      "rule": "pattern"
+    },
+    {
+      "field": "category",
+      "value": "Bad Category",
+      "rule": "pattern"
+    },
+    {
+      "field": "category",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "subCategory",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "factorValue",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "factorValue",
+      "value": 1000001,
+      "rule": "<= 1e6"
+    },
+    {
+      "field": "factorValue",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "unit",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "source",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "validFrom",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "validTo",
+      "value": "2025-12-31",
+      "rule": "to >= from (cross-field)"
+    },
+    {
+      "field": "region",
+      "value": "ZZ",
+      "rule": "ISO 3166 country or factor region"
+    },
+    {
+      "field": "unit",
+      "value": "litres",
+      "rule": "kgCO2e per unit"
+    },
+    {
+      "field": "activityLabel",
+      "value": "",
+      "rule": "required for a new activity"
+    },
+    {
+      "field": "activityScope",
+      "value": "scope_9",
+      "rule": "scope_1|2|3"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "region": {
+        "label": "Country or region",
+        "display": "Nigeria (NG)"
+      },
+      "category": {
+        "label": "Category"
+      },
+      "subCategory": {
+        "label": "Description (optional)"
+      },
+      "factorValue": {
+        "label": "Value",
+        "display": "2.345678"
+      },
+      "unit": {
+        "label": "Unit"
+      },
+      "source": {
+        "label": "Source"
+      },
+      "validFrom": {
+        "label": "Valid from"
+      },
+      "validTo": {
+        "label": "Valid to (optional)"
+      }
+    },
+    "notInEditForm": {
+      "activityLabel": "Only asked when the category is new; the edit form shows the existing activity",
+      "activityScope": "Only asked when the category is new"
+    }
+  },
+  "writeOnly": {
+    "activityLabel": "names a new activity (F11); stored on the activity, not the factor",
+    "activityScope": "scope of a new activity (F11); stored on the activity"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "id": "data-source",
+  "forms": [
+    "Data source"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_ANALYST",
+  "create": {
+    "method": "POST",
+    "path": "/v1/data/sources"
+  },
+  "read": {
+    "path": "/v1/data/sources/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/data/sources/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "name": "RT source {u}",
+    "sourceType": "excel",
+    "description": "Monthly utility workbook",
+    "active": true,
+    "ownerUserId": "{USER_DIRECTOR}"
+  },
+  "changes": {
+    "name": "RT source {u} renamed",
+    "sourceType": "meter",
+    "description": "SAP extract",
+    "active": false,
+    "ownerUserId": "{USER_COMPLIANCE}"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "name",
+      "value": "Manual",
+      "rule": "unique per tenant"
+    },
+    {
+      "field": "sourceType",
+      "value": "fax",
+      "rule": "enum"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    },
+    {
+      "field": "active",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "b0000000-0000-4000-8000-0000000000b1",
+      "rule": "active user of the tenant"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "System name"
+      },
+      "sourceType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Excel workbook"
+      },
+      "description": {
+        "label": "Description"
+      },
+      "active": {
+        "label": "Active",
+        "kind": "switch"
+      },
+      "ownerUserId": {
+        "label": "Owner (responsible person)",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      }
+    }
+  }
+}

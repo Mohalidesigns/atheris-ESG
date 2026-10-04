@@ -1,0 +1,14 @@
+{
+  "id": "login",
+  "kind": "command",
+  "forms": ["Login"],
+  "command": { "method": "POST", "path": "/v1/auth/login", "anonymous": true },
+  "values": { "email": "esg_analyst@fixture.test", "password": "Fixture!2026" },
+  "success": { "status": 200, "exists": ["data.accessToken", "data.user.permissions"] },
+  "invalid": [
+    { "field": "email", "value": "", "rule": "required" },
+    { "field": "email", "value": "not-an-email", "rule": "email" },
+    { "field": "password", "value": "", "rule": "required" }
+  ],
+  "ui": { "fields": { "email": { "label": "Email Address" }, "password": { "label": "Password" } } }
+}

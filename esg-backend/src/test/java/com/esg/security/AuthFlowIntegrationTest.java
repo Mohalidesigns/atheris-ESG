@@ -114,10 +114,21 @@ class AuthFlowIntegrationTest extends ApiTestSupport {
 
     // 3. A wrong code fails; the right one issues tokens and enables MFA.
     verify(mfaToken, "000000").andExpect(status().isUnauthorized());
-    verify(mfaToken, currentCode(secret))
+    MvcResult verified = verify(mfaToken, currentCode(secret))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-        .andExpect(jsonPath("$.data.user.mfaEnabled").value(true));
+        .andExpect(jsonPath("$.data.user.mfaEnabled").value(true))
+        .andReturn();
+
+    // 3b. The session is MFA-verified (S1): the token says so, it works, and refreshing keeps it verified.
+    String access = body(verified).path("accessToken").asText();
+    assertThat(tokens.parseAccessToken(access).orElseThrow().get("mfa", Boolean.class)).isTrue();
+    mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + access)).andExpect(status().isOk());
+    MvcResult refreshed = mvc.perform(post("/v1/auth/refresh").cookie(verified.getResponse().getCookie("esg_refresh")))
+        .andExpect(status().isOk()).andReturn();
+    String refreshedAccess = body(refreshed).path("accessToken").asText();
+    assertThat(tokens.parseAccessToken(refreshedAccess).orElseThrow().get("mfa", Boolean.class)).isTrue();
+    mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + refreshedAccess)).andExpect(status().isOk());
 
     // 4. Next login asks for the code (not set-up), and the secret is stored encrypted.
     login("esg_director@fixture.test", PASSWORD).andExpect(jsonPath("$.data.mfaRequired").value(true));
@@ -130,11 +141,43 @@ class AuthFlowIntegrationTest extends ApiTestSupport {
   }
 
   @Test
+  void mfaRequiredRolesAreRefusedEverywhereWithoutAnMfaVerifiedSession() throws Exception {
+    // S1: a password-only token for an MFA-required role is refused on every endpoint, not just at login.
+    for (String role : java.util.List.of("ESG_DIRECTOR", "TENANT_ADMIN")) {
+      String token = bearerWithoutMfa(roleUserId(role), com.esg.support.PostgresTestDatabase.TENANT_A);
+      for (String path : java.util.List.of("/v1/auth/me", "/v1/admin/users", "/v1/data/points", "/v1/settings")) {
+        mvc.perform(get(path).header("Authorization", token))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.errorCode").value("ESG-401-MFA-REQUIRED"));
+      }
+    }
+    // Roles without the flag don't need it.
+    mvc.perform(get("/v1/auth/me").header("Authorization",
+            bearerWithoutMfa(roleUserId("ESG_ANALYST"), com.esg.support.PostgresTestDatabase.TENANT_A)))
+        .andExpect(status().isOk());
+    // The password step of a password-only login doesn't reveal tokens for MFA roles (covered above); a session that
+    // started before an MFA role was granted is refused as soon as the role takes effect.
+    String analystToken = body(login("esg_analyst@fixture.test", PASSWORD).andExpect(status().isOk()).andReturn())
+        .path("accessToken").asText();
+    mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + analystToken)).andExpect(status().isOk());
+    asOwnerInTenantA("insert into auth.user_roles (user_id, role_id) select '" + roleUserId("ESG_ANALYST")
+        + "', id from auth.roles where name = 'ESG_DIRECTOR'");
+    try {
+      mvc.perform(get("/v1/auth/me").header("Authorization", "Bearer " + analystToken))
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.errorCode").value("ESG-401-MFA-REQUIRED"));
+    } finally {
+      asOwnerInTenantA("delete from auth.user_roles where user_id = '" + roleUserId("ESG_ANALYST")
+          + "' and role_id = (select id from auth.roles where name = 'ESG_DIRECTOR')");
+    }
+  }
+
+  @Test
   void unknownEmailWrongPasswordAndLockedAccountAllLookTheSame() throws Exception {
     login("nobody@fixture.test", PASSWORD).andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value("Invalid email or password"));
+        .andExpect(jsonPath("$.detail").value("Invalid email or password"));
     login("esg_analyst@fixture.test", "wrong").andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.message").value("Invalid email or password"));
+        .andExpect(jsonPath("$.detail").value("Invalid email or password"));
   }
 
   @Test

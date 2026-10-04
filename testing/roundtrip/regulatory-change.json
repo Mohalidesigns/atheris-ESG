@@ -1,0 +1,156 @@
+{
+  "id": "regulatory-change",
+  "forms": [
+    "Regulatory change"
+  ],
+  "actor": "COMPLIANCE_OFFICER",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/compliance/changes"
+  },
+  "read": {
+    "path": "/v1/compliance/changes/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/compliance/changes/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "framework": "ISSB_S2",
+    "regulator": "FRCN",
+    "title": "ISSB adoption roadmap {u}",
+    "summary": "Mandatory for public interest entities",
+    "sourceUrl": "https://frcnigeria.gov.ng/roadmap",
+    "publishedDate": "{yyyy}-02-01",
+    "effectiveDate": "{yyyy}-06-01",
+    "assessmentDue": "{yyyy}-03-01",
+    "ownerUserId": "{USER_COMPLIANCE}"
+  },
+  "changes": {
+    "framework": "SEC_NG",
+    "regulator": "SEC Nigeria",
+    "title": "SEC sustainability guidance {u}",
+    "summary": "Updated templates",
+    "sourceUrl": "https://sec.gov.ng/guidance",
+    "publishedDate": "{yyyy}-02-02",
+    "effectiveDate": "{yyyy}-07-01",
+    "assessmentDue": "{yyyy}-03-02",
+    "ownerUserId": "{USER_DIRECTOR}"
+  },
+  "derived": {
+    "status": "new",
+    "ownerName": "Compliance Officer Fixture"
+  },
+  "invalid": [
+    {
+      "field": "regulator",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "regulator",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "summary",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    },
+    {
+      "field": "sourceUrl",
+      "value": "ftp://x",
+      "rule": "http(s) link"
+    },
+    {
+      "field": "publishedDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "effectiveDate",
+      "value": "{yyyy}-01-01",
+      "rule": "on or after published (cross-field)"
+    },
+    {
+      "field": "assessmentDue",
+      "value": "{yyyy}-01-01",
+      "rule": "on or after published (cross-field)"
+    },
+    {
+      "field": "ownerUserId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "framework",
+      "value": "NOPE",
+      "rule": "known framework"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "framework": {
+        "label": "Framework",
+        "kind": "select",
+        "display": "IFRS S2 Climate-related Disclosures"
+      },
+      "regulator": {
+        "label": "Regulator"
+      },
+      "title": {
+        "label": "Title"
+      },
+      "summary": {
+        "label": "Summary"
+      },
+      "sourceUrl": {
+        "label": "Source link"
+      },
+      "publishedDate": {
+        "label": "Published"
+      },
+      "effectiveDate": {
+        "label": "Effective"
+      },
+      "assessmentDue": {
+        "label": "Assess by"
+      },
+      "ownerUserId": {
+        "label": "Owner",
+        "kind": "select",
+        "display": "Compliance Officer Fixture (compliance_officer@fixture.test)"
+      }
+    }
+  }
+}

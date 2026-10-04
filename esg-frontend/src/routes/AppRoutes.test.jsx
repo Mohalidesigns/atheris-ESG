@@ -23,6 +23,15 @@ describe('route guards', () => {
     expect(screen.getByRole('alert')).toHaveTextContent("You don't have access to this page");
   });
 
+  it("says the module isn't in the subscription when the tenant lacks it", () => {
+    renderWithStore(
+      <Routes><Route path="/risk" element={<ProtectedRoute anyOf={['risk:read']} module="risk"><span>risk page</span></ProtectedRoute>} /></Routes>,
+      { preloadedState: authenticated(['risk:read'], { modules: ['platform', 'data_hub'] }), route: '/risk' },
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent("This module isn't part of your subscription");
+    expect(screen.queryByText('risk page')).not.toBeInTheDocument();
+  });
+
   it('renders the page with the permission', () => {
     renderWithStore(guarded, { preloadedState: authenticated(['users:read']), route: '/admin' });
     expect(screen.getByText('admin page')).toBeInTheDocument();
@@ -31,7 +40,7 @@ describe('route guards', () => {
 
 describe('session restore on startup', () => {
   it('without a valid refresh cookie, shows the login page', async () => {
-    const calls = fakeApi({ 'POST /auth/refresh': () => [401, { success: false, message: 'No active session' }] });
+    const calls = fakeApi({ 'POST /auth/refresh': () => [401, { title: 'Error', detail: 'No active session' }] });
     renderWithStore(<AppRoutes />, { route: '/dashboard' });
     expect(await screen.findByRole('button', { name: 'Sign In' })).toBeInTheDocument();
     expect(calls.map((c) => c.key)).toEqual(['POST /auth/refresh']);

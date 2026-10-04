@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -68,20 +69,18 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @PublicEndpoint("Authorised by the refresh token")
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+    public ResponseEntity<?> refresh(
             @CookieValue(name = REFRESH_COOKIE, required = false) String cookieToken,
             @RequestBody(required = false) Map<String, String> body, HttpServletRequest http) {
         String token = cookieToken != null ? cookieToken : body == null ? null : body.get("refreshToken");
         if (token == null) {
-            return ResponseEntity.status(401).header(HttpHeaders.SET_COOKIE, clearCookie())
-                    .body(ApiResponse.error("No active session"));
+            return refreshFailed(org.springframework.http.HttpStatus.UNAUTHORIZED, "ESG-401", "No active session", http);
         }
         try {
             return withSession(authService.refresh(token, client(http)));
         } catch (ApiException e) {
             // A refresh token that didn't work is cleared so the browser stops sending it.
-            return ResponseEntity.status(e.getStatus()).header(HttpHeaders.SET_COOKIE, clearCookie())
-                    .body(ApiResponse.error(e.getMessage()));
+            return refreshFailed(e.getStatus(), e.getCode(), e.getMessage(), http);
         }
     }
 
@@ -101,6 +100,18 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok(authService.me()));
     }
 
+    /** WP-45 (D45): anyone signed in chooses their own interface language (kept on their account for every device). */
+    @PutMapping("/me/language")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<AuthResponse.UserDto>> language(@jakarta.validation.Valid @RequestBody LanguageRequest body) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.setLanguage(body.preferredLanguage())));
+    }
+
+    public record LanguageRequest(
+            @jakarta.validation.constraints.NotBlank
+            @jakarta.validation.constraints.Pattern(regexp = com.esg.model.dto.AdminDtos.LANGUAGE_REGEX, message = "must be one of en, fr, pt, ar, sw, ha, yo")
+            String preferredLanguage) {}
+
     // ------------------------------------------------------------------ helpers
 
     private ResponseEntity<ApiResponse<AuthResponse>> withSession(AuthService.AuthResult result) {
@@ -111,6 +122,13 @@ public class AuthController {
                     .build().toString());
         }
         return response.body(ApiResponse.ok(result.body()));
+    }
+
+    private ResponseEntity<org.springframework.http.ProblemDetail> refreshFailed(org.springframework.http.HttpStatus status,
+                                                                                  String code, String detail, HttpServletRequest http) {
+        return ResponseEntity.status(status).header(HttpHeaders.SET_COOKIE, clearCookie())
+                .contentType(org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON)
+                .body(com.esg.exception.Problems.of(status, code, detail, http.getRequestURI(), null));
     }
 
     private String clearCookie() {

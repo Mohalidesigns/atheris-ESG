@@ -193,7 +193,7 @@ Method: page files scanned for top-level `const x = [...]`/`{...}` datasets and 
 | S12 | Role is flattened to the **first** `user_roles` row; `org_scope_id` and `expires_at` are ignored, so no org scoping and no temporal expiry. | High | `AuthService.java:61-68` |
 | S13 | User enumeration via different messages ("Account is disabled" / "locked" vs "Invalid email or password"). Errors map to status codes by string matching. | Medium | `AuthService.java`, `GlobalExceptionHandler.java:19-28` |
 | S14 | `/actuator/**` fully `permitAll` (metrics exposed). | Medium | `SecurityConfig.java` |
-| S15 | Error format is `{data, message, success}`, not RFC 7807. Validation errors are not per-field problem details. | Medium (vs TRD §12.3) | `ApiResponse.java`, `GlobalExceptionHandler.java` |
+| S15 | Error format is `{data, message, success}`, not RFC 7807. Validation errors are not per-field problem details. **Closed in WP-15:** errors are `application/problem+json` with `errorCode` and per-field `errors` (`ProblemDetailTest`). | Medium (vs TRD §12.3) | `ApiResponse.java`, `GlobalExceptionHandler.java` |
 | S16 | Frontend has no route permission guards and the sidebar shows every module to everyone. `PermissionGate` is used 0 times. | Medium | `routes/AppRoutes.jsx`, `components/layout/Sidebar.jsx` |
 | S17 | Token held only in module memory; there is no refresh flow, so a page reload loses auth. The API base URL is hard-coded to `http://localhost:8080`. | Low | `services/api.js:1-6` |
 

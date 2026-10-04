@@ -3,7 +3,6 @@ package com.esg.service;
 import com.esg.exception.ApiException;
 import com.esg.exception.FieldValidationException;
 import com.esg.model.dto.AdminDtos.CreateUserRequest;
-import com.esg.model.dto.AdminDtos.OrganisationOption;
 import com.esg.model.dto.AdminDtos.PageResponse;
 import com.esg.model.dto.AdminDtos.ReplaceRolesRequest;
 import com.esg.model.dto.AdminDtos.RoleAssignmentRequest;
@@ -27,12 +26,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -55,8 +52,12 @@ public class UserAdminService {
     private final OrgScopeService orgScope;
     private final RefreshTokenService refreshTokens;
 
+    private final com.esg.notifications.NotificationService notifications;
+
     public UserAdminService(UserRepository users, JdbcTemplate jdbc, PasswordEncoder passwordEncoder,
-                            PasswordPolicy passwordPolicy, OrgScopeService orgScope, RefreshTokenService refreshTokens) {
+                            PasswordPolicy passwordPolicy, OrgScopeService orgScope, RefreshTokenService refreshTokens,
+                            com.esg.notifications.NotificationService notifications) {
+        this.notifications = notifications;
         this.users = users;
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
@@ -67,9 +68,18 @@ public class UserAdminService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> list(String search, int page, int size) {
+        return list(search, null, null, page, size);
+    }
+
+    /** Sorted by first name, then last name (Phase 2); optional role and status (active | inactive) filters. */
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> list(String search, String role, String status, int page, int size) {
+        if (status != null && !status.isBlank() && !status.matches("^(active|inactive)$")) {
+            throw com.esg.exception.FieldValidationException.of("status", "must be active or inactive");
+        }
         String q = search == null || search.isBlank() ? "" : "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-        Page<User> result = users.search(TenantContext.requireTenantId(), q,
-                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by("lastName", "firstName")));
+        Page<User> result = users.search(TenantContext.requireTenantId(), q, CurrentUser.access().platform(),
+                role == null ? "" : role.trim(), status == null ? "" : status.trim(), PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100)));
         Map<UUID, List<RoleAssignmentResponse>> roles = assignments(result.getContent().stream().map(User::getId).toList());
         return new PageResponse<>(result.getContent().stream().map(u -> toResponse(u, roles)).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -93,7 +103,7 @@ public class UserAdminService {
         }
         UUID tenantId = TenantContext.requireTenantId();
         Integer maxUsers = jdbc.queryForObject("select max_users from auth.tenants where id = ?", Integer.class, tenantId);
-        if (maxUsers != null && users.countByTenantIdAndIsActiveTrue(tenantId) >= maxUsers) {
+        if (maxUsers != null && users.countSeats(tenantId) >= maxUsers) {
             throw ApiException.conflict("ESG-409-SEATS", "Your subscription allows " + maxUsers + " active users");
         }
         User user = new User();
@@ -107,6 +117,7 @@ public class UserAdminService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setPasswordChangedAt(Instant.now());
         User saved = users.saveAndFlush(user);
+        notifications.notifyAfterCommit(saved.getId(), "WELCOME", Map.of());
         return toResponse(saved, Map.of());
     }
 
@@ -142,6 +153,35 @@ public class UserAdminService {
         return toResponse(saved, assignments(List.of(id)));
     }
 
+    /** Clears a user's MFA enrolment (lost device) and ends their sessions; they enrol again at next sign-in. */
+    @Transactional
+    public UserResponse resetMfa(UUID id) {
+        User user = find(id);
+        user.setMfaEnabled(false);
+        user.setMfaSecret(null);
+        User saved = users.saveAndFlush(user);
+        refreshTokens.revokeAllSessions(id);
+        return toResponse(saved, assignments(List.of(id)));
+    }
+
+    /** Sets a new password chosen by an administrator, unlocks the account and ends all sessions. */
+    @Transactional
+    public UserResponse setPassword(UUID id, String password) {
+        User user = find(id);
+        List<String> problems = passwordPolicy.violations(password, user.getEmail());
+        if (!problems.isEmpty()) {
+            throw FieldValidationException.of("password", "Password needs " + String.join(", ", problems));
+        }
+        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setPasswordChangedAt(Instant.now());
+        user.setFailedLoginCount(0);
+        user.setLockedUntil(null);
+        User saved = users.saveAndFlush(user);
+        refreshTokens.revokeAllSessions(id);
+        notifications.notifyAfterCommit(id, "PASSWORD_SET_BY_ADMIN", Map.of());
+        return toResponse(saved, assignments(List.of(id)));
+    }
+
     @Transactional(readOnly = true)
     public List<RoleAssignmentResponse> getRoles(UUID userId) {
         find(userId);
@@ -165,7 +205,7 @@ public class UserAdminService {
                 continue;
             }
             if (!assigner.permissions().containsAll(role.permissions())) {
-                throw ApiException.forbidden("You can't assign " + role.name() + ": it has permissions you don't hold");
+                throw ApiException.forbidden("ESG-403-ROLE", "You can't assign " + role.name() + ": it has permissions you don't hold");
             }
             if ("org".equals(role.scopeType()) && a.orgScopeId() == null) {
                 fieldErrors.put(prefix + "orgScopeId", role.name() + " must be limited to an organisation");
@@ -193,28 +233,29 @@ public class UserAdminService {
                     userId, a.roleId(), a.orgScopeId(), assigner.userId(),
                     a.expiresAt() == null ? null : Timestamp.from(a.expiresAt()));
         }
-        return assignments(List.of(userId)).getOrDefault(userId, List.of());
+        List<RoleAssignmentResponse> result = assignments(List.of(userId)).getOrDefault(userId, List.of());
+        String roleNames = result.isEmpty() ? "none" : String.join(", ", result.stream().map(r -> r.roleName().replace('_', ' ')).toList());
+        notifications.notifyAfterCommit(userId, "ROLES_CHANGED", Map.of("roles", roleNames));
+        return result;
     }
 
+    /**
+     * Roles visible to the caller (S4). Platform-scope roles (SUPER_ADMIN) exist only for platform users. Each role
+     * says whether the caller may assign it (holds all its permissions); {@code assignableOnly} returns just those,
+     * which is what the role picker offers. {@link #replaceRoles} enforces the same rule regardless.
+     */
     @Transactional(readOnly = true)
-    public List<RoleResponse> listRoles() {
+    public List<RoleResponse> listRoles(boolean assignableOnly) {
+        UserAccess caller = CurrentUser.access();
         Map<UUID, RoleInfo> info = roleInfo();
         return info.values().stream()
+                .filter(r -> caller.platform() || !"platform".equals(r.scopeType()))
+                .filter(r -> !assignableOnly || caller.permissions().containsAll(r.permissions()))
                 .sorted(java.util.Comparator.comparing(RoleInfo::sortOrder).thenComparing(RoleInfo::name))
                 .map(r -> new RoleResponse(r.id(), r.name(), r.description(), r.scopeType(), r.mfaRequired(),
-                        r.systemRole(), r.permissions().stream().sorted().toList()))
+                        r.systemRole(), r.permissions().stream().sorted().toList(),
+                        caller.permissions().containsAll(r.permissions())))
                 .toList();
-    }
-
-    /** Organisations the caller can see (all, or their scoped subtree). */
-    @Transactional(readOnly = true)
-    public List<OrganisationOption> listOrganisations() {
-        Optional<Set<UUID>> scope = orgScope.accessibleOrgIds();
-        return jdbc.query("select id, name, parent_org_id, org_type from auth.organisations "
-                        + "where deleted_at is null order by name",
-                        (rs, i) -> new OrganisationOption(rs.getObject(1, UUID.class), rs.getString(2),
-                                rs.getObject(3, UUID.class), rs.getString(4)))
-                .stream().filter(o -> scope.isEmpty() || scope.get().contains(o.id())).toList();
     }
 
     // ------------------------------------------------------------------ internals
@@ -268,8 +309,13 @@ public class UserAdminService {
         return !jdbc.queryForList(sql, Integer.class, arg).isEmpty();
     }
 
+    /** Platform-scope users don't exist for tenant administrators (S5): same 404 as an unknown id. */
     private User find(UUID id) {
-        return users.findById(id).orElseThrow(() -> ApiException.notFound("User"));
+        User user = users.findById(id).orElseThrow(() -> ApiException.notFound("User"));
+        if (!CurrentUser.access().platform() && users.isPlatformUser(id)) {
+            throw ApiException.notFound("User");
+        }
+        return user;
     }
 
     private static UserResponse toResponse(User u, Map<UUID, List<RoleAssignmentResponse>> roles) {

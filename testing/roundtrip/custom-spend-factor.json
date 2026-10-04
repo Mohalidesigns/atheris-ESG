@@ -1,0 +1,102 @@
+{
+  "id": "custom-spend-factor",
+  "forms": [
+    "Custom emission factor"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/factors"
+  },
+  "read": {
+    "path": "/v1/carbon/factors/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/factors/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "region": "NG",
+    "category": "spend_cat1_{u}",
+    "factorValue": 0.42,
+    "source": "Supplier EEIO study {u}",
+    "validFrom": "2026-01-01",
+    "factorMethod": "spend",
+    "spendCurrency": "USD",
+    "activityLabel": "Round-trip spend {u}",
+    "activityScope": "scope_3",
+    "activityScope3Category": 1
+  },
+  "changes": {
+    "spendCurrency": "GBP",
+    "factorValue": 0.5
+  },
+  "invalid": [
+    {
+      "field": "spendCurrency",
+      "value": null,
+      "rule": "required for spend factors"
+    },
+    {
+      "field": "spendCurrency",
+      "value": "BTC",
+      "rule": "ISO list"
+    },
+    {
+      "field": "factorMethod",
+      "value": "vibes",
+      "rule": "activity or spend"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "region": {
+        "label": "Country or region",
+        "display": "Nigeria (NG)"
+      },
+      "category": {
+        "label": "Category"
+      },
+      "factorValue": {
+        "label": "Value"
+      },
+      "unit": {
+        "label": "Unit"
+      },
+      "source": {
+        "label": "Source"
+      },
+      "validFrom": {
+        "label": "Valid from"
+      },
+      "factorMethod": {
+        "label": "Factor type",
+        "kind": "select",
+        "display": "Spend-based (per currency unit)"
+      },
+      "spendCurrency": {
+        "label": "Spend currency",
+        "kind": "select",
+        "display": "USD"
+      }
+    },
+    "notInEditForm": {
+      "activityLabel": "Only asked when the category is new",
+      "activityScope": "Only asked when the category is new",
+      "activityScope3Category": "Only asked when the category is new"
+    }
+  },
+  "writeOnly": {
+    "activityLabel": "names a new activity (F11)",
+    "activityScope": "scope of a new activity (F11)",
+    "activityScope3Category": "Scope 3 category of a new activity (F11)"
+  },
+  "derived": {
+    "unit": "kgCO2e/USD"
+  }
+}

@@ -13,6 +13,13 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText(/^password/i)).toHaveValue('');
   });
 
+  it('says why the user was signed out (MFA now required, S1)', () => {
+    renderWithStore(<LoginForm />, {
+      preloadedState: { auth: { ...anonymous.auth, notice: 'Your role requires two-factor authentication. Sign in again to set it up.' } },
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('requires two-factor authentication');
+  });
+
   it('validates on the client before calling the API', async () => {
     const calls = fakeApi({});
     renderWithStore(<LoginForm />, { preloadedState: anonymous });
@@ -23,7 +30,7 @@ describe('LoginForm', () => {
   });
 
   it('shows the server error for bad credentials', async () => {
-    fakeApi({ 'POST /auth/login': () => [401, { success: false, message: 'Invalid email or password' }] });
+    fakeApi({ 'POST /auth/login': () => [401, { title: 'Error', detail: 'Invalid email or password' }] });
     renderWithStore(<LoginForm />, { preloadedState: anonymous });
     await userEvent.type(screen.getByLabelText(/email address/i), 'ada@example.com');
     await userEvent.type(screen.getByLabelText(/^password/i), 'wrong');

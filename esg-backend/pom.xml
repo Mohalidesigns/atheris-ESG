@@ -14,7 +14,7 @@
     <groupId>com.esg</groupId>
     <artifactId>esg-platform</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>ESG Pro Platform</name>
+    <name>Atheris ESG Platform</name>
     <description>ESG Management Software for Nigeria and Africa</description>
 
     <properties>
@@ -24,8 +24,17 @@
         <jjwt.version>0.12.6</jjwt.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <jacoco.version>0.8.15</jacoco.version>
+        <awssdk.version>2.55.9</awssdk.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <checkstyle.version>14.3.0</checkstyle.version>
+        <!-- WP-52 (D40): patched versions over Spring Boot 3.5.16's managed ones, for CVEs found by Trivy (critical:
+             Tomcat CVE-2026-65182/65905/68525, Netty CVE-2026-75595; high: Jackson, Netty codecs, HttpCore5, pgjdbc).
+             Drop each override once a Boot release manages an equal or newer version. -->
+        <tomcat.version>10.1.60</tomcat.version>
+        <netty.version>4.1.138.Final</netty.version>
+        <jackson-bom.version>2.21.7</jackson-bom.version>
+        <httpcore5.version>5.4.4</httpcore5.version>
+        <postgresql.version>42.7.13</postgresql.version>
         <!-- Coverage ratchet (master plan §7.1): raise towards 0.80 as WPs add tests -->
         <jacoco.line.minimum>0.00</jacoco.line.minimum>
     </properties>
@@ -55,6 +64,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- Notifications: SMTP email (WP-15) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- File storage: S3 / MinIO adapter (WP-15) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${awssdk.version}</version>
         </dependency>
 
         <!-- Database -->
@@ -127,6 +149,39 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
+        </dependency>
+        <!-- WP-23 report export (TRD §8.4 ExportEngine: Thymeleaf + Flying Saucer for PDF; Apache POI for Excel) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.xhtmlrenderer</groupId>
+            <artifactId>flying-saucer-pdf</artifactId>
+            <version>10.5.0</version>
+        </dependency>
+        <dependency>
+            <!-- WP-42: QR codes on training certificates (D37 (5)); tests decode them with it too. -->
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <!-- WP-40: watermarks data room downloads (D35 (4)); tests also read PDFs with it. -->
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.6</version>
+        </dependency>
+        <!-- WP-20 bulk import (TRD §8.1 BulkImportProcessor: Apache POI for Excel, OpenCSV for CSV) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>

@@ -126,7 +126,7 @@ class AdminUserApiTest extends ApiTestSupport {
     mvc.perform(post("/v1/admin/users").header("Authorization", admin())
             .contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data." + field).exists());
+        .andExpect(jsonPath("$.errors." + field).exists());
   }
 
   @Test
@@ -156,7 +156,7 @@ class AdminUserApiTest extends ApiTestSupport {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"assignments\":[{\"roleId\":\"" + roleId("DATA_COLLECTOR") + "\"}]}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.data['assignments[0].orgScopeId']").exists());
+        .andExpect(jsonPath("$.errors['assignments[0].orgScopeId']").exists());
   }
 
   @Test
@@ -169,12 +169,64 @@ class AdminUserApiTest extends ApiTestSupport {
   }
 
   @Test
-  void tenantAdminCannotGrantSuperAdmin() throws Exception {
+  void tenantAdminCannotGrantSuperAdminAndTheRefusalIsAudited() throws Exception {
+    // S4: SUPER_ADMIN isn't offered to a tenant admin, but the server still refuses it if sent directly (S3: audited).
     String id = createUser(unique("escalate")).path("id").asText();
+    String superAdmin = superAdminRoleId();
     mvc.perform(put("/v1/admin/users/" + id + "/roles").header("Authorization", admin())
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"assignments\":[{\"roleId\":\"" + roleId("SUPER_ADMIN") + "\"}]}"))
-        .andExpect(status().isForbidden());
+            .content("{\"assignments\":[{\"roleId\":\"" + superAdmin + "\"}]}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.errorCode").value("ESG-403-ROLE"));
+    mvc.perform(get("/v1/audit/logs?action=denied&resourceId=" + id).header("Authorization", admin()))
+        .andExpect(jsonPath("$.data.content", hasSize(1)))
+        .andExpect(jsonPath("$.data.content[0].userId").value(roleUserId("TENANT_ADMIN")))
+        .andExpect(jsonPath("$.data.content[0].resource").value("PUT /v1/admin/users/{id}/roles"))
+        .andExpect(jsonPath("$.data.content[0].newValue.errorCode").value("ESG-403-ROLE"));
+  }
+
+  @Test
+  void rolePickerOffersOnlyRolesTheCallerMayAssign() throws Exception {
+    // S4: a tenant admin never sees platform roles; assignable=true leaves out roles with permissions they lack.
+    String all = mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    java.util.List<String> names = new java.util.ArrayList<>();
+    json.readTree(all).path("data").forEach(r -> names.add(r.path("name").asText()));
+    org.assertj.core.api.Assertions.assertThat(names).doesNotContain("SUPER_ADMIN").contains("TENANT_ADMIN", "AUDITOR");
+
+    String assignable = mvc.perform(get("/v1/admin/roles?assignable=true").header("Authorization", admin()))
+        .andReturn().getResponse().getContentAsString();
+    json.readTree(assignable).path("data").forEach(r ->
+        org.assertj.core.api.Assertions.assertThat(r.path("assignable").asBoolean()).as(r.path("name").asText()).isTrue());
+    // Every listed role can actually be granted (no picker option the server would refuse).
+    String id = createUser(unique("pickall")).path("id").asText();
+    for (JsonNode role : json.readTree(assignable).path("data")) {
+      String scope = "org".equals(role.path("scopeType").asText()) ? ",\"orgScopeId\":\"" + ORG_SITE_1 + "\"" : "";
+      mvc.perform(put("/v1/admin/users/" + id + "/roles").header("Authorization", admin())
+              .contentType(MediaType.APPLICATION_JSON)
+              .content("{\"assignments\":[{\"roleId\":\"" + role.path("id").asText() + "\"" + scope + "}]}"))
+          .andExpect(status().isOk());
+    }
+    // A super admin sees and may assign SUPER_ADMIN.
+    mvc.perform(get("/v1/admin/roles?assignable=true").header("Authorization", bearerForRole("SUPER_ADMIN")))
+        .andExpect(jsonPath("$.data[0].name").value("SUPER_ADMIN"));
+  }
+
+  @Test
+  void platformUsersAreHiddenFromTenantAdmins() throws Exception {
+    // S5: the fixture SUPER_ADMIN belongs to tenant A but isn't part of the tenant's user list, lookups or seats.
+    String superAdmin = roleUserId("SUPER_ADMIN");
+    String list = mvc.perform(get("/v1/admin/users?size=100").header("Authorization", admin()))
+        .andReturn().getResponse().getContentAsString();
+    org.assertj.core.api.Assertions.assertThat(list).doesNotContain(superAdmin);
+    mvc.perform(get("/v1/admin/users/" + superAdmin).header("Authorization", admin())).andExpect(status().isNotFound());
+    mvc.perform(get("/v1/admin/users/" + superAdmin + "/roles").header("Authorization", admin())).andExpect(status().isNotFound());
+    mvc.perform(post("/v1/admin/users/" + superAdmin + "/deactivate").header("Authorization", admin()))
+        .andExpect(status().isNotFound());
+    // The platform user still sees everyone, themselves included.
+    org.assertj.core.api.Assertions.assertThat(mvc.perform(get("/v1/admin/users?size=100")
+            .header("Authorization", bearerForRole("SUPER_ADMIN"))).andReturn().getResponse().getContentAsString())
+        .contains(superAdmin);
   }
 
   @Test
@@ -196,12 +248,89 @@ class AdminUserApiTest extends ApiTestSupport {
   }
 
   @Test
-  void rolesEndpointListsAllTwelveBuiltInRolesWithPermissions() throws Exception {
+  void searchFindsByNameAndEmail() throws Exception {
+    String tag = UUID.randomUUID().toString().substring(0, 8);
+    String body = "{\"email\":\"finder." + tag + "@fixture.test\",\"firstName\":\"Adeola\",\"lastName\":\"Zz" + tag
+        + "\",\"password\":\"Str0ng!Passw0rd\"}";
+    mvc.perform(post("/v1/admin/users").header("Authorization", admin()).contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isCreated());
+
+    mvc.perform(get("/v1/admin/users?search=finder." + tag).header("Authorization", admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content", hasSize(1)))
+        .andExpect(jsonPath("$.data.content[0].email").value("finder." + tag + "@fixture.test"));
+    mvc.perform(get("/v1/admin/users?search=ZZ" + tag.toUpperCase()).header("Authorization", admin()))
+        .andExpect(jsonPath("$.data.content", hasSize(1)))
+        .andExpect(jsonPath("$.data.content[0].lastName").value("Zz" + tag));
+    mvc.perform(get("/v1/admin/users?search=no-such-person-" + tag).header("Authorization", admin()))
+        .andExpect(jsonPath("$.data.content", hasSize(0)));
+    // Another tenant's admin searching for the same text finds nothing.
+    mvc.perform(get("/v1/admin/users?search=finder." + tag)
+            .header("Authorization", bearer(USER_B_ADMIN, com.esg.support.PostgresTestDatabase.TENANT_B)))
+        .andExpect(jsonPath("$.data.content", hasSize(0)));
+  }
+
+  @Test
+  void userListFiltersByRoleAndStatusAndSortsByName() throws Exception {
+    // Phase 2: role and status filters; sorted by first name.
+    String auditors = mvc.perform(get("/v1/admin/users?role=AUDITOR&size=100").header("Authorization", admin()))
+        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    for (JsonNode u : json.readTree(auditors).path("data").path("content")) {
+      org.assertj.core.api.Assertions.assertThat(u.path("roles").toString()).contains("AUDITOR");
+    }
+    org.assertj.core.api.Assertions.assertThat(json.readTree(auditors).path("data").path("content").size()).isPositive();
+    String id = createUser(unique("inactive")).path("id").asText();
+    mvc.perform(post("/v1/admin/users/" + id + "/deactivate").header("Authorization", admin())).andExpect(status().isOk());
+    String inactive = mvc.perform(get("/v1/admin/users?status=inactive&size=100").header("Authorization", admin()))
+        .andReturn().getResponse().getContentAsString();
+    org.assertj.core.api.Assertions.assertThat(inactive).contains(id);
+    for (JsonNode u : json.readTree(inactive).path("data").path("content")) {
+      org.assertj.core.api.Assertions.assertThat(u.path("active").asBoolean()).isFalse();
+    }
+    mvc.perform(get("/v1/admin/users?status=sleeping").header("Authorization", admin()))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.status").exists());
+    java.util.List<String> names = new java.util.ArrayList<>();
+    json.readTree(mvc.perform(get("/v1/admin/users?size=100").header("Authorization", admin())).andReturn().getResponse()
+        .getContentAsString()).path("data").path("content").forEach(u -> names.add(u.path("firstName").asText().toLowerCase()));
+    org.assertj.core.api.Assertions.assertThat(names).isSorted();
+  }
+
+  @Test
+  void integrationsReportEachExternalService() throws Exception {
+    // Phase 2, item 11: status straight from the adapters (test profile: sandbox scanner, no SMTP, no SMS key).
+    mvc.perform(get("/v1/integrations").header("Authorization", admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[?(@.key == 'virus_scanner')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'satellite_flaring')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'regulator_feed')].status").value(org.hamcrest.Matchers.contains("not_configured")))
+        // WP-41: the carbon credit registry and exchange (Sandbox adapters, D36).
+        .andExpect(jsonPath("$.data[?(@.key == 'carbon_registry')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'carbon_exchange')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        // WP-50: the AI service (the test profile configures none, D38).
+        .andExpect(jsonPath("$.data[?(@.key == 'ai_service')].status").value(org.hamcrest.Matchers.contains("not_configured")))
+        .andExpect(jsonPath("$.data.length()").value(8));
+    mvc.perform(get("/v1/integrations").header("Authorization", bearerForRole("DATA_COLLECTOR"))).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void rolesEndpointListsTheTwelveTenantRolesWithPermissions() throws Exception {
+    // WP-34 added ETHICS_OFFICER (designated whistleblower investigators).
     mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data", hasSize(12)))
-        .andExpect(jsonPath("$.data[0].name").value("SUPER_ADMIN"))
+        .andExpect(jsonPath("$.data[0].name").value("TENANT_ADMIN"))
         .andExpect(jsonPath("$.data[0].mfaRequired").value(true));
+    mvc.perform(get("/v1/admin/roles").header("Authorization", bearerForRole("SUPER_ADMIN")))
+        .andExpect(jsonPath("$.data", hasSize(13)));
+  }
+
+  private String superAdminRoleId() throws Exception {
+    try (var owner = com.esg.support.PostgresTestDatabase.ownerConnection(); var st = owner.createStatement()) {
+      st.execute("select set_config('app.current_tenant', '" + com.esg.support.PostgresTestDatabase.TENANT_A + "', false)");
+      var rs = st.executeQuery("select id from auth.roles where name = 'SUPER_ADMIN'");
+      rs.next();
+      return rs.getString(1);
+    }
   }
 
   private String roleId(String name) throws Exception {
