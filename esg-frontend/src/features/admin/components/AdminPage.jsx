@@ -1,116 +1,284 @@
-import { useState } from 'react';
-import { Box, Typography, Card, CardContent, Grid, Chip, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Avatar } from '@mui/material';
-import { AdminPanelSettings, PersonAdd, Security } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
+import {
+  Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, MenuItem, Tab, Table, TableBody,
+  TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
+} from '@mui/material';
+import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '@mui/icons-material';
+import Can from '../../../components/rbac/Can';
+import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery, useResetUserMfaMutation } from '../adminApi';
+import { useAuth } from '../../auth/hooks/useAuth';
+import OrganisationsTab from './OrganisationsTab';
+import PeriodsTab from './PeriodsTab';
+import SettingsTab from './SettingsTab';
+import TenantsTab from './TenantsTab';
+import SubscriptionTab from './SubscriptionTab';
+import AuditLogTab from '../../audit/components/AuditLogTab';
+import ReferenceDataTab from '../../reference/components/ReferenceDataTab';
+import SetPasswordDialog from './SetPasswordDialog';
+import IntegrationsTab from '../../integrations/components/IntegrationsTab';
+import PlatformRequestsTab from '../../integrations/components/PlatformRequestsTab';
+import FrameworkContentTab from './FrameworkContentTab';
+import PrivacyTab from '../../privacy/components/PrivacyTab';
+import { useSearchParams } from 'react-router-dom';
+import { toFormError } from '../../../services/apiSlice';
+import UserFormDialog from './UserFormDialog';
+import RoleAssignmentDialog from './RoleAssignmentDialog';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 
-const users = [
-  { name: 'Adaeze Usman', email: 'adaeze.usman@esgpro.ng', role: 'ESG_DIRECTOR', status: 'Active', lastLogin: '2026-04-03 09:15' },
-  { name: 'Chidi Okafor', email: 'chidi.okafor@esgpro.ng', role: 'ESG_ANALYST', status: 'Active', lastLogin: '2026-04-03 08:42' },
-  { name: 'Amina Bello', email: 'amina.bello@esgpro.ng', role: 'ESG_MANAGER', status: 'Active', lastLogin: '2026-04-02 16:30' },
-  { name: 'Emeka Nwosu', email: 'emeka.nwosu@esgpro.ng', role: 'DATA_COLLECTOR', status: 'Active', lastLogin: '2026-04-03 07:10' },
-  { name: 'Ibrahim Musa', email: 'ibrahim.musa@esgpro.ng', role: 'DATA_COLLECTOR', status: 'Active', lastLogin: '2026-04-01 14:22' },
-  { name: 'Funke Adeleke', email: 'funke.adeleke@esgpro.ng', role: 'AUDITOR', status: 'Inactive', lastLogin: '2026-03-15 11:00' },
-];
+import { roleLabel } from '../../../services/labels';
+import { tr, formattingLocale } from '../../../i18n';
 
-const auditLogs = [
-  { timestamp: '2026-04-03 09:15:22', user: 'Adaeze Usman', action: 'LOGIN', resource: 'auth', detail: 'Successful login from 102.89.x.x' },
-  { timestamp: '2026-04-03 09:12:05', user: 'Chidi Okafor', action: 'UPDATE', resource: 'data_points/DP-003', detail: 'Validated water usage data' },
-  { timestamp: '2026-04-03 08:45:30', user: 'System', action: 'ALERT', resource: 'carbon/anomaly', detail: 'Gas flaring anomaly detected OML 42' },
-  { timestamp: '2026-04-02 16:30:15', user: 'Amina Bello', action: 'CREATE', resource: 'reports/RPT-002', detail: 'Created ISSB S1 disclosure report' },
-  { timestamp: '2026-04-02 14:20:10', user: 'Emeka Nwosu', action: 'SYNC', resource: 'data/offline', detail: 'Synced 23 offline data points from mobile' },
-];
+/** Search waits until typing pauses: one request per pause instead of one per keystroke (found by E2E journey 1). */
+const SEARCH_DEBOUNCE_MS = 300;
 
-const roleColors = {
-  ESG_DIRECTOR: '#1A365D', ESG_MANAGER: '#2D7D46', ESG_ANALYST: '#319795',
-  DATA_COLLECTOR: '#D4AF37', AUDITOR: '#718096', TENANT_ADMIN: '#C53030',
-};
+function UsersTab() {
+  const confirm = useConfirm();
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [editing, setEditing] = useState(undefined); // undefined = closed, null = create, object = edit
+  const [rolesFor, setRolesFor] = useState(null);
+  const [passwordFor, setPasswordFor] = useState(null);
+  const [deactivate] = useDeactivateUserMutation();
+  const [resetMfa] = useResetUserMfaMutation();
+  const [actionError, setActionError] = useState('');
+  const [role, setRole] = useState('');
+  const [status, setStatus] = useState('');
+  const [highlight, setHighlight] = useState(null);
+  const { can } = useAuth();
+  const { data: roles = [] } = useListRolesQuery(undefined, { skip: !can('roles:read') });
+  const { data, isLoading, isError, error, refetch } = useListUsersQuery({ search, role, status, page, size });
 
-export default function AdminPage() {
-  const [tab, setTab] = useState(0);
+  // Phase 2: after creating a user, show their row (search by email) and highlight it for a few seconds.
+  const onUserSaved = (_saved, created) => {
+    setEditing(undefined);
+    if (!created) return;
+    setRole('');
+    setStatus('');
+    setSearchInput(created.email);
+    setHighlight(created.id);
+    setTimeout(() => setHighlight(null), 6000);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const onDeactivate = async (user) => {
+    if (!(await confirm({ title: tr("Deactivate this user?"), item: `${user.firstName} ${user.lastName} (${user.email})`, message: tr("They will be signed out everywhere and can't sign in until reactivated."), confirmLabel: tr("Deactivate") }))) return;
+    setActionError('');
+    try {
+      await deactivate(user.id).unwrap();
+    } catch (err) {
+      setActionError(toFormError(err).message);
+    }
+  };
+
+  const onResetMfa = async (user) => {
+    if (!(await confirm({ title: tr("Reset two-factor authentication?"), item: `${user.firstName} ${user.lastName}`, message: tr("They will set it up again at their next sign-in and are signed out now."), confirmLabel: tr("Reset MFA") }))) return;
+    setActionError('');
+    try {
+      await resetMfa(user.id).unwrap();
+    } catch (err) {
+      setActionError(toFormError(err).message);
+    }
+  };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Administration</Typography>
-          <Typography variant="body2" color="text.secondary">User management, roles, audit logs & system health</Typography>
+    <>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <TextField size="small" placeholder={tr("Search name or email")} value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)} inputProps={{ 'aria-label': 'Search users' }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+            sx={{ width: { xs: '100%', sm: 280 } }} />
+          <TextField select size="small" label={tr("Role")} value={role} onChange={(e) => { setRole(e.target.value); setPage(0); }} sx={{ minWidth: 170 }}>
+            <MenuItem value="">{tr("Any role")}</MenuItem>
+            {roles.map((r) => <MenuItem key={r.id} value={r.name}>{roleLabel(r.name)}</MenuItem>)}
+          </TextField>
+          <TextField select size="small" label={tr("Status")} value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }} sx={{ minWidth: 140 }}>
+            <MenuItem value="">{tr("Any status")}</MenuItem>
+            <MenuItem value="active">{tr("Active")}</MenuItem>
+            <MenuItem value="inactive">{tr("Deactivated")}</MenuItem>
+          </TextField>
         </Box>
-        <Button variant="contained" size="small" startIcon={<PersonAdd />}>Invite User</Button>
+        <Can permission="users:create">
+          <Button variant="contained" size="small" startIcon={<PersonAdd />} onClick={() => setEditing(null)}>{tr("New user")}</Button>
+        </Can>
       </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          { label: 'Active Users', value: users.filter(u => u.status === 'Active').length, color: '#2D7D46' },
-          { label: 'Total Users', value: users.length, color: '#1A365D' },
-          { label: 'System Roles', value: 12, color: '#D4AF37' },
-          { label: 'Audit Events (24h)', value: auditLogs.length, color: '#319795' },
-        ].map(s => (
-          <Grid size={{ xs: 6, md: 3 }} key={s.label}>
-            <Card><CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: s.color }}>{s.value}</Typography>
-            </CardContent></Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
-        <Tab label="Users" />
-        <Tab label="Audit Logs" />
-      </Tabs>
-
-      {tab === 0 && (
-        <Card>
+      {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+      <Card>
+        {isLoading && <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>}
+        {isError && (
+          <Alert severity="error" action={<Button onClick={refetch}>{tr("Retry")}</Button>}>{tr(toFormError(error).message)}</Alert>
+        )}
+        {data && data.content.length === 0 && (
+          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">
+            {search || role || status ? tr("No users match these filters.") : tr("No users yet.")}
+          </Typography>
+        )}
+        {data && data.content.length > 0 && (
           <TableContainer>
-            <Table size="small">
+            <Table size="small" aria-label={tr("Users")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>User</TableCell><TableCell>Email</TableCell><TableCell>Role</TableCell>
-                <TableCell>Status</TableCell><TableCell>Last Login</TableCell>
+                <TableCell>{tr("User")}</TableCell><TableCell>{tr("Email")}</TableCell><TableCell>{tr("Phone")}</TableCell>
+                <TableCell>{tr("Roles")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell>{tr("MFA")}</TableCell>
+                <TableCell>{tr("Last login")}</TableCell><TableCell align="right">{tr("Actions")}</TableCell>
               </TableRow></TableHead>
               <TableBody>
-                {users.map(u => (
-                  <TableRow key={u.email} hover>
+                {data.content.map((u) => (
+                  <TableRow key={u.id} hover selected={u.id === highlight} aria-current={u.id === highlight ? 'true' : undefined}
+                    sx={u.id === highlight ? { '& td': { bgcolor: 'rgba(212,175,55,0.18)', transition: 'background-color 0.6s' } } : undefined}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: roleColors[u.role] || '#718096' }}>
-                          {u.name.split(' ').map(n => n[0]).join('')}
+                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: '#1A365D' }}>
+                          {u.firstName?.[0]}{u.lastName?.[0]}
                         </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{u.name}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{u.firstName} {u.lastName}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.8rem' }}>{u.email}</TableCell>
-                    <TableCell><Chip size="small" label={u.role.replace(/_/g, ' ')} sx={{ bgcolor: `${roleColors[u.role]}15`, color: roleColors[u.role], fontSize: '0.6rem', fontWeight: 600 }} /></TableCell>
-                    <TableCell><Chip size="small" label={u.status} sx={{ bgcolor: u.status === 'Active' ? '#E6F4EA' : '#FEE2E2', color: u.status === 'Active' ? '#2D7D46' : '#C53030', fontSize: '0.65rem' }} /></TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{u.lastLogin}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem' }}>{u.phone ?? '—'}</TableCell>
+                    <TableCell>
+                      {u.roles.length === 0 && <Typography variant="caption" color="text.secondary">{tr("None")}</Typography>}
+                      {u.roles.map((r) => (
+                        <Tooltip key={r.id} title={[r.orgScopeName && `Scope: ${r.orgScopeName}`,
+                          r.expiresAt && `Expires ${new Date(r.expiresAt).toLocaleString(formattingLocale())}`].filter(Boolean).join(' · ')}>
+                          {/* The same role at two organisations shows as two assignments, each named (not "ESG ANALYST ESG ANALYST"). */}
+                          <Chip size="small" label={r.orgScopeName ? `${roleLabel(r.roleName)} · ${r.orgScopeName}` : roleLabel(r.roleName)}
+                            sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem', fontWeight: 600 }} />
+                        </Tooltip>
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="small" label={u.active ? tr("Active") : tr("Deactivated")} sx={{
+                        bgcolor: u.active ? '#E6F4EA' : '#FEE2E2', color: u.active ? '#1E5C32' : '#9B2020', fontSize: '0.65rem',
+                      }} />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.75rem' }}>{u.mfaEnabled ? tr("On") : tr("Off")}</TableCell>
+                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>
+                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(formattingLocale()) : tr("Never")}
+                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                      <Can permission="users:update">
+                        <IconButton size="small" aria-label={`Edit ${u.email}`} onClick={() => setEditing(u)}><Edit fontSize="small" /></IconButton>
+                      </Can>
+                      <Can permission="users:update">
+                        <IconButton size="small" aria-label={`Set password for ${u.email}`} onClick={() => setPasswordFor(u)}><Key fontSize="small" /></IconButton>
+                        {u.mfaEnabled && (
+                          <IconButton size="small" aria-label={`Reset MFA for ${u.email}`} onClick={() => onResetMfa(u)}><PhonelinkErase fontSize="small" /></IconButton>
+                        )}
+                      </Can>
+                      <Can permission="roles:assign">
+                        <IconButton size="small" aria-label={`Roles for ${u.email}`} onClick={() => setRolesFor(u)}><ManageAccounts fontSize="small" /></IconButton>
+                      </Can>
+                      <Can permission="users:delete">
+                        {u.active && (
+                          <IconButton size="small" aria-label={`Deactivate ${u.email}`} onClick={() => onDeactivate(u)}><Block fontSize="small" /></IconButton>
+                        )}
+                      </Can>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-        </Card>
-      )}
+        )}
+        {data && (
+          <TablePagination component="div" count={data.totalElements} page={data.page} rowsPerPage={data.size}
+            onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[10, 20, 50]}
+            onRowsPerPageChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} />
+        )}
+      </Card>
 
-      {tab === 1 && (
-        <Card>
-          <TableContainer>
-            <Table size="small">
-              <TableHead><TableRow>
-                <TableCell>Timestamp</TableCell><TableCell>User</TableCell><TableCell>Action</TableCell>
-                <TableCell>Resource</TableCell><TableCell>Detail</TableCell>
-              </TableRow></TableHead>
-              <TableBody>
-                {auditLogs.map((log, idx) => (
-                  <TableRow key={idx} hover>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{log.timestamp}</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>{log.user}</TableCell>
-                    <TableCell><Chip size="small" label={log.action} sx={{ fontSize: '0.6rem', fontWeight: 600 }} /></TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{log.resource}</TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem' }}>{log.detail}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
+      <UserFormDialog key={`user-form-${editing === undefined ? 'closed' : editing?.id ?? 'new'}`}
+        open={editing !== undefined} user={editing ?? null} onClose={onUserSaved} />
+      <RoleAssignmentDialog key={`roles-${rolesFor?.id ?? 'closed'}`}
+        open={Boolean(rolesFor)} user={rolesFor} onClose={() => setRolesFor(null)} />
+      <SetPasswordDialog key={`password-${passwordFor?.id ?? 'closed'}`}
+        open={Boolean(passwordFor)} user={passwordFor} onClose={() => setPasswordFor(null)} />
+    </>
+  );
+}
+
+function RolesTab() {
+  const { data: roles, isLoading, isError, error } = useListRolesQuery();
+  if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
+  if (isError) return <Alert severity="error">{tr(toFormError(error).message)}</Alert>;
+  return (
+    <Card>
+      <TableContainer>
+        <Table size="small">
+          <TableHead><TableRow>
+            <TableCell>{tr("Role")}</TableCell><TableCell>{tr("Scope")}</TableCell><TableCell>{tr("MFA")}</TableCell><TableCell>{tr("Permissions")}</TableCell>
+          </TableRow></TableHead>
+          <TableBody>
+            {roles.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell sx={{ verticalAlign: 'top', minWidth: 200 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{roleLabel(r.name)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{tr(r.description)}</Typography>
+                </TableCell>
+                <TableCell sx={{ verticalAlign: 'top' }}>{r.scopeType}</TableCell>
+                <TableCell sx={{ verticalAlign: 'top' }}>{r.mfaRequired ? tr("Required") : '—'}</TableCell>
+                <TableCell>
+                  {r.permissions.map((p) => <Chip key={p} size="small" label={p} sx={{ mr: 0.5, mb: 0.5, fontSize: '0.6rem' }} />)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
+  );
+}
+
+// no-mock-gate: config — tab definitions, each gated by a permission
+const TABS = [
+  { value: 'users', label: 'Users', permission: 'users:read', render: () => <UsersTab /> },
+  { value: 'roles', label: 'Roles', permission: 'roles:read', render: () => <RolesTab /> },
+  { value: 'organisations', label: 'Organisations', permission: 'org_structure:read', render: () => <OrganisationsTab /> },
+  { value: 'periods', label: 'Reporting periods', permission: 'reporting_periods:read', render: () => <PeriodsTab /> },
+  { value: 'settings', label: 'Settings', permission: 'tenant_settings:read', render: () => <SettingsTab /> },
+  { value: 'integrations', label: 'Integrations', anyOf: ['tenant_settings:read', 'integrations:read'], render: () => <IntegrationsTab /> },
+  { value: 'subscription', label: 'Subscription', permission: 'subscription:read', render: () => <SubscriptionTab /> },
+  { value: 'tenants', label: 'Tenants', permission: 'tenants:read', render: () => <TenantsTab /> },
+  // WP-46 (D44): the platform team's queue of connector requests from every client.
+  { value: 'integration-requests', label: 'Integration requests', permission: 'tenants:read', render: () => <PlatformRequestsTab /> },
+  { value: 'framework-content', label: 'Framework content', permission: 'framework_content:import', render: () => <FrameworkContentTab /> },
+  { value: 'reference', label: 'Reference data', permission: 'reference_data:read', render: () => <ReferenceDataTab /> },
+  { value: 'audit', label: 'Audit log', permission: 'audit_logs:read', render: () => <AuditLogTab /> },
+  { value: 'privacy', label: 'Privacy (NDPA)', permission: 'privacy:read', render: () => <PrivacyTab /> },
+];
+
+export default function AdminPage() {
+  const { can } = useAuth();
+  const tabs = TABS.filter((t) => (t.anyOf ? t.anyOf.some(can) : can(t.permission)));
+  // ?tab=… opens a tab directly, e.g. from a "Sandbox" label (→ Integrations).
+  const [params] = useSearchParams();
+  const [selected, setSelected] = useState(params.get('tab'));
+  const tab = tabs.find((t) => t.value === selected) ?? tabs[0];
+
+  return (
+    <Box>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>{tr("Administration")}</Typography>
+        <Typography variant="body2" color="text.secondary">{tr("Users, roles, organisation structure, reporting periods and settings")}</Typography>
+      </Box>
+      {!tab && <Alert severity="info">{tr("You don't have access to any administration area.")}</Alert>}
+      {tab && (
+        <>
+          <Tabs value={tab.value} onChange={(_, v) => setSelected(v)} variant="scrollable"
+            sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
+            {tabs.map((t) => <Tab key={t.value} label={tr(t.label)} value={t.value} />)}
+          </Tabs>
+          {tab.render()}
+        </>
       )}
     </Box>
   );

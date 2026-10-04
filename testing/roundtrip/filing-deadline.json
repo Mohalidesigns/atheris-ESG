@@ -1,0 +1,167 @@
+{
+  "id": "filing-deadline",
+  "forms": [
+    "Filing deadline"
+  ],
+  "actor": "COMPLIANCE_OFFICER",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/compliance/deadlines"
+  },
+  "read": {
+    "path": "/v1/compliance/deadlines/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/compliance/deadlines/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "framework": "CBN_NSBP",
+    "description": "CBN NSBP annual report {u}",
+    "deadlineDate": "{yyyy}-03-31",
+    "reportingYear": 2049,
+    "ownerUserId": "{USER_COMPLIANCE}",
+    "reminderDays": [
+      60,
+      30,
+      7
+    ],
+    "notes": "Board pack first"
+  },
+  "changes": {
+    "framework": "GRI",
+    "description": "GRI report {u}",
+    "deadlineDate": "{yyyy}-04-30",
+    "reportingYear": 2050,
+    "ownerUserId": "{USER_DIRECTOR}",
+    "reminderDays": [
+      30,
+      7,
+      1
+    ],
+    "notes": "Through the auditors"
+  },
+  "derived": {
+    "status": "upcoming",
+    "frameworkName": "CBN Nigerian Sustainable Banking Principles",
+    "ownerName": "Compliance Officer Fixture"
+  },
+  "invalid": [
+    {
+      "field": "description",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    },
+    {
+      "field": "deadlineDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "ownerUserId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "a1000000-0000-4000-8000-000000000007",
+      "rule": "must be able to update compliance (auditor can't)"
+    },
+    {
+      "field": "reminderDays",
+      "value": [
+        0
+      ],
+      "rule": "1..365",
+      "errorField": "reminderDays[0]"
+    },
+    {
+      "field": "reminderDays",
+      "value": [
+        400
+      ],
+      "rule": "1..365",
+      "errorField": "reminderDays[0]"
+    },
+    {
+      "field": "reminderDays",
+      "value": [
+        7,
+        7
+      ],
+      "rule": "distinct"
+    },
+    {
+      "field": "framework",
+      "value": "NOPE",
+      "rule": "known framework"
+    },
+    {
+      "field": "reportingYear",
+      "value": 1999,
+      "rule": "2000..2100"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "framework": {
+        "label": "Framework",
+        "kind": "select",
+        "display": "CBN Nigerian Sustainable Banking Principles"
+      },
+      "description": {
+        "label": "Description"
+      },
+      "deadlineDate": {
+        "label": "Due date"
+      },
+      "reportingYear": {
+        "label": "Reporting year"
+      },
+      "ownerUserId": {
+        "label": "Owner",
+        "kind": "select",
+        "display": "Compliance Officer Fixture (compliance_officer@fixture.test)"
+      },
+      "reminderDays": {
+        "kind": "checkboxes",
+        "options": [
+          90,
+          60,
+          30,
+          14,
+          7,
+          1
+        ]
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
+  }
+}

@@ -1,233 +1,246 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Box, Typography, Card, CardContent, Grid, Button, Chip, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, TextField,
-  Select, MenuItem, FormControl, InputLabel, LinearProgress, Avatar, Tabs, Tab,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Button, Card, CardContent, Chip, Grid, MenuItem, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
-import {
-  Add, Upload, CloudSync, FilterList, Search, CheckCircle, HourglassEmpty,
-  ErrorOutline, Edit, Visibility, Delete, CloudOff, SignalWifiOff,
-} from '@mui/icons-material';
+import { Add, Warning as WarningIcon } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
+import Can from '../../../components/rbac/Can';
+import DataTable from '../../../components/data/DataTable';
+import { useServerTable } from '../../../components/data/useServerTable';
+import { PageHeader } from '../../../components/states/States';
+import { useListOrganisationsQuery } from '../../admin/adminApi';
+import { useMetricsQuery } from '../../reference/referenceApi';
+import { useDataPointsQuery } from '../dataHubApi';
+import { STATUS } from '../schemas';
+import DataPointDialog from './DataPointDialog';
+import DataPointDrawer from './DataPointDrawer';
+import DataSourcesTab from './DataSourcesTab';
+import FxRatesTab from './FxRatesTab';
+import OfflineTab from '../../offline/components/OfflineTab';
+import ImportWizard from './ImportWizard';
+import StatusChip from './StatusChip';
+import BulkActions from './BulkActions';
+import { tr, formattingLocale } from '../../../i18n';
 
-const demoDataPoints = [
-  { id: 'DP-001', category: 'E', subCategory: 'GHG Emissions', metricKey: 'scope1_co2e_tonnes', numericValue: 1245.8, unit: 'tCO2e', org: 'Lagos HQ', period: 'Q1 2026', qualityScore: 0.92, status: 'validated', source: 'Manual', createdBy: 'Chidi Okafor' },
-  { id: 'DP-002', category: 'E', subCategory: 'Energy Consumption', metricKey: 'electricity_kwh', numericValue: 458200, unit: 'kWh', org: 'Lagos HQ', period: 'Q1 2026', qualityScore: 0.88, status: 'validated', source: 'API', createdBy: 'System' },
-  { id: 'DP-003', category: 'E', subCategory: 'Water Usage', metricKey: 'water_cubic_meters', numericValue: 12450, unit: 'm3', org: 'Port Harcourt Plant', period: 'Q1 2026', qualityScore: 0.76, status: 'pending', source: 'CSV Import', createdBy: 'Amina Bello' },
-  { id: 'DP-004', category: 'S', subCategory: 'Workforce', metricKey: 'total_employees', numericValue: 2845, unit: 'headcount', org: 'All Sites', period: 'Q1 2026', qualityScore: 0.95, status: 'validated', source: 'HRIS API', createdBy: 'System' },
-  { id: 'DP-005', category: 'S', subCategory: 'Health & Safety', metricKey: 'ltifr', numericValue: 0.42, unit: 'per million hrs', org: 'All Sites', period: 'Q1 2026', qualityScore: 0.85, status: 'pending', source: 'Manual', createdBy: 'Emeka Nwosu' },
-  { id: 'DP-006', category: 'G', subCategory: 'Board Composition', metricKey: 'board_independence_pct', numericValue: 66.7, unit: '%', org: 'Corporate', period: 'Q1 2026', qualityScore: 0.98, status: 'validated', source: 'Manual', createdBy: 'Adaeze Usman' },
-  { id: 'DP-007', category: 'E', subCategory: 'Waste Management', metricKey: 'waste_tonnes', numericValue: 342.5, unit: 'tonnes', org: 'Abuja Office', period: 'Q1 2026', qualityScore: 0.71, status: 'flagged', source: 'Mobile', createdBy: 'Ibrahim Musa' },
-  { id: 'DP-008', category: 'E', subCategory: 'Gas Flaring', metricKey: 'flared_gas_mcf', numericValue: 28400, unit: 'MCF', org: 'OML 42', period: 'Q1 2026', qualityScore: 0.65, status: 'rejected', source: 'IoT Sensor', createdBy: 'System' },
+const CATEGORY_COLOURS = { E: '#2D7D46', S: '#1A365D', G: '#B7791F' };
+const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
+
+function Count({ label, status }) {
+  const { data, isLoading, isError } = useDataPointsQuery({ ...(status ? { status } : {}), page: 0, size: 1 });
+  return (
+    <Card>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Typography variant="caption" color="text.secondary">{label}</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: STATUS[status]?.color ?? '#1A365D' }}>
+          {isLoading ? '…' : isError ? '—' : (data?.totalElements ?? 0).toLocaleString(formattingLocale())}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A server-paged list of data points with fixed and user filters; "Open" shows the detail drawer. */
+function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage, selectable = false }) {
+  const table = useServerTable({ defaultSort: { field: 'createdAt', direction: 'desc' } });
+  // Phase 3 (2): selected rows (kept across pages) for the bulk bar.
+  const [selected, setSelected] = useState(() => new Map());
+  const params = Object.fromEntries(Object.entries({ ...filters, ...fixed }).filter(([, v]) => v));
+  const query = useDataPointsQuery({ ...table.params, ...params });
+  const columns = [
+    {
+      field: 'metricKey', header: 'Metric', sortable: true,
+      render: (dp) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{dp.metricName ?? dp.metricKey}</Typography>
+          <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace', color: 'text.secondary' }}>{dp.metricKey}</Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'category', header: 'Pillar', sortable: true,
+      render: (dp) => <Chip label={dp.category} size="small" sx={{ bgcolor: CATEGORY_COLOURS[dp.category], color: '#fff', fontWeight: 700, minWidth: 28 }} />,
+    },
+    {
+      field: 'numericValue', header: 'Value', align: 'right', sortable: true,
+      render: (dp) => (
+        <>
+          <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+            {dp.numericValue != null ? Number(dp.numericValue).toLocaleString(formattingLocale()) : dp.textValue}
+          </Typography>
+          <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>{dp.unit}</Typography>
+          {dp.originalCurrency && (
+            <Typography variant="caption" display="block" color="text.secondary">
+              {Number(dp.originalAmount).toLocaleString(formattingLocale())} {dp.originalCurrency}
+            </Typography>
+          )}
+        </>
+      ),
+    },
+    { field: 'orgName', header: 'Organisation', render: (dp) => dp.orgName ?? '—' },
+    { field: 'reportingPeriodStart', header: 'Period', sortable: true, render: (dp) => `${dp.reportingPeriodStart} – ${dp.reportingPeriodEnd}` },
+    {
+      field: 'qualityScore', header: 'Quality', align: 'right', sortable: true,
+      render: (dp) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+          {(dp.validationWarnings ?? []).length > 0 && (
+            <WarningIcon fontSize="small" sx={{ color: '#C05621' }} aria-label={`${dp.validationWarnings.length} warning(s)`} />
+          )}
+          {dp.qualityScore != null ? `${Math.round(Number(dp.qualityScore) * 100)}%` : '—'}
+        </Box>
+      ),
+    },
+    { field: 'validationStatus', header: 'Status', sortable: true, render: (dp) => <StatusChip status={dp.validationStatus} /> },
+    {
+      field: 'open', header: '', align: 'right',
+      render: (dp) => (
+        <Button size="small" onClick={() => onOpen(dp.id)}
+          aria-label={`Open ${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}`}>{tr("Open")}</Button>
+      ),
+    },
+  ];
+  return (
+    <>
+      {selectable && <BulkActions selected={selected} onDone={() => setSelected(new Map())} />}
+      <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage}
+        rowsPerPageOptions={[10, 20, 50, 100]}
+        selection={selectable ? { selected, onChange: setSelected, rowLabel: (dp) => `${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}` } : undefined} />
+    </>
+  );
+}
+
+function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
+  const set = (name) => (e) => setFilters((f) => ({ ...f, [name]: e.target.value }));
+  const filtered = Object.values(filters).some(Boolean);
+  return (
+    <>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Drafts")} status="draft" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Awaiting validation")} status="submitted" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Awaiting approval")} status="validated" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Approved")} status="approved" /></Grid>
+      </Grid>
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField select size="small" label={tr("Pillar")} value={filters.category} onChange={set('category')} sx={{ minWidth: 140 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            <MenuItem value="E">{tr("Environmental")}</MenuItem>
+            <MenuItem value="S">{tr("Social")}</MenuItem>
+            <MenuItem value="G">{tr("Governance")}</MenuItem>
+          </TextField>
+          <TextField select size="small" label={tr("Status")} value={filters.status} onChange={set('status')} sx={{ minWidth: 150 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            {Object.entries(STATUS).map(([s, v]) => <MenuItem key={s} value={s}>{tr(v.label)}</MenuItem>)}
+          </TextField>
+          <TextField select size="small" label={tr("Metric")} value={filters.metricKey} onChange={set('metricKey')} sx={{ minWidth: 200 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            {metrics.map((m) => <MenuItem key={m.metricKey} value={m.metricKey}>{m.name}</MenuItem>)}
+          </TextField>
+          <TextField select size="small" label={tr("Organisation")} value={filters.orgId} onChange={set('orgId')} sx={{ minWidth: 180 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            {orgs.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+          </TextField>
+          <TextField size="small" type="date" label={tr("From")} value={filters.from} onChange={set('from')} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" type="date" label={tr("To")} value={filters.to} onChange={set('to')} InputLabelProps={{ shrink: true }} />
+          {filters.importJobId && (
+            <Chip label={tr("From one import")} onDelete={() => setFilters((f) => ({ ...f, importJobId: '' }))} />
+          )}
+          {filtered && <Button size="small" onClick={() => setFilters(emptyFilters)}>{tr("Clear filters")}</Button>}
+        </CardContent>
+      </Card>
+      <PointsList selectable filters={filters} onOpen={onOpen} ariaLabel={tr("Data points")} emptyTitle={tr("No data points yet")}
+        emptyMessage={filtered ? tr("No data points match these filters.") : tr("Add the first data point or import a file.")} />
+    </>
+  );
+}
+
+function ReviewTab({ onOpen }) {
+  return (
+    <>
+      <Can permission="data_points:validate">
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>{tr("Awaiting validation")}</Typography>
+        <PointsList selectable fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel={tr("Awaiting validation")}
+          emptyTitle={tr("Nothing to validate")} emptyMessage={tr("Submitted data points appear here.")} />
+      </Can>
+      <Can permission="data_points:approve">
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 3, mb: 1 }}>{tr("Awaiting approval")}</Typography>
+        <PointsList selectable fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel={tr("Awaiting approval")}
+          emptyTitle={tr("Nothing to approve")} emptyMessage={tr("Validated data points appear here.")} />
+      </Can>
+    </>
+  );
+}
+
+// no-mock-gate: config — tab definitions, each gated by a permission
+const TABS = [
+  { value: 'data', label: 'Data', anyOf: ['data_points:read'] },
+  { value: 'review', label: 'Review', anyOf: ['data_points:validate', 'data_points:approve'] },
+  { value: 'import', label: 'Import', anyOf: ['data_points:create'] },
+  { value: 'sources', label: 'Sources', anyOf: ['data_sources:read'] },
+  { value: 'rates', label: 'Exchange rates', anyOf: ['fx_rates:read'] },
+  // WP-43: records saved offline on this device, and conflicts waiting for a decision.
+  { value: 'device', label: 'On this device', anyOf: ['data_points:create'] },
 ];
 
-const statusConfig = {
-  validated: { color: '#2D7D46', bg: '#E6F4EA', icon: <CheckCircle sx={{ fontSize: 14 }} /> },
-  pending: { color: '#D4AF37', bg: '#FEF9E7', icon: <HourglassEmpty sx={{ fontSize: 14 }} /> },
-  flagged: { color: '#DD6B20', bg: '#FEF3E2', icon: <ErrorOutline sx={{ fontSize: 14 }} /> },
-  rejected: { color: '#C53030', bg: '#FEE2E2', icon: <ErrorOutline sx={{ fontSize: 14 }} /> },
-};
-
-const categoryColors = { E: '#2D7D46', S: '#1A365D', G: '#D4AF37' };
-
+/** M1 ESG Data Hub (WP-20): collect → validate → approve, with quality scores, import, sources and exchange rates. */
 export default function DataHubPage() {
-  const [addOpen, setAddOpen] = useState(false);
-
-  const stats = {
-    total: demoDataPoints.length,
-    validated: demoDataPoints.filter(d => d.status === 'validated').length,
-    pending: demoDataPoints.filter(d => d.status === 'pending').length,
-    flagged: demoDataPoints.filter(d => d.status === 'flagged' || d.status === 'rejected').length,
-  };
+  const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
+  const tabs = TABS.filter((t) => t.anyOf.some((p) => permissions.includes(p)));
+  // ?tab=review (e.g. from the Dashboard's review card, F14) opens that tab.
+  const [params, setParams] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') ?? 'data');
+  // A link to another tab while the page is open (e.g. the top bar's offline chip → ?tab=device) switches to it.
+  const tabParam = params.get('tab');
+  const [seenTabParam, setSeenTabParam] = useState(tabParam);
+  if (tabParam !== seenTabParam) {
+    setSeenTabParam(tabParam);
+    if (tabParam) setTab(tabParam);
+  }
+  const [filters, setFilters] = useState(emptyFilters);
+  // ?add=<metric>&from=&to= (Phase 3: the Carbon intensity prompt) opens the form with that metric and period.
+  const preset = params.get('add') && permissions.includes('data_points:create')
+    ? { metricKey: params.get('add'), reportingPeriodStart: params.get('from') ?? '', reportingPeriodEnd: params.get('to') ?? '' }
+    : null;
+  const [editing, setEditing] = useState(preset ? null : undefined); // undefined closed, null new, object edit
+  // ?point=<id> (e.g. from the dashboard's activity feed) opens that point's details.
+  const [openId, setOpenId] = useState(params.get('point'));
+  const { data: metrics = [] } = useMetricsQuery();
+  const { data: orgs = [] } = useListOrganisationsQuery();
+  const current = tabs.some((t) => t.value === tab) ? tab : tabs[0]?.value;
+  const sortedMetrics = useMemo(() => [...metrics].sort((a, b) => a.name.localeCompare(b.name)), [metrics]);
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>ESG Data Hub</Typography>
-          <Typography variant="body2" color="text.secondary">Centralised data collection, validation & quality management</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" size="small" startIcon={<Upload />}>Import CSV/Excel</Button>
-          <Button variant="outlined" size="small" startIcon={<CloudSync />}>Sync Offline Data</Button>
-          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setAddOpen(true)}>
-            Add Data Point
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader title={tr("ESG Data Hub")} subtitle={tr("Collect, validate and approve ESG data")}
+        actions={(
+          <Can permission="data_points:create">
+            <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setEditing(null)} disabled={!metrics.length}>
+              {tr("Add data point")}
+            </Button>
+          </Can>
+        )} />
+      <Tabs value={current} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile>
+        {tabs.map((t) => <Tab key={t.value} value={t.value} label={tr(t.label)} />)}
+      </Tabs>
 
-      {/* Stats */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          { label: 'Total Data Points', value: stats.total, color: '#1A365D' },
-          { label: 'Validated', value: stats.validated, color: '#2D7D46' },
-          { label: 'Pending Review', value: stats.pending, color: '#D4AF37' },
-          { label: 'Flagged/Rejected', value: stats.flagged, color: '#C53030' },
-        ].map((s) => (
-          <Grid size={{ xs: 6, md: 3 }} key={s.label}>
-            <Card>
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: s.color }}>{s.value}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {current === 'data' && <DataTab metrics={sortedMetrics} orgs={orgs} onOpen={setOpenId} filters={filters} setFilters={setFilters} />}
+      {current === 'review' && <ReviewTab onOpen={setOpenId} />}
+      {current === 'import' && (
+        <ImportWizard orgs={orgs} onShowImported={(jobId) => { setFilters({ ...emptyFilters, importJobId: jobId }); setTab('data'); }} />
+      )}
+      {current === 'sources' && <DataSourcesTab />}
+      {current === 'rates' && <FxRatesTab />}
+      {current === 'device' && <OfflineTab metrics={sortedMetrics} orgs={orgs} />}
 
-      {/* Filters */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <TextField size="small" placeholder="Search data points..." InputProps={{ startAdornment: <Search sx={{ color: '#718096', mr: 1, fontSize: 18 }} /> }} sx={{ width: 250 }} />
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Category</InputLabel>
-              <Select label="Category" defaultValue="all">
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="E">Environmental</MenuItem>
-                <MenuItem value="S">Social</MenuItem>
-                <MenuItem value="G">Governance</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" defaultValue="all">
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="validated">Validated</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="flagged">Flagged</MenuItem>
-                <MenuItem value="rejected">Rejected</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Source</InputLabel>
-              <Select label="Source" defaultValue="all">
-                <MenuItem value="all">All Sources</MenuItem>
-                <MenuItem value="manual">Manual</MenuItem>
-                <MenuItem value="api">API</MenuItem>
-                <MenuItem value="csv">CSV Import</MenuItem>
-                <MenuItem value="mobile">Mobile</MenuItem>
-                <MenuItem value="iot">IoT Sensor</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Data Table */}
-      <Card>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Sub-Category</TableCell>
-                <TableCell>Metric</TableCell>
-                <TableCell align="right">Value</TableCell>
-                <TableCell>Organisation</TableCell>
-                <TableCell>Period</TableCell>
-                <TableCell>Quality</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Source</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {demoDataPoints.map((dp) => (
-                <TableRow key={dp.id} hover sx={{ '&:hover': { bgcolor: '#F7FAFC' } }}>
-                  <TableCell sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem', fontWeight: 600 }}>{dp.id}</TableCell>
-                  <TableCell>
-                    <Chip label={dp.category} size="small" sx={{ bgcolor: categoryColors[dp.category], color: '#fff', fontWeight: 700, minWidth: 28 }} />
-                  </TableCell>
-                  <TableCell sx={{ fontSize: '0.8rem' }}>{dp.subCategory}</TableCell>
-                  <TableCell sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.7rem', color: '#718096' }}>{dp.metricKey}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>
-                    {dp.numericValue.toLocaleString()}
-                    <Typography component="span" variant="caption" sx={{ color: '#718096', ml: 0.5 }}>{dp.unit}</Typography>
-                  </TableCell>
-                  <TableCell sx={{ fontSize: '0.8rem' }}>{dp.org}</TableCell>
-                  <TableCell sx={{ fontSize: '0.8rem' }}>{dp.period}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <LinearProgress
-                        variant="determinate" value={dp.qualityScore * 100}
-                        sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: '#E2E8F0', '& .MuiLinearProgress-bar': { bgcolor: dp.qualityScore > 0.8 ? '#2D7D46' : dp.qualityScore > 0.6 ? '#D4AF37' : '#C53030' } }}
-                      />
-                      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>{dp.qualityScore.toFixed(2)}</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      icon={statusConfig[dp.status]?.icon}
-                      label={dp.status}
-                      sx={{ bgcolor: statusConfig[dp.status]?.bg, color: statusConfig[dp.status]?.color, fontWeight: 600, fontSize: '0.65rem', textTransform: 'capitalize' }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{dp.source}</TableCell>
-                  <TableCell align="center">
-                    <IconButton size="small"><Visibility sx={{ fontSize: 16 }} /></IconButton>
-                    <IconButton size="small"><Edit sx={{ fontSize: 16 }} /></IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      {/* Add Data Point Dialog */}
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add ESG Data Point</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
-                <Select label="Category" defaultValue="E">
-                  <MenuItem value="E">Environmental</MenuItem>
-                  <MenuItem value="S">Social</MenuItem>
-                  <MenuItem value="G">Governance</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={6}>
-              <TextField fullWidth size="small" label="Sub-Category" defaultValue="GHG Emissions" />
-            </Grid>
-            <Grid size={12}>
-              <TextField fullWidth size="small" label="Metric Key" placeholder="e.g. scope1_co2e_tonnes" />
-            </Grid>
-            <Grid size={6}>
-              <TextField fullWidth size="small" label="Numeric Value" type="number" />
-            </Grid>
-            <Grid size={6}>
-              <TextField fullWidth size="small" label="Unit" placeholder="e.g. tCO2e, kWh, m3" />
-            </Grid>
-            <Grid size={6}>
-              <TextField fullWidth size="small" label="Reporting Period Start" type="date" InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid size={6}>
-              <TextField fullWidth size="small" label="Reporting Period End" type="date" InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid size={12}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Organisation</InputLabel>
-                <Select label="Organisation" defaultValue="org_001">
-                  <MenuItem value="org_001">Lagos HQ</MenuItem>
-                  <MenuItem value="org_002">Port Harcourt Plant</MenuItem>
-                  <MenuItem value="org_003">Abuja Office</MenuItem>
-                  <MenuItem value="org_004">OML 42</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => setAddOpen(false)}>Save Data Point</Button>
-        </DialogActions>
-      </Dialog>
+      <DataPointDrawer id={openId} onClose={() => setOpenId(null)} onEdit={(dp) => setEditing(dp)} />
+      {editing !== undefined && metrics.length > 0 && (
+        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing} preset={editing ? null : preset}
+          onClose={(saved) => {
+            setEditing(undefined);
+            if (preset) setParams({}, { replace: true });
+            if (saved?.id) setOpenId(saved.id);
+          }} />
+      )}
     </Box>
   );
 }

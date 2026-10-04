@@ -1,0 +1,182 @@
+{
+  "id": "bond-slb",
+  "forms": [
+    "Sustainable finance instrument"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "INVESTOR_VIEWER",
+  "create": {
+    "method": "POST",
+    "path": "/v1/investor/bonds"
+  },
+  "read": {
+    "path": "/v1/investor/bonds/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/investor/bonds/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Investor Portal"
+  },
+  "values": {
+    "name": "RT bond {u}",
+    "isin": "NGFGN0000012",
+    "issueDate": "2025-01-15",
+    "maturityDate": "2032-01-15",
+    "amount": 5000000,
+    "currency": "NGN",
+    "frameworkReference": "ICMA Sustainability-Linked Bond Principles (2023)",
+    "externalReviewer": "Second-opinion provider",
+    "visibleToInvestors": true,
+    "status": "active",
+    "instrument": "sustainability_linked_bond",
+    "shariahReviewer": null,
+    "shariahPronouncementOn": null,
+    "kpiId": "{KPI_A}",
+    "sptValue": 150,
+    "sptObservationYear": 2028,
+    "couponStepUpBps": 25
+  },
+  "changes": {
+    "name": "RT bond renamed {u}",
+    "isin": "NGFGN0000020",
+    "issueDate": "2025-02-01",
+    "maturityDate": "2033-02-01",
+    "amount": 7500000,
+    "currency": "USD",
+    "frameworkReference": "ICMA Green Bond Principles (2021)",
+    "externalReviewer": "Another reviewer",
+    "visibleToInvestors": false,
+    "status": "matured",
+    "sptValue": 120.5,
+    "sptObservationYear": 2030,
+    "couponStepUpBps": 50
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "isin",
+      "value": "NG123",
+      "rule": "12-character ISIN"
+    },
+    {
+      "field": "maturityDate",
+      "value": "2024-01-01",
+      "rule": "after the issue date"
+    },
+    {
+      "field": "amount",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "currency",
+      "value": "ABC",
+      "rule": "enum"
+    },
+    {
+      "field": "frameworkReference",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "status",
+      "value": "sold",
+      "rule": "enum"
+    },
+    {
+      "field": "kpiId",
+      "value": null,
+      "rule": "an SLB needs its KPI"
+    },
+    {
+      "field": "sptValue",
+      "value": null,
+      "rule": "an SLB needs its target"
+    },
+    {
+      "field": "sptObservationYear",
+      "value": 1999,
+      "rule": "2000 to 2100"
+    },
+    {
+      "field": "couponStepUpBps",
+      "value": 1001,
+      "rule": "0 to 1000"
+    },
+    {
+      "field": "shariahReviewer",
+      "value": "Board",
+      "rule": "only a sukuk"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Name"
+      },
+      "isin": {
+        "label": "ISIN (optional)"
+      },
+      "issueDate": {
+        "label": "Issue date"
+      },
+      "maturityDate": {
+        "label": "Maturity date"
+      },
+      "amount": {
+        "label": "Amount raised"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "NGN"
+      },
+      "frameworkReference": {
+        "label": "Framework"
+      },
+      "externalReviewer": {
+        "label": "External reviewer (optional)"
+      },
+      "visibleToInvestors": {
+        "label": "Visible to investors",
+        "kind": "switch"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      },
+      "instrument": {
+        "label": "Instrument",
+        "kind": "select",
+        "display": "Sustainability-linked bond"
+      },
+      "kpiId": {
+        "label": "KPI",
+        "kind": "select",
+        "display": "Fixture KPI"
+      },
+      "sptValue": {
+        "label": "Sustainability performance target"
+      },
+      "sptObservationYear": {
+        "label": "Observation year"
+      },
+      "couponStepUpBps": {
+        "label": "Coupon step-up (bps, optional)"
+      }
+    },
+    "notInEditForm": {
+      "shariahReviewer": "shown only for sukuk",
+      "shariahPronouncementOn": "shown only for sukuk"
+    }
+  }
+}

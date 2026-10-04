@@ -1,0 +1,132 @@
+{
+  "id": "reduction-target",
+  "forms": [
+    "Reduction target"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/targets"
+  },
+  "read": {
+    "path": "/v1/carbon/targets/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/targets/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "targetName": "Cut Scope 1 by 42% {u}",
+    "targetType": "absolute",
+    "scope": "scope_1_2",
+    "baseYear": 2025,
+    "baseValue": 1000,
+    "targetYear": 2035,
+    "targetValue": 580,
+    "pathway": "linear",
+    "sbtiAligned": true
+  },
+  "changes": {
+    "targetName": "Cut Scope 1+2 {u}",
+    "scope": "scope_1",
+    "baseYear": 2024,
+    "baseValue": 1200,
+    "targetYear": 2034,
+    "targetValue": 600,
+    "pathway": "contraction",
+    "sbtiAligned": false
+  },
+  "coveredBy": {
+    "intensityDenominator": "com.esg.carbon.CarbonApiTest#journey9TargetProgressAgainstActuals"
+  },
+  "invalid": [
+    {
+      "field": "targetName",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "targetType",
+      "value": "vibes",
+      "rule": "enum"
+    },
+    {
+      "field": "scope",
+      "value": "scope_4",
+      "rule": "enum"
+    },
+    {
+      "field": "baseYear",
+      "value": 1999,
+      "rule": "2000..2100"
+    },
+    {
+      "field": "baseValue",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "targetYear",
+      "value": 2020,
+      "rule": "after base year"
+    },
+    {
+      "field": "targetValue",
+      "value": 1000,
+      "rule": "below base value"
+    },
+    {
+      "field": "pathway",
+      "value": "zigzag",
+      "rule": "enum"
+    },
+    {
+      "field": "intensityDenominator",
+      "value": "revenue",
+      "rule": "intensity only"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "targetName": {
+        "label": "Name"
+      },
+      "targetType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Absolute (tCO2e)"
+      },
+      "scope": {
+        "label": "Scope",
+        "kind": "select",
+        "display": "Scopes 1 + 2"
+      },
+      "baseYear": {
+        "label": "Base year"
+      },
+      "baseValue": {
+        "label": "Base value"
+      },
+      "targetYear": {
+        "label": "Target year"
+      },
+      "targetValue": {
+        "label": "Target value"
+      },
+      "pathway": {
+        "label": "Pathway",
+        "kind": "select",
+        "display": "Linear (equal tonnes each year)"
+      },
+      "sbtiAligned": {
+        "label": "Check against SBTi criteria",
+        "kind": "switch"
+      }
+    }
+  }
+}

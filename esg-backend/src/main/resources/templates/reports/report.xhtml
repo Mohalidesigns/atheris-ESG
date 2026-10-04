@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${title}">Report</title>
+  <style>
+    @page { size: A4; margin: 22mm 18mm; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #666; } }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a202c; }
+    h1 { font-size: 20pt; color: #1a365d; margin: 0 0 4pt 0; }
+    h2 { font-size: 13pt; color: #1a365d; border-bottom: 1px solid #cbd5e0; padding-bottom: 2pt; margin-top: 16pt; }
+    .meta { color: #4a5568; font-size: 9pt; margin-bottom: 14pt; }
+    p { margin: 0 0 6pt 0; line-height: 1.4; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-top: 8pt; }
+    th, td { border: 1px solid #cbd5e0; padding: 3pt 4pt; text-align: left; vertical-align: top; }
+    th { background: #edf2f7; }
+    /* Phase 3 (3): a draft preview carries the watermark on every page (fixed boxes repeat per page) and a banner. */
+    .watermark { position: fixed; top: 95mm; left: 0; width: 100%; text-align: center; font-size: 64pt; font-weight: bold;
+      color: #e2e8f0; transform: rotate(-35deg); z-index: -1; }
+    .draft-banner { border: 1px solid #c53030; color: #c53030; padding: 4pt 6pt; font-size: 9pt; margin-bottom: 10pt; }
+  </style>
+</head>
+<body>
+  <div class="watermark" th:if="${draft}">DRAFT</div>
+  <h1 th:text="${title}">Title</h1>
+  <div class="meta" th:text="${meta}">Tenant · Period · Version · Approved</div>
+  <div class="draft-banner" th:if="${draft}">DRAFT — not approved. For review only; do not publish or file. The final PDF is available once the report is approved.</div>
+  <div th:each="section : ${sections}">
+    <h2 th:text="${section.title}">Section</h2>
+    <p th:each="paragraph : ${section.paragraphs}">
+      <th:block th:each="line, it : ${paragraph}"><span th:text="${line}">line</span><br th:if="${!it.last}"/></th:block>
+    </p>
+  </div>
+  <h2>Data sources</h2>
+  <table>
+    <tr><th>Value</th><th>Reported</th><th>Basis</th></tr>
+    <tr th:each="row : ${data}"><td th:text="${row.variable}">var</td><td th:text="${row.display}">value</td><td th:text="${row.basis}">basis</td></tr>
+  </table>
+</body>
+</html>

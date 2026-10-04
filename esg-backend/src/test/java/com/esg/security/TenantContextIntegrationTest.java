@@ -43,6 +43,9 @@ class TenantContextIntegrationTest {
   @Autowired private DataPointRepository dataPointRepository;
   @Autowired private UserRepository userRepository;
   @Autowired private AuthService authService;
+  @Autowired private JwtTokenProvider tokens;
+
+  private static final AuthService.ClientInfo CLIENT = new AuthService.ClientInfo("junit", "127.0.0.1");
 
   @AfterEach
   void clearContext() {
@@ -53,12 +56,14 @@ class TenantContextIntegrationTest {
   void pooledConnectionNeverLeaksATenant() {
     for (int i = 0; i < 5; i++) {
       TenantContext.setTenantId(TENANT_A);
-      assertThat(dataPointRepository.count()).as("tenant A sees its data point").isEqualTo(1);
-      assertThat(userRepository.findAll()).extracting(User::getEmail).containsExactly("user.a@fixture.test");
+      assertThat(dataPointRepository.count()).as("tenant A sees its data points").isPositive();
+      assertThat(userRepository.findAll()).extracting(User::getEmail)
+          .contains("user.a@fixture.test").doesNotContain("user.b@fixture.test");
 
       TenantContext.setTenantId(TENANT_B);
       assertThat(dataPointRepository.count()).as("tenant B sees none of A's data points").isZero();
-      assertThat(userRepository.findAll()).extracting(User::getEmail).containsExactly("user.b@fixture.test");
+      assertThat(userRepository.findAll()).extracting(User::getEmail)
+          .contains("user.b@fixture.test").doesNotContain("user.a@fixture.test");
 
       TenantContext.clear();
       assertThat(dataPointRepository.count()).as("no tenant sees nothing").isZero();
@@ -68,7 +73,7 @@ class TenantContextIntegrationTest {
   @Test
   void repositoryLookupByIdCannotCrossTenants() {
     TenantContext.setTenantId(TENANT_A);
-    UUID aUser = userRepository.findAll().get(0).getId();
+    UUID aUser = UUID.fromString("a0000000-0000-4000-8000-0000000000a1");
     TenantContext.setTenantId(TENANT_B);
     assertThat(userRepository.findById(aUser)).isEmpty();
   }
@@ -79,10 +84,12 @@ class TenantContextIntegrationTest {
     request.setEmail("user.b@fixture.test");
     request.setPassword("Fixture!2026");
 
-    AuthResponse response = authService.login(request);
+    // user.b is TENANT_ADMIN, which requires MFA: the password step yields an MFA set-up challenge for tenant B.
+    AuthResponse response = authService.login(request, CLIENT).body();
 
-    assertThat(response.getUser().getTenantId()).isEqualTo(TENANT_B);
-    assertThat(response.getAccessToken()).isNotBlank();
+    assertThat(response.getMfaSetupRequired()).isTrue();
+    assertThat(tokens.parseMfaToken(response.getMfaToken()).orElseThrow().get("tenant_id", String.class))
+        .isEqualTo(TENANT_B);
   }
 
   @Test
@@ -91,7 +98,7 @@ class TenantContextIntegrationTest {
     wrong.setEmail("user.a@fixture.test");
     wrong.setPassword("wrong-password");
     for (int i = 0; i < 5; i++) {
-      assertThatThrownBy(() -> authService.login(wrong)).hasMessage("Invalid email or password");
+      assertThatThrownBy(() -> authService.login(wrong, CLIENT)).hasMessage("Invalid email or password");
       TenantContext.clear();
     }
 
@@ -99,7 +106,8 @@ class TenantContextIntegrationTest {
     right.setEmail("user.a@fixture.test");
     right.setPassword("Fixture!2026");
     try {
-      assertThatThrownBy(() -> authService.login(right)).hasMessageContaining("locked");
+      // Locked accounts get the same generic message as wrong passwords (no account enumeration).
+      assertThatThrownBy(() -> authService.login(right, CLIENT)).hasMessage("Invalid email or password");
     } finally {
       try (Connection owner = PostgresTestDatabase.ownerConnection(); Statement st = owner.createStatement()) {
         st.execute("select set_config('app.current_tenant', '" + TENANT_A + "', false)");

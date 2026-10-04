@@ -1,89 +1,85 @@
-import { Box, Typography, Card, CardContent, Grid, Chip, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
-import { Storefront, ShoppingCart } from '@mui/icons-material';
+import { useState } from 'react';
+import { Alert, Box, Card, CardContent, Grid, MenuItem, Tab, Tabs, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import SandboxChip from '../../../components/feedback/SandboxChip';
+import { PageHeader } from '../../../components/states/States';
+import { Stat } from '../../social/components/shared';
+import { useCarbonMarketOverviewQuery } from '../carbonMarketApi';
+import { fmt } from '../schemas';
+import CreditsTab from './CreditsTab';
+import PricingTab from './PricingTab';
+import ProjectsTab from './ProjectsTab';
+import RetirementsTab from './RetirementsTab';
+import { tr } from '../../../i18n';
 
-const credits = [
-  { id: 'CC-001', project: 'Ondo State Reforestation', type: 'VCS', vintage: 2025, quantity: 500, price: '$12.50', status: 'Active' },
-  { id: 'CC-002', project: 'Cross River Mangrove Restoration', type: 'Gold Standard', vintage: 2025, quantity: 300, price: '$15.00', status: 'Active' },
-  { id: 'CC-003', project: 'Kano Clean Cookstoves', type: 'ACMI', vintage: 2024, quantity: 1200, price: '$8.75', status: 'Active' },
-  { id: 'CC-004', project: 'Jos Plateau Solar Mini-Grid', type: 'VCS', vintage: 2024, quantity: 200, price: '$10.00', status: 'Retired' },
-];
+// no-mock-gate: config — tabs and their ?tab= keys
+const TABS = [['credits', 'Credits'], ['retirements', 'Retirements'], ['projects', 'Projects'], ['pricing', 'Internal pricing']];
 
-const offsetProjects = [
-  { name: 'Niger Delta Blue Carbon Initiative', type: 'Nature-based', location: 'Bayelsa', credits: '5,000/yr', price: '$14.50', registry: 'ACMI' },
-  { name: 'Sahel Great Green Wall Segment', type: 'Reforestation', location: 'Borno/Yobe', credits: '12,000/yr', price: '$11.00', registry: 'VCS' },
-  { name: 'Lagos Waste-to-Energy Project', type: 'Technology', location: 'Lagos', credits: '3,500/yr', price: '$9.25', registry: 'Gold Standard' },
-];
+function Offsetting({ o }) {
+  return (
+    <Card aria-label={tr("Offsetting")}>
+      <CardContent>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{tr("Offsetting,")} {o.year}</Typography>
+        <Alert severity={o.overReliance ? 'warning' : 'success'} sx={{ my: 1 }} aria-label={tr("Offset check")}>{tr(o.message)}</Alert>
+        <Table size="small">
+          <TableBody>
+            <TableRow><TableCell>{tr("Gross Scope 1 + 2 (location-based)")}</TableCell><TableCell align="right">{fmt(Number(o.grossScope1) + Number(o.grossScope2), 1)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Credits retired against Scope 1 + 2")}</TableCell><TableCell align="right">{fmt(Number(o.creditsScope1) + Number(o.creditsScope2), 0)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Net Scope 1 + 2 (shown beside the gross inventory)")}</TableCell><TableCell align="right">{fmt(o.netScope12, 1)} {tr("tCO2e")}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Offset share (ceiling")} {fmt(o.ceilingPct)}%)</TableCell><TableCell align="right">{o.offsetShare == null ? '—' : `${fmt(o.offsetShare)}%`}</TableCell></TableRow>
+            <TableRow>
+              <TableCell>{tr("Reductions achieved")}<Typography variant="caption" display="block" color="text.secondary">{tr("against")} {o.baselineBasis}</Typography></TableCell>
+              <TableCell align="right">{o.reductions == null ? '—' : `${fmt(o.reductions, 1)} tCO2e`}</TableCell>
+            </TableRow>
+            <TableRow><TableCell>{tr("Offset-to-reduction ratio")}</TableCell><TableCell align="right">{o.offsetToReduction == null ? '—' : fmt(o.offsetToReduction, 2)}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Scope 3 / voluntary credits")}</TableCell><TableCell align="right">{fmt(o.creditsScope3, 0)} / {fmt(o.creditsVoluntary, 0)} {tr("tCO2e")}</TableCell></TableRow>
+          </TableBody>
+        </Table>
+        <Typography variant="caption" color="text.secondary">{tr("Reported emissions stay gross (GHG Protocol); credits are disclosed separately.")}</Typography>
+      </CardContent>
+    </Card>
+  );
+}
 
+/** M11 Carbon Market (WP-41, D36): credit portfolio, retirements, offset projects, internal pricing, offset monitoring. */
 export default function CarbonMarketPage() {
+  const [params] = useSearchParams();
+  const thisYear = Number(new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }).slice(0, 4));
+  const [tab, setTab] = useState(Math.max(0, TABS.findIndex(([k]) => k === params.get('tab'))));
+  const [year, setYear] = useState(thisYear);
+  const { data: o } = useCarbonMarketOverviewQuery(year);
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Carbon Credit Marketplace</Typography>
-          <Typography variant="body2" color="text.secondary">Portfolio management, ACMI integration & African offset projects</Typography>
-        </Box>
-        <Button variant="contained" size="small" startIcon={<ShoppingCart />}>Browse Projects</Button>
-      </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[
-          { label: 'Total Credits Owned', value: '2,200', color: '#1A365D' },
-          { label: 'Credits Retired', value: '200', color: '#2D7D46' },
-          { label: 'Portfolio Value', value: '$24,850', color: '#D4AF37' },
-          { label: 'Internal Carbon Price', value: '$25/tCO2e', color: '#319795' },
-        ].map(s => (
-          <Grid size={{ xs: 6, md: 3 }} key={s.label}>
-            <Card><CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: s.color }}>{s.value}</Typography>
-            </CardContent></Card>
+      <PageHeader title={tr("Carbon Market")} subtitle={tr("Carbon credits you hold, retirements against your emissions, offset projects and internal carbon pricing")}
+        actions={(
+          <TextField select size="small" label={tr("Year")} value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
+            {Array.from({ length: 6 }, (_, i) => thisYear - i).map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+          </TextField>
+        )} />
+      {o && (o.registry.sandbox || o.exchange.sandbox) && (
+        <Alert severity="info" sx={{ mb: 2 }} aria-label={tr("Integrations")}>
+          {tr("Registry")} <SandboxChip /> {tr("and exchange")} <SandboxChip />{tr(": nothing is checked or bought automatically. Record credits from your registry account and attach its statements.")}
+        </Alert>
+      )}
+      {o && (
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 12, md: 5 }}>
+            <Grid container spacing={2} aria-label={tr("Carbon market overview")}>
+              <Grid size={6}><Stat label={tr("Credits held")} value={fmt(o.held, 0)} caption={tr("tCO2e across all lots")} /></Grid>
+              <Grid size={6}><Stat label={tr("Available")} value={fmt(o.available, 0)} caption={tr("not retired or reserved")} /></Grid>
+              <Grid size={12}><Stat label={`Retired against ${year}`} value={fmt(o.retiredThisYear, 0)} caption={tr("tCO2e, all purposes")} /></Grid>
+            </Grid>
           </Grid>
-        ))}
-      </Grid>
-
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>Credit Portfolio</Typography>
-      <Card sx={{ mb: 3 }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead><TableRow>
-              <TableCell>ID</TableCell><TableCell>Project</TableCell><TableCell>Standard</TableCell>
-              <TableCell>Vintage</TableCell><TableCell align="right">Quantity</TableCell><TableCell>Price</TableCell><TableCell>Status</TableCell>
-            </TableRow></TableHead>
-            <TableBody>
-              {credits.map(c => (
-                <TableRow key={c.id} hover>
-                  <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.75rem', fontWeight: 600 }}>{c.id}</TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>{c.project}</TableCell>
-                  <TableCell><Chip size="small" label={c.type} sx={{ fontSize: '0.65rem' }} /></TableCell>
-                  <TableCell>{c.vintage}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>{c.quantity.toLocaleString()}</TableCell>
-                  <TableCell>{c.price}</TableCell>
-                  <TableCell><Chip size="small" label={c.status} sx={{ bgcolor: c.status === 'Active' ? '#E6F4EA' : '#F7FAFC', color: c.status === 'Active' ? '#2D7D46' : '#718096', fontSize: '0.65rem' }} /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>African Offset Projects</Typography>
-      <Grid container spacing={2}>
-        {offsetProjects.map(p => (
-          <Grid size={{ xs: 12, md: 4 }} key={p.name}>
-            <Card sx={{ '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } }}>
-              <CardContent>
-                <Chip size="small" label={p.registry} sx={{ bgcolor: '#EBF5FB', color: '#1A365D', mb: 1, fontSize: '0.65rem' }} />
-                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>{p.name}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{p.type} &middot; {p.location}</Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.credits}</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2D7D46' }}>{p.price}/tCO2e</Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+          <Grid size={{ xs: 12, md: 7 }}><Offsetting o={o.offsetting} /></Grid>
+        </Grid>
+      )}
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
+        {TABS.map(([k, l]) => <Tab key={k} label={l} />)}
+      </Tabs>
+      {tab === 0 && <CreditsTab />}
+      {tab === 1 && <RetirementsTab year={year} />}
+      {tab === 2 && <ProjectsTab />}
+      {tab === 3 && <PricingTab year={year} />}
     </Box>
   );
 }
