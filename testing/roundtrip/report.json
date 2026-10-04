@@ -1,0 +1,121 @@
+{
+  "id": "report",
+  "forms": [
+    "Create New Report (dialog)"
+  ],
+  "actor": "ESG_MANAGER",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/reports"
+  },
+  "read": {
+    "path": "/v1/reports/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/reports/{id}",
+    "versioned": true,
+    "fields": [
+      "title",
+      "description",
+      "reportingPeriodStart",
+      "reportingPeriodEnd"
+    ]
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "templateId": "{TEMPLATE_A}",
+    "title": "Sustainability report {u}",
+    "description": "Annual report for the board",
+    "reportingPeriodStart": "{yyyy}-01-02",
+    "reportingPeriodEnd": "{yyyy}-12-31"
+  },
+  "changes": {
+    "title": "Half-year report {u}",
+    "description": "H1 update",
+    "reportingPeriodStart": "{yyyy}-01-03",
+    "reportingPeriodEnd": "{yyyy}-06-30"
+  },
+  "derived": {
+    "status": "draft",
+    "versionLabel": "v0.1",
+    "templateName": "A custom template"
+  },
+  "invalid": [
+    {
+      "field": "templateId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "templateId",
+      "value": "a0000000-0000-4000-8000-000000000000",
+      "rule": "an available template"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "reportingPeriodStart",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "{yyyy}-01-01",
+      "rule": "end >= start (cross-field)"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "title": {
+        "label": "Report title"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "reportingPeriodStart": {
+        "label": "Reporting period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Reporting period end"
+      }
+    },
+    "notInEditForm": {
+      "templateId": "Chosen when the report is created; the template name is shown in the report header"
+    }
+  },
+  "inventoryAliases": {
+    "frameworkCode": "templateId"
+  }
+}

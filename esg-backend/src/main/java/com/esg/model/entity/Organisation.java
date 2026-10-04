@@ -1,20 +1,26 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "organisations")
+@Table(name = "organisations", schema = "auth")
 public class Organisation {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(name = "parent_org_id")
-    private String parentOrgId;
+    private UUID parentOrgId;
 
     @Column(nullable = false)
     private String name;
@@ -45,12 +51,12 @@ public class Organisation {
 
     public Organisation() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-    public String getParentOrgId() { return this.parentOrgId; }
-    public void setParentOrgId(String parentOrgId) { this.parentOrgId = parentOrgId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public UUID getParentOrgId() { return this.parentOrgId; }
+    public void setParentOrgId(UUID parentOrgId) { this.parentOrgId = parentOrgId; }
     public String getName() { return this.name; }
     public void setName(String name) { this.name = name; }
     public String getOrgType() { return this.orgType; }
@@ -69,4 +75,6 @@ public class Organisation {
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     public Instant getCreatedAt() { return this.createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Long getVersion() { return this.version; }
 }

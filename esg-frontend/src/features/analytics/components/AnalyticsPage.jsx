@@ -1,93 +1,68 @@
-import { Box, Typography, Card, CardContent, Grid, Chip, LinearProgress, Button } from '@mui/material';
-import { Analytics, AutoAwesome, TrendingUp } from '@mui/icons-material';
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Alert, Box, Grid, MenuItem, Tab, Tabs, TextField } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import { PageHeader } from '../../../components/states/States';
+import { Stat } from '../../social/components/shared';
+import { useAnalyticsOverviewQuery } from '../analyticsApi';
+import { lagosYear } from '../schemas';
+import AnomaliesTab from './AnomaliesTab';
+import BenchmarksTab from './BenchmarksTab';
+import ExtractionTab from './ExtractionTab';
+import ForecastsTab from './ForecastsTab';
+import KpisTab from './KpisTab';
+import MaturityTab from './MaturityTab';
+import SdgTab from './SdgTab';
+import { tr } from '../../../i18n';
 
-const maturityScores = [
-  { subject: 'Environmental', A: 72, fullMark: 100 },
-  { subject: 'Social', A: 65, fullMark: 100 },
-  { subject: 'Governance', A: 78, fullMark: 100 },
-  { subject: 'Reporting', A: 61, fullMark: 100 },
-  { subject: 'Data Quality', A: 82, fullMark: 100 },
-  { subject: 'Stakeholders', A: 55, fullMark: 100 },
-];
+// no-mock-gate: config — tabs and their ?tab= keys
+const TABS = [['anomalies', 'Anomalies'], ['kpis', 'KPIs'], ['benchmarks', 'Benchmarks'], ['maturity', 'Maturity'], ['sdg', 'SDG alignment'],
+  ['forecasts', 'Forecasts (AI)'], ['extraction', 'Report extraction (AI)', 'data_points:create']];
 
-const predictions = [
-  { month: 'Apr', actual: null, predicted: 13500 },
-  { month: 'May', actual: null, predicted: 13200 },
-  { month: 'Jun', actual: null, predicted: 12800 },
-  { month: 'Jul', actual: null, predicted: 12500 },
-  { month: 'Aug', actual: null, predicted: 12100 },
-  { month: 'Sep', actual: null, predicted: 11800 },
-];
+function Overview({ year }) {
+  const { data: o } = useAnalyticsOverviewQuery(year);
+  if (!o) return null;
+  return (
+    <Grid container spacing={2} sx={{ mb: 2 }} aria-label={tr("Analytics overview")}>
+      <Grid size={{ xs: 6, md: 4 }}><Stat label={tr("ESG maturity")} value={`${o.maturity} of 5`} caption={`Level ${o.maturityLevel}: ${o.maturityLevelName}`} /></Grid>
+      <Grid size={{ xs: 6, md: 4 }}><Stat label={tr("Flags to explain")} value={o.anomaliesOpen} caption={`${o.anomaliesExplained} explained, awaiting review`} /></Grid>
+      <Grid size={{ xs: 12, md: 4 }}><Stat label={tr("KPIs on track")} value={o.kpisWithTarget ? `${o.kpisOnTrack} of ${o.kpisWithTarget}` : '—'} caption={`${o.kpis} active KPIs`} /></Grid>
+    </Grid>
+  );
+}
 
-const anomalies = [
-  { metric: 'Gas Flaring Volume - OML 42', type: 'Spike', severity: 'High', detected: '2026-04-01', confidence: '94%' },
-  { metric: 'Water Consumption - PH Plant', type: 'Unusual Pattern', severity: 'Medium', detected: '2026-03-28', confidence: '87%' },
-  { metric: 'Employee Turnover - Lagos', type: 'Trend Shift', severity: 'Low', detected: '2026-03-25', confidence: '72%' },
-];
-
+/** M9 Analytics (WP-35, D34; WP-50, D38): rules and statistics first, then labelled AI forecasts, ML flags and report extraction. */
 export default function AnalyticsPage() {
+  const [params] = useSearchParams();
+  const thisYear = lagosYear();
+  const permissions = useSelector((st) => st.auth.user?.permissions) ?? [];
+  const tabs = TABS.filter(([, , needs]) => !needs || permissions.includes(needs));
+  const [tab, setTab] = useState(Math.max(0, tabs.findIndex(([k]) => k === params.get('tab'))));
+  const key = tabs[tab]?.[0];
+  const [year, setYear] = useState(Number(params.get('year')) || thisYear);
+  const years = Array.from({ length: 8 }, (_, i) => thisYear - i);
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Analytics & AI Engine</Typography>
-          <Typography variant="body2" color="text.secondary">Predictive analytics, benchmarking, anomaly detection & SDG alignment</Typography>
-        </Box>
-        <Button variant="contained" size="small" startIcon={<AutoAwesome />}>Run AI Scan</Button>
-      </Box>
-
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>ESG Maturity Index</Typography>
-              <Typography variant="caption" color="text.secondary">Overall Score: 68.8 / 100 (Strategic Level)</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={maturityScores}>
-                  <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Radar name="Your Score" dataKey="A" stroke="#1A365D" fill="#1A365D" fillOpacity={0.3} strokeWidth={2} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Emission Forecast (AI-Powered)</Typography>
-              <Typography variant="caption" color="text.secondary">Predicted total emissions for next 6 months</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={predictions}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="predicted" stroke="#D4AF37" strokeWidth={2} strokeDasharray="8 4" dot={{ fill: '#D4AF37' }} name="Predicted tCO2e" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Anomaly Detection Alerts</Typography>
-              {anomalies.map(a => (
-                <Box key={a.metric} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, mb: 1, bgcolor: '#F7FAFC', borderRadius: 2, borderLeft: `4px solid ${a.severity === 'High' ? '#C53030' : a.severity === 'Medium' ? '#D4AF37' : '#319795'}` }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{a.metric}</Typography>
-                    <Typography variant="caption" color="text.secondary">{a.type} &middot; Detected: {a.detected} &middot; Confidence: {a.confidence}</Typography>
-                  </Box>
-                  <Chip size="small" label={a.severity} sx={{ bgcolor: a.severity === 'High' ? '#FEE2E2' : a.severity === 'Medium' ? '#FEF9E7' : '#E6F4EA', color: a.severity === 'High' ? '#C53030' : a.severity === 'Medium' ? '#D4AF37' : '#2D7D46', fontWeight: 600, fontSize: '0.65rem' }} />
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <PageHeader title={tr("Analytics")} subtitle={tr("Anomaly flags and variance explanations, KPIs, benchmarks, ESG maturity and SDG alignment")}
+        actions={(
+          <TextField select size="small" label={tr("Year")} value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
+            {years.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+          </TextField>
+        )} />
+      <Alert severity="info" sx={{ mb: 2 }}>
+        {tr("Figures are calculated from your own records with published statistical rules. Forecasts, machine-learning flags and values read from reports are marked AI-generated, show what produced them, and are only used once a person has checked them.")}
+      </Alert>
+      <Overview year={year} />
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
+        {tabs.map(([k, l]) => <Tab key={k} label={l} />)}
+      </Tabs>
+      {key === 'anomalies' && <AnomaliesTab year={year} />}
+      {key === 'kpis' && <KpisTab />}
+      {key === 'benchmarks' && <BenchmarksTab year={year} />}
+      {key === 'maturity' && <MaturityTab year={year} />}
+      {key === 'sdg' && <SdgTab year={year} />}
+      {key === 'forecasts' && <ForecastsTab />}
+      {key === 'extraction' && <ExtractionTab />}
     </Box>
   );
 }

@@ -1,0 +1,263 @@
+{
+  "id": "questionnaire-template",
+  "forms": [
+    "Questionnaire template"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/supply-chain/templates"
+  },
+  "read": {
+    "path": "/v1/supply-chain/templates/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/supply-chain/templates/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Supply Chain ESG"
+  },
+  "values": {
+    "name": "RT template {u}",
+    "kind": "full",
+    "description": "Annual supplier screen",
+    "weightE": 40,
+    "weightS": 35,
+    "weightG": 25,
+    "questions": [
+      {
+        "pillar": "E",
+        "question": "Do you measure energy use?",
+        "helpText": "Meter readings or bills",
+        "answerType": "yes_no",
+        "positiveAnswer": "yes",
+        "weight": 3,
+        "evidenceRequired": true
+      },
+      {
+        "pillar": "G",
+        "question": "Anti-bribery maturity",
+        "helpText": null,
+        "answerType": "scale",
+        "positiveAnswer": null,
+        "weight": 2,
+        "evidenceRequired": false
+      }
+    ]
+  },
+  "changes": {
+    "name": "RT template {u} v2",
+    "kind": "simplified",
+    "description": "SME screen",
+    "questions": [
+      {
+        "pillar": "S",
+        "question": "Has child labour been found?",
+        "helpText": null,
+        "answerType": "yes_no",
+        "positiveAnswer": "no",
+        "weight": 2,
+        "evidenceRequired": false
+      },
+      {
+        "pillar": "E",
+        "question": "Diesel used (litres)",
+        "helpText": null,
+        "answerType": "number",
+        "positiveAnswer": null,
+        "weight": 0,
+        "evidenceRequired": false
+      }
+    ]
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "kind",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "weightE",
+      "value": 50,
+      "rule": "weights add to 100"
+    },
+    {
+      "field": "weightS",
+      "value": 101,
+      "rule": "max 100"
+    },
+    {
+      "field": "weightG",
+      "value": -1,
+      "rule": "min 0"
+    },
+    {
+      "field": "questions",
+      "value": [],
+      "rule": "at least one question"
+    },
+    {
+      "field": "questions",
+      "value": [
+        {
+          "pillar": "X",
+          "question": "q",
+          "helpText": null,
+          "answerType": "yes_no",
+          "positiveAnswer": "yes",
+          "weight": 1,
+          "evidenceRequired": false
+        }
+      ],
+      "rule": "pillar enum",
+      "errorField": "questions[0].pillar"
+    },
+    {
+      "field": "questions",
+      "value": [
+        {
+          "pillar": "E",
+          "question": "q",
+          "helpText": null,
+          "answerType": "yes_no",
+          "positiveAnswer": null,
+          "weight": 1,
+          "evidenceRequired": false
+        }
+      ],
+      "rule": "yes/no needs a good answer",
+      "errorField": "questions[0].positiveAnswer"
+    },
+    {
+      "field": "questions",
+      "value": [
+        {
+          "pillar": "E",
+          "question": "q",
+          "helpText": null,
+          "answerType": "text",
+          "positiveAnswer": null,
+          "weight": 2,
+          "evidenceRequired": false
+        }
+      ],
+      "rule": "text isn't scored",
+      "errorField": "questions[0].weight"
+    },
+    {
+      "field": "questions",
+      "value": [
+        {
+          "pillar": "E",
+          "question": "q",
+          "helpText": null,
+          "answerType": "scale",
+          "positiveAnswer": null,
+          "weight": 11,
+          "evidenceRequired": false
+        }
+      ],
+      "rule": "max 10",
+      "errorField": "questions[0].weight"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Template name"
+      },
+      "kind": {
+        "label": "Kind",
+        "kind": "select",
+        "display": "Full"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "weightE": {
+        "label": "E weight"
+      },
+      "weightS": {
+        "label": "S weight"
+      },
+      "weightG": {
+        "label": "G weight"
+      },
+      "questions": {
+        "kind": "rows",
+        "columns": {
+          "pillar": {
+            "label": "Pillar",
+            "kind": "select",
+            "options": {
+              "E": "Environmental",
+              "S": "Social",
+              "G": "Governance"
+            }
+          },
+          "question": {
+            "label": "Question"
+          },
+          "helpText": {
+            "label": "Help"
+          },
+          "answerType": {
+            "label": "Answer type",
+            "kind": "select",
+            "options": {
+              "yes_no": "Yes / no",
+              "scale": "Scale 1–5",
+              "number": "Number",
+              "text": "Text"
+            }
+          },
+          "positiveAnswer": {
+            "label": "Good answer",
+            "kind": "select",
+            "options": {
+              "yes": "Yes",
+              "no": "No",
+              "null": "—"
+            }
+          },
+          "weight": {
+            "label": "Weight"
+          },
+          "evidenceRequired": {
+            "label": "Evidence required",
+            "kind": "switch"
+          }
+        }
+      }
+    }
+  }
+}

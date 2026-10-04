@@ -1,0 +1,13 @@
+{
+  "id": "mfa-verification",
+  "kind": "command",
+  "forms": ["MFA verification"],
+  "command": { "method": "POST", "path": "/v1/auth/mfa/verify", "anonymous": true },
+  "values": { "mfaToken": "not-checked-before-validation", "code": "123456" },
+  "successCoveredBy": "com.esg.security.AuthFlowIntegrationTest#mfaIsEnforcedForDirectorsAndCompletesWithTotp",
+  "invalid": [
+    { "field": "code", "value": "", "rule": "required" },
+    { "field": "code", "value": "12ab56", "rule": "6 digits" },
+    { "field": "code", "value": "1234567", "rule": "6 digits" }
+  ]
+}
