@@ -9,6 +9,7 @@ import { useFrameworksQuery } from '../../reference/referenceApi';
 import { useGapAnalysisQuery } from '../complianceApi';
 import { BASIS, GAP_STATUS } from '../schemas';
 import AttestDialog from './AttestDialog';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — priority colours
 const PRIORITY = { high: 'error', medium: 'warning', low: 'default' };
@@ -40,17 +41,17 @@ export default function GapAnalysisTab({ year, initialFramework }) {
   return (
     <>
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Framework" value={code ?? ''} onChange={(e) => setFramework(e.target.value)} sx={{ minWidth: 300 }}>
+        <TextField select size="small" label={tr("Framework")} value={code ?? ''} onChange={(e) => setFramework(e.target.value)} sx={{ minWidth: 300 }}>
           {withContent.map((f) => <MenuItem key={f.code} value={f.code}>{f.name}</MenuItem>)}
         </TextField>
-        <TextField select size="small" label="Show" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 160 }}>
-          <MenuItem value="">All requirements</MenuItem>
-          {Object.entries(GAP_STATUS).map(([v, s]) => <MenuItem key={v} value={v}>{s.label}</MenuItem>)}
+        <TextField select size="small" label={tr("Show")} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 160 }}>
+          <MenuItem value="">{tr("All requirements")}</MenuItem>
+          {Object.entries(GAP_STATUS).map(([v, s]) => <MenuItem key={v} value={v}>{tr(s.label)}</MenuItem>)}
         </TextField>
       </Box>
       {isError && <ErrorState error={error} onRetry={refetch} />}
       {isFetching && !data && <LoadingState />}
-      {!code && frameworks.length > 0 && <EmptyState title="No framework content loaded yet" />}
+      {!code && frameworks.length > 0 && <EmptyState title={tr("No framework content loaded yet")} />}
       {data && (
         <Grid container spacing={2}>
           {[['Requirements (excl. section headings)', data.totalRequirements], ['Met', data.met], ['Partial', data.partial], ['Missing', data.missing],
@@ -64,43 +65,43 @@ export default function GapAnalysisTab({ year, initialFramework }) {
           ))}
           <Grid size={12}>
             <Card><CardContent>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }} aria-label="Overall completeness">
-                {data.frameworkName} · {data.reportingYear}: {data.overallCompleteness}% complete
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }} aria-label={tr("Overall completeness")}>
+                {data.frameworkName} · {data.reportingYear}: {data.overallCompleteness}{tr("% complete")}
               </Typography>
-              <LinearProgress variant="determinate" value={Number(data.overallCompleteness)} sx={{ my: 1, height: 8, borderRadius: 4 }} />
+              <LinearProgress variant="determinate" aria-label={tr("Completeness progress")} value={Number(data.overallCompleteness)} sx={{ my: 1, height: 8, borderRadius: 4 }} />
               {data.contentStatus !== 'sme_verified' && (
-                <Typography variant="caption" color="text.secondary">Requirement content is pending ESG SME verification.</Typography>
+                <Typography variant="caption" color="text.secondary">{tr("Requirement content is pending ESG SME verification.")}</Typography>
               )}
             </CardContent></Card>
           </Grid>
           <Grid size={12}>
             <Card>
-              {rows.length === 0 ? <EmptyState title="No requirements match" /> : (
+              {rows.length === 0 ? <EmptyState title={tr("No requirements match")} /> : (
                 <TableContainer>
-                  <Table size="small" aria-label="Requirement checklist">
+                  <Table size="small" aria-label={tr("Requirement checklist")}>
                     <TableHead><TableRow>
-                      <TableCell>Requirement</TableCell><TableCell>Status</TableCell><TableCell align="right">Complete</TableCell>
-                      <TableCell>Priority</TableCell><TableCell>Next step</TableCell><TableCell />
+                      <TableCell>{tr("Requirement")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell align="right">{tr("Complete")}</TableCell>
+                      <TableCell>{tr("Priority")}</TableCell><TableCell>{tr("Next step")}</TableCell><TableCell />
                     </TableRow></TableHead>
                     <TableBody>
                       {rows.map((r) => (
                         <TableRow key={r.id} sx={r.leaf ? undefined : { bgcolor: 'action.hover' }}>
                           <TableCell sx={{ pl: 2 + depth(r) * 3, maxWidth: 420 }}>
                             <Typography component="span" variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>
-                            <Typography component="span" variant="body2" sx={{ fontWeight: r.leaf ? 400 : 600 }}>{r.title}</Typography>
+                            <Typography component="span" variant="body2" sx={{ fontWeight: r.leaf ? 400 : 600 }}>{tr(r.title)}</Typography>
                             {r.metricKeys.length > 0 && (
                               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                                 {r.metricKeys.map((m) => (
-                                  <Chip key={m} size="small" label={SOURCES[m] ?? m} sx={{ height: 20, fontSize: '0.65rem' }}
+                                  <Chip key={m} size="small" label={tr(SOURCES[m]) ?? m} sx={{ height: 20, fontSize: '0.65rem' }}
                                     color={r.missingMetrics.includes(m) ? 'default' : 'success'} variant={r.missingMetrics.includes(m) ? 'outlined' : 'filled'} />
                                 ))}
                               </Box>
                             )}
                           </TableCell>
                           <TableCell>
-                            <Chip size="small" color={GAP_STATUS[r.status].color} label={GAP_STATUS[r.status].label} />
+                            <Chip size="small" color={GAP_STATUS[r.status].color} label={tr(GAP_STATUS[r.status].label)} />
                             <Typography variant="caption" display="block" color="text.secondary">
-                              {BASIS[r.basis] ?? r.basis}{r.satisfiedBy ? ` · ${r.satisfiedBy}` : ''}
+                              {tr(BASIS[r.basis]) ?? r.basis}{r.satisfiedBy ? ` · ${r.satisfiedBy}` : ''}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">{r.completeness}%</TableCell>
@@ -111,7 +112,7 @@ export default function GapAnalysisTab({ year, initialFramework }) {
                               <Can permission="compliance:update">
                                 <Button size="small" aria-label={`Record status for ${r.code}`}
                                   onClick={() => setAttesting(r)}>
-                                  {r.attestation ? 'Update' : 'Record'}
+                                  {r.attestation ? tr("Update") : tr("Record")}
                                 </Button>
                               </Can>
                             )}

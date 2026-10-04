@@ -1,0 +1,179 @@
+{
+  "id": "risk-assessment",
+  "forms": [
+    "Materiality assessment"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/risk/assessments"
+  },
+  "read": {
+    "path": "/v1/risk/assessments/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/risk/assessments/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Risk & Materiality"
+  },
+  "values": {
+    "name": "RT DMA {u}",
+    "reportingYear": 2024,
+    "description": "Annual double materiality",
+    "impactThreshold": 3.5,
+    "financialThreshold": 2.5,
+    "stakeholderBlend": 0.2,
+    "stakeholders": [
+      {
+        "group": "investors",
+        "weight": 40
+      },
+      {
+        "group": "communities",
+        "weight": 60
+      }
+    ]
+  },
+  "changes": {
+    "name": "RT DMA {u} renamed",
+    "reportingYear": 2025,
+    "description": "Refreshed",
+    "impactThreshold": 3,
+    "financialThreshold": 3.25,
+    "stakeholderBlend": 0.1,
+    "stakeholders": [
+      {
+        "group": "employees",
+        "weight": 100
+      }
+    ]
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "reportingYear",
+      "value": 1999,
+      "rule": "min 2000"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "impactThreshold",
+      "value": 6,
+      "rule": "max 5"
+    },
+    {
+      "field": "financialThreshold",
+      "value": 0.1,
+      "rule": "min 0.2"
+    },
+    {
+      "field": "stakeholderBlend",
+      "value": 0.6,
+      "rule": "max 0.5"
+    },
+    {
+      "field": "stakeholders",
+      "value": [
+        {
+          "group": "investors",
+          "weight": 40
+        },
+        {
+          "group": "investors",
+          "weight": 10
+        }
+      ],
+      "rule": "unique groups",
+      "errorField": "stakeholders[1].group"
+    },
+    {
+      "field": "stakeholders",
+      "value": [
+        {
+          "group": "aliens",
+          "weight": 10
+        }
+      ],
+      "rule": "enum",
+      "errorField": "stakeholders[0].group"
+    },
+    {
+      "field": "stakeholders",
+      "value": [
+        {
+          "group": "investors",
+          "weight": 0
+        }
+      ],
+      "rule": "weight > 0",
+      "errorField": "stakeholders[0].weight"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Assessment name"
+      },
+      "reportingYear": {
+        "label": "Reporting year"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "impactThreshold": {
+        "label": "Impact threshold"
+      },
+      "financialThreshold": {
+        "label": "Financial threshold"
+      },
+      "stakeholderBlend": {
+        "label": "Stakeholder blend"
+      },
+      "stakeholders": {
+        "kind": "rows",
+        "columns": {
+          "group": {
+            "label": "Stakeholder group",
+            "kind": "select",
+            "options": {
+              "investors": "Investors",
+              "communities": "Communities",
+              "employees": "Employees"
+            }
+          },
+          "weight": {
+            "label": "Weight"
+          }
+        }
+      }
+    }
+  }
+}

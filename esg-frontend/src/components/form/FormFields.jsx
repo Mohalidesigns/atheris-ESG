@@ -1,5 +1,6 @@
 import { Autocomplete, InputAdornment, MenuItem, TextField } from '@mui/material';
 import { Controller } from 'react-hook-form';
+import { tr } from '../../i18n';
 
 /**
  * React Hook Form + MUI inputs (WP-16, D8). Values stay strings in the form; the Zod schema parses numbers and
@@ -13,7 +14,7 @@ const common = (field, fieldState, helperText) => ({
   ...field,
   value: field.value ?? '',
   error: Boolean(fieldState.error),
-  helperText: fieldState.error?.message ?? helperText,
+  helperText: tr(fieldState.error?.message) ?? helperText,
   fullWidth: true,
   size: 'small',
 });
@@ -62,7 +63,7 @@ export function FormSelect({ control, name, options, helperText, ...props }) {
   return (
     <Field control={control} name={name} render={(field, fs) => (
       <TextField {...common(field, fs, helperText)} select {...props}>
-        {options.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+        {options.map((o) => <MenuItem key={o.value} value={o.value}>{tr(o.label)}</MenuItem>)}
       </TextField>
     )} />
   );
@@ -82,7 +83,7 @@ export function FormAutocomplete({ control, name, options, label, helperText, on
           onChange={(_, o) => { field.onChange(o?.value ?? ''); onChosen?.(o); }} onBlur={field.onBlur}
           renderInput={(params) => (
             <TextField {...params} name={field.name} inputRef={field.ref} label={label} size="small" fullWidth
-              error={Boolean(fs.error)} helperText={fs.error?.message ?? helperText} {...props} />
+              error={Boolean(fs.error)} helperText={tr(fs.error?.message) ?? helperText} {...props} />
           )} />
       );
     }} />

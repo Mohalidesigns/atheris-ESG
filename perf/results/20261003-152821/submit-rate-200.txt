@@ -1,0 +1,45 @@
+time="2026-10-03T15:32:45+01:00" level=warning msg="The test has generated metrics with 100019 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{step:create}
+    ✓ 'p(95)<500' p(95)=9.97ms
+
+    http_req_duration{step:submit}
+    ✓ 'p(95)<500' p(95)=10.72ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 24001   398.817933/s
+    checks_succeeded...: 100.00% 24001 out of 24001
+    checks_failed......: 0.00%   0 out of 24001
+
+    ✓ signed in
+    ✓ created 201
+    ✓ submitted 200
+
+    HTTP
+    http_req_duration..............: avg=6.38ms  min=4.45ms med=5.6ms   max=169.23ms p(90)=8.78ms  p(95)=10.46ms
+      { expected_response:true }...: avg=6.38ms  min=4.45ms med=5.6ms   max=169.23ms p(90)=8.78ms  p(95)=10.46ms
+      { step:create }..............: avg=6.14ms  min=4.45ms med=5.41ms  max=44.13ms  p(90)=8.44ms  p(95)=9.97ms 
+      { step:submit }..............: avg=6.59ms  min=5ms    med=5.77ms  max=49.49ms  p(90)=9.09ms  p(95)=10.72ms
+    http_req_failed................: 0.00% 0 out of 24001
+    http_reqs......................: 24001 398.817933/s
+
+    EXECUTION
+    iteration_duration.............: avg=12.92ms min=9.91ms med=11.35ms max=87.99ms  p(90)=17.71ms p(95)=21.08ms
+    iterations.....................: 12000 199.400658/s
+    vus............................: 2     min=2          max=5  
+    vus_max........................: 400   min=400        max=400
+
+    NETWORK
+    data_received..................: 35 MB 585 kB/s
+    data_sent......................: 40 MB 658 kB/s
+
+
+

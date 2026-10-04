@@ -17,8 +17,15 @@ public class UserPrincipal {
     private final String tenantId;
     private final UserAccess access;
     private final List<GrantedAuthority> authorities;
+    /** WP-46: set when the request was authenticated with an API key rather than a session. */
+    private final java.util.UUID apiKeyId;
 
     public UserPrincipal(UserAccess access) {
+        this(access, null);
+    }
+
+    public UserPrincipal(UserAccess access, java.util.UUID apiKeyId) {
+        this.apiKeyId = apiKeyId;
         this.id = access.userId().toString();
         this.tenantId = access.tenantId().toString();
         this.access = access;
@@ -31,5 +38,6 @@ public class UserPrincipal {
     public String getId() { return id; }
     public String getTenantId() { return tenantId; }
     public UserAccess getAccess() { return access; }
+    public java.util.UUID getApiKeyId() { return apiKeyId; }
     public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
 }

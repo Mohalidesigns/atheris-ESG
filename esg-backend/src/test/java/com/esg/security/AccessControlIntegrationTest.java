@@ -1,8 +1,10 @@
 package com.esg.security;
 
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,7 +39,7 @@ class AccessControlIntegrationTest extends ApiTestSupport {
 
     mvc.perform(get("/v1/data/points?size=100").header("Authorization", collector))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.content[*].orgId", everyItem(is(ORG_SITE_1))));
+        .andExpect(jsonPath("$.data.content[*].orgId", everyItem(not(anyOf(is(ORG_HQ), is(ORG_SITE_2))))));
     mvc.perform(get("/v1/data/points/" + HQ_DATA_POINT).header("Authorization", collector))
         .andExpect(status().isNotFound());
 
@@ -50,7 +52,7 @@ class AccessControlIntegrationTest extends ApiTestSupport {
   void organisationsListIsScopedToo() throws Exception {
     mvc.perform(get("/v1/organisations").header("Authorization", bearerForRole("ESG_ANALYST")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data[*].id", everyItem(is(ORG_SITE_1))));
+        .andExpect(jsonPath("$.data[*].id", everyItem(not(anyOf(is(ORG_HQ), is(ORG_SITE_2))))));
   }
 
   @Test

@@ -30,7 +30,7 @@ class RlsIsolationTest {
 
   private static final String BUSINESS_SCHEMAS =
       "'auth','data_hub','carbon','compliance','reporting','risk','supply_chain','social',"
-          + "'governance','analytics','investor','carbon_market','training','audit','files','notifications'";
+          + "'governance','analytics','investor','carbon_market','training','ai','integrations','audit','files','notifications'";
 
   /** Tables with a tenant_id column, excluding partitions (covered through their parent) and the login lookup. */
   private static List<String> tenantTables() throws SQLException {
@@ -38,7 +38,7 @@ class RlsIsolationTest {
         + "join pg_namespace n on n.oid = c.relnamespace "
         + "join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id' and not a.attisdropped "
         + "where c.relkind in ('r','p') and not c.relispartition and n.nspname in (" + BUSINESS_SCHEMAS + ") "
-        + "and c.oid::regclass::text <> 'auth.login_identities' order by 1";
+        + "and c.oid::regclass::text not in ('auth.login_identities', 'integrations.api_key_identities') order by 1";
     List<String> tables = new ArrayList<>();
     try (Connection owner = PostgresTestDatabase.ownerConnection();
         Statement st = owner.createStatement();
@@ -84,15 +84,32 @@ class RlsIsolationTest {
             .as("tenant B must not UPDATE tenant A rows in %s", table)
             .isZero();
 
-        // WITH CHECK: tenant A can't move its own row into tenant B.
+        // WITH CHECK: tenant A can't move its own row into tenant B. Row by row, because a workflow lock (an approved
+        // assessment, a published template, a locked period) may refuse first; at least one row must meet the policy.
         setTenant(app, TENANT_A);
         app.setAutoCommit(false);
         try {
-          assertThatThrownBy(() -> update(app,
-              "update " + table + " set tenant_id = '" + TENANT_B + "' where tenant_id = '" + TENANT_A + "'"))
-              .as("moving a row to another tenant must be rejected in %s", table)
-              .isInstanceOf(SQLException.class)
-              .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isIn("42501", "23503"));
+          List<String> rows = new ArrayList<>();
+          try (Statement st = app.createStatement();
+              ResultSet rs = st.executeQuery("select ctid::text from " + table + " where tenant_id = '" + TENANT_A + "' limit 25")) {
+            while (rs.next()) {
+              rows.add(rs.getString(1));
+            }
+          }
+          List<String> states = new ArrayList<>();
+          for (String ctid : rows) {
+            java.sql.Savepoint sp = app.setSavepoint();
+            try {
+              int moved = update(app, "update " + table + " set tenant_id = '" + TENANT_B + "' where tenant_id = '" + TENANT_A + "' and ctid = '" + ctid + "'::tid");
+              states.add(moved == 0 ? "none" : "moved");
+            } catch (SQLException e) {
+              states.add(e.getSQLState());
+            }
+            app.rollback(sp);
+          }
+          assertThat(states).as("moving a row to another tenant must be rejected in %s", table)
+              .doesNotContain("moved").allSatisfy(s -> assertThat(s).isIn("42501", "23503", "P0L01", "P0L02", "none"))
+              .containsAnyOf("42501", "23503");
         } finally {
           app.rollback();
           app.setAutoCommit(true);
@@ -115,7 +132,7 @@ class RlsIsolationTest {
         + "from pg_class c join pg_namespace n on n.oid = c.relnamespace "
         + "join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id' and not a.attisdropped "
         + "where c.relkind in ('r','p') and n.nspname in (" + BUSINESS_SCHEMAS + ") "
-        + "and c.oid::regclass::text <> 'auth.login_identities'";
+        + "and c.oid::regclass::text not in ('auth.login_identities', 'integrations.api_key_identities')";
     List<String> problems = new ArrayList<>();
     try (Connection owner = PostgresTestDatabase.ownerConnection();
         Statement st = owner.createStatement();
@@ -230,6 +247,23 @@ class RlsIsolationTest {
         assertThat(rs.getString(1)).isEqualTo(TENANT_A);
       }
       assertThatThrownBy(() -> count(app, "select count(*) from auth.login_identities"))
+          .isInstanceOf(SQLException.class)
+          .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
+    }
+  }
+
+  @Test
+  void apiKeyLookupWorksWithoutTenantButTableIsNotReadable() throws SQLException {
+    // WP-46: an API key's tenant is found from its prefix before any tenant is in context, like a login (V040).
+    try (Connection app = PostgresTestDatabase.appConnection()) {
+      setTenant(app, "");
+      try (PreparedStatement ps = app.prepareStatement("select tenant_id from integrations.find_api_key(?)")) {
+        ps.setString(1, "fxkey1");
+        ResultSet rs = ps.executeQuery();
+        assertThat(rs.next()).isTrue();
+        assertThat(rs.getString(1)).isEqualTo(TENANT_A);
+      }
+      assertThatThrownBy(() -> count(app, "select count(*) from integrations.api_key_identities"))
           .isInstanceOf(SQLException.class)
           .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
     }
