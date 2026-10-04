@@ -1,0 +1,209 @@
+{
+  "id": "benchmark-dataset",
+  "forms": [
+    "Benchmark dataset"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/analytics/benchmark-datasets"
+  },
+  "read": {
+    "path": "/v1/analytics/benchmark-datasets/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/analytics/benchmark-datasets/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include ESG Analytics"
+  },
+  "values": {
+    "name": "RT survey {u}",
+    "publisher": "Manufacturers Association of Nigeria",
+    "publicationYear": 2025,
+    "sourceUrl": "https://example.org/survey",
+    "sectorCode": "C",
+    "countryCode": "NG",
+    "sourceFileId": "{FILE_A}",
+    "notes": "Members' 2024 returns",
+    "status": "active",
+    "values": [
+      {
+        "metricKey": "employee_turnover_pct",
+        "dataYear": 2024,
+        "p25": 5,
+        "median": 9.5,
+        "p75": 14,
+        "sampleSize": 42
+      }
+    ]
+  },
+  "changes": {
+    "name": "RT survey revised {u}",
+    "publisher": "Nigerian Economic Summit Group",
+    "publicationYear": 2026,
+    "sourceUrl": "https://example.org/survey-2026",
+    "sectorCode": "B",
+    "countryCode": "GH",
+    "notes": "Revised returns",
+    "status": "archived",
+    "values": [
+      {
+        "metricKey": "women_in_management_pct",
+        "dataYear": 2025,
+        "p25": 12,
+        "median": 20,
+        "p75": 31,
+        "sampleSize": 30
+      },
+      {
+        "metricKey": "employee_turnover_pct",
+        "dataYear": 2025,
+        "p25": 4,
+        "median": 8,
+        "p75": 12,
+        "sampleSize": null
+      }
+    ]
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "publisher",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "publicationYear",
+      "value": 1999,
+      "rule": "2000 to 2100"
+    },
+    {
+      "field": "sourceUrl",
+      "value": "ftp://example.org",
+      "rule": "http(s) link"
+    },
+    {
+      "field": "sectorCode",
+      "value": "ZZ",
+      "rule": "catalogue sector"
+    },
+    {
+      "field": "countryCode",
+      "value": "NGA",
+      "rule": "2-letter code"
+    },
+    {
+      "field": "sourceFileId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "status",
+      "value": "draft",
+      "rule": "enum"
+    },
+    {
+      "field": "values",
+      "value": [],
+      "rule": "at least one value"
+    },
+    {
+      "field": "values",
+      "value": [
+        {
+          "metricKey": "employee_turnover_pct",
+          "dataYear": 2024,
+          "p25": 10,
+          "median": 5,
+          "p75": 14
+        }
+      ],
+      "rule": "P25 ≤ median ≤ P75",
+      "errorField": "values[0].median"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Dataset name"
+      },
+      "publisher": {
+        "label": "Publisher"
+      },
+      "publicationYear": {
+        "label": "Publication year"
+      },
+      "sourceUrl": {
+        "label": "Source link (optional)"
+      },
+      "sectorCode": {
+        "label": "Sector (optional)",
+        "kind": "select",
+        "display": "C · Manufacturing"
+      },
+      "countryCode": {
+        "label": "Country (optional)"
+      },
+      "sourceFileId": {
+        "label": "Source document",
+        "kind": "text",
+        "display": "evidence.pdf"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      },
+      "values": {
+        "kind": "rows",
+        "columns": {
+          "metricKey": {
+            "label": "Metric",
+            "kind": "select",
+            "options": {
+              "employee_turnover_pct": "Employee turnover rate (%)",
+              "women_in_management_pct": "Women in management (%)"
+            }
+          },
+          "dataYear": {
+            "label": "Data year"
+          },
+          "p25": {
+            "label": "P25"
+          },
+          "median": {
+            "label": "Median"
+          },
+          "p75": {
+            "label": "P75"
+          },
+          "sampleSize": {
+            "label": "Sample size"
+          }
+        }
+      }
+    }
+  }
+}

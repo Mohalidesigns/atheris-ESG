@@ -1,0 +1,39 @@
+time="2026-10-03T15:36:15+01:00" level=info msg="recalculation: {\"data\":{\"checked\":10000,\"updated\":10000,\"changes\":[\"diesel_generator 2024-01-01: 0.300000 → 0.268564 t\",\"diesel_generator 2024-01-02: 0.300000 → 0.271249 t\",\"diesel_generator 2024-01-03: 0.300000 → 0.273935 t\",\"diesel_generator 2024-01-04: 0.300000 → 0.276621 t\",\"diesel_generator 2024-01-05: 0.300000 → 0.279306 t\",\"diesel_generator 2024-01-06: 0.300000 → 0.281992 t\",\"diesel_generator 2024-01-07: 0.300000 → 0.284678 t\",\"diesel_generator 2024-01-08: 0.300000 → 0.287363 t\",\"diesel_generator 2024-01-09: 0.300000 → 0.290049 t\",\"diesel_generator 2024-01-10: 0.300000 → 0.292734 t\",\"diesel_generator 2024-01-11: 0.300000 → 0.295420 t\",\"diesel_generator 2024-01-12: 0.300000 → 0.298106 t\",\"diesel_generator 2024-01-13: 0.300000 → 0.300791 t\",\"diesel_generator 2024-01-14: 0.300000 → 0.303477 t\",\"diesel_generator 2024-01-15: 0.300000 → 0.306163 t\",\"diesel_generator 2024-01-16: 0.300000 → 0.308848 t\",\"diesel_generator 2024-01-17: 0.300000 → 0.311534 t\",\"diesel_generator 2024-01-18: 0.300000 → 0.314220 t\",\"diesel_generator 2024-01-19: 0.300000 → 0.316905 t\",\"diesel_generator 2024-01-20: 0.300000 → 0.319591 t\",\"diesel_generator 2024-01-21: 0.300000 → 0.322277 t\",\"diesel_generator 2024-01-22: 0.300000 → 0.324962 t\",\"diesel_generator 2024-01-23: 0.300000 → 0.327648 t\",\"diesel_generator 2024-01-24: 0.300000 → 0.330333 t\",\"diesel_generator 2024-01-25: 0.300000 → 0.333019 t\",\"diesel_generator 2024-01-26: 0.300000 → 0.335705 t\",\"diesel_generator 2024-01-27: 0.300000 → 0.338390 t\",\"diesel_generator 2024-01-28: 0.300000 → 0.341076 t\",\"diesel_generator 2024-01-29: 0.300000 → 0.343762 t\",\"diesel_generator 2024-01-30: 0.300000 → 0.346447 t\",\"diesel_generator 2024-01-31: 0.300000 → 0.349133 t\",\"diesel_generator 2024-02-01: 0.300000 → 0.351819 t\",\"diesel_generator 2024-02-02: 0.300000 → 0.354504 t\",\"diesel_generator 2024-02-03: 0.300000 → 0.357190 t\",\"diesel_generator 2024-02-04: 0.300000 → 0.359875 t\",\"diesel_generator 2024-02-05: 0.300000 → 0.362561 t\",\"diesel_generator 2024-02-06: 0.300000 → 0.365247 t\",\"diesel_generator 2024-02-07: 0.300000 → 0.367932 t\",\"diesel_generator 2024-02-08: 0.300000 → 0.370618 t\",\"diesel_generator 2024-02-09: 0.300000 → 0.373304 t\",\"diesel_generator 2024-02-10: 0.300000 → 0.375989 t\",\"diesel_generator 2024-02-11: 0.300000 → 0.378675 t\",\"diesel_generator 2024-02-12: 0.300000 → 0.381361 t\",\"diesel_generator 2024-02-13: 0.300000 → 0.384046 t\",\"diesel_generator 2024-02-14: 0.300000 → 0.386732 t\",\"diesel_generator 2024-02-15: 0.300000 → 0.389417 t\",\"diesel_generator 2024-02-16: 0.300000 → 0.392103 t\",\"diesel_generator 2024-02-17: 0.300000 → 0.394789 t\",\"diesel_generator 2024-02-18: 0.300000 → 0.397474 t\",\"diesel_generator 2024-02-19: 0.300000 → 0.400160 t\"]},\"success\":true}" source=console
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_req_duration
+    ✓ 'max<300000' max=17.84s
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2       0.111298/s
+    checks_succeeded...: 100.00% 2 out of 2
+    checks_failed......: 0.00%   0 out of 2
+
+    ✓ signed in
+    ✓ recalculated 200
+
+    HTTP
+    http_req_duration..............: avg=8.98s  min=122.67ms med=8.98s  max=17.84s p(90)=16.07s p(95)=16.95s
+      { expected_response:true }...: avg=8.98s  min=122.67ms med=8.98s  max=17.84s p(90)=16.07s p(95)=16.95s
+    http_req_failed................: 0.00%  0 out of 2
+    http_reqs......................: 2      0.111298/s
+
+    EXECUTION
+    iteration_duration.............: avg=17.84s min=17.84s   med=17.84s max=17.84s p(90)=17.84s p(95)=17.84s
+    iterations.....................: 1      0.055649/s
+    vus............................: 1      min=1      max=1
+    vus_max........................: 1      min=1      max=1
+
+    NETWORK
+    data_received..................: 6.6 kB 365 B/s
+    data_sent......................: 1.8 kB 99 B/s
+
+
+

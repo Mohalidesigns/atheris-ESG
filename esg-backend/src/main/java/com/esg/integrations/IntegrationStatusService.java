@@ -21,8 +21,15 @@ public class IntegrationStatusService {
     private final VirusScanner scanner;
     private final EmailSender email;
     private final SmsSender sms;
+    private final com.esg.carbonmarket.CarbonRegistry registry;
+    private final com.esg.carbonmarket.CarbonExchange exchange;
+    private final com.esg.ai.AiEngine ai;
 
-    public IntegrationStatusService(SatelliteFlareVerifier satellite, VirusScanner scanner, EmailSender email, SmsSender sms) {
+    public IntegrationStatusService(SatelliteFlareVerifier satellite, VirusScanner scanner, EmailSender email, SmsSender sms,
+                                    com.esg.carbonmarket.CarbonRegistry registry, com.esg.carbonmarket.CarbonExchange exchange, com.esg.ai.AiEngine ai) {
+        this.ai = ai;
+        this.registry = registry;
+        this.exchange = exchange;
         this.satellite = satellite;
         this.scanner = scanner;
         this.email = email;
@@ -31,6 +38,7 @@ public class IntegrationStatusService {
 
     public List<Integration> list() {
         boolean satSandbox = "Sandbox".equals(satellite.provider());
+        com.esg.ai.AiEngine.Status aiStatus = ai.status();
         return List.of(
                 new Integration("satellite_flaring", "Satellite flaring check", satSandbox ? "sandbox" : "connected",
                         satSandbox ? "No satellite feed is connected; checks say so and never invent a detection" : satellite.provider(),
@@ -44,6 +52,14 @@ public class IntegrationStatusService {
                         "Notifications: reminders, approvals, account changes"),
                 new Integration("sms", "SMS (Africa's Talking)", !sms.configured() ? "not_configured" : sms.sandbox() ? "sandbox" : "connected",
                         !sms.configured() ? "No Africa's Talking API key configured" : sms.sandbox() ? "Africa's Talking sandbox" : "Africa's Talking live",
-                        "Notifications by SMS for users who choose it"));
+                        "Notifications by SMS for users who choose it"),
+                new Integration("carbon_registry", "Carbon credit registry (ACMI, Verra, Gold Standard)", registry.sandbox() ? "sandbox" : "connected",
+                        registry.sandbox() ? "No registry is connected; holdings are verified from attached registry statements" : registry.name(),
+                        "Carbon Market: checks that credit serials are held and retired as recorded"),
+                new Integration("carbon_exchange", "African carbon exchange", exchange.sandbox() ? "sandbox" : "connected",
+                        exchange.sandbox() ? "No exchange is connected; no listings are shown" : exchange.name(), "Carbon Market: credit listings"),
+                new Integration("ai_service", "AI service (forecasting, Isolation Forest, report extraction)",
+                        aiStatus.reachable() ? "connected" : "not_configured", aiStatus.detail(),
+                        "Analytics › AI: emission forecasts, ML anomaly flags, values read from reports (always reviewed by a person)"));
     }
 }

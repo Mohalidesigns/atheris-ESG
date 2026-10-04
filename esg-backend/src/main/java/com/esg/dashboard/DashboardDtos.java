@@ -30,6 +30,17 @@ public final class DashboardDtos {
     public record Filing(UUID id, String framework, String description, LocalDate deadlineDate, long daysLeft, String status,
                          String owner) {}
 
+    /** WP-34: board and policy health; open whistleblower cases only for whistleblower:read_summary / read (counts, no content). */
+    public record Governance(int directors, BigDecimal independentPct, BigDecimal femalePct, int codeChecksPassed, int codeChecksFailed,
+                             int codeChecksInsufficient, int policiesPublished, int policiesDueForReview, Integer openCases) {}
+
+    /** WP-33: workforce from approved figures, safety rates for the year, grievances and community investment (user's organisations). */
+    public record Social(Integer headcount, BigDecimal womenPct, BigDecimal womenInManagementPct, BigDecimal ltifr, BigDecimal trir,
+                         long lostTimeInjuries, BigDecimal hoursWorked, int openGrievances, int overdueGrievances,
+                         BigDecimal communityInvestment, String baseCurrency, int activeProjects) {}
+
     public record Executive(int year, Emissions emissions, Compliance compliance, SdgAlignment sdg, List<Activity> activity,
-                            List<Filing> filings) {}
+                            List<Filing> filings, Governance governance, Social social, com.esg.risk.RiskDtos.Overview risk,
+                            com.esg.supplychain.SupplyDtos.Overview supplyChain, com.esg.analytics.AnalyticsDtos.Overview analytics,
+                            com.esg.carbonmarket.CarbonMarketDtos.Overview carbonMarket, com.esg.training.TrainingDtos.Overview training) {}
 }
