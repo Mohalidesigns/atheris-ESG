@@ -36,4 +36,12 @@ class ProductionSecretsPolicyTest {
     new ProductionSecretsPolicy(env("local", Map.of("esg.security.jwt-secret", "local-dev-only")));
     assertThat(ProductionSecretsPolicy.problems(name -> "")).isEmpty();
   }
+
+  @Test
+  void webhooksToLocalNetworksAreRefusedInRealEnvironments() {
+    // WP-46 (D44): request forgery guard — the local/test convenience must not reach staging or production.
+    assertThat(ProductionSecretsPolicy.problems(name -> "esg.webhooks.allow-private-networks".equals(name) ? "true" : ""))
+        .containsExactly("esg.webhooks.allow-http and allow-private-networks must be false");
+    assertThat(ProductionSecretsPolicy.problems(name -> "esg.webhooks.allow-http".equals(name) ? "TRUE" : "")).hasSize(1);
+  }
 }

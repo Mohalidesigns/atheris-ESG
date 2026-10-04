@@ -19,6 +19,7 @@ import {
 import {
   POLICY_ACTIONS, POLICY_CATEGORIES, POLICY_STATUS, emptyPolicy, policySchema, reasonSchema, toPolicyBody, toPolicyForm,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 export function PolicyDialog({ policy, onClose }) {
   const editing = Boolean(policy?.id);
@@ -39,38 +40,38 @@ export function PolicyDialog({ policy, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${policy.name}` : 'New policy'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${policy.name}` : tr("New policy")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label="Policy name" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="policyVersion" label="Version" helperText="e.g. 1.0; a revision needs a new one" /></Grid>
+            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label={tr("Policy name")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="policyVersion" label={tr("Version")} helperText={tr("e.g. 1.0; a revision needs a new one")} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="category" label="Category" options={Object.entries(POLICY_CATEGORIES).map(([value, label]) => ({ value, label }))} />
+              <FormSelect control={control} name="category" label={tr("Category")} options={Object.entries(POLICY_CATEGORIES).map(([value, label]) => ({ value, label }))} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="ownerUserId" label="Policy owner" options={people.map((p) => ({ value: p.id, label: p.name }))} />
+              <FormSelect control={control} name="ownerUserId" label={tr("Policy owner")} options={people.map((p) => ({ value: p.id, label: p.name }))} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="summary" label="Summary (optional)" multiline minRows={2} /></Grid>
-            <Grid size={12}><FormTextField control={control} name="content" label="Policy text" multiline minRows={6} helperText="Or attach the approved document below" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="summary" label={tr("Summary (optional)")} multiline minRows={2} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="content" label={tr("Policy text")} multiline minRows={6} helperText={tr("Or attach the approved document below")} /></Grid>
             <Grid size={12}>
               <Controller name="fileId" control={control} render={({ field, fieldState }) => (
                 <EvidencePicker value={field.value ? [field.value] : []} onChange={(ids) => field.onChange(ids[0] ?? '')} max={1}
-                  resourceType="governance_policy" dataPointId={policy?.id} caption="Policy document (optional)" error={fieldState.error?.message} />
+                  resourceType="governance_policy" dataPointId={policy?.id} caption={tr("Policy document (optional)")} error={fieldState.error?.message} />
               )} />
             </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="reviewMonths" label="Review every (months)" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormDateField control={control} name="effectiveDate" label="Effective from (optional)" /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="reviewMonths" label={tr("Review every (months)")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormDateField control={control} name="effectiveDate" label={tr("Effective from (optional)")} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <Controller name="requiresAcknowledgement" control={control} render={({ field }) => (
-                <FormControlLabel label="Staff must acknowledge it" control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} />
+                <FormControlLabel label={tr("Staff must acknowledge it")} control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create draft'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create draft")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -90,14 +91,14 @@ function ReasonDialog({ action, onCancel, onConfirm }) {
   return (
     <Dialog open onClose={onCancel} maxWidth="xs" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{POLICY_ACTIONS[action]}</DialogTitle>
+        <DialogTitle>{tr(POLICY_ACTIONS[action])}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <FormTextField control={control} name="reason" label="Reason" multiline minRows={2} autoFocus />
+          <FormTextField control={control} name="reason" label={tr("Reason")} multiline minRows={2} autoFocus />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onCancel}>Cancel</Button>
-          <Button type="submit" variant="contained">{POLICY_ACTIONS[action]}</Button>
+          <Button onClick={onCancel}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained">{tr(POLICY_ACTIONS[action])}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -123,18 +124,18 @@ function PolicyDrawer({ id, onClose, onEdit }) {
   return (
     <Drawer anchor="right" open={Boolean(id)} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 560 } } }}>
       {isLoading || !p ? <LoadingState /> : (
-        <Box sx={{ p: 3 }} role="region" aria-label="Policy details">
+        <Box sx={{ p: 3 }} role="region" aria-label={tr("Policy details")}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>{p.name}</Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                <Chip size="small" color={POLICY_STATUS[p.status].color} label={POLICY_STATUS[p.status].label} aria-label="Policy status" />
+                <Chip size="small" color={POLICY_STATUS[p.status].color} label={tr(POLICY_STATUS[p.status].label)} aria-label={tr("Policy status")} />
                 <Chip size="small" variant="outlined" label={`Version ${p.policyVersion}`} />
-                <Chip size="small" variant="outlined" label={POLICY_CATEGORIES[p.category]} />
-                {p.reviewDue && <Chip size="small" color="warning" label="Review due" />}
+                <Chip size="small" variant="outlined" label={tr(POLICY_CATEGORIES[p.category])} />
+                {p.reviewDue && <Chip size="small" color="warning" label={tr("Review due")} />}
               </Box>
             </Box>
-            <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+            <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
           </Box>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           {p.statusReason && <Alert severity="info" sx={{ mt: 2 }}>{p.statusReason}</Alert>}
@@ -143,22 +144,22 @@ function PolicyDrawer({ id, onClose, onEdit }) {
               <Button key={a} size="small" variant={['approve', 'publish'].includes(a) ? 'contained' : 'outlined'} disabled={t.isLoading}
                 color={a === 'retire' ? 'error' : 'primary'}
                 onClick={() => (['send_back', 'retire', 'revise'].includes(a) ? setAsking(a) : run(a))}>
-                {POLICY_ACTIONS[a]}
+                {tr(POLICY_ACTIONS[a])}
               </Button>
             ))}
-            {Object.entries(p.blockedActions ?? {}).map(([a, why]) => <BlockedAction key={a} label={POLICY_ACTIONS[a]} reason={why} />)}
-            {p.actions.includes('edit') && <Button size="small" onClick={() => onEdit(p)}>Edit</Button>}
+            {Object.entries(p.blockedActions ?? {}).map(([a, why]) => <BlockedAction key={a} label={tr(POLICY_ACTIONS[a])} reason={why} />)}
+            {p.actions.includes('edit') && <Button size="small" onClick={() => onEdit(p)}>{tr("Edit")}</Button>}
           </Box>
           <Divider sx={{ my: 2 }} />
           <Typography variant="body2" color="text.secondary">
-            Owner: {p.ownerName ?? '—'} · Review every {p.reviewMonths} months
+            {tr("Owner:")} {p.ownerName ?? '—'} {tr("· Review every")} {p.reviewMonths} {tr("months")}
             {p.nextReview ? ` · next review ${p.nextReview}` : ''}{p.lastReviewed ? ` (last ${p.lastReviewed})` : ''}
           </Typography>
-          {p.submittedBy && <Typography variant="body2" color="text.secondary">Submitted by {p.submittedBy}</Typography>}
-          {p.approvedBy && <Typography variant="body2" color="text.secondary">Approved by {p.approvedBy}</Typography>}
+          {p.submittedBy && <Typography variant="body2" color="text.secondary">{tr("Submitted by")} {p.submittedBy}</Typography>}
+          {p.approvedBy && <Typography variant="body2" color="text.secondary">{tr("Approved by")} {p.approvedBy}</Typography>}
           {p.status === 'published' && p.requiresAcknowledgement && (
-            <Typography variant="body2" sx={{ mt: 1 }} aria-label="Acknowledgements">
-              Acknowledged by {p.acknowledged} of {p.staff} colleagues ({p.acknowledgedPct ?? 0}%) for version {p.policyVersion}
+            <Typography variant="body2" sx={{ mt: 1 }} aria-label={tr("Acknowledgements")}>
+              {tr("Acknowledged by")} {p.acknowledged} {tr("of")} {p.staff} {tr("colleagues (")}{p.acknowledgedPct ?? 0}{tr("%) for version")} {p.policyVersion}
             </Typography>
           )}
           {p.summary && <Typography sx={{ mt: 2, fontWeight: 600 }}>{p.summary}</Typography>}
@@ -181,32 +182,32 @@ export default function PoliciesTab({ initialPolicy }) {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
-          <MenuItem value="">All</MenuItem>
-          {Object.entries(POLICY_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{v.label}</MenuItem>)}
+        <TextField select size="small" label={tr("Status")} value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
+          <MenuItem value="">{tr("All")}</MenuItem>
+          {Object.entries(POLICY_STATUS).map(([k, v]) => <MenuItem key={k} value={k}>{tr(v.label)}</MenuItem>)}
         </TextField>
         <Can permission="governance:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New policy</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New policy")}</Button>
         </Can>
       </Box>
       <Card>
-        {data.length === 0 ? <EmptyState title="No policies yet">Record your code of conduct, anti-bribery, whistleblowing and other policies.</EmptyState> : (
+        {data.length === 0 ? <EmptyState title={tr("No policies yet")}>{tr("Record your code of conduct, anti-bribery, whistleblowing and other policies.")}</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Policies" data-sticky-actions>
+            <Table size="small" aria-label={tr("Policies")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Policy</TableCell><TableCell>Category</TableCell><TableCell>Version</TableCell><TableCell>Status</TableCell>
-                <TableCell>Next review</TableCell><TableCell align="right">Acknowledged</TableCell><TableCell />
+                <TableCell>{tr("Policy")}</TableCell><TableCell>{tr("Category")}</TableCell><TableCell>{tr("Version")}</TableCell><TableCell>{tr("Status")}</TableCell>
+                <TableCell>{tr("Next review")}</TableCell><TableCell align="right">{tr("Acknowledged")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell sx={{ fontWeight: 600 }}>{p.name}</TableCell>
-                    <TableCell>{POLICY_CATEGORIES[p.category]}</TableCell>
+                    <TableCell>{tr(POLICY_CATEGORIES[p.category])}</TableCell>
                     <TableCell>{p.policyVersion}</TableCell>
-                    <TableCell><Chip size="small" color={POLICY_STATUS[p.status].color} label={POLICY_STATUS[p.status].label} /></TableCell>
-                    <TableCell>{p.nextReview ?? '—'}{p.reviewDue && <Chip size="small" color="warning" label="Due" sx={{ ml: 1 }} />}</TableCell>
+                    <TableCell><Chip size="small" color={POLICY_STATUS[p.status].color} label={tr(POLICY_STATUS[p.status].label)} /></TableCell>
+                    <TableCell>{p.nextReview ?? '—'}{p.reviewDue && <Chip size="small" color="warning" label={tr("Due")} sx={{ ml: 1 }} />}</TableCell>
                     <TableCell align="right">{p.acknowledgedPct == null ? '—' : `${p.acknowledgedPct}%`}</TableCell>
-                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(p.id)} aria-label={`Open ${p.name}`}>Open</Button></TableCell>
+                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(p.id)} aria-label={`Open ${p.name}`}>{tr("Open")}</Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

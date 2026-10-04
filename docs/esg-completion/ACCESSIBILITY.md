@@ -39,5 +39,6 @@ Sign-in page (the first page anyone loads), production build, Lighthouse 13.5:
 
 Done: the app shell and zod moved out of the entry bundle (140 → 86 KB gz), fonts self-hosted, CI budget (entry
 ≤ 95 KB gz, sign-in JavaScript ≤ 190 KB gz). The target holds on fast 3G; on regular 3G the first visit needs about
-285 KiB, which can't arrive in 3 s at 700 kbps. Next (OPEN): offline precache so repeat visits load from the device
-(WP-43), Brotli at the edge (WP-54), and an HTML sign-in shell that paints before JavaScript.
+285 KiB, which can't arrive in 3 s at 700 kbps. Repeat visits load from the device since WP-43 (the service worker
+precaches the app after the first visit, D43). Next (OPEN): Brotli at the edge (WP-54), and an HTML sign-in shell that
+paints before JavaScript.

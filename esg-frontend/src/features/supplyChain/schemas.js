@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Supply chain form rules. Mirror the server exactly: SupplyDtos (Bean Validation) + SupplierService.validate,
@@ -169,5 +170,5 @@ export const sendSchema = (today) => z.object({
 });
 
 export const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
-export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';

@@ -10,6 +10,7 @@ import { moduleOverrideSchema, toOverrideBody } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
 import { ErrorState, LoadingState } from '../../../components/states/States';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — display labels for entitlement sources returned by the API
 const SOURCE_LABEL = { plan: 'Plan', add_on: 'Add-on' };
@@ -40,15 +41,15 @@ function OverrideForm({ tenantId, module, current, onDone }) {
       {serverError && <Alert severity="error" sx={{ mb: 1.5 }}>{serverError}</Alert>}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <Controller name="enabled" control={control} render={({ field }) => (
-          <TextField select size="small" label="Entitlement" sx={{ minWidth: 200 }} {...field}>
-            <MenuItem value="plan">Follow the plan</MenuItem>
-            <MenuItem value="on">Add (add-on)</MenuItem>
-            <MenuItem value="off">Remove</MenuItem>
+          <TextField select size="small" label={tr("Entitlement")} sx={{ minWidth: 200 }} {...field}>
+            <MenuItem value="plan">{tr("Follow the plan")}</MenuItem>
+            <MenuItem value="on">{tr("Add (add-on)")}</MenuItem>
+            <MenuItem value="off">{tr("Remove")}</MenuItem>
           </TextField>
         )} />
-        <TextField size="small" label="Reason" sx={{ flex: 1, minWidth: 240 }} {...register('reason')}
-          error={!!errors.reason} helperText={errors.reason?.message ?? 'Recorded in the audit log, e.g. the contract reference'} />
-        <Button type="submit" variant="contained" disabled={isLoading}>Apply</Button>
+        <TextField size="small" label={tr("Reason")} sx={{ flex: 1, minWidth: 240 }} {...register('reason')}
+          error={!!errors.reason} helperText={tr(errors.reason?.message) ?? tr("Recorded in the audit log, e.g. the contract reference")} />
+        <Button type="submit" variant="contained" disabled={isLoading}>{tr("Apply")}</Button>
       </Box>
     </Box>
   );
@@ -63,19 +64,18 @@ export default function TenantModulesDialog({ tenant, onClose }) {
 
   return (
     <Dialog open={Boolean(tenant)} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Modules for {tenant?.name}</DialogTitle>
+      <DialogTitle>{tr("Modules for")} {tenant?.name}</DialogTitle>
       <DialogContent>
-        {isLoading && <LoadingState label="Loading modules" />}
+        {isLoading && <LoadingState label={tr("Loading modules")} />}
         {isError && <ErrorState error={error} onRetry={refetch} />}
         {data && (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Plan: <strong>{data.plans.find((p) => p.code === data.plan)?.name ?? data.plan}</strong>. Change the plan with Edit;
-              use an override for a single module.
+              {tr("Plan:")} <strong>{data.plans.find((p) => p.code === data.plan)?.name ?? data.plan}</strong>{tr(". Change the plan with Edit; use an override for a single module.")}
             </Typography>
-            <Table size="small" aria-label="Tenant modules">
+            <Table size="small" aria-label={tr("Tenant modules")}>
               <TableHead><TableRow>
-                <TableCell>Module</TableCell><TableCell>Access</TableCell><TableCell>Override</TableCell><TableCell />
+                <TableCell>{tr("Module")}</TableCell><TableCell>{tr("Access")}</TableCell><TableCell>{tr("Override")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.catalogue.filter((m) => !m.alwaysOn).map((m) => {
@@ -85,12 +85,12 @@ export default function TenantModulesDialog({ tenant, onClose }) {
                       <TableCell>{m.name}</TableCell>
                       <TableCell>
                         {enabled.has(m.code)
-                          ? <Chip size="small" color="success" variant="outlined" label={SOURCE_LABEL[enabled.get(m.code)] ?? 'On'} />
-                          : <Chip size="small" label="Off" />}
+                          ? <Chip size="small" color="success" variant="outlined" label={tr(SOURCE_LABEL[enabled.get(m.code)]) ?? tr("On")} />
+                          : <Chip size="small" label={tr("Off")} />}
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.75rem' }}>{o ? `${o.enabled ? 'Added' : 'Removed'}: ${o.reason}` : '—'}</TableCell>
                       <TableCell align="right">
-                        <Button size="small" onClick={() => setSelected(m)} aria-label={`Change ${m.name}`}>Change</Button>
+                        <Button size="small" onClick={() => setSelected(m)} aria-label={`Change ${m.name}`}>{tr("Change")}</Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -104,7 +104,7 @@ export default function TenantModulesDialog({ tenant, onClose }) {
           </>
         )}
       </DialogContent>
-      <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
+      <DialogActions><Button onClick={onClose}>{tr("Close")}</Button></DialogActions>
     </Dialog>
   );
 }

@@ -453,6 +453,57 @@ public class ImportService {
      * downloading it — an organisation they can enter data for, the current quarter, metrics from the catalogue and
      * the tenant's base currency (no exchange rate needed). Headers match the automatic column mapping.
      */
+    // no-mock-gate: config — WP-46 (D44): which catalogue metrics each source system's template lists, and where the figure comes from
+    static final Map<String, List<String[]>> SOURCE_TEMPLATES = Map.of(
+            "energy", List.of(new String[] {"diesel_litres", "ERP fuel purchases or generator logs"},
+                    new String[] {"petrol_litres", "ERP fuel purchases or fleet cards"}, new String[] {"lpg_kg", "ERP purchases"},
+                    new String[] {"natural_gas_m3", "Gas supplier invoices or meters"}),
+            "utilities", List.of(new String[] {"electricity_kwh", "Electricity bills or meter readings"},
+                    new String[] {"water_withdrawal_m3", "Water bills or meters"}, new String[] {"water_consumption_m3", "Water meters"}),
+            "workforce", List.of(new String[] {"employees_total", "HR system headcount at period end"},
+                    new String[] {"employees_female", "HR system headcount at period end"}, new String[] {"new_hires", "HR system joiners"},
+                    new String[] {"employee_turnover_pct", "HR system leavers ÷ average headcount × 100"},
+                    new String[] {"training_hours_per_employee", "Learning system hours ÷ headcount"},
+                    new String[] {"hours_worked", "Payroll or time and attendance"},
+                    new String[] {"women_in_management_pct", "HR system"}),
+            "waste", List.of(new String[] {"waste_generated_t", "Waste contractor manifests"},
+                    new String[] {"waste_diverted_t", "Recycling and reuse certificates"},
+                    new String[] {"waste_disposed_t", "Landfill and incineration manifests"}));
+
+    /**
+     * WP-46 (D44): a template for one source system's export (ERP fuel, utility bills, HRIS, waste contractors) — one row
+     * per metric for the current quarter, the value left for the system's figure, the note saying where it comes from.
+     */
+    public String template(String kind) {
+        if (kind == null || kind.isBlank() || "general".equals(kind)) {
+            return template();
+        }
+        List<String[]> rows = SOURCE_TEMPLATES.get(kind);
+        if (rows == null) {
+            throw com.esg.exception.FieldValidationException.of("kind", "must be one of general, " + String.join(", ",
+                    new java.util.TreeSet<>(SOURCE_TEMPLATES.keySet())));
+        }
+        String org = csv(firstOrganisation());
+        String period = quarter();
+        StringBuilder out = new StringBuilder("organisation,metric,value,currency,period_start,period_end,sub_category,notes,owner\n");
+        for (String[] r : rows) {
+            out.append(org).append(',').append(r[0]).append(",,,").append(period).append(",,").append(csv("From " + r[1])).append(",\n");
+        }
+        return out.toString();
+    }
+
+    private String firstOrganisation() {
+        return jdbc.queryForList("select id, name from auth.organisations where is_active order by parent_org_id nulls first, name")
+                .stream().filter(o -> orgScope.canAccess((UUID) o.get("id"))).map(o -> (String) o.get("name"))
+                .findFirst().orElse("Your organisation");
+    }
+
+    private String quarter() {
+        LocalDate today = LocalDate.now(clock);
+        LocalDate start = today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+        return start + "," + start.plusMonths(3).minusDays(1);
+    }
+
     public String template() {
         String org = jdbc.queryForList("select id, name from auth.organisations where is_active order by parent_org_id nulls first, name")
                 .stream().filter(o -> orgScope.canAccess((UUID) o.get("id"))).map(o -> (String) o.get("name"))

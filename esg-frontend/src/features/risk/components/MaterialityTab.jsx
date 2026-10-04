@@ -21,6 +21,7 @@ import {
   ASSESSMENT_ACTIONS, ASSESSMENT_STATUS, ESG, GROUPS, LEVEL, LIKELIHOOD, QUADRANTS, assessmentSchema, emptyAssessment, emptyTopic, problemText,
   toAssessmentBody, toAssessmentForm, toTopicBody, toTopicForm, topicSchema,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 const opts = (map) => Object.entries(map).map(([value, label]) => ({ value: String(value), label }));
 const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
@@ -47,40 +48,40 @@ export function AssessmentDialog({ assessment, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${assessment.name}` : 'New materiality assessment'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${assessment.name}` : tr("New materiality assessment")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label="Assessment name" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="reportingYear" label="Reporting year" inputMode="numeric" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label={tr("Assessment name")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="reportingYear" label={tr("Reporting year")} inputMode="numeric" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormTextField control={control} name="impactThreshold" label="Impact threshold" helperText="0.2–5: impact position at or above it is material" />
+              <FormTextField control={control} name="impactThreshold" label={tr("Impact threshold")} helperText={tr("0.2–5: impact position at or above it is material")} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormTextField control={control} name="financialThreshold" label="Financial threshold" helperText="0.2–5" />
+              <FormTextField control={control} name="financialThreshold" label={tr("Financial threshold")} helperText="0.2–5" />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormTextField control={control} name="stakeholderBlend" label="Stakeholder blend" helperText="0–0.5: how far stakeholder ratings pull the impact score" />
+              <FormTextField control={control} name="stakeholderBlend" label={tr("Stakeholder blend")} helperText={tr("0–0.5: how far stakeholder ratings pull the impact score")} />
             </Grid>
           </Grid>
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>Stakeholder groups and weights</Typography>
-          {errors.stakeholders?.message && <Alert severity="error" sx={{ my: 1 }}>{errors.stakeholders.message}</Alert>}
-          <Table size="small" aria-label="Stakeholder groups">
+          <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("Stakeholder groups and weights")}</Typography>
+          {tr(errors.stakeholders?.message) && <Alert severity="error" sx={{ my: 1 }}>{tr(errors.stakeholders.message)}</Alert>}
+          <Table size="small" aria-label={tr("Stakeholder groups")}>
             <TableBody>
               {groups.fields.map((row, i) => (
                 <TableRow key={row.id}>
                   <TableCell sx={{ minWidth: 200 }}>
                     <Controller name={`stakeholders.${i}.group`} control={control} render={({ field, fieldState }) => (
-                      <TextField select size="small" fullWidth {...field} error={!!fieldState.error} helperText={fieldState.error?.message}
+                      <TextField select size="small" fullWidth {...field} error={!!fieldState.error} helperText={tr(fieldState.error?.message)}
                         SelectProps={{ SelectDisplayProps: { 'aria-label': `Stakeholder group, line ${i + 1}` } }}>
-                        {Object.entries(GROUPS).map(([k, l]) => <MenuItem key={k} value={k}>{l}</MenuItem>)}
+                        {Object.entries(GROUPS).map(([k, l]) => <MenuItem key={k} value={k}>{tr(l)}</MenuItem>)}
                       </TextField>
                     )} />
                   </TableCell>
                   <TableCell sx={{ minWidth: 120 }}>
                     <Controller name={`stakeholders.${i}.weight`} control={control} render={({ field, fieldState }) => (
-                      <TextField size="small" fullWidth {...field} error={!!fieldState.error} helperText={fieldState.error?.message}
+                      <TextField size="small" fullWidth {...field} error={!!fieldState.error} helperText={tr(fieldState.error?.message)}
                         slotProps={{ htmlInput: { 'aria-label': `Weight, line ${i + 1}`, inputMode: 'decimal' } }} />
                     )} />
                   </TableCell>
@@ -90,12 +91,12 @@ export function AssessmentDialog({ assessment, onClose }) {
             </TableBody>
           </Table>
           <Button size="small" startIcon={<Add />} sx={{ mt: 1 }} disabled={groups.fields.length >= 9} onClick={() => groups.append({ group: '', weight: '' })}>
-            Add stakeholder group
+            {tr("Add stakeholder group")}
           </Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create assessment'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create assessment")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -127,39 +128,39 @@ function TopicDialog({ assessment, topic, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${topic.topic}` : 'Add topic'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${topic.topic}` : tr("Add topic")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="topic" label="Topic" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="category" label="Pillar" options={opts(ESG)} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="griTopic" label="GRI topic (optional)" placeholder="e.g. GRI 305" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="topic" label={tr("Topic")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="category" label={tr("Pillar")} options={opts(ESG)} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="griTopic" label={tr("GRI topic (optional)")} placeholder={tr("e.g. GRI 305")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
           </Grid>
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>Impact on people and the environment (inside-out)</Typography>
+          <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("Impact on people and the environment (inside-out)")}</Typography>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="impactType" label="Impact" options={[{ value: 'actual', label: 'Actual' }, { value: 'potential', label: 'Potential' }]} />
+              <FormSelect control={control} name="impactType" label={tr("Impact")} options={[{ value: 'actual', label: 'Actual' }, { value: 'potential', label: 'Potential' }]} />
             </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityScale" label="Scale" options={opts(LEVEL)} /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityScope" label="Scope" options={opts(LEVEL)} /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityIrremediability" label="Irremediability" options={opts(LEVEL)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityScale" label={tr("Scale")} options={opts(LEVEL)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityScope" label={tr("Scope")} options={opts(LEVEL)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="severityIrremediability" label={tr("Irremediability")} options={opts(LEVEL)} /></Grid>
             {impactType === 'potential' && (
-              <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="impactLikelihood" label="Impact likelihood" options={opts(LIKELIHOOD)} /></Grid>
+              <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="impactLikelihood" label={tr("Impact likelihood")} options={opts(LIKELIHOOD)} /></Grid>
             )}
           </Grid>
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>Financial effect on the company (outside-in)</Typography>
+          <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("Financial effect on the company (outside-in)")}</Typography>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="financialMagnitude" label="Financial magnitude" options={opts(LEVEL)} /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="financialLikelihood" label="Financial likelihood" options={opts(LIKELIHOOD)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="financialMagnitude" label={tr("Financial magnitude")} options={opts(LEVEL)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormSelect control={control} name="financialLikelihood" label={tr("Financial likelihood")} options={opts(LIKELIHOOD)} /></Grid>
           </Grid>
           {assessment.stakeholders.length > 0 && (
             <>
-              <Typography variant="subtitle2" sx={{ mt: 2 }}>How important stakeholders rate the topic</Typography>
+              <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("How important stakeholders rate the topic")}</Typography>
               <Grid container spacing={2} sx={{ mt: 0.5 }}>
                 {assessment.stakeholders.map((s) => (
                   <Grid key={s.group} size={{ xs: 6, sm: 4 }}>
-                    <FormSelect control={control} name={`ratings.${s.group}`} label={`${GROUPS[s.group]} rating`}
+                    <FormSelect control={control} name={`ratings.${s.group}`} label={`${tr(GROUPS[s.group])} rating`}
                       options={[{ value: '', label: 'Not rated' }, ...opts(LEVEL)]} />
                   </Grid>
                 ))}
@@ -168,8 +169,8 @@ function TopicDialog({ assessment, topic, onClose }) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={a.isLoading || u.isLoading}>{editing ? 'Save topic' : 'Add topic'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={a.isLoading || u.isLoading}>{editing ? tr("Save topic") : tr("Add topic")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -183,7 +184,7 @@ export function MaterialityMatrix({ assessment }) {
   const points = assessment.topicList.map((t) => ({ x: Number(t.position.financial), y: Number(t.position.impactPosition), name: t.topic,
     quadrant: t.position.quadrant }));
   return (
-    <Box sx={{ height: 360 }} role="img" aria-label="Materiality matrix">
+    <Box sx={{ height: 360 }} role="img" aria-label={tr("Materiality matrix")}>
       <ResponsiveContainer>
         <ScatterChart margin={{ top: 10, right: 30, bottom: 30, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -226,17 +227,17 @@ function AssessmentDrawer({ id, onClose, onEdit }) {
   return (
     <Drawer anchor="right" open={Boolean(id)} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', md: 960 } } }}>
       {isLoading || !a ? <LoadingState /> : (
-        <Box sx={{ p: 3 }} role="region" aria-label="Materiality assessment">
+        <Box sx={{ p: 3 }} role="region" aria-label={tr("Materiality assessment")}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>{a.name}</Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                <Chip size="small" color={ASSESSMENT_STATUS[a.status].color} label={ASSESSMENT_STATUS[a.status].label} aria-label="Assessment status" />
+                <Chip size="small" color={ASSESSMENT_STATUS[a.status].color} label={tr(ASSESSMENT_STATUS[a.status].label)} aria-label={tr("Assessment status")} />
                 <Chip size="small" variant="outlined" label={`Reporting year ${a.reportingYear}`} />
-                <Chip size="small" variant="outlined" label={`${a.materialTopics} of ${a.topics} topics material`} aria-label="Material topics" />
+                <Chip size="small" variant="outlined" label={`${a.materialTopics} of ${a.topics} topics material`} aria-label={tr("Material topics")} />
               </Box>
             </Box>
-            <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+            <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
           </Box>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           {a.statusReason && <Alert severity="info" sx={{ mt: 2 }}>{a.statusReason}</Alert>}
@@ -245,26 +246,26 @@ function AssessmentDrawer({ id, onClose, onEdit }) {
               onAction={(x) => (['return', 'reopen'].includes(x) ? setAsking(x) : run(x))} />
             {draft && (
               <Can permission="risk:update">
-                <Button size="small" onClick={() => onEdit(a)}>Edit assessment</Button>
-                <Button size="small" startIcon={<Add />} onClick={() => setEditingTopic(null)}>Add topic</Button>
+                <Button size="small" onClick={() => onEdit(a)}>{tr("Edit assessment")}</Button>
+                <Button size="small" startIcon={<Add />} onClick={() => setEditingTopic(null)}>{tr("Add topic")}</Button>
               </Can>
             )}
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Thresholds: impact {n2(a.impactThreshold)} · financial {n2(a.financialThreshold)} · stakeholder blend {n2(a.stakeholderBlend)}
-            {a.stakeholders.length > 0 && ` · ${a.stakeholders.map((s) => `${GROUPS[s.group]} ${Number(s.weight)}`).join(', ')}`}
+            {tr("Thresholds: impact")} {n2(a.impactThreshold)} {tr("· financial")} {n2(a.financialThreshold)} {tr("· stakeholder blend")} {n2(a.stakeholderBlend)}
+            {a.stakeholders.length > 0 && ` · ${a.stakeholders.map((s) => `${tr(GROUPS[s.group])} ${Number(s.weight)}`).join(', ')}`}
             {a.submittedByName ? ` · Submitted by ${a.submittedByName}` : ''}{a.approvedByName ? ` · Approved by ${a.approvedByName}` : ''}
           </Typography>
           <Divider sx={{ my: 2 }} />
-          {a.topicList.length === 0 ? <EmptyState title="No topics yet">Add the sustainability topics and score them for impact and financial effect.</EmptyState> : (
+          {a.topicList.length === 0 ? <EmptyState title={tr("No topics yet")}>{tr("Add the sustainability topics and score them for impact and financial effect.")}</EmptyState> : (
             <>
               <MaterialityMatrix assessment={a} />
               <TableContainer sx={{ mt: 2 }}>
-                <Table size="small" aria-label="Materiality topics">
+                <Table size="small" aria-label={tr("Materiality topics")}>
                   <TableHead><TableRow>
-                    <TableCell>Topic</TableCell><TableCell>Pillar</TableCell><TableCell align="right">Severity</TableCell><TableCell align="right">Impact</TableCell>
-                    <TableCell align="right">Stakeholders</TableCell><TableCell align="right">Impact position</TableCell><TableCell align="right">Financial</TableCell>
-                    <TableCell>Result</TableCell><TableCell />
+                    <TableCell>{tr("Topic")}</TableCell><TableCell>{tr("Pillar")}</TableCell><TableCell align="right">{tr("Severity")}</TableCell><TableCell align="right">{tr("Impact")}</TableCell>
+                    <TableCell align="right">{tr("Stakeholders")}</TableCell><TableCell align="right">{tr("Impact position")}</TableCell><TableCell align="right">{tr("Financial")}</TableCell>
+                    <TableCell>{tr("Result")}</TableCell><TableCell />
                   </TableRow></TableHead>
                   <TableBody>
                     {a.topicList.map((t) => (
@@ -272,17 +273,17 @@ function AssessmentDrawer({ id, onClose, onEdit }) {
                         <TableCell sx={{ fontWeight: 600 }}>{t.topic}{t.griTopic && <Typography variant="caption" display="block">{t.griTopic}</Typography>}</TableCell>
                         <TableCell>{t.category}</TableCell>
                         <TableCell align="right">{n2(t.position.severity)}</TableCell>
-                        <TableCell align="right">{n2(t.position.impact)}{t.impactType === 'potential' && <Typography variant="caption" display="block">potential</Typography>}</TableCell>
+                        <TableCell align="right">{n2(t.position.impact)}{t.impactType === 'potential' && <Typography variant="caption" display="block">{tr("potential")}</Typography>}</TableCell>
                         <TableCell align="right">{n2(t.position.stakeholder)}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 600 }}>{n2(t.position.impactPosition)}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 600 }}>{n2(t.position.financial)}</TableCell>
-                        <TableCell><Chip size="small" color={QUADRANTS[t.position.quadrant].color} label={QUADRANTS[t.position.quadrant].label} /></TableCell>
+                        <TableCell><Chip size="small" color={QUADRANTS[t.position.quadrant].color} label={tr(QUADRANTS[t.position.quadrant].label)} /></TableCell>
                         <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {draft && (
                             <Can permission="risk:update">
                               <IconButton size="small" aria-label={`Edit ${t.topic}`} onClick={() => setEditingTopic(t)}><Edit fontSize="small" /></IconButton>
                               <IconButton size="small" aria-label={`Remove ${t.topic}`} onClick={async () => {
-                                if (await confirm({ title: 'Remove this topic?', item: t.topic, destructive: true, confirmLabel: 'Remove' })) {
+                                if (await confirm({ title: tr("Remove this topic?"), item: t.topic, destructive: true, confirmLabel: tr("Remove") })) {
                                   try { await removeTopic({ assessmentId: a.id, id: t.id, version: t.version }).unwrap(); } catch (err) { setError(problemText(err)); }
                                 }
                               }}><Delete fontSize="small" /></IconButton>
@@ -295,15 +296,14 @@ function AssessmentDrawer({ id, onClose, onEdit }) {
                 </Table>
               </TableContainer>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                Severity = mean of scale, scope and irremediability; potential impacts × likelihood ÷ 5; financial = magnitude × likelihood ÷ 5;
-                impact position blends in the weighted stakeholder rating. Material when either axis reaches its threshold.
+                {tr("Severity = mean of scale, scope and irremediability; potential impacts × likelihood ÷ 5; financial = magnitude × likelihood ÷ 5; impact position blends in the weighted stakeholder rating. Material when either axis reaches its threshold.")}
               </Typography>
             </>
           )}
         </Box>
       )}
       {asking && (
-        <StepDialog title={ASSESSMENT_ACTIONS[asking]} fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
+        <StepDialog title={tr(ASSESSMENT_ACTIONS[asking])} fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
           onCancel={() => setAsking(null)} onConfirm={(v) => run(asking, v)} />
       )}
       {editingTopic !== undefined && a && <TopicDialog assessment={a} topic={editingTopic} onClose={() => setEditingTopic(undefined)} />}
@@ -322,18 +322,18 @@ export default function MaterialityTab({ initialAssessment }) {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="risk:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New assessment</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New assessment")}</Button>
         </Can>
       </Box>
       <Card>
         {data.length === 0 ? (
-          <CardContent><EmptyState title="No materiality assessments yet">Start one for the reporting year: weight your stakeholder groups, then score each topic.</EmptyState></CardContent>
+          <CardContent><EmptyState title={tr("No materiality assessments yet")}>{tr("Start one for the reporting year: weight your stakeholder groups, then score each topic.")}</EmptyState></CardContent>
         ) : (
           <TableContainer>
-            <Table size="small" aria-label="Materiality assessments" data-sticky-actions>
+            <Table size="small" aria-label={tr("Materiality assessments")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Assessment</TableCell><TableCell>Year</TableCell><TableCell align="right">Topics</TableCell><TableCell align="right">Material</TableCell>
-                <TableCell>Status</TableCell><TableCell />
+                <TableCell>{tr("Assessment")}</TableCell><TableCell>{tr("Year")}</TableCell><TableCell align="right">{tr("Topics")}</TableCell><TableCell align="right">{tr("Material")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((a) => (
@@ -342,8 +342,8 @@ export default function MaterialityTab({ initialAssessment }) {
                     <TableCell>{a.reportingYear}</TableCell>
                     <TableCell align="right">{a.topics}</TableCell>
                     <TableCell align="right">{a.materialTopics}</TableCell>
-                    <TableCell><Chip size="small" color={ASSESSMENT_STATUS[a.status].color} label={ASSESSMENT_STATUS[a.status].label} /></TableCell>
-                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(a.id)} aria-label={`Open ${a.name}`}>Open</Button></TableCell>
+                    <TableCell><Chip size="small" color={ASSESSMENT_STATUS[a.status].color} label={tr(ASSESSMENT_STATUS[a.status].label)} /></TableCell>
+                    <TableCell align="right"><Button size="small" onClick={() => setOpenId(a.id)} aria-label={`Open ${a.name}`}>{tr("Open")}</Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

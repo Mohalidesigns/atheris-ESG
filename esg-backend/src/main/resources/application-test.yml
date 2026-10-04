@@ -15,6 +15,11 @@ esg:
     scanner: sandbox
     rescan:
       enabled: false   # tests drive VirusScanService.runOnce() directly
+  webhooks:
+    dispatch:
+      enabled: false   # tests drive WebhookDispatcher directly
+    allow-http: true
+    allow-private-networks: true   # tests receive webhooks on a local server
   privacy:
     retention:
       enabled: false   # tests call RetentionService.runAll(clock)

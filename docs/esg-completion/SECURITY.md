@@ -24,7 +24,9 @@ any HIGH/CRITICAL vulnerability that has a fix.
 | Secrets | All from the environment / secrets manager; `ProductionSecretsPolicy` refuses to start staging/prod with any committed development value or an AI service without a token. HashiCorp Vault integration itself is a deployment choice (OPEN, D40 (6)) |
 | Security headers | API: CSP `default-src 'none'`, frame-ancestors none, no-referrer, Permissions-Policy, HSTS (HTTPS), nosniff, X-Frame-Options DENY. Web app: CSP `'self'` (styles inline for MUI), frame-ancestors none, nosniff, Referrer-Policy, Permissions-Policy, COOP — set on the preview server and to be copied to the production web server (`securityHeaders` in `vite.config.js`) |
 | Third-party requests | Fonts are self-hosted (no Google Fonts call, so no visitor IP leaves the platform) |
-| API docs | Swagger UI and `/api-docs` off in production |
+| API docs | Swagger UI off in production; since WP-46 `/api-docs` is served in production only to signed-in users with `integrations:read` (D44 (5)) |
+| API keys (WP-46) | Shown once, SHA-256 stored, prefix lookup through a SECURITY DEFINER function; scopes limited to data read/submit, intersected on every request with the creator's current permissions and org scope; expiry and revocation; audited as the creator with the key named; `key_hash` redacted from the audit log |
+| Webhooks (WP-46) | HTTPS to public addresses only — loopback, private, link-local, unique-local and metadata addresses refused at save and before each send, no redirects (SSRF); `ProductionSecretsPolicy` refuses the local allowances in staging/prod; HMAC-SHA256 signatures with timestamp; secrets AES-GCM encrypted and redacted from the audit log; thin payloads (ids and key facts) |
 | NDPA 2023 | Privacy notice per tenant with versioned acknowledgements (shown at sign-in); data subject request register (access, rectification, erasure, objection, portability) with a 30-day due date and overdue flag; self-service "Download my data" (JSON); access/portability export for the DPO; erasure by anonymisation with the legal record kept; per-tenant retention of notifications, message logs, sessions and access-log IPs (nightly) |
 
 ## Pentest preparation
@@ -32,7 +34,7 @@ any HIGH/CRITICAL vulnerability that has a fix.
 Scope for an external test: the web app, `/api/v1/**` (OpenAPI from CI), the public endpoints (whistleblower, supplier
 questionnaire, certificate verification — throttled), file upload/download (virus-scanned, signed URLs), multi-tenant
 isolation (RLS; cross-tenant API tests in `RlsIsolationTest`, `TenancyApiTest`), and the AI service (internal only,
-token-authenticated). Test accounts: seeded local demo users (`db/seed/README.md`) on a dedicated environment.
+token-authenticated). Test accounts: seeded local demo users (`esg-backend/src/main/resources/db/seed/README.md`) on a dedicated environment.
 
 ## Open (D40)
 
