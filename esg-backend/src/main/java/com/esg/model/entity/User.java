@@ -1,16 +1,22 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.time.Instant;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", schema = "auth")
 public class User {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -69,10 +75,10 @@ public class User {
 
     public User() {}
 
-    public String getId() { return this.id; }
-    public void setId(String id) { this.id = id; }
-    public String getTenantId() { return this.tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+    public UUID getId() { return this.id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return this.tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
     public String getEmail() { return this.email; }
     public void setEmail(String email) { this.email = email; }
     public String getPasswordHash() { return this.passwordHash; }
@@ -105,4 +111,6 @@ public class User {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return this.updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    public Long getVersion() { return this.version; }
 }

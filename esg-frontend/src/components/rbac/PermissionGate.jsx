@@ -1,6 +1,8 @@
-import { usePermissions } from '../../features/auth/hooks/usePermissions';
+import Can from './Can';
 
-export const PermissionGate = ({ resource, action, children, fallback = null }) => {
-  const { hasPermission } = usePermissions();
-  return hasPermission(resource, action) ? children : fallback;
-};
+/** Resource/action form of {@link Can}, kept for existing callers. */
+export const PermissionGate = ({ resource, action, children, fallback = null }) => (
+  <Can permission={`${resource}:${action}`} fallback={fallback}>
+    {children}
+  </Can>
+);

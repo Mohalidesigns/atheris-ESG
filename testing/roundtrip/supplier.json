@@ -1,0 +1,186 @@
+{
+  "id": "supplier",
+  "forms": [
+    "Supplier"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/supply-chain/suppliers"
+  },
+  "read": {
+    "path": "/v1/supply-chain/suppliers/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/supply-chain/suppliers/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Supply Chain ESG"
+  },
+  "values": {
+    "name": "RT supplier {u}",
+    "tier": "tier_2",
+    "onboarding": "full",
+    "sectorCode": "C",
+    "countryCode": "NG",
+    "stateRegion": "Lagos",
+    "registrationNumber": "RC 123456",
+    "contactName": "Ngozi Eze",
+    "contactEmail": "rt{u}@example.test",
+    "contactPhone": "+234 803 000 0000",
+    "description": "Steel fabrication",
+    "status": "active",
+    "ownerUserId": "{USER_DIRECTOR}"
+  },
+  "changes": {
+    "name": "RT supplier {u} renamed",
+    "tier": "tier_3",
+    "onboarding": "simplified",
+    "sectorCode": "A",
+    "countryCode": "GH",
+    "stateRegion": "Greater Accra",
+    "registrationNumber": "CS 7890",
+    "contactName": "Kwame Mensah",
+    "contactEmail": "kwame{u}@example.test",
+    "contactPhone": "+233 20 000 0000",
+    "description": "Cassava supplier",
+    "status": "suspended",
+    "ownerUserId": "{USER_MANAGER}"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          256
+        ]
+      },
+      "rule": "max 255"
+    },
+    {
+      "field": "tier",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "onboarding",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "sectorCode",
+      "value": "ZZ",
+      "rule": "catalogue"
+    },
+    {
+      "field": "countryCode",
+      "value": "NGA",
+      "rule": "2 letters"
+    },
+    {
+      "field": "countryCode",
+      "value": "XX",
+      "rule": "catalogue"
+    },
+    {
+      "field": "contactEmail",
+      "value": "not-an-email",
+      "rule": "email"
+    },
+    {
+      "field": "contactEmail",
+      "value": null,
+      "rule": "required for full onboarding"
+    },
+    {
+      "field": "contactPhone",
+      "value": "abc",
+      "rule": "phone"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "status",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "{USER_COMPLIANCE}",
+      "rule": "must hold supply_chain:update"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Supplier name"
+      },
+      "tier": {
+        "label": "Tier",
+        "kind": "select",
+        "display": "Tier 2"
+      },
+      "onboarding": {
+        "label": "Onboarding",
+        "kind": "select",
+        "display": "Full"
+      },
+      "sectorCode": {
+        "label": "Sector (optional)",
+        "kind": "select",
+        "display": "C · Manufacturing"
+      },
+      "countryCode": {
+        "label": "Country",
+        "kind": "select",
+        "display": "Nigeria"
+      },
+      "stateRegion": {
+        "label": "State / region (optional)"
+      },
+      "registrationNumber": {
+        "label": "Registration number (optional)"
+      },
+      "contactName": {
+        "label": "Contact name (optional)"
+      },
+      "contactEmail": {
+        "label": "Contact email"
+      },
+      "contactPhone": {
+        "label": "Contact phone (optional)"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      },
+      "ownerUserId": {
+        "label": "Owner (optional)",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      }
+    }
+  }
+}

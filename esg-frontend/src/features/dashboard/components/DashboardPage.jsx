@@ -1,292 +1,448 @@
+import { useState } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Chip, LinearProgress, Avatar, IconButton,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button,
+  Box, Card, CardActionArea, CardContent, Chip, Grid, LinearProgress, Link, List, ListItem, ListItemText, Table, TableBody,
+  TableCell, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Tooltip as MuiTooltip, Typography,
 } from '@mui/material';
-import {
-  TrendingDown, TrendingUp, Co2, Gavel, Assessment, Warning, ArrowForward,
-  CheckCircle, Schedule, ErrorOutline, MoreVert,
-} from '@mui/icons-material';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
+import { Link as RouterLink } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import Can from '../../../components/rbac/Can';
+import { EmptyState, ErrorState, LoadingState, PageHeader } from '../../../components/states/States';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { useDataPointsQuery } from '../../dataHub/dataHubApi';
+import { useExecutiveDashboardQuery } from '../dashboardApi';
+import { tr, formattingLocale } from '../../../i18n';
 
-const emissionsTrend = [
-  { month: 'Jul', scope1: 420, scope2: 1280, scope3: 2980 },
-  { month: 'Aug', scope1: 405, scope2: 1250, scope3: 2870 },
-  { month: 'Sep', scope1: 398, scope2: 1190, scope3: 2940 },
-  { month: 'Oct', scope1: 415, scope2: 1220, scope3: 2810 },
-  { month: 'Nov', scope1: 380, scope2: 1150, scope3: 2750 },
-  { month: 'Dec', scope1: 365, scope2: 1100, scope3: 2680 },
-  { month: 'Jan', scope1: 352, scope2: 1070, scope3: 2620 },
-  { month: 'Feb', scope1: 340, scope2: 1040, scope3: 2560 },
-  { month: 'Mar', scope1: 328, scope2: 1010, scope3: 2490 },
-];
+// no-mock-gate: config — chart colours per scope
+const SCOPE_COLOURS = { scope1: '#1A365D', scope2Location: '#2D7D46', scope3: '#B7791F' };
+const fmt = (v, digits = 1) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: digits });
+const day = (iso) => new Date(iso).toLocaleDateString(formattingLocale(), { day: 'numeric', month: 'short' });
 
-const complianceData = [
-  { name: 'Complete', value: 52, color: '#2D7D46' },
-  { name: 'In Progress', value: 18, color: '#D4AF37' },
-  { name: 'Gap', value: 15, color: '#C53030' },
-];
-
-const sdgProgress = [
-  { goal: 'SDG 7', name: 'Affordable Energy', progress: 72 },
-  { goal: 'SDG 8', name: 'Decent Work', progress: 85 },
-  { goal: 'SDG 12', name: 'Responsible Consumption', progress: 56 },
-  { goal: 'SDG 13', name: 'Climate Action', progress: 64 },
-  { goal: 'SDG 16', name: 'Peace & Justice', progress: 78 },
-];
-
-const recentActivity = [
-  { action: 'Scope 2 emissions data validated', user: 'Chidi Okafor', time: '12 min ago', status: 'success' },
-  { action: 'ISSB S1 gap analysis completed', user: 'Amina Bello', time: '1 hr ago', status: 'info' },
-  { action: 'Q4 2025 sustainability report submitted', user: 'Adaeze Usman', time: '3 hrs ago', status: 'warning' },
-  { action: 'New supplier ESG questionnaire sent', user: 'Emeka Nwosu', time: '5 hrs ago', status: 'success' },
-  { action: 'Gas flaring anomaly detected - OML 42', user: 'System AI', time: '6 hrs ago', status: 'error' },
-];
-
-const upcomingDeadlines = [
-  { framework: 'SEC Nigeria', deadline: 'Apr 30, 2026', daysLeft: 27, status: 'on-track' },
-  { framework: 'NGX Sustainability', deadline: 'May 15, 2026', daysLeft: 42, status: 'on-track' },
-  { framework: 'CBN NSBP Report', deadline: 'Jun 30, 2026', daysLeft: 88, status: 'at-risk' },
-  { framework: 'ISSB S1 (Voluntary)', deadline: 'Dec 31, 2026', daysLeft: 272, status: 'on-track' },
-];
-
-const statusColors = { success: '#2D7D46', info: '#319795', warning: '#D4AF37', error: '#C53030' };
-
-function KpiCard({ title, value, unit, change, changeLabel, icon, color }) {
-  const isPositive = change > 0;
+function Kpi({ title, value, caption, loading, colour }) {
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-          <Typography variant="body2" sx={{ color: '#718096', fontWeight: 500 }}>{title}</Typography>
-          <Avatar sx={{ width: 36, height: 36, bgcolor: `${color}15`, color: color }}>
-            {icon}
-          </Avatar>
-        </Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          {value}
-          {unit && <Typography component="span" variant="body2" sx={{ color: '#718096', ml: 0.5 }}>{unit}</Typography>}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {isPositive ? <TrendingUp sx={{ fontSize: 16, color: '#2D7D46' }} /> : <TrendingDown sx={{ fontSize: 16, color: change < 0 ? '#2D7D46' : '#C53030' }} />}
-          <Typography variant="caption" sx={{ color: change < 0 ? '#2D7D46' : '#C53030', fontWeight: 600 }}>
-            {Math.abs(change)}%
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#718096' }}>{changeLabel}</Typography>
-        </Box>
+        <Typography variant="caption" color="text.secondary">{title}</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: colour }}>{loading ? '…' : value}</Typography>
+        {caption && <Typography variant="caption" color="text.secondary">{caption}</Typography>}
       </CardContent>
     </Card>
   );
 }
 
+/** F14: both review queues (validation and approval), linking to the Data Hub's Review tab. */
+function PendingReviewKpi() {
+  const toValidate = useDataPointsQuery({ status: 'submitted', page: 0, size: 1 });
+  const toApprove = useDataPointsQuery({ status: 'validated', page: 0, size: 1 });
+  const count = (q) => q.data?.totalElements ?? q.data?.page?.totalElements ?? 0;
+  return (
+    <CardActionArea component={RouterLink} to="/data-hub?tab=review" sx={{ height: '100%', borderRadius: 1 }}
+      aria-label={tr("Data points awaiting review: open the review queue")}>
+      <Kpi title={tr("Data points awaiting review")} value={fmt(count(toValidate) + count(toApprove), 0)}
+        caption={`${fmt(count(toValidate), 0)} to validate · ${fmt(count(toApprove), 0)} to approve`}
+        loading={toValidate.isLoading || toApprove.isLoading} />
+    </CardActionArea>
+  );
+}
+
+function EmissionsTrend({ emissions, granularity, onGranularity }) {
+  const data = emissions.trend.map((p) => ({
+    period: p.period, scope1: Number(p.scope1), scope2Location: Number(p.scope2Location), scope3: Number(p.scope3),
+  }));
+  const empty = data.every((p) => p.scope1 + p.scope2Location + p.scope3 === 0);
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Emissions trend")}</Typography>
+          <ToggleButtonGroup size="small" exclusive value={granularity} onChange={(_, v) => v && onGranularity(v)} aria-label={tr("Trend period")}>
+            <ToggleButton value="year">{tr("Years")}</ToggleButton>
+            <ToggleButton value="quarter">{tr("Quarters")}</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+        <Typography variant="caption" color="text.secondary">{tr("tCO2e, location-based Scope 2; records spanning periods are split by days")}</Typography>
+        {empty ? <EmptyState title={tr("No emissions recorded in these periods")} /> : (
+          <Box sx={{ height: 260, mt: 1 }} aria-label={tr("Emissions trend chart")}>
+            <ResponsiveContainer>
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="period" fontSize={11} />
+                <YAxis fontSize={11} />
+                <Tooltip formatter={(v) => `${fmt(v, 2)} tCO2e`} />
+                <Legend />
+                <Bar dataKey="scope1" name="Scope 1" stackId="s" fill={SCOPE_COLOURS.scope1} />
+                <Bar dataKey="scope2Location" name="Scope 2" stackId="s" fill={SCOPE_COLOURS.scope2Location} />
+                <Bar dataKey="scope3" name="Scope 3" stackId="s" fill={SCOPE_COLOURS.scope3} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        )}
+        <Table size="small" aria-label={tr("Emissions by period")} sx={{ mt: 1 }}>
+          <TableHead><TableRow><TableCell>{tr("Period")}</TableCell><TableCell align="right">{tr("Total tCO2e")}</TableCell></TableRow></TableHead>
+          <TableBody>
+            {emissions.trend.map((p) => (
+              <TableRow key={p.period}><TableCell>{p.period}</TableCell><TableCell align="right">{fmt(p.total, 2)}</TableCell></TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ComplianceScores({ compliance }) {
+  const shown = [...compliance.frameworks].sort((a, b) => Number(b.active) - Number(a.active) || a.code.localeCompare(b.code));
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Compliance by framework,")} {compliance.year}</Typography>
+        <Typography variant="caption" color="text.secondary">{tr("Share of assessable requirements met (partly met counts half), from the gap analysis")}</Typography>
+        <List dense aria-label={tr("Compliance by framework")}>
+          {shown.map((f) => (
+            <ListItem key={f.code} disableGutters sx={{ display: 'block' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                <Link component={RouterLink} to="/compliance?tab=gaps" underline="hover" sx={{ fontWeight: f.active ? 700 : 400, fontSize: '0.85rem' }}>
+                  {f.code}{f.active ? '' : tr(" (not active)")}
+                </Link>
+                <Typography variant="caption">
+                  {fmt(f.completeness)}% · {f.met} {tr("met,")} {f.partial} {tr("partly,")} {f.missing} {tr("missing")}
+                  {f.contentStatus !== 'sme_verified' && f.contentStatus !== 'seeded' ? tr(" · pending SME") : ''}
+                </Typography>
+              </Box>
+              <LinearProgress variant="determinate" value={Math.min(100, Number(f.completeness))} aria-label={`${f.code} ${fmt(f.completeness)}%`}
+                sx={{ height: 6, borderRadius: 3 }} />
+            </ListItem>
+          ))}
+        </List>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SdgAlignment({ sdg }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("SDG alignment,")} {sdg.year}</Typography>
+        <Typography variant="caption" color="text.secondary">{sdg.basis}</Typography>
+        <Grid container spacing={1} sx={{ mt: 1 }} role="list" aria-label={tr("SDG alignment")}>
+          {sdg.goals.map((g) => (
+            <Grid key={g.goal} size={{ xs: 6, sm: 4, md: 3 }} role="listitem">
+              <MuiTooltip describeChild title={g.linkedMetrics === 0 ? tr("No catalogue metric is linked to this goal yet")
+                : `With data: ${g.evidenced.join(', ') || 'none'}. Missing: ${g.missing.join(', ') || 'none'}`}>
+                <Box sx={{ p: 1, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: '100%' }}
+                  aria-label={`SDG ${g.goal} ${g.title}: ${g.linkedMetrics === 0 ? 'no linked metrics' : `${g.evidencedMetrics} of ${g.linkedMetrics} metrics with data`}`}>
+                  <Typography variant="caption" sx={{ fontWeight: 700 }}>{tr("SDG")} {g.goal}</Typography>
+                  <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, minHeight: 28 }}>{tr(g.title)}</Typography>
+                  {g.linkedMetrics === 0 ? <Typography variant="caption" color="text.secondary">{tr("No linked metrics")}</Typography> : (
+                    <>
+                      <LinearProgress variant="determinate" aria-label={`SDG ${g.goal} coverage`} value={Number(g.coveragePct)} sx={{ height: 5, borderRadius: 3, my: 0.5 }} />
+                      <Typography variant="caption" color="text.secondary">{g.evidencedMetrics} / {g.linkedMetrics} {tr("metrics")}</Typography>
+                    </>
+                  )}
+                </Box>
+              </MuiTooltip>
+            </Grid>
+          ))}
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecentActivity({ activity }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Recent activity")}</Typography>
+        {activity.length === 0 ? <EmptyState title={tr("No workflow activity yet")} /> : (
+          <List dense aria-label={tr("Recent activity")}>
+            {activity.map((a) => (
+              <ListItem key={`${a.at}-${a.id}-${a.verb}`} disableGutters>
+                <ListItemText
+                  primary={<><strong>{a.user}</strong> {a.verb} <Link component={RouterLink} to={a.link} underline="hover">{tr(a.title)}</Link></>}
+                  secondary={new Date(a.at).toLocaleString(formattingLocale())} />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function UpcomingFilings({ filings }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Upcoming filings")}</Typography>
+        <Typography variant="caption" color="text.secondary">{tr("Overdue and due in the next 90 days")}</Typography>
+        {filings.length === 0 ? <EmptyState title={tr("Nothing due in the next 90 days")} /> : (
+          <List dense aria-label={tr("Upcoming filings")}>
+            {filings.map((f) => (
+              <ListItem key={f.id} disableGutters secondaryAction={(
+                <Chip size="small" color={f.status === 'overdue' ? 'error' : f.daysLeft <= 14 ? 'warning' : 'default'}
+                  label={f.status === 'overdue' ? `${Math.abs(f.daysLeft)} days overdue` : `in ${f.daysLeft} days`} />
+              )}>
+                <ListItemText sx={{ pr: 14 }}
+                  primary={<Link component={RouterLink} to="/compliance?tab=deadlines" underline="hover">{f.framework} · {tr(f.description)}</Link>}
+                  secondary={`${day(f.deadlineDate)}${f.owner ? ` · ${f.owner}` : ''}`} />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function GovernanceCard({ governance }) {
+  const pct = (v) => (v == null ? '—' : `${fmt(v)}%`);
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Governance")}</Typography>
+        <Table size="small" aria-label={tr("Governance summary")}>
+          <TableBody>
+            <TableRow><TableCell>{tr("Directors")}</TableCell><TableCell align="right">{governance.directors}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Independent")}</TableCell><TableCell align="right">{pct(governance.independentPct)}</TableCell></TableRow>
+            <TableRow><TableCell>{tr("Women on the board")}</TableCell><TableCell align="right">{pct(governance.femalePct)}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/governance?tab=code-check" underline="hover">{tr("Governance code checks")}</Link></TableCell>
+              <TableCell align="right">{governance.codeChecksPassed} {tr("met ·")} {governance.codeChecksFailed} {tr("not met")}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/governance?tab=policies" underline="hover">{tr("Published policies")}</Link></TableCell>
+              <TableCell align="right">{governance.policiesPublished}{governance.policiesDueForReview ? ` · ${governance.policiesDueForReview} due for review` : ''}</TableCell>
+            </TableRow>
+            {governance.openCases != null && (
+              <TableRow><TableCell>{tr("Open whistleblower cases")}</TableCell><TableCell align="right">{governance.openCases}</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SocialCard({ social }) {
+  const pct = (v) => (v == null ? '—' : `${fmt(v)}%`);
+  const rate = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Social")}</Typography>
+        <Table size="small" aria-label={tr("Social summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=workforce" underline="hover">{tr("Headcount (approved)")}</Link></TableCell>
+              <TableCell align="right">{social.headcount ?? '—'}</TableCell>
+            </TableRow>
+            <TableRow><TableCell>{tr("Women · in management")}</TableCell><TableCell align="right">{pct(social.womenPct)} · {pct(social.womenInManagementPct)}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=safety" underline="hover">{tr("LTIFR · TRIR")}</Link></TableCell>
+              <TableCell align="right">{rate(social.ltifr)} · {rate(social.trir)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=grievances" underline="hover">{tr("Open grievances")}</Link></TableCell>
+              <TableCell align="right">{social.openGrievances}{social.overdueGrievances ? ` · ${social.overdueGrievances} overdue` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/social?tab=community" underline="hover">{tr("Community investment")}</Link></TableCell>
+              <TableCell align="right">{social.baseCurrency} {fmt(social.communityInvestment)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RiskCard({ risk }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Risk & materiality")}</Typography>
+        <Table size="small" aria-label={tr("Risk summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=materiality" underline="hover">{tr("Material topics")}</Link></TableCell>
+              <TableCell align="right">{risk.materialityYear ? `${risk.materialTopics} (${risk.materialityYear})` : tr("no approved assessment")}</TableCell>
+            </TableRow>
+            {risk.topMaterial.length > 0 && <TableRow><TableCell colSpan={2}>{risk.topMaterial.join(' · ')}</TableCell></TableRow>}
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=register" underline="hover">{tr("Open risks")}</Link></TableCell>
+              <TableCell align="right">{risk.openRisks} · {risk.risksByBand.very_high} {tr("very high ·")} {risk.risksByBand.high} {tr("high")}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/risk?tab=climate" underline="hover">{tr("Sites at high physical risk")}</Link></TableCell>
+              <TableCell align="right">{risk.physicalHighOrAbove}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SupplyCard({ supply }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Supply chain")}</Typography>
+        <Table size="small" aria-label={tr("Supply chain summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=suppliers" underline="hover">{tr("Suppliers assessed")}</Link></TableCell>
+              <TableCell align="right">{supply.assessed} {tr("of")} {supply.suppliers}{supply.averageScore != null ? ` · average ${fmt(supply.averageScore)}` : ''}</TableCell>
+            </TableRow>
+            <TableRow><TableCell>{tr("High-risk suppliers")}</TableCell><TableCell align="right">{supply.byRisk.high}</TableCell></TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=actions" underline="hover">{tr("Open corrective actions")}</Link></TableCell>
+              <TableCell align="right">{supply.openActions}{supply.overdueActions ? ` · ${supply.overdueActions} overdue` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/supply-chain?tab=spend" underline="hover">{tr("Scope 3 Cat 1 from spend")}</Link></TableCell>
+              <TableCell align="right">{fmt(supply.scope3Cat1Tonnes)} {tr("tCO2e")}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnalyticsCard({ analytics: a }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Analytics")}</Typography>
+        <Table size="small" aria-label={tr("Analytics summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=maturity" underline="hover">{tr("ESG maturity")}</Link></TableCell>
+              <TableCell align="right">{fmt(a.maturity)} {tr("of 5 ·")} {a.maturityLevelName}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=anomalies" underline="hover">{tr("Anomaly flags to explain")}</Link></TableCell>
+              <TableCell align="right">{a.anomaliesOpen}{a.anomaliesExplained ? ` · ${a.anomaliesExplained} to review` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/analytics?tab=kpis" underline="hover">{tr("KPIs on track")}</Link></TableCell>
+              <TableCell align="right">{a.kpisWithTarget ? `${a.kpisOnTrack} of ${a.kpisWithTarget}` : '—'}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CarbonMarketCard({ market: m }) {
+  const o = m.offsetting;
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Carbon credits")}</Typography>
+        <Table size="small" aria-label={tr("Carbon market summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/carbon-market?tab=credits" underline="hover">{tr("Credits held")}</Link></TableCell>
+              <TableCell align="right">{fmt(m.held)} · {fmt(m.available)} {tr("available")}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/carbon-market?tab=retirements" underline="hover">{tr("Retired against")} {m.year}</Link></TableCell>
+              <TableCell align="right">{fmt(m.retiredThisYear)} {tr("tCO2e")}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>{tr("Offset share of Scope 1+2")}</TableCell>
+              <TableCell align="right">{o.offsetShare == null ? '—' : `${fmt(o.offsetShare)}%`}{o.overReliance ? tr(" · over-reliance") : ''}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TrainingCard({ training: t }) {
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Training")}</Typography>
+        <Table size="small" aria-label={tr("Training summary")}>
+          <TableBody>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/training?tab=team" underline="hover">{tr("Hours completed in")} {t.year}</Link></TableCell>
+              <TableCell align="right">{fmt(t.hours)}{t.hoursPerEmployee == null ? '' : ` · ${fmt(t.hoursPerEmployee)} per person`}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>{tr("Completion rate")}</TableCell>
+              <TableCell align="right">{t.completionRate == null ? '—' : `${fmt(t.completionRate)}%`}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><Link component={RouterLink} to="/training?tab=certificates" underline="hover">{tr("Certificates issued")}</Link></TableCell>
+              <TableCell align="right">{t.certificatesIssued}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Executive dashboard (WP-24, D29): every figure is live and in the user's organisation scope; cards follow permissions. */
 export default function DashboardPage() {
   const { user } = useAuth();
-
+  const [granularity, setGranularity] = useState('year');
+  const { data, isLoading, isError, error, refetch } = useExecutiveDashboardQuery(granularity);
+  const e = data?.emissions;
+  const activeAverage = data?.compliance?.averageActive;
+  const due = data?.filings?.filter((f) => f.daysLeft <= 30 || f.status === 'overdue').length;
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Welcome back, {user?.firstName}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            ESG Performance Overview — Q1 2026 Reporting Period
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" size="small">Export Dashboard</Button>
-          <Button variant="contained" size="small" sx={{ bgcolor: '#2D7D46' }}>Generate Report</Button>
-        </Box>
-      </Box>
-
-      {/* KPI Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KpiCard
-            title="Total Emissions (tCO2e)"
-            value="14,001"
-            change={-4.2}
-            changeLabel="vs last quarter"
-            icon={<Co2 sx={{ fontSize: 20 }} />}
-            color="#1A365D"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KpiCard
-            title="Compliance Score"
-            value="61.2%"
-            change={8.5}
-            changeLabel="vs last quarter"
-            icon={<Gavel sx={{ fontSize: 20 }} />}
-            color="#2D7D46"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KpiCard
-            title="ESG Risk Score"
-            value="Medium"
-            unit=""
-            change={-12}
-            changeLabel="risk reduction"
-            icon={<Warning sx={{ fontSize: 20 }} />}
-            color="#D4AF37"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KpiCard
-            title="Data Quality Score"
-            value="0.82"
-            change={5.1}
-            changeLabel="improvement"
-            icon={<Assessment sx={{ fontSize: 20 }} />}
-            color="#319795"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Charts Row */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        {/* Emissions Trend */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>Carbon Emissions Trend</Typography>
-                  <Typography variant="caption" color="text.secondary">Monthly Scope 1, 2 & 3 emissions (tCO2e)</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1.5 }}>
-                  <Chip size="small" sx={{ bgcolor: '#1A365D', color: '#fff', fontSize: '0.65rem' }} label="Scope 1" />
-                  <Chip size="small" sx={{ bgcolor: '#2D7D46', color: '#fff', fontSize: '0.65rem' }} label="Scope 2" />
-                  <Chip size="small" sx={{ bgcolor: '#D4AF37', color: '#fff', fontSize: '0.65rem' }} label="Scope 3" />
-                </Box>
-              </Box>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={emissionsTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#718096' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#718096' }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="scope3" stackId="1" stroke="#D4AF37" fill="#D4AF3730" />
-                  <Area type="monotone" dataKey="scope2" stackId="1" stroke="#2D7D46" fill="#2D7D4630" />
-                  <Area type="monotone" dataKey="scope1" stackId="1" stroke="#1A365D" fill="#1A365D30" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Compliance Pie */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>ISSB S1 Compliance</Typography>
-              <Typography variant="caption" color="text.secondary">85 total requirements</Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                <ResponsiveContainer width={180} height={180}>
-                  <PieChart>
-                    <Pie data={complianceData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" strokeWidth={0}>
-                      {complianceData.map((entry, idx) => (
-                        <Cell key={idx} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-                {complianceData.map((item) => (
-                  <Box key={item.name} sx={{ textAlign: 'center' }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color, mx: 'auto', mb: 0.5 }} />
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>{item.value}</Typography>
-                    <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.6rem' }}>{item.name}</Typography>
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Bottom Section */}
-      <Grid container spacing={2.5}>
-        {/* SDG Progress */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>SDG Alignment Progress</Typography>
-              {sdgProgress.map((sdg) => (
-                <Box key={sdg.goal} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      <Typography component="span" sx={{ color: '#1A365D', fontWeight: 700, mr: 0.5 }}>{sdg.goal}</Typography>
-                      {sdg.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>{sdg.progress}%</Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate" value={sdg.progress}
-                    sx={{
-                      height: 6, borderRadius: 3,
-                      bgcolor: '#E2E8F0',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 3,
-                        bgcolor: sdg.progress > 70 ? '#2D7D46' : sdg.progress > 50 ? '#D4AF37' : '#C53030',
-                      },
-                    }}
-                  />
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Recent Activity</Typography>
-              {recentActivity.map((item, idx) => (
-                <Box key={idx} sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'flex-start' }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusColors[item.status], mt: 0.8, flexShrink: 0 }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.4 }}>{item.action}</Typography>
-                    <Typography variant="caption" color="text.secondary">{item.user} &middot; {item.time}</Typography>
-                  </Box>
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Upcoming Deadlines */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Compliance Deadlines</Typography>
-              {upcomingDeadlines.map((dl) => (
-                <Box key={dl.framework} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, p: 1.5, borderRadius: 1.5, bgcolor: '#F7FAFC' }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{dl.framework}</Typography>
-                    <Typography variant="caption" color="text.secondary">{dl.deadline}</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Chip
-                      size="small"
-                      label={`${dl.daysLeft}d left`}
-                      sx={{
-                        bgcolor: dl.status === 'on-track' ? '#E6F4EA' : '#FEF3E2',
-                        color: dl.status === 'on-track' ? '#2D7D46' : '#DD6B20',
-                        fontWeight: 600, fontSize: '0.65rem',
-                      }}
-                    />
-                  </Box>
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <PageHeader title={`Welcome${user?.firstName ? `, ${user.firstName}` : ''}`} subtitle={user?.tenantName} />
+      {isError && <ErrorState error={error} onRetry={refetch} />}
+      {isLoading && <LoadingState />}
+      {data && (
+        <>
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            {e && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Kpi title={`Emissions ${data.year} so far`} value={fmt(e.currentYear)}
+                  caption={e.changePct == null ? tr("tCO2e · no previous-year data to compare")
+                    : `tCO2e · ${Number(e.changePct) > 0 ? '+' : ''}${fmt(e.changePct)}% on ${data.year - 1} (${fmt(e.previousYear)})`} />
+              </Grid>
+            )}
+            <Can permission="data_points:read"><Grid size={{ xs: 12, sm: 6, md: 3 }}><PendingReviewKpi /></Grid></Can>
+            {data.compliance && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Kpi title={tr("Compliance (active frameworks)")} value={activeAverage == null ? '—' : `${fmt(activeAverage)}%`}
+                  caption={activeAverage == null ? tr("Choose your frameworks under Compliance") : `average of ${data.compliance.frameworks.filter((f) => f.active).length} frameworks, ${data.compliance.year}`} />
+              </Grid>
+            )}
+            {data.filings && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Kpi title={tr("Filings due within 30 days")} value={fmt(due, 0)} colour={due ? '#C05621' : undefined}
+                  caption={`${data.filings.length} overdue or due in 90 days`} />
+              </Grid>
+            )}
+          </Grid>
+          <Grid container spacing={2}>
+            {e && <Grid size={{ xs: 12, lg: 7 }}><EmissionsTrend emissions={e} granularity={granularity} onGranularity={setGranularity} /></Grid>}
+            {data.compliance && <Grid size={{ xs: 12, lg: 5 }}><ComplianceScores compliance={data.compliance} /></Grid>}
+            {data.sdg && <Grid size={12}><SdgAlignment sdg={data.sdg} /></Grid>}
+            {data.activity && <Grid size={{ xs: 12, md: 7 }}><RecentActivity activity={data.activity} /></Grid>}
+            {data.filings && <Grid size={{ xs: 12, md: 5 }}><UpcomingFilings filings={data.filings} /></Grid>}
+            {data.governance && <Grid size={{ xs: 12, md: 5 }}><GovernanceCard governance={data.governance} /></Grid>}
+            {data.social && <Grid size={{ xs: 12, md: 5 }}><SocialCard social={data.social} /></Grid>}
+            {data.risk && <Grid size={{ xs: 12, md: 5 }}><RiskCard risk={data.risk} /></Grid>}
+            {data.supplyChain && <Grid size={{ xs: 12, md: 5 }}><SupplyCard supply={data.supplyChain} /></Grid>}
+            {data.analytics && <Grid size={{ xs: 12, md: 5 }}><AnalyticsCard analytics={data.analytics} /></Grid>}
+            {data.carbonMarket && <Grid size={{ xs: 12, md: 5 }}><CarbonMarketCard market={data.carbonMarket} /></Grid>}
+            {data.training && <Grid size={{ xs: 12, md: 5 }}><TrainingCard training={data.training} /></Grid>}
+          </Grid>
+        </>
+      )}
     </Box>
   );
 }

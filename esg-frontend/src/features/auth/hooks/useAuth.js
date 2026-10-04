@@ -1,29 +1,25 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { loginAsync, loginDemo, logout as logoutAction } from '../slices/authSlice';
+import { useSelector } from 'react-redux';
+import { useLogoutMutation } from '../authApi';
 
+/**
+ * Current session and permission checks. Permissions come from the server (login/refresh/me); the UI uses them
+ * only to hide what the user can't do — the API enforces the same rules on every request.
+ */
 export const useAuth = () => {
-  const dispatch = useDispatch();
-  const { user, isAuthenticated, loading, error } = useSelector(state => state.auth);
+  const { user, status } = useSelector((state) => state.auth);
+  const [logoutMutation] = useLogoutMutation();
+  const permissions = user?.permissions ?? [];
 
-  const login = (email, password) => {
-    if (email && password) {
-      return dispatch(loginAsync({ email, password }));
-    }
-    return dispatch(loginDemo());
+  const can = (permission) => permissions.includes(permission);
+  const canAny = (list) => !list || list.length === 0 || list.some(can);
+
+  return {
+    user,
+    status,
+    isAuthenticated: status === 'authenticated',
+    can,
+    canAny,
+    hasPermission: (resource, action) => can(`${resource}:${action}`),
+    logout: () => logoutMutation(),
   };
-  const logout = () => dispatch(logoutAction());
-
-  const hasPermission = (resource, action) => {
-    if (!user) return false;
-    return user.permissions.includes(`${resource}:${action}`);
-  };
-
-  const hasAllPermissions = (perms) => {
-    if (!perms || perms.length === 0) return true;
-    return perms.every(p => user?.permissions?.includes(p));
-  };
-
-  const hasRole = (role) => user?.role === role;
-
-  return { user, isAuthenticated, loading, error, login, logout, hasPermission, hasAllPermissions, hasRole };
 };

@@ -1,35 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '../../features/auth/slices/authSlice';
+import { screen } from '@testing-library/react';
 import { PermissionGate } from './PermissionGate';
+import Can from './Can';
+import { anonymous, authenticated, renderWithStore } from '../../test/renderWithStore';
 
-const renderWithUser = (user, ui) => {
-  const store = configureStore({
-    reducer: { auth: authReducer },
-    preloadedState: { auth: { user, token: user ? 't' : null, isAuthenticated: !!user, loading: false, error: null } },
-  });
-  return render(<Provider store={store}>{ui}</Provider>);
-};
-
-describe('PermissionGate', () => {
+describe('Can / PermissionGate', () => {
   it('renders children when the user has the permission', () => {
-    renderWithUser({ permissions: ['reports:create'] },
-      <PermissionGate resource="reports" action="create"><span>allowed</span></PermissionGate>);
+    renderWithStore(<PermissionGate resource="reports" action="create"><span>allowed</span></PermissionGate>,
+      { preloadedState: authenticated(['reports:create']) });
     expect(screen.getByText('allowed')).toBeInTheDocument();
   });
 
   it('renders the fallback when the permission is missing', () => {
-    renderWithUser({ permissions: ['reports:read'] },
-      <PermissionGate resource="reports" action="create" fallback={<span>denied</span>}><span>allowed</span></PermissionGate>);
+    renderWithStore(<Can permission="reports:create" fallback={<span>denied</span>}><span>allowed</span></Can>,
+      { preloadedState: authenticated(['reports:read']) });
     expect(screen.queryByText('allowed')).not.toBeInTheDocument();
     expect(screen.getByText('denied')).toBeInTheDocument();
   });
 
+  it('anyOf passes with any one permission', () => {
+    renderWithStore(<Can anyOf={['users:read', 'roles:read']}><span>admin</span></Can>,
+      { preloadedState: authenticated(['roles:read']) });
+    expect(screen.getByText('admin')).toBeInTheDocument();
+  });
+
   it('renders nothing when no user is logged in', () => {
-    const { container } = renderWithUser(null,
-      <PermissionGate resource="reports" action="create"><span>allowed</span></PermissionGate>);
-    expect(container).toBeEmptyDOMElement();
+    renderWithStore(<Can permission="reports:create"><span>allowed</span></Can>, { preloadedState: anonymous });
+    expect(screen.queryByText('allowed')).not.toBeInTheDocument();
   });
 });

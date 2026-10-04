@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       ESG_OWNER_PASSWORD: ${ESG_OWNER_PASSWORD:-esg_owner_local}
+      ESG_APP_PASSWORD: ${ESG_APP_PASSWORD:-esg_app_local}
     ports:
       - "${ESG_PG_PORT:-5433}:5432"
     volumes:

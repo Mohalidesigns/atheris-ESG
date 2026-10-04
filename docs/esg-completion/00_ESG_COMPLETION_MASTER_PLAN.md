@@ -4,7 +4,7 @@
 
 | Item | Value |
 |---|---|
-| Product | Atheris ESG (working name in docs: "ESG Pro") |
+| Product | Atheris ESG (earlier working name "ESG Pro"; renamed in the UI, 4 Oct 2026) |
 | Source documents | `ESG_Solution_BRD_Nigeria_Africa.docx` (v1.0, 31 Mar 2026) · `ESG_Solution_TRD_Spring_Boot_React_PostgreSQL.docx` (v1.0, 31 Mar 2026) · `ESG_Pro_Global_Competitive_Benchmark.xlsx` (Apr 2026) |
 | Governing spec | **TRD v1.0** (Spring Boot 3.3 / Java 21 · React 18 · PostgreSQL 16). Where BRD §8 says Node.js/Python backend, the TRD overrides it. |
 | Date | 1 October 2026 |

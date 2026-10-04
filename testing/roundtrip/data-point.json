@@ -1,0 +1,181 @@
+{
+  "id": "data-point",
+  "forms": [
+    "Data Collection Form"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/data/points"
+  },
+  "read": {
+    "path": "/v1/data/points/{id}"
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "orgId": "{ORG_SITE_1}",
+    "metricKey": "diesel_litres",
+    "subCategory": "Generator fuel",
+    "numericValue": 1234.5,
+    "reportingPeriodStart": "{yyyy}-04-01",
+    "reportingPeriodEnd": "{yyyy}-06-30",
+    "sourceId": "{SOURCE_A}",
+    "evidenceFileIds": [
+      "{FILE_A}"
+    ],
+    "notes": "Read from meter G-2 on site",
+    "ownerUserId": "{USER_DIRECTOR}"
+  },
+  "derived": {
+    "category": "E",
+    "unit": "L",
+    "validationStatus": "draft"
+  },
+  "invalid": [
+    {
+      "field": "metricKey",
+      "value": "made_up_metric",
+      "rule": "catalogue metric"
+    },
+    {
+      "field": "metricKey",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "numericValue",
+      "value": -5,
+      "rule": ">= 0 for this metric"
+    },
+    {
+      "field": "numericValue",
+      "value": 1.1234567,
+      "rule": "6 decimals"
+    },
+    {
+      "field": "subCategory",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "reportingPeriodStart",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "2026-03-31",
+      "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "sourceId",
+      "value": "99999999-9999-4999-8999-999999999999",
+      "rule": "active data source"
+    },
+    {
+      "field": "evidenceFileIds",
+      "value": [
+        "99999999-9999-4999-8999-999999999999"
+      ],
+      "rule": "existing file"
+    },
+    {
+      "field": "currency",
+      "value": "USD",
+      "rule": "currency metrics only"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "{yyyy}-03-31",
+      "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "b0000000-0000-4000-8000-0000000000b1",
+      "rule": "active user of the tenant"
+    }
+  ],
+  "update": {
+    "method": "PUT",
+    "path": "/v1/data/points/{id}",
+    "versioned": true
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "metricKey": "petrol_litres",
+    "subCategory": "Vehicles",
+    "numericValue": 99.25,
+    "reportingPeriodStart": "{yyyy}-04-02",
+    "reportingPeriodEnd": "{yyyy}-06-29",
+    "sourceId": null,
+    "evidenceFileIds": [],
+    "notes": "Corrected after the supplier invoice",
+    "ownerUserId": "{USER_COMPLIANCE}"
+  },
+  "ui": {
+    "fields": {
+      "metricKey": {
+        "label": "Metric",
+        "display": "Diesel consumed (L)"
+      },
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 1"
+      },
+      "numericValue": {
+        "label": "Value",
+        "display": "1234.5"
+      },
+      "subCategory": {
+        "label": "Sub-category (optional)"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "sourceId": {
+        "label": "Source system (optional)",
+        "kind": "select",
+        "display": "Manual"
+      },
+      "evidenceFileIds": {
+        "kind": "text",
+        "display": "evidence.pdf"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      },
+      "ownerUserId": {
+        "label": "Responsible person",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      }
+    }
+  }
+}

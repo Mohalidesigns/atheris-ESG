@@ -1,0 +1,91 @@
+{
+  "id": "reporting-period",
+  "forms": [
+    "Admin: reporting period"
+  ],
+  "actor": "TENANT_ADMIN",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/reporting-periods"
+  },
+  "read": {
+    "path": "/v1/reporting-periods",
+    "list": true
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/reporting-periods/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "name": "RT period {u}",
+    "periodType": "monthly",
+    "startDate": "{yyyy}-03-01",
+    "endDate": "{yyyy}-03-31"
+  },
+  "changes": {
+    "name": "RT period {u} renamed",
+    "periodType": "quarterly",
+    "startDate": "{yyyy}-03-02",
+    "endDate": "{yyyy}-03-30"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "name",
+      "value": {
+        "$repeat": [
+          "x",
+          101
+        ]
+      },
+      "rule": "max 100"
+    },
+    {
+      "field": "periodType",
+      "value": "weekly",
+      "rule": "enum"
+    },
+    {
+      "field": "startDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "endDate",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "endDate",
+      "value": "{yyyy}-02-01",
+      "rule": "end >= start (cross-field)"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Name"
+      },
+      "periodType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Monthly"
+      },
+      "startDate": {
+        "label": "Start"
+      },
+      "endDate": {
+        "label": "End"
+      }
+    }
+  }
+}
