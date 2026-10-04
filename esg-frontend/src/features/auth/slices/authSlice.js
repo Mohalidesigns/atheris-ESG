@@ -26,6 +26,10 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.mfa = null;
     },
+    /** The signed-in user's own settings changed (e.g. their language, WP-45). */
+    userUpdated(state, action) {
+      if (state.user) state.user = { ...state.user, ...action.payload };
+    },
     mfaChallenged(state, action) {
       state.mfa = { token: action.payload.mfaToken, setupRequired: Boolean(action.payload.mfaSetupRequired) };
     },
@@ -38,5 +42,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { sessionStarted, offlineSessionStarted, mfaChallenged, mfaCancelled, loggedOut } = authSlice.actions;
+export const { sessionStarted, offlineSessionStarted, userUpdated, mfaChallenged, mfaCancelled, loggedOut } = authSlice.actions;
 export default authSlice.reducer;

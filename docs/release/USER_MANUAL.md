@@ -194,6 +194,17 @@ Everything can be reached with the keyboard: **Tab** moves between controls, **E
 **Escape** closes menus, drawers and dialogs. Buttons that are disabled for a reason (for example segregation of duties)
 explain the reason when you hover or focus them.
 
+### 1.11 Language
+
+Choose the language with the **language** button on the sign-in page, or in the account menu once signed in:
+English, Français, Português, العربية (Arabic), Kiswahili, Hausa or Yorùbá. Signed in, your choice is saved on your
+account and used on every device; administrators can also set it on the user form. Arabic is shown right to left.
+Numbers, amounts and dates follow the language you choose.
+
+The translations other than English are **drafts** that a professional translator hasn't reviewed yet — the list marks
+them "Draft translation". Technical terms (ESG, Scope 1/2/3, tCO2e, GRI, API, Data Hub) stay in English, and so do
+messages from the server, names from the catalogue (metrics, frameworks, factors) and generated reports.
+
 ---
 
 ## 2. Dashboard

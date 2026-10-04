@@ -6,6 +6,7 @@ import { useMetricsQuery } from '../../reference/referenceApi';
 import { useSyncOfflineMutation } from '../offlineApi';
 import { cacheList, deviceId, outboxFor, rememberProfile, syncOutbox } from '../outbox';
 import { canCapture } from '../hooks';
+import { tr } from '../../../i18n';
 
 const EVERY_MINUTE = 60_000;
 
@@ -42,7 +43,7 @@ export default function OfflineAgent() {
         if (!navigator.onLine) return;
         const waiting = (await outboxFor(user)).filter((o) => o.status === 'pending');
         if (!waiting.length) {
-          if (announce) dispatch(toastShown({ message: 'Nothing waiting to sync' }));
+          if (announce) dispatch(toastShown({ message: tr("Nothing waiting to sync") }));
           return;
         }
         const result = await syncOutbox(user, await deviceId(), (body) => send(body).unwrap());
@@ -54,7 +55,7 @@ export default function OfflineAgent() {
         if (parts.length) {
           dispatch(toastShown({ message: parts.join(' · '), severity: result.conflicts || result.rejected ? 'warning' : 'success' }));
         } else if (result.offline && announce) {
-          dispatch(toastShown({ message: "Can't reach the server — your records stay on this device", severity: 'warning' }));
+          dispatch(toastShown({ message: tr("Can't reach the server — your records stay on this device"), severity: 'warning' }));
         }
       } catch {
         // IndexedDB unavailable (private mode): nothing was kept offline, so there is nothing to send.

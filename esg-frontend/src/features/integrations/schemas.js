@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 // Mirrors IntegrationDtos (WP-46, D44): the same limits and messages as the server's Bean Validation.
 
@@ -69,4 +70,4 @@ export const statusSchema = z.object({
   note: z.string().trim().max(1000, 'At most 1000 characters'),
 }).refine((v) => v.status !== 'declined' || v.note.length > 0, { path: ['note'], message: 'Say why the request is declined' });
 
-export const when = (iso) => (iso ? new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+export const when = (iso) => (iso ? new Date(iso).toLocaleString(formattingLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—');

@@ -4,6 +4,7 @@ import { CircularProgress, Box, Typography } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { useRestoreSessionMutation } from '../features/auth/authApi';
 import { allNavItems, firstAllowedPath, moduleEnabled } from './navigation';
+import { tr } from '../i18n';
 
 const LoginForm = lazy(() => import('../features/auth/components/LoginForm'));
 // WP-53: the app shell loads after sign-in, so the sign-in page downloads only what it needs (3G target).
@@ -43,8 +44,8 @@ const Loading = () => (
 export function Forbidden() {
   return (
     <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>You don't have access to this page</Typography>
-      <Typography color="text.secondary">Ask your administrator if you need it.</Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{tr("You don't have access to this page")}</Typography>
+      <Typography color="text.secondary">{tr("Ask your administrator if you need it.")}</Typography>
     </Box>
   );
 }
@@ -53,8 +54,8 @@ export function Forbidden() {
 export function NotInPlan() {
   return (
     <Box sx={{ textAlign: 'center', py: 10 }} role="alert">
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>This module isn't part of your subscription</Typography>
-      <Typography color="text.secondary">Your administrator can see your plan under Administration → Subscription.</Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{tr("This module isn't part of your subscription")}</Typography>
+      <Typography color="text.secondary">{tr("Your administrator can see your plan under Administration → Subscription.")}</Typography>
     </Box>
   );
 }

@@ -1,0 +1,31 @@
+{
+  "en": {
+    "status": "source",
+    "coverage": 1,
+    "texts": 2850
+  },
+  "fr": {
+    "status": "draft",
+    "coverage": 1
+  },
+  "pt": {
+    "status": "draft",
+    "coverage": 1
+  },
+  "ar": {
+    "status": "draft",
+    "coverage": 1
+  },
+  "sw": {
+    "status": "draft",
+    "coverage": 1
+  },
+  "ha": {
+    "status": "draft",
+    "coverage": 1
+  },
+  "yo": {
+    "status": "draft",
+    "coverage": 1
+  }
+}

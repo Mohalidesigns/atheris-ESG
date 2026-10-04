@@ -5,6 +5,7 @@ import Can from '../../../components/rbac/Can';
 import { problemText, saveBlob } from '../../../services/download';
 import { useImportTemplateMutation } from '../../dataHub/dataHubApi';
 import { useApiDescriptionMutation } from '../integrationsApi';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — the source templates offered (ImportService.SOURCE_TEMPLATES)
 const TEMPLATES = [
@@ -36,8 +37,7 @@ export function TemplatesPanel() {
   return (
     <Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Export from your system into a template, fill in the value column and upload it under Data Hub › Import. Each row becomes a draft
-        data point checked by the same rules as the form.
+        {tr("Export from your system into a template, fill in the value column and upload it under Data Hub › Import. Each row becomes a draft data point checked by the same rules as the form.")}
       </Typography>
       {failure && <Alert severity="error" sx={{ mb: 2 }}>{failure}</Alert>}
       <Grid container spacing={2}>
@@ -45,11 +45,11 @@ export function TemplatesPanel() {
           <Grid key={t.kind} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
-                <Typography variant="subtitle2" component="h3" sx={{ fontWeight: 700 }}>{t.label}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>From: {t.from}</Typography>
-                <Can permission="data_points:create" fallback={<Typography variant="caption">Needs permission to enter data points</Typography>}>
+                <Typography variant="subtitle2" component="h3" sx={{ fontWeight: 700 }}>{tr(t.label)}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{tr("From:")} {t.from}</Typography>
+                <Can permission="data_points:create" fallback={<Typography variant="caption">{tr("Needs permission to enter data points")}</Typography>}>
                   <Button size="small" startIcon={<Download />} onClick={() => download(t.kind)} aria-label={`Download ${t.label} template`}>
-                    Download
+                    {tr("Download")}
                   </Button>
                 </Can>
               </CardContent>
@@ -77,36 +77,34 @@ export default function DeveloperPanel() {
     <Box sx={{ maxWidth: 900 }}>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
         <Typography variant="body2" sx={{ flex: 1 }}>
-          Every screen in Atheris ESG uses the same REST API. The full description of every endpoint is an OpenAPI 3 file you can load into
-          Postman, Insomnia or a code generator.
+          {tr("Every screen in Atheris ESG uses the same REST API. The full description of every endpoint is an OpenAPI 3 file you can load into Postman, Insomnia or a code generator.")}
         </Typography>
-        <Button variant="outlined" size="small" startIcon={<Download />} onClick={downloadSpec}>Download API description</Button>
+        <Button variant="outlined" size="small" startIcon={<Download />} onClick={downloadSpec}>{tr("Download API description")}</Button>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }}>{failure}</Alert>}
 
-      <Typography variant="h6" component="h2">1. Authenticate</Typography>
-      <Typography variant="body2" sx={{ mb: 1 }}>Create an API key under API keys and send it with every request:</Typography>
+      <Typography variant="h6" component="h2">{tr("1. Authenticate")}</Typography>
+      <Typography variant="body2" sx={{ mb: 1 }}>{tr("Create an API key under API keys and send it with every request:")}</Typography>
       <Code>{`curl ${base}/data/points?size=5 \\\n  -H "X-API-Key: atk_xxxxxxxx_…"`}</Code>
 
-      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>2. Send data</Typography>
+      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>{tr("2. Send data")}</Typography>
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Readings arrive as drafts and go through the same checks as the form (metric catalogue, units, locked periods, organisations the key's
-        creator may enter data for). Metric keys and organisation ids come from <code>GET /reference/metrics</code> and <code>GET /organisations</code>.
+        {tr("Readings arrive as drafts and go through the same checks as the form (metric catalogue, units, locked periods, organisations the key's creator may enter data for). Metric keys and organisation ids come from")} <code>GET /reference/metrics</code> {tr("and")} <code>GET /organisations</code>.
       </Typography>
       <Code>{`curl -X POST ${base}/data/points \\\n  -H "X-API-Key: atk_xxxxxxxx_…" -H "Content-Type: application/json" \\\n  -d '{"orgId":"<organisation id>","metricKey":"diesel_litres","numericValue":1250.5,\n       "reportingPeriodStart":"2026-09-01","reportingPeriodEnd":"2026-09-30"}'`}</Code>
 
-      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>3. Read the answer</Typography>
+      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>{tr("3. Read the answer")}</Typography>
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Successful responses are <code>{'{ "success": true, "data": …, "message": … }'}</code>. Errors are RFC 7807 problem details with an
-        <code> errorCode</code> and, for invalid fields, <code>errors</code> by field name — e.g. 400 <code>ESG-400-VALIDATION</code>,
-        401 <code>ESG-401-API-KEY</code> (unknown, revoked or expired key), 403 (outside the key's permissions), 409 (locked period, changed record).
+        {tr("Successful responses are")} <code>{'{ "success": true, "data": …, "message": … }'}</code>{tr(". Errors are RFC 7807 problem details with an")}
+        <code> errorCode</code> {tr("and, for invalid fields,")} <code>errors</code> {tr("by field name — e.g. 400")} <code>ESG-400-VALIDATION</code>,
+        401 <code>ESG-401-API-KEY</code> {tr("(unknown, revoked or expired key), 403 (outside the key's permissions), 409 (locked period, changed record).")}
       </Typography>
 
-      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>4. Check webhook signatures</Typography>
+      <Typography variant="h6" component="h2" sx={{ mt: 2 }}>{tr("4. Check webhook signatures")}</Typography>
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Each delivery has <code>X-Atheris-Signature: t=&lt;unix time&gt;,v1=&lt;hex&gt;</code>, where v1 is HMAC-SHA256 of
-        <code> t + "." + raw body</code> with the webhook's secret. Reject old timestamps (e.g. over 5 minutes) and use
-        <code> X-Atheris-Delivery</code> to ignore repeats.
+        {tr("Each delivery has")} <code>X-Atheris-Signature: t=&lt;unix time&gt;,v1=&lt;hex&gt;</code>{tr(", where v1 is HMAC-SHA256 of")}
+        <code> t + "." + raw body</code> {tr("with the webhook's secret. Reject old timestamps (e.g. over 5 minutes) and use")}
+        <code> X-Atheris-Delivery</code> {tr("to ignore repeats.")}
       </Typography>
       <Code>{`// Node.js
 const crypto = require('crypto');

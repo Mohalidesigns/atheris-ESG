@@ -15,13 +15,14 @@ import { applyProblem } from '../../../services/formErrors';
 import { useCreateTargetMutation, useDeleteTargetMutation, useTargetsQuery, useUpdateTargetMutation } from '../carbonApi';
 import { DENOMINATORS, TARGET_SCOPES, emptyTarget, targetSchema, toTargetBody, toTargetForm } from '../schemas';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr, formattingLocale } from '../../../i18n';
 
 // no-mock-gate: config — labels for TargetMath.status values
 const STATUS = {
   achieved: { label: 'Achieved', color: 'success' }, on_track: { label: 'On track', color: 'success' },
   off_track: { label: 'Off track', color: 'error' }, no_data: { label: 'No data yet', color: 'default' },
 };
-const n = (v) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }));
+const n = (v) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: 2 }));
 
 export function TargetDialog({ target, onClose }) {
   const editing = Boolean(target?.id);
@@ -45,43 +46,43 @@ export function TargetDialog({ target, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? 'Edit reduction target' : 'Set a reduction target'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit reduction target") : tr("Set a reduction target")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={12}><FormTextField control={control} name="targetName" label="Name" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="targetName" label={tr("Name")} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="targetType" label="Type"
+              <FormSelect control={control} name="targetType" label={tr("Type")}
                 options={[{ value: 'absolute', label: 'Absolute (tCO2e)' }, { value: 'intensity', label: 'Intensity (tCO2e per unit)' }]} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="scope" label="Scope" options={Object.entries(TARGET_SCOPES).map(([value, label]) => ({ value, label }))} />
+              <FormSelect control={control} name="scope" label={tr("Scope")} options={Object.entries(TARGET_SCOPES).map(([value, label]) => ({ value, label }))} />
             </Grid>
             {type === 'intensity' && (
               <Grid size={12}>
-                <FormSelect control={control} name="intensityDenominator" label="Intensity per"
+                <FormSelect control={control} name="intensityDenominator" label={tr("Intensity per")}
                   options={Object.entries(DENOMINATORS).map(([value, label]) => ({ value, label }))} />
               </Grid>
             )}
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="baseYear" label="Base year" inputProps={{ inputMode: 'numeric' }} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormNumberField control={control} name="baseValue" label="Base value" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="targetYear" label="Target year" inputProps={{ inputMode: 'numeric' }} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormNumberField control={control} name="targetValue" label="Target value" /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="baseYear" label={tr("Base year")} inputProps={{ inputMode: 'numeric' }} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormNumberField control={control} name="baseValue" label={tr("Base value")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="targetYear" label={tr("Target year")} inputProps={{ inputMode: 'numeric' }} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormNumberField control={control} name="targetValue" label={tr("Target value")} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="pathway" label="Pathway"
+              <FormSelect control={control} name="pathway" label={tr("Pathway")}
                 options={[{ value: 'linear', label: 'Linear (equal tonnes each year)' }, { value: 'contraction', label: 'Contraction (equal % each year)' }]} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller name="sbtiAligned" control={control} render={({ field }) => (
-                <FormControlLabel label="Check against SBTi criteria"
+                <FormControlLabel label={tr("Check against SBTi criteria")}
                   control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Set target'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Set target")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -89,8 +90,8 @@ export function TargetDialog({ target, onClose }) {
 }
 
 function TargetCard({ target, onEdit, onDelete }) {
-  const status = STATUS[target.status] ?? STATUS.no_data;
-  const unit = target.targetType === 'intensity' ? `tCO2e ${DENOMINATORS[target.intensityDenominator]}` : 'tCO2e';
+  const status = tr(STATUS[target.status]) ?? STATUS.no_data;
+  const unit = target.targetType === 'intensity' ? `tCO2e ${tr(DENOMINATORS[target.intensityDenominator])}` : 'tCO2e';
   return (
     <Card aria-label={`Target ${target.targetName}`}>
       <CardContent>
@@ -98,12 +99,12 @@ function TargetCard({ target, onEdit, onDelete }) {
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>{target.targetName}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {TARGET_SCOPES[target.scope]} · {n(target.baseValue)} ({target.baseYear}) → {n(target.targetValue)} ({target.targetYear}) {unit}
-              {' '}· {target.pathway} · {n(target.annualReductionPct)}% a year
+              {tr(TARGET_SCOPES[target.scope])} · {n(target.baseValue)} ({target.baseYear}) → {n(target.targetValue)} ({target.targetYear}) {unit}
+              {' '}· {target.pathway} · {n(target.annualReductionPct)}{tr("% a year")}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Chip size="small" color={status.color} label={status.label} />
+            <Chip size="small" color={status.color} label={tr(status.label)} />
             <Can permission="carbon_data:update">
               <IconButton size="small" aria-label={`Edit target ${target.targetName}`} onClick={onEdit}><Edit fontSize="small" /></IconButton>
             </Can>
@@ -115,15 +116,15 @@ function TargetCard({ target, onEdit, onDelete }) {
         {target.progressYear && (
           <Box sx={{ my: 1.5 }}>
             <Typography variant="body2">
-              {target.progressYear}: {n(target.currentValue)} actual vs {n(target.expectedValue)} on the pathway · {n(target.progressPct)}% of the reduction achieved
+              {target.progressYear}: {n(target.currentValue)} {tr("actual vs")} {n(target.expectedValue)} {tr("on the pathway ·")} {n(target.progressPct)}{tr("% of the reduction achieved")}
             </Typography>
             <LinearProgress variant="determinate" aria-label={`${target.targetName} progress`} value={Math.max(0, Math.min(100, Number(target.progressPct ?? 0)))} sx={{ mt: 0.5, height: 6, borderRadius: 3 }} />
           </Box>
         )}
-        {target.baselineWarning && <Alert severity="warning" sx={{ my: 1 }} aria-label="Baseline check">{target.baselineWarning}</Alert>}
+        {target.baselineWarning && <Alert severity="warning" sx={{ my: 1 }} aria-label={tr("Baseline check")}>{target.baselineWarning}</Alert>}
         {target.sbtiAligned && (
           target.sbtiFindings.length === 0
-            ? <Alert severity="success" sx={{ my: 1 }}>Meets the SBTi near-term criteria checked here.</Alert>
+            ? <Alert severity="success" sx={{ my: 1 }}>{tr("Meets the SBTi near-term criteria checked here.")}</Alert>
             : <Alert severity="warning" sx={{ my: 1 }}>{target.sbtiFindings.map((f) => <div key={f}>{f}</div>)}</Alert>
         )}
         <Box sx={{ height: 220 }}>
@@ -155,7 +156,7 @@ export default function TargetsTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const del = async (t) => {
-    if (!(await confirm({ title: 'Delete this target?', item: t.targetName }))) return;
+    if (!(await confirm({ title: tr("Delete this target?"), item: t.targetName }))) return;
     setActionError('');
     try {
       await remove({ id: t.id, version: t.version }).unwrap();
@@ -167,12 +168,12 @@ export default function TargetsTab() {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="carbon_data:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Set target</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Set target")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       {data.length === 0
-        ? <Card><EmptyState title="No reduction targets yet">Set a base year and a target to track progress against a pathway.</EmptyState></Card>
+        ? <Card><EmptyState title={tr("No reduction targets yet")}>{tr("Set a base year and a target to track progress against a pathway.")}</EmptyState></Card>
         : (
           <Grid container spacing={2}>
             {data.map((t) => <Grid key={t.id} size={{ xs: 12, lg: 6 }}><TargetCard target={t} onEdit={() => setEditing(t)} onDelete={() => del(t)} /></Grid>)}

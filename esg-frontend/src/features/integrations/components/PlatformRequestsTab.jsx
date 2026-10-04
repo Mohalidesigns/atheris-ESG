@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../../components/states
 import { applyProblem } from '../../../services/formErrors';
 import { usePlatformRequestsQuery, useSetRequestStatusMutation } from '../integrationsApi';
 import { DATA_CATEGORIES, FREQUENCIES, PLATFORM_STATUSES, REQUEST_STATUS, statusSchema, when } from '../schemas';
+import { tr } from '../../../i18n';
 
 function StatusDialog({ request, onClose }) {
   const [save, state] = useSetRequestStatusMutation();
@@ -32,25 +33,25 @@ function StatusDialog({ request, onClose }) {
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Typography variant="body2" sx={{ mb: 2 }}>
-            {request.tenantName}: {request.systemDetails}. Data: {request.dataNeeded.map((d) => DATA_CATEGORIES[d] ?? d).join(', ')},
-            {' '}{FREQUENCIES[request.frequency]?.toLowerCase()}. Contact: {request.contactName}, {request.contactEmail}{request.contactPhone ? `, ${request.contactPhone}` : ''}.
+            {request.tenantName}: {request.systemDetails}{tr(". Data:")} {request.dataNeeded.map((d) => tr(DATA_CATEGORIES[d]) ?? d).join(', ')},
+            {' '}{tr(FREQUENCIES[request.frequency])?.toLowerCase()}{tr(". Contact:")} {request.contactName}, {request.contactEmail}{request.contactPhone ? `, ${request.contactPhone}` : ''}.
             {request.notes ? ` Notes: ${request.notes}` : ''}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={12}>
-              <FormSelect control={control} name="status" label="New status"
-                helperText="Active means the connector is configured and live for this client"
+              <FormSelect control={control} name="status" label={tr("New status")}
+                helperText={tr("Active means the connector is configured and live for this client")}
                 options={Object.entries(PLATFORM_STATUSES).map(([value, label]) => ({ value, label }))} />
             </Grid>
             <Grid size={12}>
-              <FormTextField control={control} name="note" label="Note for the client" multiline minRows={2}
-                helperText="Shown to the client and emailed to their contact; required when declining" />
+              <FormTextField control={control} name="note" label={tr("Note for the client")} multiline minRows={2}
+                helperText={tr("Shown to the client and emailed to their contact; required when declining")} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={state.isLoading}>Update</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={state.isLoading}>{tr("Update")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -63,14 +64,14 @@ export default function PlatformRequestsTab() {
   const [editing, setEditing] = useState(null);
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
-  if (!data.length) return <EmptyState title="No integration requests">Requests from clients appear here.</EmptyState>;
+  if (!data.length) return <EmptyState title={tr("No integration requests")}>{tr("Requests from clients appear here.")}</EmptyState>;
   return (
     <>
       <TableContainer>
-        <Table size="small" aria-label="Integration requests from clients">
+        <Table size="small" aria-label={tr("Integration requests from clients")}>
           <TableHead><TableRow>
-            <TableCell>Reference</TableCell><TableCell>Client</TableCell><TableCell>Connector</TableCell><TableCell>Status</TableCell>
-            <TableCell>Requested</TableCell><TableCell>Actions</TableCell>
+            <TableCell>{tr("Reference")}</TableCell><TableCell>{tr("Client")}</TableCell><TableCell>{tr("Connector")}</TableCell><TableCell>{tr("Status")}</TableCell>
+            <TableCell>{tr("Requested")}</TableCell><TableCell>{tr("Actions")}</TableCell>
           </TableRow></TableHead>
           <TableBody>
             {data.map((r) => (
@@ -79,14 +80,14 @@ export default function PlatformRequestsTab() {
                 <TableCell>{r.tenantName}<Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{r.contactEmail}</Typography></TableCell>
                 <TableCell>{r.connectorName}</TableCell>
                 <TableCell>
-                  <Chip size="small" variant="outlined" color={REQUEST_STATUS[r.status].color} label={REQUEST_STATUS[r.status].label} />
+                  <Chip size="small" variant="outlined" color={REQUEST_STATUS[r.status].color} label={tr(REQUEST_STATUS[r.status].label)} />
                   {r.statusNote && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{r.statusNote}</Typography>}
                 </TableCell>
                 <TableCell>{when(r.createdAt)}</TableCell>
                 <TableCell>
                   {!['withdrawn', 'declined'].includes(r.status) && (
                     <Can permission="tenants:update">
-                      <Button size="small" onClick={() => setEditing(r)} aria-label={`Update ${r.reference}`}>Update</Button>
+                      <Button size="small" onClick={() => setEditing(r)} aria-label={`Update ${r.reference}`}>{tr("Update")}</Button>
                     </Can>
                   )}
                 </TableCell>

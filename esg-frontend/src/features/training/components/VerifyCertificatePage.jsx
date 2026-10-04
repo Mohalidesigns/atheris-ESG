@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Container, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@mui/material';
 import { Verified } from '@mui/icons-material';
 import { useVerifyCertificateQuery } from '../trainingApi';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — verification outcomes
 const OUTCOME = {
@@ -24,28 +25,28 @@ export default function VerifyCertificatePage() {
     <Container maxWidth="sm" sx={{ py: 6 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
         <Verified color="primary" />
-        <Typography variant="h5" component="h1">Verify a training certificate</Typography>
+        <Typography variant="h5" component="h1">{tr("Verify a training certificate")}</Typography>
       </Box>
       <Box component="form" sx={{ display: 'flex', gap: 1, mb: 3 }} onSubmit={(e) => { e.preventDefault(); if (code.trim()) navigate(`/verify-certificate/${code.trim().toUpperCase()}`); }}>
-        <TextField size="small" fullWidth label="Certificate code" value={code} onChange={(e) => setCode(e.target.value)} slotProps={{ htmlInput: { maxLength: 12 } }} />
-        <Button type="submit" variant="contained">Check</Button>
+        <TextField size="small" fullWidth label={tr("Certificate code")} value={code} onChange={(e) => setCode(e.target.value)} slotProps={{ htmlInput: { maxLength: 12 } }} />
+        <Button type="submit" variant="contained">{tr("Check")}</Button>
       </Box>
-      {param && isFetching && <Typography>Checking…</Typography>}
+      {param && isFetching && <Typography>{tr("Checking…")}</Typography>}
       {param && !isFetching && error && (
-        <Alert severity="error">{error.status === 429 ? 'Too many checks from here. Please try again later.' : 'No certificate has this code. Check it was typed exactly as printed.'}</Alert>
+        <Alert severity="error">{error.status === 429 ? tr("Too many checks from here. Please try again later.") : tr("No certificate has this code. Check it was typed exactly as printed.")}</Alert>
       )}
       {param && !isFetching && data && (
-        <Card aria-label="Certificate">
+        <Card aria-label={tr("Certificate")}>
           <CardContent>
-            <Alert severity={OUTCOME[data.status].severity} sx={{ mb: 2 }}>{OUTCOME[data.status].text}</Alert>
+            <Alert severity={OUTCOME[data.status].severity} sx={{ mb: 2 }}>{tr(OUTCOME[data.status].text)}</Alert>
             <Table size="small">
               <TableBody>
-                <TableRow><TableCell>Holder</TableCell><TableCell>{data.holderName}</TableCell></TableRow>
-                <TableRow><TableCell>Course</TableCell><TableCell>{data.courseTitle}</TableCell></TableRow>
-                <TableRow><TableCell>Issued by</TableCell><TableCell>{data.organisation}</TableCell></TableRow>
-                <TableRow><TableCell>Issued on</TableCell><TableCell>{data.issuedOn}</TableCell></TableRow>
-                <TableRow><TableCell>Valid until</TableCell><TableCell>{data.expiresOn ?? 'Does not expire'}</TableCell></TableRow>
-                <TableRow><TableCell>Code</TableCell><TableCell sx={{ fontFamily: 'monospace' }}>{data.code}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Holder")}</TableCell><TableCell>{data.holderName}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Course")}</TableCell><TableCell>{data.courseTitle}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Issued by")}</TableCell><TableCell>{data.organisation}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Issued on")}</TableCell><TableCell>{data.issuedOn}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Valid until")}</TableCell><TableCell>{data.expiresOn ?? tr("Does not expire")}</TableCell></TableRow>
+                <TableRow><TableCell>{tr("Code")}</TableCell><TableCell sx={{ fontFamily: 'monospace' }}>{data.code}</TableCell></TableRow>
               </TableBody>
             </Table>
           </CardContent>

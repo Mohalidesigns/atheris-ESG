@@ -7,6 +7,7 @@ import { Shield, Logout } from '@mui/icons-material';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { visibleSections } from '../../routes/navigation';
 import { roleLabel } from '../../services/labels';
+import { tr } from '../../i18n';
 
 export const DRAWER_WIDTH = 260;
 
@@ -42,10 +43,10 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
         <Shield sx={{ fontSize: 32, color: '#D4AF37' }} />
         <Box>
           <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem' }}>
-            ESG Pro
+            {tr("ESG Pro")}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }}>
-            Africa Edition
+            {tr("Africa Edition")}
           </Typography>
         </Box>
       </Box>
@@ -53,14 +54,14 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
       {/* Navigation */}
-      <Box component="nav" aria-label="Main" sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         {sections.map((section) => (
           <Box key={section.label}>
             <Typography
               variant="caption"
               sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
             >
-              {section.label}
+              {tr(section.label)}
             </Typography>
             <List disablePadding>
               {section.items.map((item) => {
@@ -90,7 +91,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
                       }}
                     >
                       <ListItemIcon>{item.icon}</ListItemIcon>
-                      <ListItemText primary={item.text} />
+                      <ListItemText primary={tr(item.text)} />
                     </ListItemButton>
                   </ListItem>
                 );
@@ -117,7 +118,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
         </Box>
         <Logout
           role="button"
-          aria-label="Sign out"
+          aria-label={tr("Sign out")}
           onClick={logout}
           sx={{ color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
         />
