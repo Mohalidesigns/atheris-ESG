@@ -26,7 +26,7 @@ INSERT INTO reference.module_resources (resource, module_code) VALUES
   ('dashboard', 'platform'), ('users', 'platform'), ('roles', 'platform'), ('org_structure', 'platform'),
   ('reporting_periods', 'platform'), ('files', 'platform'), ('tenant_settings', 'platform'),
   ('subscription', 'platform'), ('tenants', 'platform'), ('audit_logs', 'platform'), ('notifications', 'platform'),
-  ('reference_data', 'platform'), ('framework_content', 'platform'),
+  ('reference_data', 'platform'), ('framework_content', 'platform'), ('privacy', 'platform'), ('integrations', 'platform'),
   ('data_points', 'data_hub'), ('data_sources', 'data_hub'), ('fx_rates', 'data_hub'),
   ('carbon_data', 'carbon'), ('emission_factors', 'carbon'),
   ('compliance', 'compliance'),

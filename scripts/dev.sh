@@ -6,6 +6,7 @@
 #   ./scripts/dev.sh reset-db   # drop and recreate esg_dev (needed once after the WP-11 re-baseline)
 #   ./scripts/dev.sh testdb     # create esg_test for integration tests without Docker (see README)
 #   ./scripts/dev.sh e2edb      # create a fresh esg_e2e for the Cypress journeys (used by scripts/e2e.sh)
+#   ./scripts/dev.sh perfdb     # create a fresh esg_perf for the performance runs (used by scripts/perf.sh)
 #   ./scripts/dev.sh reset-dev  # wipe esg_dev, migrate and reseed the demo tenant, then exit (make reset-dev)
 #   ./scripts/dev.sh clean-test-data  # remove records marked as test data from the demo tenant (make clean-test-data)
 #
@@ -19,6 +20,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Local settings that must not be committed (SMTP credentials, …): .env.local at the repo root, git-ignored.
+if [ -f "$ROOT/.env.local" ]; then set -a; . "$ROOT/.env.local"; set +a; fi
 MODE="${ESG_DB_MODE:-auto}"
 DB_NAME="esg_dev"
 DB_OWNER="esg_owner"
@@ -124,6 +127,11 @@ case "$CMD" in
     ensure_db esg_e2e
     log "E2E database ready: jdbc:postgresql://localhost:$PG_PORT/esg_e2e"
     exit 0 ;;
+  perfdb)
+    su_sql postgres "DROP DATABASE IF EXISTS esg_perf WITH (FORCE)"
+    ensure_db esg_perf
+    log "Performance database ready: jdbc:postgresql://localhost:$PG_PORT/esg_perf"
+    exit 0 ;;
   testdb)
     su_sql postgres "DROP DATABASE IF EXISTS esg_test WITH (FORCE)"
     ensure_db esg_test
@@ -137,6 +145,15 @@ esac
 PIDS=()
 cleanup() { log "Stopping"; for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null || true; done; }
 trap cleanup EXIT INT TERM
+
+# WP-50: the AI service, when its virtualenv exists (the backend's local profile points at :8090 with a dev-only token).
+if [[ -x "$ROOT/esg-ai/.venv/bin/uvicorn" ]]; then
+  log "Starting AI service on http://localhost:8090 (Ollama: ${OLLAMA_URL:-http://localhost:11434}, model ${OLLAMA_MODEL:-granite4:micro})"
+  (cd "$ROOT/esg-ai" && ESG_AI_TOKEN="${ESG_AI_TOKEN:-local-dev-ai-token}" .venv/bin/uvicorn app.main:app --port 8090) &
+  PIDS+=($!)
+else
+  log "AI service not started: create esg-ai/.venv (see esg-ai/README.md); AI features will say the service isn't running"
+fi
 
 log "Starting backend (profile: local) on http://localhost:8080/api"
 (cd "$ROOT/esg-backend" && ./mvnw -q spring-boot:run -Dspring-boot.run.profiles=local) &

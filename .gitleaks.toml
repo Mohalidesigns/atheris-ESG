@@ -1,0 +1,12 @@
+# WP-52: secrets scanning (gitleaks). Default rules, plus an allowlist for two reviewed false positives of the
+# generic-api-key rule: catalogue metric keys in tests ("metricKey: 'water_consumption_m3'") and prose naming FastAPI.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed false positives (WP-52)"
+regexTarget = "match"
+regexes = [
+  '''metricKey: '[a-z0-9_]+'(,|\s|$)''',
+  '''FastAPI(,| service:) [A-Za-z/]''',
+]

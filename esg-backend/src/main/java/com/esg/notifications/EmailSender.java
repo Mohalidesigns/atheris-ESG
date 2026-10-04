@@ -15,10 +15,14 @@ public class EmailSender {
 
     private final ObjectProvider<JavaMailSender> mailSender;
     private final String from;
+    /** Outside production every message can be redirected to one inbox (MAIL_ALWAYS_TO), so tests never reach real people. */
+    private final String alwaysTo;
 
-    public EmailSender(ObjectProvider<JavaMailSender> mailSender, @Value("${esg.notifications.email.from}") String from) {
+    public EmailSender(ObjectProvider<JavaMailSender> mailSender, @Value("${esg.notifications.email.from}") String from,
+                       @Value("${esg.notifications.email.always-to:}") String alwaysTo) {
         this.mailSender = mailSender;
         this.from = from;
+        this.alwaysTo = alwaysTo == null ? "" : alwaysTo.trim();
     }
 
     public boolean configured() {
@@ -33,8 +37,8 @@ public class EmailSender {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(from);
-            message.setTo(to);
-            message.setSubject(subject);
+            message.setTo(alwaysTo.isEmpty() ? to : alwaysTo);
+            message.setSubject(alwaysTo.isEmpty() ? subject : "[for " + to + "] " + subject);
             message.setText(body);
             sender.send(message);
             return SendResult.sent();

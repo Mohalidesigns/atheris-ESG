@@ -32,7 +32,7 @@ public class DeniedActionAuditor {
      * (ESG-422-MALWARE) have their own, richer {@code quarantined} row (files.QuarantineLog).
      */
     static final Set<String> DENIAL_CODES = Set.of("ESG-409-LOCKED", "ESG-409-SOD", "ESG-400-SELF", "ESG-409-SEATS",
-            "ESG-409-FACTOR-IN-USE", "ESG-409-FACTOR-PENDING", "ESG-409-QUARANTINED");
+            "ESG-409-FACTOR-IN-USE", "ESG-409-FACTOR-PENDING", "ESG-409-QUARANTINED", "ESG-409-SERIAL");
     private static final Pattern UUID_IN_PATH = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
     private static final Logger log = LoggerFactory.getLogger(DeniedActionAuditor.class);
 

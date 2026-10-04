@@ -34,9 +34,30 @@ FROM (VALUES ('risk.materiality_assessment', 'GRI', '3-1'), ('risk.materiality_a
 JOIN compliance.regulatory_frameworks f ON f.code = s.framework
 JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
 
+-- WP-31 (D33): an active supplier register evidences the value-chain disclosure (GRI 2-6).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT 'supply_chain.suppliers', r.id
+FROM compliance.framework_requirements r JOIN compliance.regulatory_frameworks f ON f.id = r.framework_id
+WHERE f.code = 'GRI' AND r.requirement_code = '2-6';
+
+-- WP-35 (D34): an active custom KPI with a target evidences tracking the effectiveness of actions on material topics
+-- (GRI 3-3) and the metrics used to assess climate-related risks and opportunities (TCFD Metrics and Targets a).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT s.source, r.id
+FROM (VALUES ('analytics.custom_kpis', 'GRI', '3-3'), ('analytics.custom_kpis', 'TCFD', 'MT-a')) AS s(source, framework, code)
+JOIN compliance.regulatory_frameworks f ON f.code = s.framework
+JOIN compliance.framework_requirements r ON r.framework_id = f.id AND r.requirement_code = s.code;
+
+-- WP-41 (D36): retired carbon credits evidence the use of carbon credits disclosed with climate-related targets
+-- (IFRS S2 paragraphs 33-36).
+INSERT INTO reference.requirement_data_sources (data_source, requirement_id)
+SELECT 'carbon_market.retirements', r.id
+FROM compliance.framework_requirements r JOIN compliance.regulatory_frameworks f ON f.id = r.framework_id
+WHERE f.code = 'ISSB_S2' AND r.requirement_code = 'S2-33';
+
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 15 THEN
-    RAISE EXCEPTION 'Expected 15 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
+  IF (SELECT count(*) FROM reference.requirement_data_sources) <> 19 THEN
+    RAISE EXCEPTION 'Expected 19 requirement data sources, found %', (SELECT count(*) FROM reference.requirement_data_sources);
   END IF;
 END $$;

@@ -65,7 +65,8 @@ class RbacMatrixTest extends ApiTestSupport {
       Map.entry("CONSULTANT", Set.of("reference:read", "data:read", "data:create", "carbon:read", "compliance:read", "orgs:read", "me")),
       Map.entry("BOARD_MEMBER", Set.of("reference:read", "me")),
       Map.entry("COMPLIANCE_OFFICER", Set.of("reference:read", "data:read", "carbon:read", "compliance:read", "orgs:read", "me")),
-      Map.entry("TRAINING_ADMIN", Set.of("reference:read", "users:read", "me")),
+      // WP-42 (D37): the training admin sees the organisation tree (files and org structure for course content).
+      Map.entry("TRAINING_ADMIN", Set.of("reference:read", "users:read", "orgs:read", "me")),
       Map.entry("ETHICS_OFFICER", Set.of("reference:read", "me")));
 
   static Stream<Arguments> matrix() {

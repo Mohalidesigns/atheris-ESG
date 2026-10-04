@@ -44,7 +44,7 @@ const AUTH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/mfa/s
 
 // Writes that are calculations or housekeeping, not something the user saved: no success toast.
 const SILENT = [/^\/auth\//, /^\/public\//, /\/preview$/, /\/read(-all)?$/, /\/satellite-check$/, /^\/carbon\/calculate$/, /^\/compliance\/map$/,
-  /\/reminders\/run$/, /^\/files$/, /\/versions$/];
+  /\/reminders\/run$/, /^\/files$/, /\/versions$/, /^\/data\/sync$/];
 
 /**
  * Phase 2: every successful create, update or delete confirms itself with a toast — the server's message ("User
@@ -106,6 +106,6 @@ export function toFormError(error) {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate', 'Board', 'Policy', 'MyPolicy', 'Case', 'Workforce', 'Incident', 'Project', 'Grievance', 'SocialOverview', 'Assessment', 'RiskItem', 'Scenario', 'Physical', 'RiskOverview'],
+  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate', 'Board', 'Policy', 'MyPolicy', 'Case', 'Workforce', 'Incident', 'Project', 'Grievance', 'SocialOverview', 'Assessment', 'RiskItem', 'Scenario', 'Physical', 'RiskOverview', 'Supplier', 'SupplyTemplate', 'SupplierQuestionnaire', 'SupplyAction', 'SupplySpend', 'SupplyOverview', 'Anomaly', 'Kpi', 'BenchmarkDataset', 'Maturity', 'SdgPriority', 'AnalyticsSettings', 'AnalyticsOverview', 'InvestorScorecard', 'InvestorSettings', 'SharedReport', 'DataRoom', 'Bond', 'ImpactMetric', 'OffsetProject', 'CreditLot', 'Retirement', 'InternalPrice', 'CarbonMarketSettings', 'TrainingCourse', 'TrainingPath', 'Enrollment', 'Certificate', 'AiStatus', 'AiRun', 'PrivacyNotice', 'SubjectRequest', 'Retention', 'SyncConflict', 'IntegrationRequest', 'ApiKey', 'Webhook', 'WebhookDelivery', 'PlatformIntegrationRequest'],
   endpoints: () => ({}),
 });

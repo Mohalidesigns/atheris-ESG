@@ -15,6 +15,20 @@ esg:
     scanner: sandbox
     rescan:
       enabled: false   # tests drive VirusScanService.runOnce() directly
+  webhooks:
+    dispatch:
+      enabled: false   # tests drive WebhookDispatcher directly
+    allow-http: true
+    allow-private-networks: true   # tests receive webhooks on a local server
+  privacy:
+    retention:
+      enabled: false   # tests call RetentionService.runAll(clock)
+  supply-chain:
+    reminders:
+      enabled: false   # tests drive CorrectiveActionService.runAll(clock) with a shifted clock
+  analytics:
+    scan:
+      enabled: false   # tests call AnomalyService.runAll(clock)
   social:
     escalation:
       enabled: false   # tests drive GrievanceService.runAll(clock) with a shifted clock

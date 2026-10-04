@@ -1,0 +1,43 @@
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    report_total_ms
+    ✓ 'max<60000' max=768ms
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 10      9.045918/s
+    checks_succeeded...: 100.00% 10 out of 10
+    checks_failed......: 0.00%   0 out of 10
+
+    ✓ signed in
+    ✓ report created
+    ✓ sections saved
+    ✓ pdf rendered
+
+    CUSTOM
+    report_total_ms................: avg=320ms    min=85ms    med=107ms    max=768ms    p(90)=635.8ms  p(95)=701.9ms 
+
+    HTTP
+    http_req_duration..............: avg=84.67ms  min=3.01ms  med=33.93ms  max=623.27ms p(90)=112.22ms p(95)=322.56ms
+      { expected_response:true }...: avg=84.67ms  min=3.01ms  med=33.93ms  max=623.27ms p(90)=112.22ms p(95)=322.56ms
+    http_req_failed................: 0.00% 0 out of 13
+    http_reqs......................: 13    11.759693/s
+
+    EXECUTION
+    iteration_duration.............: avg=326.89ms min=88.79ms med=112.06ms max=779.8ms  p(90)=646.25ms p(95)=713.03ms
+    iterations.....................: 3     2.713775/s
+    vus............................: 1     min=1       max=1
+    vus_max........................: 1     min=1       max=1
+
+    NETWORK
+    data_received..................: 93 kB 84 kB/s
+    data_sent......................: 21 kB 19 kB/s
+
+
+

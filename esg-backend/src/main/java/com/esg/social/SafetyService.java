@@ -57,7 +57,11 @@ public class SafetyService {
     private final ReportingPeriodService periods;
     private final NotificationService notifications;
 
-    public SafetyService(JdbcTemplate jdbc, SocialSupport support, ReportingPeriodService periods, NotificationService notifications) {
+    private final org.springframework.context.ApplicationEventPublisher events;
+
+    public SafetyService(JdbcTemplate jdbc, SocialSupport support, ReportingPeriodService periods, NotificationService notifications,
+                         org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.jdbc = jdbc;
         this.support = support;
         this.periods = periods;
@@ -102,6 +106,7 @@ public class SafetyService {
                 r.title().trim(), r.incidentType(), r.outcome(), r.personType(), timestamp(r.occurredAt()), r.lostDays(),
                 SocialSupport.blank(r.location()), SocialSupport.blank(r.description()), CurrentUser.access().userId());
         Incident created = get(id);
+        events.publishEvent(new SafetyEvents.IncidentRecorded(id));
         if (SafetyRates.lostTime(r.outcome())) {
             notifySerious(created);
         }

@@ -27,6 +27,22 @@ import { GrievanceDialog } from '../features/social/components/GrievancesTab';
 import { AssessmentDialog } from '../features/risk/components/MaterialityTab';
 import { RiskDialog } from '../features/risk/components/RiskRegisterTab';
 import { PhysicalDialog } from '../features/risk/components/ClimateTab';
+import { SupplierDialog } from '../features/supplyChain/components/SuppliersTab';
+import { TemplateDialog } from '../features/supplyChain/components/TemplatesTab';
+import { SpendDialog } from '../features/supplyChain/components/SpendTab';
+import { ActionDialog } from '../features/supplyChain/components/ActionsTab';
+import { KpiDialog } from '../features/analytics/components/KpisTab';
+import { DatasetDialog } from '../features/analytics/components/BenchmarksTab';
+import { SensitivityDialog } from '../features/analytics/components/AnomaliesTab';
+import { WeightsDialog } from '../features/investor/components/ScorecardsTab';
+import { BondDialog } from '../features/investor/components/BondsTab';
+import { RoomDialog } from '../features/investor/components/DataRoomsTab';
+import { ImpactDialog } from '../features/investor/components/ImpactTab';
+import { ProjectDialog as OffsetProjectDialog } from '../features/carbonMarket/components/ProjectsTab';
+import { CourseDialog } from '../features/training/components/CourseDialog';
+import { PathDialog } from '../features/training/components/PathsTab';
+import { LotDialog } from '../features/carbonMarket/components/CreditsTab';
+import { PriceDialog, CeilingDialog } from '../features/carbonMarket/components/PricingTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -52,16 +68,26 @@ const TEMPLATE_A = 'a0000000-0000-4000-8000-0000000000f4';
 const USER_MANAGER = 'a1000000-0000-4000-8000-000000000004';
 const PROJECT_A = 'a0000000-0000-4000-8000-000000000301';
 const TOPIC_A = 'a0000000-0000-4000-8000-000000000102';
+const SUPPLIER_A = 'a0000000-0000-4000-8000-000000000201';
+const QUESTIONNAIRE_A = 'a0000000-0000-4000-8000-000000000204';
+const QUESTION_A = 'a0000000-0000-4000-8000-000000000203';
+const KPI_A = 'a0000000-0000-4000-8000-000000000601';
+const USER_INVESTOR = 'a1000000-0000-4000-8000-000000000008';
+const PROJECT_CM = 'a0000000-0000-4000-8000-000000000701';
+const COURSE_TR = 'a0000000-0000-4000-8000-000000000801';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
-    return v.replaceAll('{u}', 'rt0001').replaceAll('{yyyy}', '2301')
+    return v.replaceAll('{u}', 'rt0001').replaceAll('{U}', 'RT0001').replaceAll('{yyyy}', '2301').replaceAll('{COURSE_TR}', COURSE_TR)
       .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
       .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
       .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
       .replaceAll('{TEMPLATE_A}', TEMPLATE_A)
       .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
-      .replaceAll('{TOPIC_A}', TOPIC_A);
+      .replaceAll('{TOPIC_A}', TOPIC_A)
+      .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A)
+      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR)
+      .replaceAll('{PROJECT_CM}', PROJECT_CM);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -298,6 +324,120 @@ const openers = {
     renderWithStore(<PhysicalDialog assessment={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
+  supplier: async (record) => {
+    fakeApi({
+      'GET /reference/sectors': () => ok([{ code: 'C', name: 'Manufacturing', classification: 'ISIC_REV4' }]),
+      'GET /reference/countries': () => ok([{ code: 'NG', name: 'Nigeria' }, { code: 'GH', name: 'Ghana' }]),
+      'GET /supply-chain/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }]),
+    });
+    renderWithStore(<SupplierDialog supplier={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'questionnaire-template': async (record) => {
+    renderWithStore(<TemplateDialog template={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'supplier-spend': async (record) => {
+    fakeApi({
+      'GET /supply-chain/suppliers': () => ok([{ id: SUPPLIER_A, name: 'Supplier A' }]),
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /supply-chain/spend/categories': () => ok([{ code: 'spend_paper_stationery', label: 'Paper and stationery (spend)' }]),
+    });
+    renderWithStore(<SpendDialog line={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'custom-kpi': async (record) => {
+    fakeApi({
+      'GET /organisations': () => ok(FIXTURE_ORGS),
+      'GET /reference/metrics': () => ok([
+        { metricKey: 'water_consumption_m3', name: 'Water consumption', unit: 'm3', dataType: 'decimal' },
+        { metricKey: 'production_output', name: 'Production output', unit: 'unit', dataType: 'decimal' },
+      ]),
+    });
+    renderWithStore(<KpiDialog kpi={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'benchmark-dataset': async (record) => {
+    fakeApi({
+      'GET /reference/metrics': () => ok([
+        { metricKey: 'employee_turnover_pct', name: 'Employee turnover rate', unit: '%', dataType: 'percentage' },
+        { metricKey: 'women_in_management_pct', name: 'Women in management', unit: '%', dataType: 'percentage' },
+      ]),
+      'GET /reference/sectors': () => ok([{ code: 'C', name: 'Manufacturing' }]),
+      'GET /files': () => ok([{ id: FILE_A, originalName: 'evidence.pdf' }]),
+      'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 1000, allowedExtensions: 'pdf', virusScanning: 'Not configured' }),
+    });
+    renderWithStore(<DatasetDialog dataset={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'analytics-settings': async (record) => {
+    renderWithStore(<SensitivityDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'investor-settings': async (record) => {
+    renderWithStore(<WeightsDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'bond-slb': async (record) => {
+    fakeApi({ 'GET /analytics/kpis': () => ok([{ id: KPI_A, name: 'Fixture KPI' }]) });
+    renderWithStore(<BondDialog bond={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'bond-sukuk': async (record) => {
+    fakeApi({ 'GET /analytics/kpis': () => ok([]) });
+    renderWithStore(<BondDialog bond={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'data-room': async (record) => {
+    fakeApi({ 'GET /investor/people': () => ok([{ id: USER_INVESTOR, name: 'Investor Viewer Fixture', email: 'investor_viewer@fixture.test' }]) });
+    renderWithStore(<RoomDialog room={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'impact-metric': async (record) => {
+    fakeApi({
+      'GET /reference/metrics': () => ok([{ metricKey: 'employees_total', name: 'Total employees', unit: 'count', dataType: 'integer' }]),
+      'GET /analytics/kpis': () => ok([]),
+    });
+    renderWithStore(<ImpactDialog metric={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'offset-project': async (record) => {
+    renderWithStore(<OffsetProjectDialog project={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'credit-lot': async (record) => {
+    fakeApi({ 'GET /carbon-market/projects': () => ok([{ id: PROJECT_CM, name: 'Fixture cookstoves', status: 'active' }]) });
+    renderWithStore(<LotDialog lot={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'internal-price': async (record) => {
+    renderWithStore(<PriceDialog price={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'carbon-market-settings': async (record) => {
+    renderWithStore(<CeilingDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'corrective-action': async (record) => {
+    fakeApi({
+      'GET /supply-chain/suppliers': () => ok([{ id: SUPPLIER_A, name: 'Supplier A' }]),
+      'GET /supply-chain/people': () => ok([{ id: USER_DIRECTOR, name: 'Esg Director Fixture' }]),
+      'GET /supply-chain/questionnaires': () => ok([{ id: QUESTIONNAIRE_A, title: 'ESG survey' }]),
+      [`GET /supply-chain/questionnaires/${QUESTIONNAIRE_A}`]: () => ok({ id: QUESTIONNAIRE_A, questions: [{ id: QUESTION_A, question: 'Do you measure energy use?' }] }),
+    });
+    renderWithStore(<ActionDialog action={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'training-course': async (record) => {
+    fakeApi({ 'GET /training/courses': () => ok([]) });
+    renderWithStore(<CourseDialog course={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'learning-path': async (record) => {
+    fakeApi({ 'GET /training/courses': () => ok([{ id: COURSE_TR, code: 'FIX-101', title: 'Fixture ESG basics', status: 'published' }]) });
+    renderWithStore(<PathDialog path={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
   report: async (record) => {
     fakeApi({ 'GET /reports/templates': () => ok([{ id: TEMPLATE_A, name: 'A custom template', platform: false, sections: [] }]) });
     renderWithStore(<ReportDialog report={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
@@ -335,9 +475,16 @@ describe('UI reload generator: edit forms show every saved value', () => {
         // A row editor (workforce lines): each saved row's cells, labelled "<column>, line <n>".
         for (const [i, row] of value.entries()) {
           for (const [key, col] of Object.entries(ui.columns)) {
+            // onlyWhen: a cell shown only for some rows (a course module's text or video link, by its kind).
+            if (col.onlyWhen && Object.entries(col.onlyWhen).some(([k, v]) => row[k] !== v)) continue;
             const name = `${col.label}, line ${i + 1}`;
-            if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[row[key]]);
-            else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : String(row[key]));
+            if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[String(row[key])]);
+            else if (col.kind === 'switch') {
+              if (row[key]) expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toBeChecked();
+              else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).not.toBeChecked();
+            }
+            // A list in one cell (a quiz question's options) is edited one item per line.
+            else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : Array.isArray(row[key]) ? row[key].join('\n') : String(row[key]));
           }
         }
       } else if (ui.kind === 'toggle') {

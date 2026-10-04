@@ -7,6 +7,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useFrameworksQuery, useRequirementsQuery } from '../../reference/referenceApi';
 import { useComplianceStatusQuery, useSetActiveFrameworksMutation } from '../complianceApi';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — labels for regulatory_frameworks.content_status
 const CONTENT_STATUS = {
@@ -28,8 +29,8 @@ function Requirements({ framework }) {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   if (!data.length) {
     return (
-      <EmptyState title="No requirements loaded">
-        {framework.description ?? 'The ESG subject-matter expert supplies and verifies this framework\'s requirements.'}
+      <EmptyState title={tr("No requirements loaded")}>
+        {tr(framework.description) ?? tr("The ESG subject-matter expert supplies and verifies this framework's requirements.")}
       </EmptyState>
     );
   }
@@ -38,7 +39,7 @@ function Requirements({ framework }) {
       {data.map((r) => (
         <ListItem key={r.id} sx={{ pl: 2 + depthOf(r, byCode) * 3, alignItems: 'flex-start' }} divider>
           <ListItemText
-            primary={<><Typography component="span" variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>{r.title}</>}
+            primary={<><Typography component="span" variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>{tr(r.title)}</>}
             secondary={(r.metricKeys.length > 0 || r.mappedTo.length > 0) && (
               <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                 {r.metricKeys.map((m) => <Chip key={m} component="span" size="small" label={m} sx={{ height: 20, fontSize: '0.65rem' }} />)}
@@ -88,11 +89,11 @@ export default function FrameworksTab({ year }) {
       <Grid size={{ xs: 12, md: 4 }}>
         {problem && <Alert severity="error" sx={{ mb: 1 }}>{problem}</Alert>}
         <Card>
-          <List dense aria-label="Frameworks">
+          <List dense aria-label={tr("Frameworks")}>
             {data.map((f) => (
               <ListItem key={f.code} disablePadding
                 secondaryAction={can('compliance:configure') && (
-                  <FormControlLabel label="Report" labelPlacement="start" sx={{ mr: 0 }} control={(
+                  <FormControlLabel label={tr("Report")} labelPlacement="start" sx={{ mr: 0 }} control={(
                     <Checkbox size="small" checked={active.includes(f.code)} disabled={saving}
                       inputProps={{ 'aria-label': `We report against ${f.code}` }} onChange={(e) => toggle(f.code, e.target.checked)} />
                   )} />
@@ -111,18 +112,17 @@ export default function FrameworksTab({ year }) {
             <CardContent>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{current.name}</Typography>
-                <Chip size="small" color={CONTENT_STATUS[current.contentStatus]?.color} label={CONTENT_STATUS[current.contentStatus]?.label ?? current.contentStatus} />
+                <Chip size="small" color={CONTENT_STATUS[current.contentStatus]?.color} label={tr(CONTENT_STATUS[current.contentStatus]?.label) ?? current.contentStatus} />
               </Box>
-              {current.source && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Source: {current.source}</Typography>}
+              {current.source && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{tr("Source:")} {current.source}</Typography>}
               {current.version && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Version {current.version}{current.effectiveDate ? ` · effective ${current.effectiveDate}` : ''}
+                  {tr("Version")} {current.version}{current.effectiveDate ? ` · effective ${current.effectiveDate}` : ''}
                 </Typography>
               )}
               {current.contentStatus !== 'sme_verified' && current.requirementCount > 0 && (
                 <Alert severity="info" sx={{ my: 1 }}>
-                  These requirements haven't been verified by an ESG subject-matter expert yet. Use them to plan; check the
-                  source before relying on them for a filing.
+                  {tr("These requirements haven't been verified by an ESG subject-matter expert yet. Use them to plan; check the source before relying on them for a filing.")}
                 </Alert>
               )}
               <Requirements framework={current} />

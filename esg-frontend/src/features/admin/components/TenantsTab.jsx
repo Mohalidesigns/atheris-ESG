@@ -12,6 +12,7 @@ import { createTenantSchema, CURRENCIES, TENANT_SERVER_FIELDS, TIERS, toCreateTe
 import { toFormError } from '../../../services/apiSlice';
 import TenantModulesDialog from './TenantModulesDialog';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { tr } from '../../../i18n';
 
 const emptyCreate = {
   name: '', slug: '', countryCode: 'NG', industrySector: '', subscriptionTier: 'starter', billingCurrency: 'NGN', maxUsers: 10,
@@ -50,11 +51,11 @@ function TenantDialog({ open, tenant, onClose }) {
   };
 
   const text = (name, label, props = {}) => (
-    <TextField fullWidth size="small" label={label} {...register(name)} error={!!errors[name]} helperText={errors[name]?.message} {...props} />
+    <TextField fullWidth size="small" label={label} {...register(name)} error={!!errors[name]} helperText={tr(errors[name]?.message)} {...props} />
   );
   const select = (name, label, options) => (
     <Controller name={name} control={control} render={({ field }) => (
-      <TextField select fullWidth size="small" label={label} {...field} error={!!errors[name]} helperText={errors[name]?.message}>
+      <TextField select fullWidth size="small" label={label} {...field} error={!!errors[name]} helperText={tr(errors[name]?.message)}>
         {options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
       </TextField>
     )} />
@@ -63,7 +64,7 @@ function TenantDialog({ open, tenant, onClose }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>{editing ? `Edit ${tenant.name}` : 'New tenant'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${tenant.name}` : tr("New tenant")}</DialogTitle>
         <DialogContent>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -77,13 +78,13 @@ function TenantDialog({ open, tenant, onClose }) {
             {editing && (
               <Grid size={8}>
                 <Controller name="active" control={control} render={({ field }) => (
-                  <FormControlLabel control={<Switch checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />} label="Active" />
+                  <FormControlLabel control={<Switch checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />} label={tr("Active")} />
                 )} />
               </Grid>
             )}
             {!editing && (
               <>
-                <Grid size={12}><Typography variant="subtitle2">First tenant administrator</Typography></Grid>
+                <Grid size={12}><Typography variant="subtitle2">{tr("First tenant administrator")}</Typography></Grid>
                 <Grid size={12}>{text('adminEmail', 'Admin email', { type: 'email' })}</Grid>
                 <Grid size={6}>{text('adminFirstName', 'First name')}</Grid>
                 <Grid size={6}>{text('adminLastName', 'Last name')}</Grid>
@@ -93,9 +94,9 @@ function TenantDialog({ open, tenant, onClose }) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
           <Button type="submit" variant="contained" disabled={createState.isLoading || updateState.isLoading}>
-            {editing ? 'Save changes' : 'Create tenant'}
+            {editing ? tr("Save changes") : tr("Create tenant")}
           </Button>
         </DialogActions>
       </form>
@@ -108,20 +109,20 @@ export default function TenantsTab() {
   const [dialog, setDialog] = useState(undefined);
   const [modulesFor, setModulesFor] = useState(null);
   if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
-  if (isError) return <Alert severity="error">{toFormError(error).message}</Alert>;
+  if (isError) return <Alert severity="error">{tr(toFormError(error).message)}</Alert>;
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="tenants:create">
-          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog(null)}>New tenant</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog(null)}>{tr("New tenant")}</Button>
         </Can>
       </Box>
       <Card>
         <TableContainer>
           <Table size="small" data-sticky-actions>
             <TableHead><TableRow>
-              <TableCell>Tenant</TableCell><TableCell>Country</TableCell><TableCell>Sector</TableCell><TableCell>Tier</TableCell>
-              <TableCell>Users</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell>
+              <TableCell>{tr("Tenant")}</TableCell><TableCell>{tr("Country")}</TableCell><TableCell>{tr("Sector")}</TableCell><TableCell>{tr("Tier")}</TableCell>
+              <TableCell>{tr("Users")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell align="right">{tr("Actions")}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {tenants.map((t) => (
@@ -132,7 +133,7 @@ export default function TenantsTab() {
                   <TableCell>{t.industrySector ?? '—'}</TableCell>
                   <TableCell>{t.subscriptionTier}</TableCell>
                   <TableCell>{t.users} / {t.maxUsers}</TableCell>
-                  <TableCell><Chip size="small" label={t.active ? 'Active' : 'Suspended'} sx={{ fontSize: '0.65rem' }} /></TableCell>
+                  <TableCell><Chip size="small" label={t.active ? tr("Active") : tr("Suspended")} sx={{ fontSize: '0.65rem' }} /></TableCell>
                   <TableCell align="right">
                     <Can permission="tenants:update">
                       <IconButton size="small" aria-label={`Modules for ${t.name}`} onClick={() => setModulesFor(t)}><ViewModule fontSize="small" /></IconButton>

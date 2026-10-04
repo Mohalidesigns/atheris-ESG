@@ -65,7 +65,11 @@ public class ReportService {
     private final ObjectMapper json;
     private final Clock clock;
 
-    public ReportService(JdbcTemplate jdbc, VariableEngine engine, NotificationService notifications, ObjectMapper json, Clock clock) {
+    private final org.springframework.context.ApplicationEventPublisher events;
+
+    public ReportService(JdbcTemplate jdbc, VariableEngine engine, NotificationService notifications, ObjectMapper json, Clock clock,
+                         org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.jdbc = jdbc;
         this.engine = engine;
         this.notifications = notifications;
@@ -281,6 +285,7 @@ public class ReportService {
                 jdbc.update("update reporting.reports set status = 'approved', approved_at = now(), version_major = version_major + 1, version_minor = 0, "
                         + "report_version = 'v' || (version_major + 1) || '.0' where id = ?", id);
                 recordVersion(id, "approved", blank(r.comments()));
+                events.publishEvent(new ReportEvents.Approved(id));
                 notifications.notifyAfterCommit(submitter, "REPORT_APPROVED", Map.of("title", title, "version", get(id).versionLabel()));
             }
         } else {
@@ -339,7 +344,7 @@ public class ReportService {
     }
 
     /** The latest approved version: what exports render. */
-    VersionDetail latestApproved(UUID reportId) {
+    public VersionDetail latestApproved(UUID reportId) {
         List<UUID> ids = jdbc.queryForList("select id from reporting.report_versions where report_id = ? and event = 'approved' "
                 + "order by created_at desc limit 1", UUID.class, reportId);
         if (ids.isEmpty()) {
