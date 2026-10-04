@@ -1,13 +1,19 @@
 package com.esg.model.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.time.Instant;
 
 @Entity
-@Table(name = "tenants")
+@Table(name = "tenants", schema = "auth")
 public class Tenant {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
     @Column(nullable = false) private String name;
     @Column(unique = true, nullable = false) private String slug;
     @Column(name = "subscription_tier", nullable = false) private String subscriptionTier;
@@ -21,7 +27,7 @@ public class Tenant {
 
     public Tenant() {}
 
-    public String getId() { return id; } public void setId(String id) { this.id = id; }
+    public UUID getId() { return id; } public void setId(UUID id) { this.id = id; }
     public String getName() { return name; } public void setName(String name) { this.name = name; }
     public String getSlug() { return slug; } public void setSlug(String slug) { this.slug = slug; }
     public String getSubscriptionTier() { return subscriptionTier; } public void setSubscriptionTier(String v) { this.subscriptionTier = v; }
@@ -35,4 +41,6 @@ public class Tenant {
 
     @PrePersist public void prePersist() { if (createdAt == null) createdAt = Instant.now(); if (updatedAt == null) updatedAt = Instant.now(); }
     @PreUpdate public void preUpdate() { updatedAt = Instant.now(); }
+
+    public Long getVersion() { return this.version; }
 }

@@ -1,0 +1,218 @@
+{
+  "id": "risk",
+  "forms": [
+    "Risk register entry"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/risk/risks"
+  },
+  "read": {
+    "path": "/v1/risk/risks/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/risk/risks/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Risk & Materiality"
+  },
+  "values": {
+    "orgId": "{ORG_SITE_2}",
+    "title": "RT risk {u}",
+    "category": "climate_physical",
+    "sectorCode": "D",
+    "description": "Tank farm in a flood plain",
+    "timeHorizon": "long",
+    "likelihood": 4,
+    "impact": 5,
+    "controls": "Bund walls",
+    "residualLikelihood": 2,
+    "residualImpact": 3,
+    "ownerUserId": "{USER_DIRECTOR}",
+    "status": "mitigating",
+    "reviewDate": "2027-03-31",
+    "topicId": "{TOPIC_A}"
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "title": "RT risk {u} revised",
+    "category": "climate_transition",
+    "sectorCode": "B",
+    "description": "Carbon tax on flaring",
+    "timeHorizon": "short",
+    "likelihood": 3,
+    "impact": 4,
+    "controls": "Flare reduction plan",
+    "residualLikelihood": 1,
+    "residualImpact": 2,
+    "ownerUserId": "{USER_MANAGER}",
+    "status": "accepted",
+    "reviewDate": "2027-06-30",
+    "topicId": null
+  },
+  "invalid": [
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "title",
+      "value": {
+        "$repeat": [
+          "x",
+          201
+        ]
+      },
+      "rule": "max 200"
+    },
+    {
+      "field": "category",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "sectorCode",
+      "value": "ZZ",
+      "rule": "catalogue"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    },
+    {
+      "field": "timeHorizon",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "likelihood",
+      "value": 6,
+      "rule": "max 5"
+    },
+    {
+      "field": "impact",
+      "value": 0,
+      "rule": "min 1"
+    },
+    {
+      "field": "controls",
+      "value": {
+        "$repeat": [
+          "x",
+          4001
+        ]
+      },
+      "rule": "max 4000"
+    },
+    {
+      "field": "residualLikelihood",
+      "value": null,
+      "rule": "both or neither",
+      "errorField": "residualLikelihood"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "{USER_COMPLIANCE}",
+      "rule": "must hold risk:update"
+    },
+    {
+      "field": "status",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "likelihood",
+      "value": 1,
+      "rule": "residual not above inherent",
+      "errorField": "residualImpact"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "title": {
+        "label": "Title"
+      },
+      "category": {
+        "label": "Category",
+        "kind": "select",
+        "display": "Climate — physical"
+      },
+      "sectorCode": {
+        "label": "Sector (optional)",
+        "kind": "select",
+        "display": "D · Electricity, gas, steam and air conditioning supply"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "timeHorizon": {
+        "label": "Time horizon",
+        "kind": "select",
+        "display": "Long term"
+      },
+      "likelihood": {
+        "label": "Likelihood",
+        "kind": "select",
+        "display": "4 · Likely"
+      },
+      "impact": {
+        "label": "Impact",
+        "kind": "select",
+        "display": "5 · Critical"
+      },
+      "controls": {
+        "label": "Controls (optional)"
+      },
+      "residualLikelihood": {
+        "label": "Likelihood after controls (optional)",
+        "kind": "select",
+        "display": "2 · Unlikely"
+      },
+      "residualImpact": {
+        "label": "Impact after controls (optional)",
+        "kind": "select",
+        "display": "3 · Major"
+      },
+      "ownerUserId": {
+        "label": "Owner (optional)",
+        "kind": "select",
+        "display": "Esg Director Fixture"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Mitigating"
+      },
+      "reviewDate": {
+        "label": "Review date (optional)"
+      },
+      "topicId": {
+        "label": "Material topic (optional)",
+        "kind": "select",
+        "display": "Climate (2026)"
+      }
+    }
+  }
+}

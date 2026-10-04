@@ -1,0 +1,56 @@
+{
+  "id": "investor-settings",
+  "forms": [
+    "Scorecard weights"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_MANAGER",
+  "singleton": true,
+  "read": {
+    "path": "/v1/investor/settings"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/investor/settings",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Investor Portal"
+  },
+  "values": {
+    "weightE": 50,
+    "weightS": 25,
+    "weightG": 25
+  },
+  "invalid": [
+    {
+      "field": "weightE",
+      "value": 60,
+      "rule": "E + S + G = 100"
+    },
+    {
+      "field": "weightS",
+      "value": 101,
+      "rule": "0 to 100"
+    },
+    {
+      "field": "weightG",
+      "value": null,
+      "rule": "required"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "weightE": {
+        "label": "E weight"
+      },
+      "weightS": {
+        "label": "S weight"
+      },
+      "weightG": {
+        "label": "G weight"
+      }
+    }
+  }
+}

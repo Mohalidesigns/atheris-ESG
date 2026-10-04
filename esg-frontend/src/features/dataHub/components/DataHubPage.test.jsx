@@ -1,0 +1,403 @@
+import { describe, it, expect, vi } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import DataHubPage from './DataHubPage';
+import { authenticated, renderWithStore } from '../../../test/renderWithStore';
+import { fakeApi, ok } from '../../../test/fakeApi';
+
+const metrics = [
+  { metricKey: 'electricity_kwh', pillar: 'E', category: 'Energy', name: 'Electricity consumed', unit: 'kWh', dataType: 'decimal', description: 'Grid electricity.', requirements: [{ framework: 'GRI', code: '302-1', title: 'Energy' }] },
+  { metricKey: 'employees_total', pillar: 'S', category: 'Workforce', name: 'Total employees', unit: 'count', dataType: 'integer', description: '', requirements: [] },
+  { metricKey: 'community_investment', pillar: 'S', category: 'Community', name: 'Community investment', unit: 'currency', dataType: 'currency', description: '', requirements: [] },
+];
+const orgs = [{ id: 'hq', name: 'Lagos HQ', parentOrgId: null }];
+const point = {
+  id: 'p1', metricKey: 'electricity_kwh', metricName: 'Electricity consumed', category: 'E', subCategory: 'Energy', numericValue: 458200,
+  unit: 'kWh', orgId: 'hq', orgName: 'Lagos HQ', reportingPeriodStart: '2026-01-01', reportingPeriodEnd: '2026-03-31',
+  validationStatus: 'submitted', qualityScore: 0.75, version: 1, createdByName: 'Emeka Nwosu', createdAt: '2026-04-02T09:00:00Z',
+  qualityBreakdown: { completeness: 0.3333, consistency: 1, timeliness: 0.9104, accuracy: 0.5, score: 0.75, notes: ['timeliness: submitted 60 days after the period ended'] },
+  validationWarnings: [{ code: 'period_overlap', field: 'reportingPeriodStart', message: 'Overlaps 1 other electricity_kwh value(s)' }],
+  evidenceFileIds: [], actions: ['validate', 'reject'],
+};
+const page = (content) => ok({ content, totalElements: content.length, number: 0, size: 20 });
+
+const routes = (extra = {}) => ({
+  'GET /data/points': () => page([point]),
+  'GET /reference/metrics': () => ok(metrics),
+  'GET /organisations': () => ok(orgs),
+  'GET /data/rules': () => ok([]),
+  'GET /data/sources': () => ok([{ id: 's1', name: 'Generator logbook', sourceType: 'manual', active: true, dataPoints: 3, version: 0 }]),
+  'GET /data/owners': () => ok([{ id: 'u1', name: 'Ada Lovelace', email: 'ada@example.ng' }]),
+  'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 52428800, allowedExtensions: 'csv, pdf, xlsx', virusScanning: 'Not configured' }),
+  ...extra,
+});
+const READ = ['data_points:read', 'org_structure:read', 'reference_data:read'];
+const COLLECTOR = [...READ, 'data_points:create', 'data_points:update', 'data_sources:read', 'files:create', 'files:read'];
+const ANALYST = [...READ, 'data_points:validate', 'files:read'];
+
+describe('DataHubPage list', () => {
+  it('lists data points with names, quality, warnings and status, newest first', async () => {
+    const calls = fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(READ) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    expect(within(table).getByText('Electricity consumed')).toBeInTheDocument();
+    expect(within(table).getByText('Lagos HQ')).toBeInTheDocument();
+    expect(within(table).getByText('458,200')).toBeInTheDocument();
+    expect(within(table).getByText('75%')).toBeInTheDocument();
+    expect(within(table).getByLabelText('1 warning(s)')).toBeInTheDocument();
+    expect(within(table).getByText('Submitted')).toBeInTheDocument();
+    expect(calls.find((c) => c.key === 'GET /data/points' && c.query.size === '20').query).toMatchObject({ sort: 'createdAt,desc', page: '0' });
+    // Read-only users get no Add button and no Review/Import tabs.
+    expect(screen.queryByRole('button', { name: 'Add data point' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Review' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Import' })).not.toBeInTheDocument();
+  });
+
+  it('sends filters to the server', async () => {
+    const calls = fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(READ) });
+    await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(screen.getByLabelText('Status'));
+    await userEvent.click(screen.getByRole('option', { name: 'Approved' }));
+    await userEvent.click(screen.getByLabelText('Metric'));
+    await userEvent.click(screen.getByRole('option', { name: 'Total employees' }));
+    await waitFor(() => expect(calls.at(-1).query).toMatchObject({ status: 'approved', metricKey: 'employees_total', page: '0' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByRole('combobox', { name: 'Status' })).not.toHaveTextContent('Approved');
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
+  });
+});
+
+describe('DataHubPage data entry', () => {
+  const fill = async (metricName, value) => {
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('Metric'));
+    await userEvent.click(screen.getByRole('option', { name: new RegExp(metricName) }));
+    await userEvent.click(within(dialog).getByLabelText('Organisation'));
+    await userEvent.click(screen.getByRole('option', { name: 'Lagos HQ' }));
+    await userEvent.type(within(dialog).getByLabelText(/^(Value|Amount)/), value);
+    await userEvent.type(within(dialog).getByLabelText('Period start'), '2026-07-01');
+    await userEvent.type(within(dialog).getByLabelText('Period end'), '2026-09-30');
+    return dialog;
+  };
+
+  it('saves a draft: metric from the catalogue, no category/unit in the body, data source chosen', async () => {
+    const calls = fakeApi(routes({
+      'POST /data/points': (body) => [201, { success: true, data: { ...point, ...body, id: 'p2', validationStatus: 'draft', version: 0, actions: [] } }],
+      'GET /data/points/p2': () => ok({ ...point, id: 'p2', validationStatus: 'draft', actions: ['edit', 'submit', 'delete'] }),
+      'GET /data/points/p2/history': () => ok([]),
+      'GET /files': () => ok([]),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await fill('Electricity consumed', '1250.5');
+    await userEvent.click(within(dialog).getByLabelText('Source system (optional)'));
+    await userEvent.click(screen.getByRole('option', { name: 'Generator logbook' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(calls.some((c) => c.key === 'POST /data/points')).toBe(true));
+    expect(calls.find((c) => c.key === 'POST /data/points').body).toEqual({
+      orgId: 'hq', metricKey: 'electricity_kwh', subCategory: null, numericValue: 1250.5, textValue: null, currency: null,
+      sourceId: 's1', ownerUserId: null, evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
+    });
+    expect(calls.some((c) => c.key === 'PUT /data/points/p2/submit')).toBe(false);
+    // The saved point opens in the drawer with the actions the server allows.
+    expect(await screen.findByRole('button', { name: 'Submit' })).toBeInTheDocument();
+  });
+
+  it('"Save and submit" submits with the saved version; money metrics offer a currency', async () => {
+    const calls = fakeApi(routes({
+      'POST /data/points': (body) => [201, { success: true, data: { ...point, ...body, id: 'p3', version: 0 } }],
+      'PUT /data/points/p3/submit': (body) => ok({ ...point, id: 'p3', version: body.version + 1 }),
+      'GET /data/points/p3': () => ok({ ...point, id: 'p3' }),
+      'GET /data/points/p3/history': () => ok([]),
+      'GET /files': () => ok([]),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await fill('Community investment', '5000');
+    await userEvent.click(within(dialog).getByLabelText('Currency'));
+    await userEvent.click(screen.getByRole('option', { name: 'USD' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save and submit' }));
+    await waitFor(() => expect(calls.some((c) => c.key === 'PUT /data/points/p3/submit')).toBe(true));
+    expect(calls.find((c) => c.key === 'POST /data/points').body).toMatchObject({ numericValue: 5000, currency: 'USD' });
+    expect(calls.find((c) => c.key === 'PUT /data/points/p3/submit').body).toEqual({ version: 0 });
+  });
+
+  it('server field errors land on the right field (no exchange rate → currency)', async () => {
+    fakeApi(routes({
+      'POST /data/points': () => [400, { title: 'Validation failed', detail: 'One or more fields are invalid',
+        errors: { currency: 'No EUR→NGN exchange rate on or before 2026-09-30.' } }],
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await fill('Community investment', '5000');
+    await userEvent.click(within(dialog).getByLabelText('Currency'));
+    await userEvent.click(screen.getByRole('option', { name: 'EUR' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
+    expect(await within(dialog).findByText(/No EUR→NGN exchange rate/)).toBeInTheDocument();
+  });
+
+  it('client rules stop an invalid value before the request', async () => {
+    const calls = fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await fill('Total employees', '10.5');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
+    expect(await within(dialog).findByText('Must be a whole number')).toBeInTheDocument();
+    expect(calls.some((c) => c.key === 'POST /data/points')).toBe(false);
+  });
+});
+
+describe('DataHubPage review', () => {
+  const drawerRoutes = (extra = {}) => routes({
+    'GET /data/points/p1': () => ok(point),
+    'GET /data/points/p1/history': () => ok([
+      { at: '2026-04-02T09:00:00Z', userName: 'Emeka Nwosu', action: 'created', changedFields: [] },
+      { at: '2026-04-02T09:05:00Z', userName: 'Emeka Nwosu', action: 'submitted', changedFields: [] },
+    ]),
+    'GET /files': () => ok([]),
+    ...extra,
+  });
+
+  it('the drawer shows quality, warnings and history; validate sends the version', async () => {
+    const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/validate': () => ok({ ...point, validationStatus: 'validated', actions: [] }) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByText('Data quality 75%')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Completeness 33%')).toBeInTheDocument();
+    expect(within(drawer).getByText(/submitted 60 days after/)).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Rule warnings')).toHaveTextContent('Overlaps 1 other');
+    expect(within(drawer).getByText('Submitted by Emeka Nwosu')).toBeInTheDocument();
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Validate' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/validate')?.body).toEqual({ version: 1 }));
+  });
+
+  it('an action segregation of duties forbids is shown disabled with the reason (Phase 2)', async () => {
+    fakeApi(drawerRoutes({
+      'GET /data/points/p1': () => ok({ ...point, actions: [], blockedActions: { validate: 'You entered or submitted this — another person must validate it' } }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByRole('button', { name: 'Validate' })).toBeDisabled();
+    expect(within(drawer).getByLabelText('Validate: You entered or submitted this — another person must validate it')).toBeInTheDocument();
+  });
+
+  it('reject asks for a reason (required, like the server) and sends it', async () => {
+    const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/reject': (body) => ok({ ...point, validationStatus: 'rejected', statusReason: body.reason }) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    await userEvent.click(await within(drawer).findByRole('button', { name: 'Reject' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reject data point' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    expect(await within(dialog).findByText('A reason is required')).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText('Reason'), 'Meter photo missing');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/reject')?.body)
+      .toEqual({ version: 1, reason: 'Meter photo missing' }));
+  });
+
+  it('the Review tab lists what awaits validation for validators', async () => {
+    const calls = fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    expect(await screen.findByRole('table', { name: 'Awaiting validation' })).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Awaiting approval' })).not.toBeInTheDocument();
+    await waitFor(() => expect(calls.some((c) => c.key === 'GET /data/points' && c.query.status === 'submitted')).toBe(true));
+  });
+});
+
+describe('DataHubPage bulk actions (Phase 3)', () => {
+  const p2 = { ...point, id: 'p2', reportingPeriodStart: '2026-04-01', reportingPeriodEnd: '2026-06-30', version: 4 };
+  const p3 = { ...point, id: 'p3', reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', actions: [],
+    blockedActions: { validate: 'You entered or submitted this — another person must validate it' } };
+
+  it('selects rows, validates the eligible ones in one request and reports each refusal', async () => {
+    const calls = fakeApi(routes({
+      'GET /data/points': () => page([point, p2, p3]),
+      'POST /data/points/bulk': () => ok({
+        action: 'validate', requested: 2, succeeded: 1, failed: 1,
+        results: [{ id: 'p1', ok: true, status: 'validated' },
+          { id: 'p2', ok: false, errorCode: 'ESG-409-VERSION', message: 'This data point was changed by someone else. Reload and try again.' }],
+      }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select all on this page' }));
+    const bar = screen.getByRole('region', { name: 'Bulk actions' });
+    expect(within(bar).getByText('3 selected')).toBeInTheDocument();
+    // p3 is the analyst's own: it isn't sent, and the bar says why.
+    expect(within(bar).getByText(/1 you can't review/)).toBeInTheDocument();
+    await userEvent.click(within(bar).getByRole('button', { name: 'Validate (2)' }));
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Validate 2' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/bulk')?.body).toEqual({
+      action: 'validate', items: [{ id: 'p1', version: 1 }, { id: 'p2', version: 4 }],
+    }));
+    const result = await screen.findByRole('dialog', { name: 'Validate: 1 of 2 validated' });
+    expect(within(result).getByRole('table', { name: 'Not processed' })).toHaveTextContent('Electricity consumed 2026-04-01');
+    expect(within(result).getByText('ESG-409-VERSION')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Bulk actions' })).not.toBeInTheDocument(); // selection cleared
+  });
+
+  it('a bulk reject needs a reason, as a single reject does', async () => {
+    const calls = fakeApi(routes({
+      'GET /data/points': () => page([point, p2]),
+      'POST /data/points/bulk': () => ok({ action: 'reject', requested: 2, succeeded: 2, failed: 0, results: [] }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-01-01' }));
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-04-01' }));
+    await userEvent.click(within(screen.getByRole('region', { name: 'Bulk actions' })).getByRole('button', { name: 'Reject (2)' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reject 2 data points' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    expect(await within(dialog).findByText('A reason is required')).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText('Reason'), 'Wrong meter');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/bulk')?.body)
+      .toEqual({ action: 'reject', items: [{ id: 'p1', version: 1 }, { id: 'p2', version: 4 }], reason: 'Wrong meter' }));
+  });
+
+  it('a collector sees only Submit', async () => {
+    fakeApi(routes({ 'GET /data/points': () => page([{ ...point, validationStatus: 'draft', actions: ['edit', 'submit', 'delete'] }]) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(['data_points:read', 'data_points:create', 'data_points:update']) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-01-01' }));
+    const bar = screen.getByRole('region', { name: 'Bulk actions' });
+    expect(within(bar).getByRole('button', { name: 'Submit (1)' })).toBeEnabled();
+    expect(within(bar).queryByRole('button', { name: /Validate|Approve|Reject/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('DataHubPage guided entry and responsible person (Phase 3)', () => {
+  it('?add= opens the form with the metric and period preselected', async () => {
+    fakeApi(routes());
+    renderWithStore(<DataHubPage />, {
+      preloadedState: authenticated(COLLECTOR),
+      route: '/data-hub?add=employees_total&from=2026-01-01&to=2026-12-31',
+    });
+    const dialog = await screen.findByRole('dialog', { name: 'Add data point' });
+    expect(within(dialog).getByLabelText('Metric')).toHaveValue('Total employees (count)');
+    expect(within(dialog).getByLabelText('Period start')).toHaveValue('2026-01-01');
+    expect(within(dialog).getByLabelText('Period end')).toHaveValue('2026-12-31');
+  });
+
+  it('?point= opens that data point (links from the dashboard activity feed, WP-24)', async () => {
+    fakeApi(routes({ 'GET /data/points/p1': () => ok(point), 'GET /data/points/p1/history': () => ok([]), 'GET /files': () => ok([]) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?point=p1' });
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByText('Data quality 75%')).toBeInTheDocument();
+  });
+
+  it('?add= does nothing for someone who cannot add data', async () => {
+    fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?add=employees_total' });
+    await screen.findByRole('table', { name: 'Data points' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('names the responsible person separately from the source system', async () => {
+    const calls = fakeApi(routes({
+      'POST /data/points': (body) => ok({ ...point, ...body, id: 'p9', version: 0 }),
+      'GET /data/points/p9': () => ok({ ...point, id: 'p9' }), 'GET /data/points/p9/history': () => ok([]), 'GET /files': () => ok([]),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('Responsible person'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Ada Lovelace' }));
+    await userEvent.type(within(dialog).getByLabelText('Metric'), 'Electricity');
+    await userEvent.click(await screen.findByRole('option', { name: /Electricity consumed/ }));
+    await userEvent.click(within(dialog).getByLabelText('Organisation'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Lagos HQ' }));
+    await userEvent.type(within(dialog).getByLabelText('Value'), '10');
+    await userEvent.type(within(dialog).getByLabelText('Period start'), '2026-07-01');
+    await userEvent.type(within(dialog).getByLabelText('Period end'), '2026-09-30');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points')?.body).toMatchObject({ ownerUserId: 'u1', sourceId: null }));
+  });
+});
+
+describe('DataHubPage set-up tabs', () => {
+  it('adds a data source', async () => {
+    const calls = fakeApi(routes({
+      'POST /data/sources': (body) => [201, { success: true, data: { id: 's2', ...body, dataPoints: 0, version: 0 } }],
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated([...READ, 'data_sources:read', 'data_sources:manage']) });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Sources' }));
+    expect(await screen.findByText('Generator logbook')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'New data source' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.type(within(dialog).getByLabelText('System name'), 'SAP extract');
+    await userEvent.click(within(dialog).getByLabelText('Type'));
+    await userEvent.click(screen.getByRole('option', { name: 'ERP system' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add data source' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/sources')?.body)
+      .toEqual({ name: 'SAP extract', sourceType: 'erp', description: null, ownerUserId: null, active: true }));
+  });
+
+  it('adds an exchange rate and refuses a same-currency pair before sending', async () => {
+    const calls = fakeApi(routes({
+      'GET /data/fx-rates': () => ok([]),
+      'POST /data/fx-rates': (body) => [201, { success: true, data: { id: 'r1', ...body, version: 0 } }],
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated([...READ, 'fx_rates:read', 'fx_rates:manage']) });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Exchange rates' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'New exchange rate' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('To'));
+    await userEvent.click(screen.getByRole('option', { name: 'USD' }));
+    await userEvent.type(within(dialog).getByLabelText('Rate'), '1520.5');
+    await userEvent.type(within(dialog).getByLabelText('Rate date'), '2026-03-31');
+    await userEvent.type(within(dialog).getByLabelText('Source'), 'CBN official rate');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add rate' }));
+    expect(await within(dialog).findByText('Must differ from the source currency')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByLabelText('To'));
+    await userEvent.click(screen.getByRole('option', { name: 'NGN' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add rate' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/fx-rates')?.body)
+      .toEqual({ fromCurrency: 'USD', toCurrency: 'NGN', rate: 1520.5, rateDate: '2026-03-31', source: 'CBN official rate' }));
+  });
+
+  it('imports a file: upload, suggested mapping, defaults, progress and row errors', async () => {
+    vi.useRealTimers();
+    const job = {
+      id: 'j1', fileName: 'q3.csv', fileFormat: 'csv', status: 'uploaded', columns: ['Metric', 'Value'], sampleRows: [['diesel_litres', '10']],
+      suggestedMapping: { metric: 'Metric', value: 'Value' }, totalRows: 2, processedRows: 0, succeededRows: 0, failedRows: 0, rowErrors: [], version: 0,
+      createdAt: '2026-10-01T10:00:00Z',
+    };
+    let polls = 0;
+    const calls = fakeApi(routes({
+      'GET /data/import': () => ok([]),
+      'POST /data/import': () => [201, { success: true, data: job }],
+      'POST /data/import/j1/start': () => [202, { success: true, data: { ...job, status: 'processing', version: 1 } }],
+      'GET /data/import/j1': () => {
+        polls += 1;
+        return ok(polls < 2 ? { ...job, status: 'processing', processedRows: 1 }
+          : { ...job, status: 'completed', processedRows: 2, succeededRows: 1, failedRows: 1,
+            rowErrors: [{ row: 3, column: 'Value', field: 'value', message: "'lots' isn't a number" }] });
+      },
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Import' }));
+    await userEvent.upload(await screen.findByTestId('import-file'), new File(['Metric,Value\ndiesel_litres,10\n'], 'q3.csv', { type: 'text/csv' }));
+    expect(await screen.findByText(/q3.csv: 2 rows/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Metric *' })).toHaveTextContent('Metric'); // suggested
+    await userEvent.click(screen.getByRole('button', { name: 'Import 2 rows' }));
+    expect(await screen.findByText('Map a column or choose an organisation for every row')).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText('Organisation for every row'));
+    await userEvent.click(screen.getByRole('option', { name: 'Lagos HQ' }));
+    await userEvent.type(screen.getByLabelText('Period start for every row'), '2026-07-01');
+    await userEvent.type(screen.getByLabelText('Period end for every row'), '2026-09-30');
+    await userEvent.click(screen.getByRole('button', { name: 'Import 2 rows' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/import/j1/start')?.body).toEqual({
+      version: 0, mapping: { metric: 'Metric', value: 'Value' }, defaultOrgId: 'hq', defaultPeriodStart: '2026-07-01',
+      defaultPeriodEnd: '2026-09-30', sourceId: null,
+    }));
+    const result = await screen.findByLabelText('Import result', {}, { timeout: 4000 });
+    expect(await within(result).findByText(/1 of 2 rows imported as drafts; 1 need fixing/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(within(result).getByRole('table', { name: 'Row errors' })).toHaveTextContent("'lots' isn't a number");
+  });
+});

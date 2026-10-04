@@ -4,11 +4,49 @@
     {
       "name": "esg-dev",
       "runtimeExecutable": "/usr/local/bin/npx",
-      "runtimeArgs": ["vite", "--port", "5174"],
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5174"
+      ],
       "port": 5174,
       "cwd": "esg-frontend",
       "env": {
         "PATH": "/usr/local/bin:/usr/bin:/bin"
+      }
+    },
+    {
+      "name": "esg-backend-local",
+      "runtimeExecutable": "/Users/mac/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home/bin/java",
+      "runtimeArgs": [
+        "-jar",
+        "/Users/mac/Documents/devs/laravel/ESG/esg-backend/target/esg-platform-1.0.0-SNAPSHOT.jar",
+        "--spring.profiles.active=local",
+        "--server.port=8090"
+      ],
+      "port": 8090,
+      "cwd": "esg-backend",
+      "env": {
+        "DB_USERNAME": "esg_app",
+        "DB_PASSWORD": "esg_app_local",
+        "DB_OWNER_USERNAME": "esg_owner",
+        "DB_OWNER_PASSWORD": "esg_owner_local"
+      }
+    },
+    {
+      "name": "esg-frontend-proxied",
+      "runtimeExecutable": "/usr/local/bin/npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175,
+      "cwd": "esg-frontend",
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "VITE_BACKEND_URL": "http://localhost:8090"
       }
     }
   ]

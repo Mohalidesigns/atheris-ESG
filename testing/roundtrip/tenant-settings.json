@@ -1,0 +1,112 @@
+{
+  "id": "tenant-settings",
+  "forms": [
+    "Admin: tenant settings"
+  ],
+  "actor": "TENANT_ADMIN",
+  "readOnlyRole": "AUDITOR",
+  "singleton": true,
+  "read": {
+    "path": "/v1/settings"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/settings",
+    "versioned": true
+  },
+  "values": {
+    "baseCurrency": "GHS",
+    "fiscalYearStartMonth": 7,
+    "reportingTimezone": "Africa/Accra",
+    "defaultFrameworkCodes": [
+      "GRI",
+      "TCFD"
+    ],
+    "gwpSet": "AR5",
+    "provisionalFactorPolicy": "block"
+  },
+  "changes": {
+    "baseCurrency": "ZAR",
+    "fiscalYearStartMonth": 4,
+    "reportingTimezone": "Africa/Johannesburg",
+    "defaultFrameworkCodes": [
+      "ISSB_S2"
+    ],
+    "gwpSet": "AR6",
+    "provisionalFactorPolicy": "allow_flagged"
+  },
+  "invalid": [
+    {
+      "field": "baseCurrency",
+      "value": "BTC",
+      "rule": "enum"
+    },
+    {
+      "field": "fiscalYearStartMonth",
+      "value": 13,
+      "rule": "1..12"
+    },
+    {
+      "field": "fiscalYearStartMonth",
+      "value": 0,
+      "rule": "1..12"
+    },
+    {
+      "field": "reportingTimezone",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "defaultFrameworkCodes",
+      "value": [
+        "NOT_A_FRAMEWORK"
+      ],
+      "rule": "codes must exist"
+    },
+    {
+      "field": "gwpSet",
+      "value": "AR4",
+      "rule": "AR5 or AR6"
+    },
+    {
+      "field": "provisionalFactorPolicy",
+      "value": "maybe",
+      "rule": "allow_flagged or block"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "baseCurrency": {
+        "label": "Base currency",
+        "kind": "select",
+        "display": "GHS"
+      },
+      "fiscalYearStartMonth": {
+        "label": "Fiscal year starts",
+        "kind": "select",
+        "display": "July"
+      },
+      "reportingTimezone": {
+        "label": "Reporting time zone"
+      },
+      "defaultFrameworkCodes": {
+        "kind": "checkboxes",
+        "options": [
+          "GRI",
+          "TCFD",
+          "ISSB_S2"
+        ]
+      },
+      "gwpSet": {
+        "label": "Global warming potentials",
+        "kind": "select",
+        "display": "IPCC AR5 (CH4 28, N2O 265)"
+      },
+      "provisionalFactorPolicy": {
+        "label": "Emission factors pending expert review",
+        "kind": "select",
+        "display": "Block: use only verified or your own factors"
+      }
+    }
+  }
+}

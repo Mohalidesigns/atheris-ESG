@@ -1,0 +1,144 @@
+{
+  "id": "gas-flaring",
+  "forms": [
+    "Gas flaring record"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon/flaring"
+  },
+  "read": {
+    "path": "/v1/carbon/flaring/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon/flaring/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404
+  },
+  "values": {
+    "facilityId": "{ORG_SITE_2}",
+    "volumeMcf": 100,
+    "gasComposition": {
+      "methane": 90,
+      "ethane": 5,
+      "co2": 3,
+      "nitrogen": 2
+    },
+    "combustionEfficiency": 0.98,
+    "flaringReason": "routine",
+    "reportingPeriodStart": "{yyyy}-05-01",
+    "reportingPeriodEnd": "{yyyy}-05-31",
+    "notes": "Flare stack A"
+  },
+  "changes": {
+    "facilityId": "{ORG_HQ}",
+    "volumeMcf": 150.5,
+    "gasComposition": {
+      "methane": 95,
+      "nitrogen": 5
+    },
+    "combustionEfficiency": 0.95,
+    "flaringReason": "safety",
+    "reportingPeriodStart": "{yyyy}-05-02",
+    "reportingPeriodEnd": "{yyyy}-05-30",
+    "notes": "Flare stack B"
+  },
+  "invalid": [
+    {
+      "field": "facilityId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "volumeMcf",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "gasComposition",
+      "value": {
+        "methane": 50
+      },
+      "rule": "adds up to 100"
+    },
+    {
+      "field": "gasComposition",
+      "value": {
+        "methane": 90,
+        "argon": 10
+      },
+      "rule": "known components"
+    },
+    {
+      "field": "combustionEfficiency",
+      "value": 1.2,
+      "rule": "0.5..1"
+    },
+    {
+      "field": "flaringReason",
+      "value": "boredom",
+      "rule": "enum"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "{yyyy}-04-01",
+      "rule": "end >= start (cross-field)"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "facilityId": {
+        "label": "Facility",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "volumeMcf": {
+        "label": "Volume flared"
+      },
+      "gasComposition": {
+        "kind": "object",
+        "labels": {
+          "methane": "Methane (CH4)",
+          "ethane": "Ethane (C2H6)",
+          "propane": "Propane (C3H8)",
+          "butane": "Butane (C4H10)",
+          "pentane_plus": "Pentane+ (C5+)",
+          "co2": "Carbon dioxide (CO2)",
+          "nitrogen": "Nitrogen (N2)"
+        }
+      },
+      "combustionEfficiency": {
+        "label": "Combustion efficiency"
+      },
+      "flaringReason": {
+        "label": "Reason",
+        "kind": "select",
+        "display": "Routine"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
+  }
+}
