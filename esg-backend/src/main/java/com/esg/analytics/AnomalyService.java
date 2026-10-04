@@ -136,8 +136,8 @@ public class AnomalyService {
             where.append(" and a.status <> 'cleared'");
         }
         if (kind != null) {
-            if (!Set.of("outlier", "variance").contains(kind)) {
-                throw FieldValidationException.of("kind", "must be outlier or variance");
+            if (!Set.of("outlier", "variance", "ml").contains(kind)) {
+                throw FieldValidationException.of("kind", "must be outlier, variance or ml");
             }
             where.append(" and a.kind = ?");
             args.add(kind);
@@ -249,8 +249,9 @@ public class AnomalyService {
     /** On-demand scan of the year, over the caller's organisations. */
     @Transactional
     public ScanResult scan(int year) {
-        StringBuilder where = new StringBuilder("and extract(year from d.reporting_period_end) = ?");
-        List<Object> args = new ArrayList<>(List.of(year));
+        // Date bounds, not extract(year …): under RLS only leakproof comparisons on the column can use its index (WP-51).
+        StringBuilder where = new StringBuilder("and d.reporting_period_end between ? and ?");
+        List<Object> args = new ArrayList<>(List.of(java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31))));
         support.scope(where, args, "d.org_id");
         return run(where.toString(), args, false);
     }
@@ -277,8 +278,8 @@ public class AnomalyService {
                 TenantContext.setTenantId(tenant.toString());
                 TenantContext.setUserId(null);
                 try {
-                    ScanResult r = tx.execute(s -> run("and extract(year from d.reporting_period_end) between ? and ?",
-                            new ArrayList<>(List.of(thisYear - 1, thisYear)), false));
+                    ScanResult r = tx.execute(s -> run("and d.reporting_period_end between ? and ?",
+                            new ArrayList<>(List.of(java.sql.Date.valueOf(java.time.LocalDate.of(thisYear - 1, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(thisYear, 12, 31)))), false));
                     flags += r == null ? 0 : r.newFlags();
                 } catch (RuntimeException e) {
                     log.warn("Anomaly scan for tenant {} failed: {}", tenant, e.getMessage());
@@ -442,6 +443,12 @@ public class AnomalyService {
         return "both".equals(method) && z != null ? range + " (" + fmt(z.abs()) + " standard deviations from the average)" : range;
     }
 
+    /** WP-50 (D38 (3)): an Isolation Forest finding is labelled as AI-generated with its score. */
+    static String mlDetail(BigDecimal score, BigDecimal z) {
+        return "AI-generated: isolated by the Isolation Forest model (score " + (score == null ? "?" : score.stripTrailingZeros().toPlainString())
+                + " of 1" + (z == null ? "" : "; " + fmt(z.abs()) + " robust deviations from this site's usual level") + ")";
+    }
+
     private static String fmt(BigDecimal v) {
         return new DecimalFormat("#,##0.##").format(v);
     }
@@ -478,8 +485,9 @@ public class AnomalyService {
                 rs.getString("metric_key"), rs.getString("metric_name"), rs.getString("unit"), start, end, kind, method, rs.getBigDecimal("value"),
                 baseline, low, high, z, change, (Integer) rs.getObject("history_n"), status, rs.getString("explanation"),
                 rs.getString("explained_by_name"), instant(rs.getTimestamp("explained_at")), rs.getString("review_note"), rs.getString("reviewed_by_name"),
-                instant(rs.getTimestamp("reviewed_at")), instant(rs.getTimestamp("detected_at")), detail(kind, method, z, change, baseline, low, high),
-                actions, blocked, rs.getLong("version"));
+                instant(rs.getTimestamp("reviewed_at")), instant(rs.getTimestamp("detected_at")),
+                "ml".equals(kind) ? mlDetail(rs.getBigDecimal("ml_score"), z) : detail(kind, method, z, change, baseline, low, high),
+                rs.getBigDecimal("ml_score"), rs.getObject("ai_run_id", UUID.class), "ml".equals(kind), actions, blocked, rs.getLong("version"));
     }
 
     private static Instant instant(Timestamp t) {

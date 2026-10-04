@@ -10,6 +10,7 @@ import DataRoomsTab from './DataRoomsTab';
 import ImpactTab from './ImpactTab';
 import ScorecardsTab from './ScorecardsTab';
 import SharedReportsTab from './SharedReportsTab';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — tabs and their ?tab= keys
 const TABS = [['scorecards', 'Scorecards'], ['reports', 'Reports'], ['rooms', 'Data rooms'], ['bonds', 'Sustainable finance'], ['impact', 'Impact (IRIS+)']];
@@ -27,14 +28,14 @@ export default function InvestorPage() {
   const latest = d.latest;
   return (
     <Box>
-      <PageHeader title="Investor Portal" subtitle={d.manager ? 'What your investors see: scorecards, reports, data rooms, instruments and impact metrics'
+      <PageHeader title={tr("Investor Portal")} subtitle={d.manager ? tr("What your investors see: scorecards, reports, data rooms, instruments and impact metrics")
         : `${d.company}: published ESG information shared with you`} />
-      {d.manager && <Alert severity="info" sx={{ mb: 2 }}>You are preparing the portal. Investors see only published scorecards, shared reports, rooms they are members of and items marked visible.</Alert>}
-      <Grid container spacing={2} sx={{ mb: 2 }} aria-label="Investor overview">
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Latest ESG grade" value={latest ? latest.grade : '—'} caption={latest ? `${fmt(latest.total)} / 100 · ${latest.year}` : 'none published'} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Shared reports" value={d.reports.length} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Data rooms" value={d.rooms.length} /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Stat label="Sustainable finance" value={d.bonds.length} caption="instruments" /></Grid>
+      {d.manager && <Alert severity="info" sx={{ mb: 2 }}>{tr("You are preparing the portal. Investors see only published scorecards, shared reports, rooms they are members of and items marked visible.")}</Alert>}
+      <Grid container spacing={2} sx={{ mb: 2 }} aria-label={tr("Investor overview")}>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Latest ESG grade")} value={latest ? latest.grade : '—'} caption={latest ? `${fmt(latest.total)} / 100 · ${latest.year}` : tr("none published")} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Shared reports")} value={d.reports.length} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Data rooms")} value={d.rooms.length} /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Stat label={tr("Sustainable finance")} value={d.bonds.length} caption="instruments" /></Grid>
       </Grid>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile sx={{ mb: 2 }}>
         {TABS.map(([k, l]) => <Tab key={k} label={l} />)}

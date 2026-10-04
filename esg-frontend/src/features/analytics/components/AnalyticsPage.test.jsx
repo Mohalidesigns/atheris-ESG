@@ -37,7 +37,7 @@ describe('Analytics page', () => {
     });
     renderWithStore(<AnalyticsPage />, { preloadedState: authenticated(READ) });
     expect(await screen.findByLabelText('Analytics overview')).toHaveTextContent('2.8 of 5');
-    expect(screen.getByText(/Forecasts and machine-learning models are not part of this release/)).toBeInTheDocument();
+    expect(screen.getByText(/are marked AI-generated, show what produced them, and are only used once a person has checked them/)).toBeInTheDocument();
     expect(await screen.findByLabelText('Sensitivity')).toHaveTextContent('z ≥ 3');
     const table = await screen.findByRole('table', { name: 'Anomaly flags' });
     expect(within(table).getByText(/37.1 standard deviations/)).toBeInTheDocument();

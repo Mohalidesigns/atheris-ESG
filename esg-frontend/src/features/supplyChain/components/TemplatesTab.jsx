@@ -14,15 +14,16 @@ import { useCreateSupplyTemplateMutation, useSupplyTemplateActionMutation, useSu
 import {
   ANSWER_TYPES, ONBOARDING, PILLARS, TEMPLATE_STATUS, emptyQuestion, emptyTemplate, problemText, templateSchema, toTemplateBody, toTemplateForm,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 const cellSelect = (field, fs, label, options) => (
-  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={fs.error?.message}
+  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={tr(fs.error?.message)}
     SelectProps={{ displayEmpty: true, SelectDisplayProps: { 'aria-label': label } }}>
-    {options.map(([k, l]) => <MenuItem key={k} value={k}>{l}</MenuItem>)}
+    {options.map(([k, l]) => <MenuItem key={k} value={k}>{tr(l)}</MenuItem>)}
   </TextField>
 );
 const cellText = (field, fs, label, props = {}) => (
-  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={fs.error?.message}
+  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={tr(fs.error?.message)}
     slotProps={{ htmlInput: { 'aria-label': label } }} {...props} />
 );
 
@@ -48,27 +49,27 @@ export function TemplateDialog({ template, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="xl" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${template.name}` : 'New questionnaire template'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${template.name}` : tr("New questionnaire template")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, md: 6 }}><FormTextField control={control} name="name" label="Template name" /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormSelect control={control} name="kind" label="Kind" options={Object.keys(ONBOARDING).map((value) => ({ value, label: value === 'full' ? 'Full' : 'Simplified' }))} /></Grid>
-            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightE" label="E weight" inputMode="numeric" /></Grid>
-            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightS" label="S weight" inputMode="numeric" /></Grid>
-            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightG" label="G weight" inputMode="numeric" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormTextField control={control} name="name" label={tr("Template name")} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormSelect control={control} name="kind" label={tr("Kind")} options={Object.keys(ONBOARDING).map((value) => ({ value, label: value === 'full' ? 'Full' : 'Simplified' }))} /></Grid>
+            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightE" label={tr("E weight")} inputMode="numeric" /></Grid>
+            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightS" label={tr("S weight")} inputMode="numeric" /></Grid>
+            <Grid size={{ xs: 4, md: 1 }}><FormTextField control={control} name="weightG" label={tr("G weight")} inputMode="numeric" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} /></Grid>
           </Grid>
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>Questions</Typography>
+          <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("Questions")}</Typography>
           <Typography variant="caption" color="text.secondary">
-            Yes/no and 1–5 questions are scored (weight 1–10); number and text questions are for information (weight 0). An answer that needs evidence scores 0 without it.
+            {tr("Yes/no and 1–5 questions are scored (weight 1–10); number and text questions are for information (weight 0). An answer that needs evidence scores 0 without it.")}
           </Typography>
-          {errors.questions?.message && <Alert severity="error" sx={{ my: 1 }}>{errors.questions.message}</Alert>}
+          {tr(errors.questions?.message) && <Alert severity="error" sx={{ my: 1 }}>{tr(errors.questions.message)}</Alert>}
           <TableContainer>
-            <Table size="small" aria-label="Questions">
+            <Table size="small" aria-label={tr("Questions")}>
               <TableHead><TableRow>
-                <TableCell>Pillar</TableCell><TableCell sx={{ minWidth: 240 }}>Question</TableCell><TableCell sx={{ minWidth: 160 }}>Help</TableCell>
-                <TableCell>Answer type</TableCell><TableCell>Good answer</TableCell><TableCell>Weight</TableCell><TableCell>Evidence</TableCell><TableCell />
+                <TableCell>{tr("Pillar")}</TableCell><TableCell sx={{ minWidth: 240 }}>{tr("Question")}</TableCell><TableCell sx={{ minWidth: 160 }}>{tr("Help")}</TableCell>
+                <TableCell>{tr("Answer type")}</TableCell><TableCell>{tr("Good answer")}</TableCell><TableCell>{tr("Weight")}</TableCell><TableCell>{tr("Evidence")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {questions.fields.map((row, i) => (
@@ -90,11 +91,11 @@ export function TemplateDialog({ template, onClose }) {
               </TableBody>
             </Table>
           </TableContainer>
-          <Button size="small" startIcon={<Add />} sx={{ mt: 1 }} disabled={questions.fields.length >= 60} onClick={() => questions.append({ ...emptyQuestion })}>Add question</Button>
+          <Button size="small" startIcon={<Add />} sx={{ mt: 1 }} disabled={questions.fields.length >= 60} onClick={() => questions.append({ ...emptyQuestion })}>{tr("Add question")}</Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create template'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create template")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -117,11 +118,11 @@ export default function TemplatesTab() {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="supply_chain:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New template</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New template")}</Button>
         </Can>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
-      {data.length === 0 ? <Card><CardContent><EmptyState title="No questionnaire templates yet">Build a full or simplified question set with E, S and G weights.</EmptyState></CardContent></Card> : (
+      {data.length === 0 ? <Card><CardContent><EmptyState title={tr("No questionnaire templates yet")}>{tr("Build a full or simplified question set with E, S and G weights.")}</EmptyState></CardContent></Card> : (
         <Grid container spacing={2}>
           {data.map((t) => (
             <Grid key={t.id} size={{ xs: 12, md: 6 }}>
@@ -129,17 +130,17 @@ export default function TemplatesTab() {
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t.name}</Typography>
-                    <Chip size="small" color={TEMPLATE_STATUS[t.status].color} label={TEMPLATE_STATUS[t.status].label} />
+                    <Chip size="small" color={TEMPLATE_STATUS[t.status].color} label={tr(TEMPLATE_STATUS[t.status].label)} />
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    {t.kind === 'full' ? 'Full' : 'Simplified'} · {t.questions.length} questions · weights E {t.weightE} / S {t.weightS} / G {t.weightG} · sent {t.sent}×
+                    {t.kind === 'full' ? tr("Full") : tr("Simplified")} · {t.questions.length} {tr("questions · weights E")} {t.weightE} {tr("/ S")} {t.weightS} {tr("/ G")} {t.weightG} {tr("· sent")} {t.sent}×
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                     <Can permission="supply_chain:update">
-                      {t.status === 'draft' && <Button size="small" onClick={() => setEditing(t)}>Edit</Button>}
-                      {t.status === 'draft' && <Button size="small" variant="contained" disabled={a.isLoading} onClick={() => run(t, 'publish')}>Publish</Button>}
-                      {t.status === 'published' && <Button size="small" disabled={a.isLoading} onClick={() => run(t, 'retire')}>Retire</Button>}
-                      <Button size="small" disabled={a.isLoading} onClick={() => run(t, 'copy')}>Copy</Button>
+                      {t.status === 'draft' && <Button size="small" onClick={() => setEditing(t)}>{tr("Edit")}</Button>}
+                      {t.status === 'draft' && <Button size="small" variant="contained" disabled={a.isLoading} onClick={() => run(t, 'publish')}>{tr("Publish")}</Button>}
+                      {t.status === 'published' && <Button size="small" disabled={a.isLoading} onClick={() => run(t, 'retire')}>{tr("Retire")}</Button>}
+                      <Button size="small" disabled={a.isLoading} onClick={() => run(t, 'copy')}>{tr("Copy")}</Button>
                     </Can>
                   </Box>
                 </CardContent>

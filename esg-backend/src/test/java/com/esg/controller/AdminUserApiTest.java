@@ -306,7 +306,9 @@ class AdminUserApiTest extends ApiTestSupport {
         // WP-41: the carbon credit registry and exchange (Sandbox adapters, D36).
         .andExpect(jsonPath("$.data[?(@.key == 'carbon_registry')].status").value(org.hamcrest.Matchers.contains("sandbox")))
         .andExpect(jsonPath("$.data[?(@.key == 'carbon_exchange')].status").value(org.hamcrest.Matchers.contains("sandbox")))
-        .andExpect(jsonPath("$.data.length()").value(7));
+        // WP-50: the AI service (the test profile configures none, D38).
+        .andExpect(jsonPath("$.data[?(@.key == 'ai_service')].status").value(org.hamcrest.Matchers.contains("not_configured")))
+        .andExpect(jsonPath("$.data.length()").value(8));
     mvc.perform(get("/v1/integrations").header("Authorization", bearerForRole("DATA_COLLECTOR"))).andExpect(status().isForbidden());
   }
 

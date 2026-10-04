@@ -305,10 +305,16 @@ public class ComplianceService {
         jdbc.query("select requirement_id, metric_key from reference.metric_requirements order by metric_key",
                 rs -> { metrics.computeIfAbsent(rs.getObject(1, UUID.class), k -> new ArrayList<>()).add(rs.getString(2)); });
         Map<String, MetricState> states = new HashMap<>();
-        jdbc.query("select metric_key, bool_or(validation_status = 'approved'), bool_or(validation_status in ('draft', 'submitted', 'validated')) "
-                        + "from data_hub.data_points where deleted_at is null and extract(year from reporting_period_end) = ? group by metric_key",
-                rs -> { states.put(rs.getString(1), new MetricState(rs.getBoolean(2), rs.getBoolean(3))); }, year);
-        jdbc.query("select scope from carbon.emission_records where deleted_at is null and extract(year from reporting_period_end) = ? "
+        // WP-51: per-metric index lookups (idx_data_points_metric_status_end) instead of aggregating a year of points.
+        String has = "exists (select 1 from data_hub.data_points d where d.metric_key = m.metric_key and d.deleted_at is null "
+                + "and d.reporting_period_end between ? and ? and d.validation_status ";
+        jdbc.query("select m.metric_key, " + has + "= 'approved'), " + has + "in ('draft', 'submitted', 'validated')) from reference.metrics m",
+                rs -> {
+                    if (rs.getBoolean(2) || rs.getBoolean(3)) {
+                        states.put(rs.getString(1), new MetricState(rs.getBoolean(2), rs.getBoolean(3)));
+                    }
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)));
+        jdbc.query("select scope from carbon.emission_records where deleted_at is null and reporting_period_end between ? and ? "
                 + "group by scope", rs -> {
                     String scope = rs.getString(1);
                     CARBON_METRICS.forEach((metric, s) -> {
@@ -316,7 +322,7 @@ public class ComplianceService {
                             states.merge(metric, new MetricState(true, false), (x, y) -> new MetricState(true, x.pending()));
                         }
                     });
-                }, year);
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)));
         // WP-33 (D31): approved workforce figures, the incident register and project expenditure evidence the catalogue
         // metrics the Social module produces (GRI 401-1, 403-9, 405-1, CBN NSBP P4).
         for (String metric : social.available(year)) {

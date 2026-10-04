@@ -427,7 +427,8 @@ class FieldRoundTripTest extends ApiTestSupport {
       }
       if (node.isTextual()) {
         return JsonNodeFactory.instance.textNode(node.asText()
-            .replace("{u}", unique).replace("{yyyy}", year)
+            .replace("{u}", unique).replace("{U}", unique.toUpperCase()).replace("{yyyy}", year)
+            .replace("{COURSE_TR}", "a0000000-0000-4000-8000-000000000801")
             .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2)
             .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A)
             .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR"))

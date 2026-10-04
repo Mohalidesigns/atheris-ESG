@@ -19,6 +19,7 @@ import { useCreateKpiMutation, useDeleteKpiMutation, useKpisQuery, useUpdateKpiM
 import {
   DIRECTIONS, KPI_STATUS, OPERATORS, PILLARS, SDG_GOALS, emptyKpi, fmt, kpiSchema, problemText, toKpiBody, toKpiForm,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
@@ -45,58 +46,58 @@ export function KpiDialog({ kpi, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${kpi.name}` : 'New KPI'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${kpi.name}` : tr("New KPI")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label="Name" /></Grid>
+            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="name" label={tr("Name")} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormTextField control={control} name="code" label="Code (for reports)" helperText="e.g. water_intensity → {{kpi:water_intensity}}" />
+              <FormTextField control={control} name="code" label={tr("Code (for reports)")} helperText={tr("e.g. water_intensity → {{kpi:water_intensity}}")} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="pillar" label="Pillar" options={options(PILLARS)} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="pillar" label={tr("Pillar")} options={options(PILLARS)} /></Grid>
             <Grid size={{ xs: 12, sm: 8 }}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Organisation" emptyLabel="All my organisations" size="small" fullWidth
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} emptyLabel="All my organisations" size="small" fullWidth
                   SelectProps={{ displayEmpty: true }} slotProps={{ inputLabel: { shrink: true } }} error={!!fieldState.error}
-                  helperText={fieldState.error?.message ?? 'Whose approved data the KPI is calculated from'} />
+                  helperText={tr(fieldState.error?.message) ?? tr("Whose approved data the KPI is calculated from")} />
               )} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 5 }}><FormSelect control={control} name="metricA" label="Metric" options={metricOptions} /></Grid>
+            <Grid size={{ xs: 12, sm: 5 }}><FormSelect control={control} name="metricA" label={tr("Metric")} options={metricOptions} /></Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
-              <FormSelect control={control} name="operator" label="Combine with" options={options(OPERATORS)}
+              <FormSelect control={control} name="operator" label={tr("Combine with")} options={options(OPERATORS)}
                 onChange={(e) => { setValue('operator', e.target.value); if (e.target.value === 'none') setValue('metricB', ''); }} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="metricB" label="Second metric" disabled={operator === 'none'}
+              <FormSelect control={control} name="metricB" label={tr("Second metric")} disabled={operator === 'none'}
                 options={[{ value: '', label: '—' }, ...metricOptions]} SelectProps={{ displayEmpty: true }} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="multiplier" label="Multiplier" helperText="e.g. 1000 for litres from m3" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="unit" label="Unit" /></Grid>
-            <Grid size={{ xs: 6, sm: 2 }}><FormTextField control={control} name="decimals" label="Decimal places" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="direction" label="Better when" options={options(DIRECTIONS)} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="baselineYear" label="Baseline year (optional)" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="targetValue" label="Target value (optional)" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="targetYear" label="Target year (optional)" /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormTextField control={control} name="multiplier" label={tr("Multiplier")} helperText={tr("e.g. 1000 for litres from m3")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="unit" label={tr("Unit")} /></Grid>
+            <Grid size={{ xs: 6, sm: 2 }}><FormTextField control={control} name="decimals" label={tr("Decimal places")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="direction" label={tr("Better when")} options={options(DIRECTIONS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormTextField control={control} name="baselineYear" label={tr("Baseline year (optional)")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="targetValue" label={tr("Target value (optional)")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="targetYear" label={tr("Target year (optional)")} /></Grid>
             <Grid size={{ xs: 12, sm: 8 }}>
               <Controller name="sdgGoals" control={control} render={({ field, fieldState }) => (
-                <TextField select fullWidth size="small" label="SDG goals (optional)" value={field.value} inputRef={field.ref} onBlur={field.onBlur}
-                  onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={fieldState.error?.message}
+                <TextField select fullWidth size="small" label={tr("SDG goals (optional)")} value={field.value} inputRef={field.ref} onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={tr(fieldState.error?.message)}
                   SelectProps={{ multiple: true, displayEmpty: true, renderValue: (sel) => (sel.length ? sel.map((g) => `SDG ${g}`).join(', ') : '—') }}
                   slotProps={{ inputLabel: { shrink: true } }}>
-                  {SDG_GOALS.map((g) => <MenuItem key={g} value={g}>SDG {g}</MenuItem>)}
+                  {SDG_GOALS.map((g) => <MenuItem key={g} value={g}>{tr("SDG")} {g}</MenuItem>)}
                 </TextField>
               )} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label="Status" options={options(KPI_STATUS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label={tr("Status")} options={options(KPI_STATUS)} /></Grid>
           </Grid>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-            Calculated each calendar year from approved Data Hub values: summed, or the latest period for headcount-type metrics.
+            {tr("Calculated each calendar year from approved Data Hub values: summed, or the latest period for headcount-type metrics.")}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create KPI'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create KPI")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -112,7 +113,7 @@ function KpiCard({ kpi: k, onEdit, onDelete }) {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
           <Box>
             <Typography sx={{ fontWeight: 700 }}>{k.name}</Typography>
-            <Typography variant="caption" color="text.secondary">{formula} · {k.orgName ?? 'all my organisations'} · {`{{kpi:${k.code}}}`}</Typography>
+            <Typography variant="caption" color="text.secondary">{formula} · {k.orgName ?? tr("all my organisations")} · {`{{kpi:${k.code}}}`}</Typography>
           </Box>
           <Can permission="analytics:create">
             <Box sx={{ whiteSpace: 'nowrap' }}>
@@ -124,13 +125,13 @@ function KpiCard({ kpi: k, onEdit, onDelete }) {
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 700 }}>{k.latest ? fmt(k.latest.value, k.decimals) : '—'}</Typography>
           <Typography variant="body2" color="text.secondary">{k.unit}{k.latest ? ` in ${k.latest.year}` : ''}</Typography>
-          {k.status === 'archived' && <Chip size="small" label="Archived" />}
+          {k.status === 'archived' && <Chip size="small" label={tr("Archived")} />}
         </Box>
         {k.targetValue != null && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
             <Chip size="small" color={k.onTrack == null ? 'default' : k.onTrack ? 'success' : 'warning'}
-              label={k.onTrack == null ? 'Progress unknown' : k.onTrack ? 'On track' : 'Behind'} />
-            <Typography variant="caption" color="text.secondary">Target {fmt(k.targetValue, k.decimals)} by {k.targetYear} · {k.trackNote}</Typography>
+              label={k.onTrack == null ? tr("Progress unknown") : k.onTrack ? tr("On track") : tr("Behind")} />
+            <Typography variant="caption" color="text.secondary">{tr("Target")} {fmt(k.targetValue, k.decimals)} {tr("by")} {k.targetYear} · {k.trackNote}</Typography>
           </Box>
         )}
         <Box sx={{ height: 140, mt: 1 }}>
@@ -148,7 +149,7 @@ function KpiCard({ kpi: k, onEdit, onDelete }) {
         {k.sdgGoals.length > 0 && <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>{k.sdgGoals.map((g) => <Chip key={g} size="small" variant="outlined" label={`SDG ${g}`} />)}</Box>}
         {k.series.some((p) => p.note) && (
           <MuiTooltip title={k.series.filter((p) => p.note).map((p) => p.note).join(' · ')}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>Some years have no value — hover for why</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>{tr("Some years have no value — hover for why")}</Typography>
           </MuiTooltip>
         )}
       </CardContent>
@@ -166,19 +167,19 @@ export default function KpisTab() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const onDelete = async (k) => {
-    if (!(await confirm({ title: 'Delete this KPI?', item: k.name, message: 'Reports that quote it will show it as not reported when refreshed.' }))) return;
+    if (!(await confirm({ title: tr("Delete this KPI?"), item: k.name, message: tr("Reports that quote it will show it as not reported when refreshed.") }))) return;
     try { await remove(k.id).unwrap(); } catch (err) { setFailure(problemText(err)); }
   };
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="analytics:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New KPI</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New KPI")}</Button>
         </Can>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
       {data.length === 0 ? (
-        <Card><CardContent><EmptyState title="No KPIs yet">Combine catalogue metrics into the KPIs you manage by, e.g. water per unit produced, with a target and the SDGs it serves.</EmptyState></CardContent></Card>
+        <Card><CardContent><EmptyState title={tr("No KPIs yet")}>{tr("Combine catalogue metrics into the KPIs you manage by, e.g. water per unit produced, with a target and the SDGs it serves.")}</EmptyState></CardContent></Card>
       ) : (
         <Grid container spacing={2}>
           {data.map((k) => <Grid key={k.id} size={{ xs: 12, md: 6, lg: 4 }}><KpiCard kpi={k} onEdit={setEditing} onDelete={onDelete} /></Grid>)}
