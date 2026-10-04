@@ -28,12 +28,16 @@ public class FrameworkCatalogService {
     public List<Framework> frameworks(String jurisdiction) {
         String sql = "select f.id, f.code, f.name, f.jurisdiction, f.framework_type, f.effective_date, f.version, f.content_status, "
                 + "f.source, f.description, (select count(*) from compliance.framework_requirements r "
-                + "where r.framework_id = f.id and r.is_active) from compliance.regulatory_frameworks f where f.is_active"
+                + "where r.framework_id = f.id and r.is_active), "
+                // F8: section headings (requirements with sub-requirements) aren't assessed by the gap analysis.
+                + "(select count(*) from compliance.framework_requirements r where r.framework_id = f.id and r.is_active "
+                + "and exists (select 1 from compliance.framework_requirements c where c.parent_req_id = r.id and c.is_active)) "
+                + "from compliance.regulatory_frameworks f where f.is_active"
                 + (jurisdiction == null ? "" : " and f.jurisdiction = ?") + " order by f.jurisdiction desc, f.code";
         Object[] args = jurisdiction == null ? new Object[0] : new Object[] {jurisdiction};
         return jdbc.query(sql, (rs, i) -> new Framework(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3),
                 rs.getString(4), rs.getString(5), rs.getObject(6, java.time.LocalDate.class), rs.getString(7), rs.getString(8),
-                rs.getString(9), rs.getString(10), rs.getInt(11)), args);
+                rs.getString(9), rs.getString(10), rs.getInt(11), rs.getInt(11) - rs.getInt(12), rs.getInt(12)), args);
     }
 
     public Framework framework(String code) {

@@ -27,6 +27,7 @@ const routes = (extra = {}) => ({
   'GET /organisations': () => ok(orgs),
   'GET /data/rules': () => ok([]),
   'GET /data/sources': () => ok([{ id: 's1', name: 'Generator logbook', sourceType: 'manual', active: true, dataPoints: 3, version: 0 }]),
+  'GET /data/owners': () => ok([{ id: 'u1', name: 'Ada Lovelace', email: 'ada@example.ng' }]),
   'GET /files/storage-info': () => ok({ storage: 'Local filesystem', maxBytes: 52428800, allowedExtensions: 'csv, pdf, xlsx', virusScanning: 'Not configured' }),
   ...extra,
 });
@@ -90,13 +91,13 @@ describe('DataHubPage data entry', () => {
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
     await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
     const dialog = await fill('Electricity consumed', '1250.5');
-    await userEvent.click(within(dialog).getByLabelText('Data source (optional)'));
+    await userEvent.click(within(dialog).getByLabelText('Source system (optional)'));
     await userEvent.click(screen.getByRole('option', { name: 'Generator logbook' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
     await waitFor(() => expect(calls.some((c) => c.key === 'POST /data/points')).toBe(true));
     expect(calls.find((c) => c.key === 'POST /data/points').body).toEqual({
       orgId: 'hq', metricKey: 'electricity_kwh', subCategory: null, numericValue: 1250.5, textValue: null, currency: null,
-      sourceId: 's1', evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30',
+      sourceId: 's1', ownerUserId: null, evidenceFileIds: [], reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', notes: null,
     });
     expect(calls.some((c) => c.key === 'PUT /data/points/p2/submit')).toBe(false);
     // The saved point opens in the drawer with the actions the server allows.
@@ -172,6 +173,17 @@ describe('DataHubPage review', () => {
     await waitFor(() => expect(calls.find((c) => c.key === 'PUT /data/points/p1/validate')?.body).toEqual({ version: 1 }));
   });
 
+  it('an action segregation of duties forbids is shown disabled with the reason (Phase 2)', async () => {
+    fakeApi(drawerRoutes({
+      'GET /data/points/p1': () => ok({ ...point, actions: [], blockedActions: { validate: 'You entered or submitted this — another person must validate it' } }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Electricity consumed 2026-01-01' }));
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByRole('button', { name: 'Validate' })).toBeDisabled();
+    expect(within(drawer).getByLabelText('Validate: You entered or submitted this — another person must validate it')).toBeInTheDocument();
+  });
+
   it('reject asks for a reason (required, like the server) and sends it', async () => {
     const calls = fakeApi(drawerRoutes({ 'PUT /data/points/p1/reject': (body) => ok({ ...point, validationStatus: 'rejected', statusReason: body.reason }) }));
     renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
@@ -197,6 +209,117 @@ describe('DataHubPage review', () => {
   });
 });
 
+describe('DataHubPage bulk actions (Phase 3)', () => {
+  const p2 = { ...point, id: 'p2', reportingPeriodStart: '2026-04-01', reportingPeriodEnd: '2026-06-30', version: 4 };
+  const p3 = { ...point, id: 'p3', reportingPeriodStart: '2026-07-01', reportingPeriodEnd: '2026-09-30', actions: [],
+    blockedActions: { validate: 'You entered or submitted this — another person must validate it' } };
+
+  it('selects rows, validates the eligible ones in one request and reports each refusal', async () => {
+    const calls = fakeApi(routes({
+      'GET /data/points': () => page([point, p2, p3]),
+      'POST /data/points/bulk': () => ok({
+        action: 'validate', requested: 2, succeeded: 1, failed: 1,
+        results: [{ id: 'p1', ok: true, status: 'validated' },
+          { id: 'p2', ok: false, errorCode: 'ESG-409-VERSION', message: 'This data point was changed by someone else. Reload and try again.' }],
+      }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select all on this page' }));
+    const bar = screen.getByRole('region', { name: 'Bulk actions' });
+    expect(within(bar).getByText('3 selected')).toBeInTheDocument();
+    // p3 is the analyst's own: it isn't sent, and the bar says why.
+    expect(within(bar).getByText(/1 you can't review/)).toBeInTheDocument();
+    await userEvent.click(within(bar).getByRole('button', { name: 'Validate (2)' }));
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Validate 2' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/bulk')?.body).toEqual({
+      action: 'validate', items: [{ id: 'p1', version: 1 }, { id: 'p2', version: 4 }],
+    }));
+    const result = await screen.findByRole('dialog', { name: 'Validate: 1 of 2 validated' });
+    expect(within(result).getByRole('table', { name: 'Not processed' })).toHaveTextContent('Electricity consumed 2026-04-01');
+    expect(within(result).getByText('ESG-409-VERSION')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Bulk actions' })).not.toBeInTheDocument(); // selection cleared
+  });
+
+  it('a bulk reject needs a reason, as a single reject does', async () => {
+    const calls = fakeApi(routes({
+      'GET /data/points': () => page([point, p2]),
+      'POST /data/points/bulk': () => ok({ action: 'reject', requested: 2, succeeded: 2, failed: 0, results: [] }),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-01-01' }));
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-04-01' }));
+    await userEvent.click(within(screen.getByRole('region', { name: 'Bulk actions' })).getByRole('button', { name: 'Reject (2)' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reject 2 data points' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    expect(await within(dialog).findByText('A reason is required')).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText('Reason'), 'Wrong meter');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points/bulk')?.body)
+      .toEqual({ action: 'reject', items: [{ id: 'p1', version: 1 }, { id: 'p2', version: 4 }], reason: 'Wrong meter' }));
+  });
+
+  it('a collector sees only Submit', async () => {
+    fakeApi(routes({ 'GET /data/points': () => page([{ ...point, validationStatus: 'draft', actions: ['edit', 'submit', 'delete'] }]) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(['data_points:read', 'data_points:create', 'data_points:update']) });
+    const table = await screen.findByRole('table', { name: 'Data points' });
+    await userEvent.click(within(table).getByRole('checkbox', { name: 'Select Electricity consumed 2026-01-01' }));
+    const bar = screen.getByRole('region', { name: 'Bulk actions' });
+    expect(within(bar).getByRole('button', { name: 'Submit (1)' })).toBeEnabled();
+    expect(within(bar).queryByRole('button', { name: /Validate|Approve|Reject/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('DataHubPage guided entry and responsible person (Phase 3)', () => {
+  it('?add= opens the form with the metric and period preselected', async () => {
+    fakeApi(routes());
+    renderWithStore(<DataHubPage />, {
+      preloadedState: authenticated(COLLECTOR),
+      route: '/data-hub?add=employees_total&from=2026-01-01&to=2026-12-31',
+    });
+    const dialog = await screen.findByRole('dialog', { name: 'Add data point' });
+    expect(within(dialog).getByLabelText('Metric')).toHaveValue('Total employees (count)');
+    expect(within(dialog).getByLabelText('Period start')).toHaveValue('2026-01-01');
+    expect(within(dialog).getByLabelText('Period end')).toHaveValue('2026-12-31');
+  });
+
+  it('?point= opens that data point (links from the dashboard activity feed, WP-24)', async () => {
+    fakeApi(routes({ 'GET /data/points/p1': () => ok(point), 'GET /data/points/p1/history': () => ok([]), 'GET /files': () => ok([]) }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?point=p1' });
+    const drawer = await screen.findByRole('region', { name: 'Data point details' });
+    expect(await within(drawer).findByText('Data quality 75%')).toBeInTheDocument();
+  });
+
+  it('?add= does nothing for someone who cannot add data', async () => {
+    fakeApi(routes());
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(ANALYST), route: '/data-hub?add=employees_total' });
+    await screen.findByRole('table', { name: 'Data points' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('names the responsible person separately from the source system', async () => {
+    const calls = fakeApi(routes({
+      'POST /data/points': (body) => ok({ ...point, ...body, id: 'p9', version: 0 }),
+      'GET /data/points/p9': () => ok({ ...point, id: 'p9' }), 'GET /data/points/p9/history': () => ok([]), 'GET /files': () => ok([]),
+    }));
+    renderWithStore(<DataHubPage />, { preloadedState: authenticated(COLLECTOR) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add data point' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('Responsible person'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Ada Lovelace' }));
+    await userEvent.type(within(dialog).getByLabelText('Metric'), 'Electricity');
+    await userEvent.click(await screen.findByRole('option', { name: /Electricity consumed/ }));
+    await userEvent.click(within(dialog).getByLabelText('Organisation'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Lagos HQ' }));
+    await userEvent.type(within(dialog).getByLabelText('Value'), '10');
+    await userEvent.type(within(dialog).getByLabelText('Period start'), '2026-07-01');
+    await userEvent.type(within(dialog).getByLabelText('Period end'), '2026-09-30');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/points')?.body).toMatchObject({ ownerUserId: 'u1', sourceId: null }));
+  });
+});
+
 describe('DataHubPage set-up tabs', () => {
   it('adds a data source', async () => {
     const calls = fakeApi(routes({
@@ -207,12 +330,12 @@ describe('DataHubPage set-up tabs', () => {
     expect(await screen.findByText('Generator logbook')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'New data source' }));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.type(within(dialog).getByLabelText('Name'), 'SAP extract');
+    await userEvent.type(within(dialog).getByLabelText('System name'), 'SAP extract');
     await userEvent.click(within(dialog).getByLabelText('Type'));
     await userEvent.click(screen.getByRole('option', { name: 'ERP system' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add data source' }));
     await waitFor(() => expect(calls.find((c) => c.key === 'POST /data/sources')?.body)
-      .toEqual({ name: 'SAP extract', sourceType: 'erp', description: null, active: true }));
+      .toEqual({ name: 'SAP extract', sourceType: 'erp', description: null, ownerUserId: null, active: true }));
   });
 
   it('adds an exchange rate and refuses a same-currency pair before sending', async () => {

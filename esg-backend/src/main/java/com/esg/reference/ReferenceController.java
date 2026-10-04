@@ -51,6 +51,13 @@ public class ReferenceController {
         return ResponseEntity.ok(ApiResponse.ok(service.scope3Categories()));
     }
 
+    /** IANA time zones for Settings › Reporting time zone (F10); the server accepts only these. */
+    @GetMapping("/timezones")
+    @PreAuthorize("hasAuthority('reference_data:read') or hasAuthority('tenant_settings:read')")
+    public ResponseEntity<ApiResponse<List<String>>> timeZones() {
+        return ResponseEntity.ok(ApiResponse.ok(com.esg.service.TenantSettingsService.timeZones()));
+    }
+
     @GetMapping("/sectors")
     @PreAuthorize("hasAuthority('reference_data:read')")
     public ResponseEntity<ApiResponse<List<ReferenceDtos.Sector>>> sectors() {

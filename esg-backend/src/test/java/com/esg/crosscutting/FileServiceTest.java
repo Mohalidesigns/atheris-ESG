@@ -47,7 +47,9 @@ class FileServiceTest extends ApiTestSupport {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.currentVersion").value(2))
         .andExpect(jsonPath("$.data.versions.length()").value(2))
-        .andExpect(jsonPath("$.data.versions[0].scanStatus").value("not_scanned"));
+        .andExpect(jsonPath("$.data.scanStatus").value("clean"))
+        .andExpect(jsonPath("$.data.versions[0].scanStatus").value("clean"))
+        .andExpect(jsonPath("$.data.versions[0].scanner").value("sandbox-eicar"));
 
     byte[] latest = mvc.perform(get("/v1/files/" + id + "/content").header("Authorization", director))
         .andExpect(status().isOk())
@@ -78,6 +80,92 @@ class FileServiceTest extends ApiTestSupport {
     upload("ESG_ANALYST", "chart.png", PNG, 201);
     upload("ESG_ANALYST", "data.csv", "a,b\n1,2\n".getBytes(StandardCharsets.UTF_8), 201);
     upload("ESG_ANALYST", "big.pdf", ("%PDF" + "x".repeat(3000)).getBytes(StandardCharsets.US_ASCII), 413);
+  }
+
+  /** The EICAR anti-virus test file, assembled at runtime so this source isn't flagged by real scanners. */
+  private static final byte[] EICAR = ("X5O!P%@AP[4\\PZX54(P^)7CC)7}$" + "EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*")
+      .getBytes(StandardCharsets.US_ASCII);
+
+  @Autowired private com.esg.files.VirusScanService rescans;
+
+  @Test
+  void infectedUploadIsQuarantinedAuditedAndRefused() throws Exception {
+    String response = upload("ESG_ANALYST", "eicar.txt", EICAR, 422);
+    assertThat(json.readTree(response).path("errorCode").asText()).isEqualTo("ESG-422-MALWARE");
+    assertThat(json.readTree(response).path("detail").asText()).contains("Eicar-Test-Signature");
+
+    String sha = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(EICAR));
+    try (Connection owner = PostgresTestDatabase.ownerConnection(); Statement st = owner.createStatement()) {
+      st.execute("select set_config('app.current_tenant', '" + PostgresTestDatabase.TENANT_A + "', false)");
+      ResultSet rs = st.executeQuery("select user_id, resource_id, new_value ->> 'threat', new_value ->> 'detectedAt' "
+          + "from audit.audit_logs where action = 'quarantined' and new_value ->> 'sha256' = '" + sha + "' order by created_at desc limit 1");
+      assertThat(rs.next()).isTrue();
+      assertThat(rs.getString(1)).isEqualTo(roleUserId("ESG_ANALYST"));
+      assertThat(rs.getString(3)).isEqualTo("Eicar-Test-Signature");
+      assertThat(rs.getString(4)).isEqualTo("upload");
+      String fileId = rs.getString(2);
+      // No file record; the bytes are kept only under the quarantine prefix.
+      ResultSet meta = st.executeQuery("select count(*) from files.file_metadata where id = '" + fileId + "'");
+      meta.next();
+      assertThat(meta.getInt(1)).isZero();
+      assertThat(java.nio.file.Files.exists(storagePath("quarantine/" + PostgresTestDatabase.TENANT_A + "/" + fileId + "/v1"))).isTrue();
+      assertThat(java.nio.file.Files.exists(storagePath(PostgresTestDatabase.TENANT_A + "/" + fileId + "/v1"))).isFalse();
+    }
+  }
+
+  @Test
+  void pendingFilesCantBeDownloadedUntilTheRescanCallsThemClean() throws Exception {
+    String id = json.readTree(upload("ESG_ANALYST", "pending.pdf", PDF_V1, 201)).path("data").path("id").asText();
+    String director = bearerForRole("ESG_DIRECTOR");
+    // As if the scanner had been unreachable at upload.
+    asOwnerInTenantA("update files.file_versions set scan_status = 'pending_scan', scanned_at = null where file_id = '" + id + "'");
+    mvc.perform(get("/v1/files/" + id).header("Authorization", director)).andExpect(jsonPath("$.data.scanStatus").value("pending_scan"));
+    mvc.perform(get("/v1/files/" + id + "/content").header("Authorization", director))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.errorCode").value("ESG-409-SCAN-PENDING"));
+    mvc.perform(get("/v1/files/" + id + "/download-url").header("Authorization", director))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.errorCode").value("ESG-409-SCAN-PENDING"));
+
+    var run = rescans.runOnce();
+    assertThat(run.clean()).isGreaterThanOrEqualTo(1);
+    mvc.perform(get("/v1/files/" + id).header("Authorization", director))
+        .andExpect(jsonPath("$.data.scanStatus").value("clean"))
+        .andExpect(jsonPath("$.data.versions[0].scannedAt").isNotEmpty());
+    mvc.perform(get("/v1/files/" + id + "/content").header("Authorization", director)).andExpect(status().isOk());
+  }
+
+  @Test
+  void rescanQuarantinesAFileFoundInfectedLater() throws Exception {
+    String id = json.readTree(upload("ESG_ANALYST", "later.txt", "harmless".getBytes(StandardCharsets.US_ASCII), 201))
+        .path("data").path("id").asText();
+    // A signature update: the stored bytes are now recognised as malware.
+    java.nio.file.Files.write(storagePath(PostgresTestDatabase.TENANT_A + "/" + id + "/v1"), EICAR);
+    asOwnerInTenantA("update files.file_versions set scan_status = 'pending_scan', scanned_at = null where file_id = '" + id + "'");
+
+    assertThat(rescans.runOnce().infected()).isGreaterThanOrEqualTo(1);
+    String director = bearerForRole("ESG_DIRECTOR");
+    mvc.perform(get("/v1/files/" + id).header("Authorization", director))
+        .andExpect(jsonPath("$.data.scanStatus").value("infected"))
+        .andExpect(jsonPath("$.data.versions[0].scanDetail").value("Eicar-Test-Signature"));
+    mvc.perform(get("/v1/files/" + id + "/content").header("Authorization", director))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.errorCode").value("ESG-409-QUARANTINED"));
+    try (Connection owner = PostgresTestDatabase.ownerConnection(); Statement st = owner.createStatement()) {
+      st.execute("select set_config('app.current_tenant', '" + PostgresTestDatabase.TENANT_A + "', false)");
+      ResultSet rs = st.executeQuery("select new_value ->> 'detectedAt' from audit.audit_logs where action = 'quarantined' "
+          + "and resource_id = '" + id + "'");
+      assertThat(rs.next()).isTrue();
+      assertThat(rs.getString(1)).isEqualTo("rescan");
+    }
+  }
+
+  @Test
+  void storageInfoNamesTheSandboxScanner() throws Exception {
+    mvc.perform(get("/v1/files/storage-info").header("Authorization", bearerForRole("ESG_ANALYST")))
+        .andExpect(jsonPath("$.data.virusScanningSandbox").value(true))
+        .andExpect(jsonPath("$.data.virusScanning").value(org.hamcrest.Matchers.startsWith("Sandbox")));
+  }
+
+  private static java.nio.file.Path storagePath(String key) {
+    return java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "esg-test-files").toAbsolutePath().normalize().resolve(key);
   }
 
   @Test

@@ -99,9 +99,14 @@ public class FinancedService {
         return new FinancedSummary(year, total, weighted, classes);
     }
 
-    private static void check(FinancedRequest r) {
+    private void check(FinancedRequest r) {
         if (r.outstandingAmount().compareTo(r.denominatorValue()) > 0) {
             throw FieldValidationException.of("outstandingAmount", "can't exceed the denominator (attribution factor above 1)");
+        }
+        // F9: the sector is a code from the sector taxonomy (GET /reference/sectors), not free text.
+        if (r.sector() != null && !r.sector().isBlank() && jdbc.queryForList(
+                "select 1 from reference.sectors where code = ?", Integer.class, r.sector().trim()).isEmpty()) {
+            throw FieldValidationException.of("sector", "Choose a sector from the list");
         }
     }
 

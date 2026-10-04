@@ -21,9 +21,11 @@ public class AdminController {
         this.service = service;
     }
 
+    /** {@code assignable=true}: only roles the caller may grant (the role picker; S4). */
     @GetMapping("/roles")
     @PreAuthorize("hasAuthority('roles:read')")
-    public ResponseEntity<ApiResponse<List<RoleResponse>>> roles() {
-        return ResponseEntity.ok(ApiResponse.ok(service.listRoles()));
+    public ResponseEntity<ApiResponse<List<RoleResponse>>> roles(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean assignable) {
+        return ResponseEntity.ok(ApiResponse.ok(service.listRoles(assignable)));
     }
 }

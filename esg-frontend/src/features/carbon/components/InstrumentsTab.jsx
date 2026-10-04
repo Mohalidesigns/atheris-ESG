@@ -14,8 +14,10 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateInstrumentMutation, useDeleteInstrumentMutation, useInstrumentsQuery, useUpdateInstrumentMutation } from '../carbonApi';
 import { ENERGY_SOURCES, INSTRUMENT_TYPES, emptyInstrument, instrumentSchema, toInstrumentBody, toInstrumentForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr, formattingLocale } from '../../../i18n';
 
-const n = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
+const n = (v) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: 3 });
 
 export function InstrumentDialog({ instrument, orgs, onClose }) {
   const editing = Boolean(instrument?.id);
@@ -38,35 +40,35 @@ export function InstrumentDialog({ instrument, orgs, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? 'Edit energy instrument' : 'Record a REC, PPA or green tariff'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit energy instrument") : tr("Record a REC, PPA or green tariff")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={12}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Organisation" size="small" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} size="small" fullWidth error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
               )} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="instrumentType" label="Type" options={Object.entries(INSTRUMENT_TYPES).map(([value, label]) => ({ value, label }))} />
+              <FormSelect control={control} name="instrumentType" label={tr("Type")} options={Object.entries(INSTRUMENT_TYPES).map(([value, label]) => ({ value, label }))} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="energySource" label="Energy source"
+              <FormSelect control={control} name="energySource" label={tr("Energy source")}
                 options={ENERGY_SOURCES.map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1) }))} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="mwh" label="Electricity covered" unit="MWh" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="mwh" label={tr("Electricity covered")} unit="MWh" /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormNumberField control={control} name="emissionFactor" label="Emission factor" unit="kgCO2e/kWh" helperText="0 for renewable" />
+              <FormNumberField control={control} name="emissionFactor" label={tr("Emission factor")} unit="kgCO2e/kWh" helperText={tr("0 for renewable")} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label="Period start" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label="Period end" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="certificateRef" label="Certificate reference" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="supplier" label="Supplier / registry" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label={tr("Period start")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label={tr("Period end")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="certificateRef" label={tr("Certificate reference")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormTextField control={control} name="supplier" label={tr("Supplier / registry")} /></Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Record instrument'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Record instrument")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -75,6 +77,7 @@ export function InstrumentDialog({ instrument, orgs, onClose }) {
 
 /** RECs, PPAs and green tariffs (BRD-5.2.2-05): what makes market-based Scope 2 lower than location-based. */
 export default function InstrumentsTab({ orgs }) {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useInstrumentsQuery();
   const [remove] = useDeleteInstrumentMutation();
   const [editing, setEditing] = useState(undefined);
@@ -85,26 +88,26 @@ export default function InstrumentsTab({ orgs }) {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, gap: 2, alignItems: 'center' }}>
         <Typography variant="body2" color="text.secondary">
-          Each instrument covers grid electricity of the same organisation and period, up to its MWh, at its own factor.
+          {tr("Each instrument covers grid electricity of the same organisation and period, up to its MWh, at its own factor.")}
         </Typography>
         <Can permission="carbon_data:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Record instrument</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Record instrument")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       <Card>
-        {data.length === 0 ? <EmptyState title="No RECs or PPAs yet">Without instruments, market-based Scope 2 equals location-based.</EmptyState> : (
+        {data.length === 0 ? <EmptyState title={tr("No RECs or PPAs yet")}>{tr("Without instruments, market-based Scope 2 equals location-based.")}</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Energy instruments">
+            <Table size="small" aria-label={tr("Energy instruments")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Organisation</TableCell><TableCell>Type</TableCell><TableCell>Period</TableCell><TableCell align="right">MWh</TableCell>
-                <TableCell align="right">Matched MWh</TableCell><TableCell align="right">tCO2e avoided</TableCell><TableCell>Certificate</TableCell><TableCell />
+                <TableCell>{tr("Organisation")}</TableCell><TableCell>{tr("Type")}</TableCell><TableCell>{tr("Period")}</TableCell><TableCell align="right">{tr("MWh")}</TableCell>
+                <TableCell align="right">{tr("Matched MWh")}</TableCell><TableCell align="right">{tr("tCO2e avoided")}</TableCell><TableCell>{tr("Certificate")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((i) => (
                   <TableRow key={i.id}>
                     <TableCell>{i.orgName}</TableCell>
-                    <TableCell>{INSTRUMENT_TYPES[i.instrumentType]} · {i.energySource}</TableCell>
+                    <TableCell>{tr(INSTRUMENT_TYPES[i.instrumentType])} · {i.energySource}</TableCell>
                     <TableCell>{i.reportingPeriodStart} – {i.reportingPeriodEnd}</TableCell>
                     <TableCell align="right">{n(i.mwh)}</TableCell>
                     <TableCell align="right">{n(i.coveredMwh)}</TableCell>
@@ -116,7 +119,7 @@ export default function InstrumentsTab({ orgs }) {
                       </Can>
                       <Can permission="carbon_data:delete">
                         <IconButton size="small" aria-label={`Delete instrument ${i.certificateRef ?? i.supplier}`} onClick={async () => {
-                          if (!window.confirm('Delete this instrument?')) return;
+                          if (!(await confirm({ title: tr("Delete this instrument?"), item: i.certificateRef ?? i.supplier, message: tr("Market-based Scope 2 is recalculated without it.") }))) return;
                           setActionError('');
                           try { await remove({ id: i.id, version: i.version }).unwrap(); } catch (err) { setActionError(toFormError(err).message); }
                         }}><DeleteOutline fontSize="small" /></IconButton>

@@ -75,12 +75,33 @@ public class ExportService {
         return reports.get(reportId).exports().stream().filter(e -> e.id().equals(job)).findFirst().orElseThrow();
     }
 
+    /**
+     * Phase 3 (3): the report as it stands now (working sections and data snapshot), watermarked DRAFT on every page.
+     * Never stored and never an export job: the final export stays gated on approval ({@link #generate}).
+     */
+    public byte[] draftPreview(UUID reportId) {
+        ReportDetail report = reports.get(reportId);
+        String meta = tenant() + " · " + period(report) + " · Working version " + report.versionLabel() + " · Not approved — "
+                + "preview generated " + DAY.format(java.time.Instant.now());
+        return render(report.title(), meta, report.sections(), report.snapshot(), true);
+    }
+
+    static String draftFileName(String title, String version) {
+        return fileName(title, version + "-DRAFT", "pdf");
+    }
+
     byte[] pdf(ReportDetail report, VersionDetail v) {
+        return render(report.title(), tenant() + " · " + period(report) + " · Version " + v.label() + " · Approved " + DAY.format(v.createdAt()),
+                v.sections(), v.snapshot(), false);
+    }
+
+    private byte[] render(String title, String meta, List<Section> sections, Map<String, VariableValue> snapshot, boolean draft) {
         Context ctx = new Context(Locale.UK);
-        ctx.setVariable("title", report.title());
-        ctx.setVariable("meta", tenant() + " · " + period(report) + " · Version " + v.label() + " · Approved " + DAY.format(v.createdAt()));
-        ctx.setVariable("sections", v.sections().stream().map(s -> Map.of("title", s.title(), "paragraphs", paragraphs(s.rendered()))).toList());
-        ctx.setVariable("data", dataRows(v.snapshot()));
+        ctx.setVariable("title", title);
+        ctx.setVariable("meta", meta);
+        ctx.setVariable("draft", draft);
+        ctx.setVariable("sections", sections.stream().map(s -> Map.of("title", s.title(), "paragraphs", paragraphs(s.rendered()))).toList());
+        ctx.setVariable("data", dataRows(snapshot == null ? Map.of() : snapshot));
         String html = xhtml.process("report", ctx);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             ITextRenderer renderer = new ITextRenderer();
@@ -118,7 +139,7 @@ public class ExportService {
 
             Sheet data = wb.createSheet("Data");
             Row h = data.createRow(0);
-            String[] cols = {"Variable", "Reported", "Value", "Unit", "Status", "Basis"};
+            String[] cols = {"Variable", "Reported", "Value", "Unit", "Status", "Basis", "Provisional"};
             for (int i = 0; i < cols.length; i++) {
                 h.createCell(i).setCellValue(cols[i]);
                 h.getCell(i).setCellStyle(head);
@@ -135,6 +156,7 @@ public class ExportService {
                 row.createCell(3).setCellValue(val.unit() == null ? "" : val.unit());
                 row.createCell(4).setCellValue(val.status());
                 row.createCell(5).setCellValue(val.basis() == null ? "" : val.basis());
+                row.createCell(6).setCellValue(val.provisional() == null ? "" : val.provisional());
             }
             for (int c = 0; c < cols.length; c++) {
                 data.autoSizeColumn(c);
@@ -163,8 +185,10 @@ public class ExportService {
     }
 
     private static List<Map<String, String>> dataRows(Map<String, VariableValue> snapshot) {
+        // S7: a provisional value says so next to its basis.
         return snapshot.entrySet().stream().map(e -> Map.of("variable", e.getKey(), "display", e.getValue().display(),
-                "basis", e.getValue().basis() == null ? "" : e.getValue().basis())).toList();
+                "basis", (e.getValue().basis() == null ? "" : e.getValue().basis())
+                        + (e.getValue().provisional() == null ? "" : " — PROVISIONAL: " + e.getValue().provisional()))).toList();
     }
 
     private String tenant() {

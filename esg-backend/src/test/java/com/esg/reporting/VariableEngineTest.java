@@ -21,8 +21,8 @@ class VariableEngineTest {
   @Test
   void rendersSnapshotValuesAndMarksMissingOnes() {
     Map<String, VariableValue> snap = Map.of(
-        "metric:electricity_kwh", new VariableValue("1,750 kWh", new BigDecimal("1750"), "kWh", "ok", "3 approved data points"),
-        "metric:water_withdrawal_m3", new VariableValue("[not reported]", null, null, "missing", "no approved data in the period"));
+        "metric:electricity_kwh", new VariableValue("1,750 kWh", new BigDecimal("1750"), "kWh", "ok", "3 approved data points", null),
+        "metric:water_withdrawal_m3", new VariableValue("[not reported]", null, null, "missing", "no approved data in the period", null));
     assertThat(VariableEngine.render("Electricity: {{metric:electricity_kwh}}; water: {{metric:water_withdrawal_m3}}; scope 3: {{carbon:scope3}}", snap))
         .isEqualTo("Electricity: 1,750 kWh; water: [not reported]; scope 3: [not reported]");
     assertThat(VariableEngine.render("Costs $5 {{metric:electricity_kwh}}", snap)).isEqualTo("Costs $5 1,750 kWh");

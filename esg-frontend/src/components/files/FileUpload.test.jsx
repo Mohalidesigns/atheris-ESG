@@ -7,8 +7,8 @@ import { authenticated, renderWithStore } from '../../test/renderWithStore';
 import { fakeApi, ok } from '../../test/fakeApi';
 
 const pdf = (name = 'evidence.pdf', extra = '') => new File([`%PDF-1.4 ${extra}`], name, { type: 'application/pdf' });
-const info = { storage: 'Local filesystem', maxBytes: 1024, allowedExtensions: 'csv, doc, docx, jpeg, jpg, pdf, png, txt, xls, xlsx', virusScanning: 'Not configured: files are stored unscanned' };
-const stored = { id: 'f1', originalName: 'evidence.pdf', contentType: 'application/pdf', sizeBytes: 13, currentVersion: 1, createdAt: '2026-09-30T10:00:00Z', versions: [{ version: 1, scanStatus: 'not_scanned' }] };
+const info = { storage: 'Local filesystem', maxBytes: 1024, allowedExtensions: 'csv, doc, docx, jpeg, jpg, pdf, png, txt, xls, xlsx', virusScanning: 'Sandbox: detects the EICAR test file only (not a real virus scanner)', virusScanningSandbox: true };
+const stored = { id: 'f1', originalName: 'evidence.pdf', contentType: 'application/pdf', sizeBytes: 13, currentVersion: 1, createdAt: '2026-09-30T10:00:00Z', scanStatus: 'clean', versions: [{ version: 1, scanStatus: 'clean' }] };
 
 describe('checkFile (mirrors FileTypePolicy)', () => {
   it.each([
@@ -47,7 +47,8 @@ describe('FileUpload', () => {
     expect(await screen.findByText('No files attached.')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Upload' })).toBeEnabled());
     await userEvent.upload(screen.getByTestId('file-input'), pdf());
-    expect(await screen.findByText(/Not scanned/)).toBeInTheDocument();
+    expect(await screen.findByText('Scanned clean')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox')).toBeInTheDocument(); // the sandbox scanner is labelled (rule 9)
     const upload = calls.find((c) => c.key === 'POST /files');
     expect(upload.headers.get('Content-Type')).toMatch(/^multipart\/form-data/);
     expect(calls.find((c) => c.key === 'GET /files').query).toEqual({ resourceType: 'data_point', resourceId: 'dp-1' });
@@ -89,5 +90,28 @@ describe('FileUpload', () => {
     await waitFor(() => expect(click).toHaveBeenCalled());
     expect(calls.map((c) => c.key)).toContain('GET /files/f1/content');
     expect(calls.find((c) => c.key === 'GET /files/f1/content').headers.get('Authorization')).toBe('Bearer access-token');
+  });
+
+  it("files waiting for the virus scan or quarantined can't be downloaded (S6)", async () => {
+    const pending = { ...stored, id: 'f2', originalName: 'meter.pdf', scanStatus: 'pending_scan', versions: [{ version: 1, scanStatus: 'pending_scan' }] };
+    const infected = { ...stored, id: 'f3', originalName: 'bad.txt', scanStatus: 'infected', versions: [{ version: 1, scanStatus: 'infected' }] };
+    fakeApi(routes(() => [stored, pending, infected]));
+    renderWithStore(<FileUpload resourceType="data_point" resourceId="dp-1" />, { preloadedState: authenticated(['files:read']) });
+    expect(await screen.findByText('Waiting for virus scan')).toBeInTheDocument();
+    expect(screen.getByText('Quarantined: failed virus scan')).toBeInTheDocument();
+    expect(screen.getByLabelText('Download evidence.pdf')).toBeEnabled();
+    expect(screen.getByLabelText('Download meter.pdf')).toBeDisabled();
+    expect(screen.getByLabelText('Download bad.txt')).toBeDisabled();
+  });
+
+  it('shows the quarantine refusal for an infected upload', async () => {
+    fakeApi(routes(() => [], {
+      'POST /files': () => [422, { status: 422, errorCode: 'ESG-422-MALWARE', detail: 'The file failed the virus scan (Eicar-Test-Signature) and was quarantined, not stored' }],
+    }));
+    renderWithStore(<FileUpload resourceType="data_point" resourceId="dp-1" />,
+      { preloadedState: authenticated(['files:read', 'files:create']) });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Upload' })).toBeEnabled());
+    await userEvent.upload(screen.getByTestId('file-input'), pdf());
+    expect(await screen.findByText(/failed the virus scan \(Eicar-Test-Signature\) and was quarantined/)).toBeInTheDocument();
   });
 });

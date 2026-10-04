@@ -1,0 +1,112 @@
+{
+  "id": "internal-price",
+  "forms": [
+    "Internal carbon price"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_MANAGER",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon-market/internal-prices"
+  },
+  "read": {
+    "path": "/v1/carbon-market/internal-prices/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon-market/internal-prices/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Carbon Market"
+  },
+  "values": {
+    "priceType": "shadow",
+    "price": 45.5,
+    "currency": "USD",
+    "effectiveFrom": "{yyyy}-01-01",
+    "scopes": [
+      "scope_1",
+      "scope_2"
+    ],
+    "note": "Board-approved"
+  },
+  "changes": {
+    "priceType": "fee",
+    "price": 20,
+    "currency": "NGN",
+    "effectiveFrom": "{yyyy}-07-01",
+    "scopes": [
+      "scope_1",
+      "scope_2",
+      "scope_3"
+    ],
+    "note": "Internal levy"
+  },
+  "invalid": [
+    {
+      "field": "priceType",
+      "value": "tax",
+      "rule": "enum"
+    },
+    {
+      "field": "price",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "currency",
+      "value": "ABC",
+      "rule": "enum"
+    },
+    {
+      "field": "effectiveFrom",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "scopes",
+      "value": [],
+      "rule": "at least one scope"
+    },
+    {
+      "field": "note",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "priceType": {
+        "label": "Type",
+        "kind": "select",
+        "display": "Shadow price"
+      },
+      "price": {
+        "label": "Price per tCO2e"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "effectiveFrom": {
+        "label": "Effective from"
+      },
+      "scopes": {
+        "label": "Scopes covered",
+        "kind": "select",
+        "display": "Scope 1, Scope 2"
+      },
+      "note": {
+        "label": "Note (optional)"
+      }
+    }
+  }
+}

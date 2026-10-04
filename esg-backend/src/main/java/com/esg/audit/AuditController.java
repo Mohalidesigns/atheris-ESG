@@ -36,6 +36,38 @@ public class AuditController {
         return ResponseEntity.ok(ApiResponse.ok(service.search(resource, action, userId, resourceId, from, to, page, size)));
     }
 
+    /** The audited tables, with friendly names, for the Audit log screen's Table filter (S2). */
+    @GetMapping("/resources")
+    @PreAuthorize("hasAuthority('audit_logs:read')")
+    public ResponseEntity<ApiResponse<java.util.List<AuditDtos.AuditResource>>> resources() {
+        return ResponseEntity.ok(ApiResponse.ok(service.resources()));
+    }
+
+    /** Phase 3 (6): the filtered trail as a CSV download (same filters as /logs). */
+    @GetMapping(value = "/logs/export", produces = "text/csv")
+    @PreAuthorize("hasAuthority('audit_logs:read')")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String resource,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID resourceId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        byte[] csv = service.exportCsv(resource, action, userId, resourceId, from, to).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audit-log.csv\"")
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(csv);
+    }
+
+    /** People who appear in the trail, for the User filter (audit readers may not have users:read). */
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority('audit_logs:read')")
+    public ResponseEntity<ApiResponse<java.util.List<AuditDtos.AuditUser>>> users() {
+        return ResponseEntity.ok(ApiResponse.ok(service.users()));
+    }
+
     @GetMapping("/lineage")
     @PreAuthorize("hasAuthority('audit_logs:read')")
     public ResponseEntity<ApiResponse<AuditDtos.Lineage>> lineage(@RequestParam String type, @RequestParam UUID id) {

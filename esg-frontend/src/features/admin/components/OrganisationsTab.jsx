@@ -15,6 +15,8 @@ import {
 import { organisationSchema, toOrganisationBody } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr } from '../../../i18n';
 
 const typeLabel = Object.fromEntries(ORG_TYPES.map((t) => [t.value, t.label]));
 const empty = { name: '', parentOrgId: '', orgType: 'site', countryCode: 'NG', stateRegion: '', address: '', latitude: '', longitude: '' };
@@ -51,27 +53,27 @@ function OrganisationDialog({ open, org, parentId, orgs, onClose }) {
   };
 
   const text = (name, label, props = {}) => (
-    <TextField fullWidth size="small" label={label} {...register(name)} error={!!errors[name]} helperText={errors[name]?.message} {...props} />
+    <TextField fullWidth size="small" label={label} {...register(name)} error={!!errors[name]} helperText={tr(errors[name]?.message)} {...props} />
   );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>{editing ? `Edit ${org.name}` : 'New organisation'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${org.name}` : tr("New organisation")}</DialogTitle>
         <DialogContent>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={12}>{text('name', 'Name')}</Grid>
             <Grid size={6}>
               <Controller name="parentOrgId" control={control} render={({ field }) => (
-                <OrgTreeSelect fullWidth size="small" label="Parent" orgs={orgs} exclude={exclude} emptyLabel="None (top level)"
-                  {...field} error={!!errors.parentOrgId} helperText={errors.parentOrgId?.message} />
+                <OrgTreeSelect fullWidth size="small" label={tr("Parent")} orgs={orgs} exclude={exclude} emptyLabel="None (top level)"
+                  {...field} error={!!errors.parentOrgId} helperText={tr(errors.parentOrgId?.message)} />
               )} />
             </Grid>
             <Grid size={6}>
               <Controller name="orgType" control={control} render={({ field }) => (
-                <TextField select fullWidth size="small" label="Type" {...field} error={!!errors.orgType} helperText={errors.orgType?.message}>
-                  {ORG_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+                <TextField select fullWidth size="small" label={tr("Type")} {...field} error={!!errors.orgType} helperText={tr(errors.orgType?.message)}>
+                  {ORG_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{tr(t.label)}</MenuItem>)}
                 </TextField>
               )} />
             </Grid>
@@ -83,9 +85,9 @@ function OrganisationDialog({ open, org, parentId, orgs, onClose }) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
           <Button type="submit" variant="contained" disabled={createState.isLoading || updateState.isLoading}>
-            {editing ? 'Save changes' : 'Create organisation'}
+            {editing ? tr("Save changes") : tr("Create organisation")}
           </Button>
         </DialogActions>
       </form>
@@ -94,6 +96,7 @@ function OrganisationDialog({ open, org, parentId, orgs, onClose }) {
 }
 
 export default function OrganisationsTab() {
+  const confirm = useConfirm();
   const { data: orgs = [], isLoading, isError, error } = useListOrganisationsQuery();
   const [deleteOrg] = useDeleteOrganisationMutation();
   const [dialog, setDialog] = useState(null); // { org } edit | { parentId } create
@@ -101,7 +104,7 @@ export default function OrganisationsTab() {
   const rows = flattenTree(orgs);
 
   const onDelete = async (org) => {
-    if (!window.confirm(`Remove ${org.name}?`)) return;
+    if (!(await confirm({ title: tr("Remove this organisation?"), item: org.name, message: tr("Only possible while nothing refers to it."), confirmLabel: tr("Remove") }))) return;
     setActionError('');
     try {
       await deleteOrg(org.id).unwrap();
@@ -111,19 +114,19 @@ export default function OrganisationsTab() {
   };
 
   if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
-  if (isError) return <Alert severity="error">{toFormError(error).message}</Alert>;
+  if (isError) return <Alert severity="error">{tr(toFormError(error).message)}</Alert>;
 
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="org_structure:create">
-          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog({ parentId: null })}>New organisation</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog({ parentId: null })}>{tr("New organisation")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       <Card>
-        {rows.length === 0 && <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">No organisations yet.</Typography>}
-        <List dense aria-label="Organisation tree">
+        {rows.length === 0 && <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">{tr("No organisations yet.")}</Typography>}
+        <List dense aria-label={tr("Organisation tree")}>
           {rows.map(({ org, depth }) => (
             <ListItem key={org.id} sx={{ pl: 2 + depth * 3 }} secondaryAction={(
               <Box>

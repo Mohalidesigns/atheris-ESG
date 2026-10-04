@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,9 +68,18 @@ public class UserAdminService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> list(String search, int page, int size) {
+        return list(search, null, null, page, size);
+    }
+
+    /** Sorted by first name, then last name (Phase 2); optional role and status (active | inactive) filters. */
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> list(String search, String role, String status, int page, int size) {
+        if (status != null && !status.isBlank() && !status.matches("^(active|inactive)$")) {
+            throw com.esg.exception.FieldValidationException.of("status", "must be active or inactive");
+        }
         String q = search == null || search.isBlank() ? "" : "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-        Page<User> result = users.search(TenantContext.requireTenantId(), q,
-                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by("lastName", "firstName")));
+        Page<User> result = users.search(TenantContext.requireTenantId(), q, CurrentUser.access().platform(),
+                role == null ? "" : role.trim(), status == null ? "" : status.trim(), PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100)));
         Map<UUID, List<RoleAssignmentResponse>> roles = assignments(result.getContent().stream().map(User::getId).toList());
         return new PageResponse<>(result.getContent().stream().map(u -> toResponse(u, roles)).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -95,7 +103,7 @@ public class UserAdminService {
         }
         UUID tenantId = TenantContext.requireTenantId();
         Integer maxUsers = jdbc.queryForObject("select max_users from auth.tenants where id = ?", Integer.class, tenantId);
-        if (maxUsers != null && users.countByTenantIdAndIsActiveTrue(tenantId) >= maxUsers) {
+        if (maxUsers != null && users.countSeats(tenantId) >= maxUsers) {
             throw ApiException.conflict("ESG-409-SEATS", "Your subscription allows " + maxUsers + " active users");
         }
         User user = new User();
@@ -197,7 +205,7 @@ public class UserAdminService {
                 continue;
             }
             if (!assigner.permissions().containsAll(role.permissions())) {
-                throw ApiException.forbidden("You can't assign " + role.name() + ": it has permissions you don't hold");
+                throw ApiException.forbidden("ESG-403-ROLE", "You can't assign " + role.name() + ": it has permissions you don't hold");
             }
             if ("org".equals(role.scopeType()) && a.orgScopeId() == null) {
                 fieldErrors.put(prefix + "orgScopeId", role.name() + " must be limited to an organisation");
@@ -231,13 +239,22 @@ public class UserAdminService {
         return result;
     }
 
+    /**
+     * Roles visible to the caller (S4). Platform-scope roles (SUPER_ADMIN) exist only for platform users. Each role
+     * says whether the caller may assign it (holds all its permissions); {@code assignableOnly} returns just those,
+     * which is what the role picker offers. {@link #replaceRoles} enforces the same rule regardless.
+     */
     @Transactional(readOnly = true)
-    public List<RoleResponse> listRoles() {
+    public List<RoleResponse> listRoles(boolean assignableOnly) {
+        UserAccess caller = CurrentUser.access();
         Map<UUID, RoleInfo> info = roleInfo();
         return info.values().stream()
+                .filter(r -> caller.platform() || !"platform".equals(r.scopeType()))
+                .filter(r -> !assignableOnly || caller.permissions().containsAll(r.permissions()))
                 .sorted(java.util.Comparator.comparing(RoleInfo::sortOrder).thenComparing(RoleInfo::name))
                 .map(r -> new RoleResponse(r.id(), r.name(), r.description(), r.scopeType(), r.mfaRequired(),
-                        r.systemRole(), r.permissions().stream().sorted().toList()))
+                        r.systemRole(), r.permissions().stream().sorted().toList(),
+                        caller.permissions().containsAll(r.permissions())))
                 .toList();
     }
 
@@ -292,8 +309,13 @@ public class UserAdminService {
         return !jdbc.queryForList(sql, Integer.class, arg).isEmpty();
     }
 
+    /** Platform-scope users don't exist for tenant administrators (S5): same 404 as an unknown id. */
     private User find(UUID id) {
-        return users.findById(id).orElseThrow(() -> ApiException.notFound("User"));
+        User user = users.findById(id).orElseThrow(() -> ApiException.notFound("User"));
+        if (!CurrentUser.access().platform() && users.isPlatformUser(id)) {
+            throw ApiException.notFound("User");
+        }
+        return user;
     }
 
     private static UserResponse toResponse(User u, Map<UUID, List<RoleAssignmentResponse>> roles) {

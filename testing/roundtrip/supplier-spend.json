@@ -1,0 +1,120 @@
+{
+  "id": "supplier-spend",
+  "forms": [
+    "Supplier spend"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/supply-chain/spend"
+  },
+  "read": {
+    "path": "/v1/supply-chain/spend/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/supply-chain/spend/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Supply Chain ESG"
+  },
+  "values": {
+    "supplierId": "{SUPPLIER_A}",
+    "orgId": "{ORG_SITE_2}",
+    "reportingPeriodStart": "2025-01-01",
+    "reportingPeriodEnd": "2025-03-31",
+    "amount": 1500.5,
+    "currency": "USD",
+    "sourceActivity": "spend_paper_stationery",
+    "description": "RT paper {u}"
+  },
+  "changes": {
+    "orgId": "{ORG_HQ}",
+    "reportingPeriodStart": "2025-02-01",
+    "reportingPeriodEnd": "2025-04-30",
+    "amount": 2500,
+    "sourceActivity": "spend_professional_services",
+    "description": "RT consulting {u}"
+  },
+  "invalid": [
+    {
+      "field": "supplierId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "orgId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "reportingPeriodEnd",
+      "value": "2024-12-31",
+      "rule": "on or after start"
+    },
+    {
+      "field": "amount",
+      "value": 0,
+      "rule": "> 0"
+    },
+    {
+      "field": "currency",
+      "value": "ABC",
+      "rule": "enum"
+    },
+    {
+      "field": "sourceActivity",
+      "value": "spend_computers",
+      "rule": "Scope 3 Category 1 spend category"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          501
+        ]
+      },
+      "rule": "max 500"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "supplierId": {
+        "label": "Supplier",
+        "kind": "select",
+        "display": "Supplier A"
+      },
+      "orgId": {
+        "label": "Organisation",
+        "kind": "select",
+        "display": "A Site 2"
+      },
+      "reportingPeriodStart": {
+        "label": "Period start"
+      },
+      "reportingPeriodEnd": {
+        "label": "Period end"
+      },
+      "amount": {
+        "label": "Amount"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "sourceActivity": {
+        "label": "Purchase category",
+        "kind": "select",
+        "display": "Paper and stationery (spend)"
+      },
+      "description": {
+        "label": "Description (optional)"
+      }
+    }
+  }
+}

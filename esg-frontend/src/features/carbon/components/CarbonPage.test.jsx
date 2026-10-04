@@ -10,7 +10,7 @@ const YEAR = new Date().getFullYear();
 const platform = { id: 'f1', region: 'NG', category: 'electricity_grid', subCategory: 'National Grid', factorValue: 0.43, unit: 'kgCO2e/kWh', source: 'FMPWH Nigeria 2024', derivation: 'Legacy seed value', factorVersion: '1', validFrom: '2024-01-01', validTo: null, verificationStatus: 'pending_sme', custom: false, factorMethod: 'activity', version: 0 };
 const diesel = { ...platform, id: 'f0', region: 'GLOBAL', category: 'diesel_generator', subCategory: null, factorValue: 2.68, unit: 'kgCO2e/litre', source: 'IPCC 2006', co2Factor: 2.676492, ch4Factor: 0.00010836, n2oFactor: 0.000021672 };
 const mine = { ...platform, id: 'f2', category: 'captive_gas', subCategory: null, factorValue: 0.5, source: 'Plant certificate', derivation: null, verificationStatus: 'tenant_provided', custom: true, version: 3 };
-const factorUsed = { id: 'f0', version: '1', value: 2.68, unit: 'kgCO2e/litre', level: 'global', source: 'IPCC 2006', category: 'diesel_generator', region: 'GLOBAL' };
+const factorUsed = { id: 'f0', version: '1', value: 2.68, unit: 'kgCO2e/litre', level: 'global', source: 'IPCC 2006', category: 'diesel_generator', region: 'GLOBAL', reviewStatus: 'pending_sme' };
 const record = (over) => ({
   id: 'e1', orgId: 'hq', orgName: 'Lagos HQ', scope: 'scope_1', scope3Category: null, sourceActivity: 'diesel_generator', activityData: 1000,
   activityUnit: 'litre', calculationMethod: 'activity_based', factor: factorUsed, gwpSet: 'AR6', co2eTonnes: 2.68, recordSource: 'manual',
@@ -22,7 +22,16 @@ const summary = {
   byOrganisation: [{ key: 'hq', label: 'Lagos HQ', co2eTonnes: 1687.8 }], byScope3Category: [{ key: '1', label: '1. Purchased goods and services', co2eTonnes: 12 }],
   intensity: [{ denominator: 'employees', denominatorValue: 100, unit: 'employees', tonnesPerUnit: 16.878, per: 'per employee' }], records: 4,
 };
+const activities = [
+  { category: 'diesel_generator', label: 'Diesel generator', scope: 'scope_1', scope3Category: null, factorMethod: 'activity', activityUnit: 'litre', custom: false },
+  { category: 'captive_gas', label: 'Captive gas', scope: 'scope_1', scope3Category: null, factorMethod: 'activity', activityUnit: 'kWh', custom: true },
+  { category: 'electricity_grid', label: 'Electricity grid', scope: 'scope_2', scope3Category: null, factorMethod: 'activity', activityUnit: 'kWh', custom: false },
+  { category: 'purchased_goods', label: 'Purchased goods', scope: 'scope_3', scope3Category: 1, factorMethod: 'spend', activityUnit: null, custom: true },
+];
 const routes = (extra = {}) => ({
+  'GET /carbon/factors/activities': () => ok(activities),
+  'GET /carbon/factors/regions': () => ok([{ code: 'GLOBAL', name: 'Global', kind: 'region' }, { code: 'NG', name: 'Nigeria', kind: 'country' },
+    { code: 'GH', name: 'Ghana', kind: 'country' }]),
   'GET /carbon/emissions/summary': () => ok(summary),
   'GET /carbon/emissions': () => ok({ content: [record(), record({ id: 'e2', recordSource: 'data_hub', sourceActivity: 'electricity_grid', scope: 'scope_2' }),
     record({ id: 'e3', recordSource: 'flaring', sourceActivity: 'gas_flaring', calculationMethod: 'flaring_composition', factor: null, activityData: 1000, activityUnit: 'Mcf' })], totalElements: 3, number: 0, size: 20 }),
@@ -46,6 +55,35 @@ const choose = async (container, label, option) => {
 const openTab = async (name) => userEvent.click(await screen.findByRole('tab', { name }));
 
 describe('CarbonPage overview and records', () => {
+  it('guides the user to the missing intensity data: add it, or review what is waiting (Phase 3)', async () => {
+    fakeApi(routes({
+      'GET /carbon/emissions/summary': () => ok({
+        ...summary, intensity: [],
+        intensityGaps: [
+          { denominator: 'revenue', metricKey: 'revenue', metricName: 'Revenue', unit: 'currency', awaitingApproval: 0 },
+          { denominator: 'employees', metricKey: 'employees_total', metricName: 'Total employees', unit: 'headcount', awaitingApproval: 2 },
+        ],
+      }),
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated([...READ, 'data_points:create', 'data_points:approve']) });
+    const gaps = await screen.findByRole('list', { name: 'Missing intensity data' });
+    expect(within(gaps).getByRole('link', { name: 'Add revenue' }))
+      .toHaveAttribute('href', `/data-hub?add=revenue&from=${YEAR}-01-01&to=${YEAR}-12-31`);
+    expect(within(gaps).getByText(/2 entered and waiting for approval/)).toBeInTheDocument();
+    expect(within(gaps).getByRole('link', { name: 'Review 2 waiting' })).toHaveAttribute('href', '/data-hub?tab=review');
+  });
+
+  it('shows no intensity prompt to someone who can only read', async () => {
+    fakeApi(routes({
+      'GET /carbon/emissions/summary': () => ok({ ...summary, intensity: [], intensityGaps: [
+        { denominator: 'revenue', metricKey: 'revenue', metricName: 'Revenue', unit: 'currency', awaitingApproval: 0 }] }),
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated(READ) });
+    const gaps = await screen.findByRole('list', { name: 'Missing intensity data' });
+    expect(within(gaps).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(gaps).getByText('Not entered yet (currency)')).toBeInTheDocument();
+  });
+
   it('shows location- and market-based totals, breakdowns and intensity for the selected year', async () => {
     const calls = fakeApi(routes());
     renderWithStore(<CarbonPage />, { preloadedState: authenticated(READ) });
@@ -72,6 +110,7 @@ describe('CarbonPage overview and records', () => {
     expect(within(table).queryByLabelText(`Edit electricity_grid ${YEAR}-01-01`)).not.toBeInTheDocument();
     // Flaring records carry no emission factor: they are calculated from the gas composition.
     expect(within(table).getByText('Gas composition · AR6')).toBeInTheDocument();
+    expect(within(table).getAllByText('Provisional factor').length).toBeGreaterThan(0); // S7
     expect(within(table).queryByLabelText(`Edit gas_flaring ${YEAR}-01-01`)).not.toBeInTheDocument();
     expect(calls.find((c) => c.key === 'GET /carbon/emissions').query).toMatchObject({ from: `${YEAR}-01-01`, to: `${YEAR}-12-31` });
   });
@@ -105,6 +144,7 @@ describe('CarbonPage overview and records', () => {
     expect(result).toHaveTextContent('2.68645');
     expect(result).toHaveTextContent('AR6 (CO2 2.676492 t, CH4 0.00010836 t, N2O 0.000021672 t)');
     expect(result).toHaveTextContent('IPCC 2006');
+    expect(result).toHaveTextContent('Provisional factor'); // S7: library factor pending expert review
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save record' }));
     const expected = {
       orgId: 'hq', scope: 'scope_1', scope3Category: null, calculationMethod: 'activity_based', sourceActivity: 'diesel_generator',
@@ -166,6 +206,39 @@ describe('CarbonPage overview and records', () => {
   });
 });
 
+describe('CarbonPage calculator activities (F4, F5)', () => {
+  it('offers only the activities of the chosen scope', async () => {
+    fakeApi(routes());
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated(WRITE) });
+    await openTab('Emission records');
+    await userEvent.click(await screen.findByRole('button', { name: 'Calculate emissions' }));
+    const dialog = await screen.findByRole('dialog');
+    await choose(dialog, 'Scope', 'Scope 2 — purchased energy');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    await userEvent.click(within(dialog).getByRole('combobox', { name: 'Activity' }));
+    const options = (await screen.findAllByRole('option')).map((o) => o.textContent);
+    expect(options).toEqual(['Electricity grid (kgCO2e/kWh)']);
+  });
+
+  it('a scope 3 category with no spend-based factor says so and links to the factor library', async () => {
+    fakeApi(routes({
+      'GET /reference/scope3-categories': () => ok([{ category: 1, name: 'Purchased goods and services' }, { category: 6, name: 'Business travel' }]),
+    }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated(WRITE) });
+    await openTab('Emission records');
+    await userEvent.click(await screen.findByRole('button', { name: 'Calculate emissions' }));
+    const dialog = await screen.findByRole('dialog');
+    await choose(dialog, 'Scope', 'Scope 3 — value chain');
+    await choose(dialog, 'Scope 3 category', '6. Business travel');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Spend-based (amount spent)' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    expect(within(dialog).getByLabelText('No factors')).toHaveTextContent('No spend-based factors for Scope 3 category 6 — add a custom factor');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add a custom factor' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('tab', { name: 'Emission factors', selected: true })).toBeInTheDocument();
+  });
+});
+
 describe('CarbonPage factors', () => {
   it('factor library shows source, status, per-gas values and derivation; read-only users cannot add or recalculate', async () => {
     fakeApi(routes());
@@ -188,16 +261,45 @@ describe('CarbonPage factors', () => {
     await openTab('Emission factors');
     await userEvent.click(await screen.findByRole('button', { name: 'Add custom factor' }));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.type(within(dialog).getByLabelText('Category'), 'captive_gas');
+    // F11: the category comes from the known activities, and its unit fills in.
+    await userEvent.click(within(dialog).getByLabelText('Category'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Captive gas' }));
+    expect(within(dialog).getByLabelText('Unit')).toHaveValue('kgCO2e/kWh');
     await userEvent.type(within(dialog).getByLabelText('Description (optional)'), 'On-site gas turbine');
     await userEvent.type(within(dialog).getByLabelText('Value'), '0.512');
-    await userEvent.type(within(dialog).getByLabelText('Unit'), 'kgCO2e/kWh');
     await userEvent.type(within(dialog).getByLabelText('Source'), 'Plant operator certificate 2026');
     await userEvent.type(within(dialog).getByLabelText('Valid from'), '2026-01-01');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(created).toEqual({
       region: 'NG', category: 'captive_gas', subCategory: 'On-site gas turbine', factorValue: 0.512, unit: 'kgCO2e/kWh',
       source: 'Plant operator certificate 2026', validFrom: '2026-01-01', validTo: null, factorMethod: 'activity', spendCurrency: null,
+      activityLabel: null, activityScope: null, activityScope3Category: null,
+    }));
+  });
+
+  it('a new activity needs its name and GHG scope; the country comes from the ISO list (F11)', async () => {
+    let created;
+    fakeApi(routes({ 'POST /carbon/factors': (body) => { created = body; return [201, { success: true, data: { ...mine, id: 'f5' } }]; } }));
+    renderWithStore(<CarbonPage />, { preloadedState: authenticated([...READ, 'emission_factors:manage']) });
+    await openTab('Emission factors');
+    await userEvent.click(await screen.findByRole('button', { name: 'Add custom factor' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('Category'));
+    await userEvent.click(await screen.findByRole('option', { name: 'New activity…' }));
+    await userEvent.type(within(dialog).getByLabelText('New activity name'), 'Captive gas turbine');
+    expect(within(dialog).getByLabelText('Category key')).toHaveValue('captive_gas_turbine');
+    await userEvent.click(within(dialog).getByLabelText('Country or region'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Ghana (GH)' }));
+    await userEvent.type(within(dialog).getByLabelText('Value'), '0.4');
+    await userEvent.type(within(dialog).getByLabelText('Unit'), 'kgCO2e/kWh');
+    await userEvent.type(within(dialog).getByLabelText('Source'), 'Turbine OEM datasheet');
+    await userEvent.type(within(dialog).getByLabelText('Valid from'), '2026-01-01');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await within(dialog).findByText('Choose the GHG scope of the new activity')).toBeInTheDocument();
+    await choose(dialog, 'GHG scope', 'Scope 1 — direct');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(created).toMatchObject({
+      category: 'captive_gas_turbine', region: 'GH', activityLabel: 'Captive gas turbine', activityScope: 'scope_1', activityScope3Category: null,
     }));
   });
 
@@ -209,16 +311,18 @@ describe('CarbonPage factors', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Add custom factor' }));
     const dialog = await screen.findByRole('dialog');
     await choose(dialog, 'Factor type', 'Spend-based (per currency unit)');
-    await userEvent.type(within(dialog).getByLabelText('Category'), 'purchased_goods');
+    await userEvent.click(within(dialog).getByLabelText('Category'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Purchased goods' }));
     await userEvent.type(within(dialog).getByLabelText('Value'), '0.42');
-    await userEvent.type(within(dialog).getByLabelText('Unit'), 'kgCO2e/USD');
     await userEvent.type(within(dialog).getByLabelText('Source'), 'Supplier EEIO study');
     await userEvent.type(within(dialog).getByLabelText('Valid from'), '2026-01-01');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     expect(await within(dialog).findByText('Choose the currency the factor is per')).toBeInTheDocument();
     await choose(dialog, 'Spend currency', 'USD');
+    // The unit is kgCO2e per the currency: shown, and set by the server.
+    expect(within(dialog).getByLabelText('Unit')).toHaveValue('kgCO2e/USD');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(created).toMatchObject({ factorMethod: 'spend', spendCurrency: 'USD', unit: 'kgCO2e/USD' }));
+    await waitFor(() => expect(created).toMatchObject({ factorMethod: 'spend', spendCurrency: 'USD', unit: null }));
   });
 
   it('editing reloads every field and shows the in-use conflict from the server', async () => {
@@ -228,7 +332,7 @@ describe('CarbonPage factors', () => {
     await openTab('Emission factors');
     await userEvent.click(await screen.findByLabelText('Edit captive_gas'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByLabelText('Category')).toHaveValue('captive_gas');
+    expect(within(dialog).getByLabelText('Category')).toHaveValue('Captive gas');
     expect(within(dialog).getByLabelText('Value')).toHaveValue('0.5');
     await userEvent.clear(within(dialog).getByLabelText('Value'));
     await userEvent.type(within(dialog).getByLabelText('Value'), '0.6');
@@ -298,6 +402,7 @@ describe('CarbonPage flaring, targets, instruments, PCAF', () => {
       targetValue: 580, pathway: 'linear', sbtiAligned: true, intensityDenominator: null, progressYear: YEAR, currentValue: 990,
       expectedValue: 958, progressPct: 2.38, status: 'off_track', annualReductionPct: 4.2,
       sbtiFindings: ['Target year must be 5 to 10 years after submission'], pathwayPoints: [{ year: 2025, expected: 1000, actual: 1000 }, { year: 2035, expected: 580, actual: null }], version: 0,
+      baselineWarning: 'Emissions measured for 2025 (1917.0) differ from the base value entered (1000) by more than 10%. Check the base value and scope.',
     };
     fakeApi(routes({
       'GET /carbon/targets': () => ok([target]),
@@ -308,6 +413,7 @@ describe('CarbonPage flaring, targets, instruments, PCAF', () => {
     const card = await screen.findByLabelText('Target Net zero ops');
     expect(within(card).getByText('Off track')).toBeInTheDocument();
     expect(within(card).getByText('Target year must be 5 to 10 years after submission')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Baseline check')).toHaveTextContent('differ from the base value entered (1000)');
     await userEvent.click(screen.getByRole('button', { name: 'Set target' }));
     const dialog = await screen.findByRole('dialog');
     await userEvent.type(within(dialog).getByLabelText('Name'), 'Halve Scope 1+2');
@@ -392,14 +498,19 @@ const fieldsOf = (schema, valid) => (v) => {
 };
 
 describe('customFactorSchema', () => {
-  const f = fieldsOf(customFactorSchema, { region: 'NG', category: 'x', subCategory: '', factorValue: '1', unit: 'kg', source: 's', validFrom: '2026-01-01', validTo: '', factorMethod: 'activity', spendCurrency: '' });
+  const f = fieldsOf(customFactorSchema, { region: 'NG', category: 'x', subCategory: '', factorValue: '1', unit: 'kgCO2e/kg', source: 's', validFrom: '2026-01-01', validTo: '', factorMethod: 'activity', spendCurrency: '' });
   it.each([
     ['region', { region: 'Lagos' }], ['category', { category: 'Diesel Gen' }], ['factorValue', { factorValue: '-1' }],
     ['factorValue', { factorValue: '0' }], ['factorValue', { factorValue: '1.12345678901' }], ['unit', { unit: '' }],
     ['source', { source: '' }], ['validTo', { validTo: '2025-01-01' }], ['subCategory', { subCategory: 'x'.repeat(201) }],
     ['spendCurrency', { factorMethod: 'spend' }], ['spendCurrency', { spendCurrency: 'USD' }], ['factorMethod', { factorMethod: 'guess' }],
+    // F11: unit per unit of activity or currency; a new activity needs its name and scope (EmissionFactorService.checkActivity).
+    ['unit', { unit: 'litres' }], ['unit', { unit: '' }],
+    ['activityLabel', { newActivity: true, activityScope: 'scope_1' }], ['activityScope', { newActivity: true, activityLabel: 'Turbine' }],
+    ['activityScope3Category', { newActivity: true, activityLabel: 'Freight', activityScope: 'scope_3' }],
   ])('%s: %j', (field, v) => expect(f(v)).toContain(field));
-  it.each([[{}], [{ region: 'WEST_AFRICA' }], [{ factorValue: '2.6856' }], [{ factorMethod: 'spend', spendCurrency: 'USD' }]])('accepts %j', (v) => expect(f(v)).toEqual([]));
+  it.each([[{}], [{ region: 'WEST_AFRICA' }], [{ factorValue: '2.6856' }], [{ factorMethod: 'spend', spendCurrency: 'USD', unit: '' }],
+    [{ newActivity: true, activityLabel: 'Freight', activityScope: 'scope_3', activityScope3Category: '4' }]])('accepts %j', (v) => expect(f(v)).toEqual([]));
 });
 
 describe('emissionSchema', () => {

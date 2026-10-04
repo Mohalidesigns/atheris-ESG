@@ -147,7 +147,7 @@ describe('CompliancePage overview, gaps and frameworks', () => {
     expect(within(reqs).getByText('↔ GRI 305-1')).toBeInTheDocument();
     await userEvent.click(within(list).getByText('SEC Nigeria Sustainability Reporting Guidelines'));
     expect(await screen.findByText('No requirements loaded')).toBeInTheDocument();
-    expect(screen.getByText('Content pending SME')).toBeInTheDocument();
+    expect(screen.getByText('Pending SME verification')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('We report against CBN_NSBP')).toBeChecked());
     await userEvent.click(screen.getByLabelText('We report against ISSB_S2'));
     await waitFor(() => expect(active).toEqual({ codes: ['CBN_NSBP', 'SEC_NG', 'ISSB_S2'] }));

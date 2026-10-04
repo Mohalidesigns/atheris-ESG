@@ -60,7 +60,18 @@ overdue and the owner is told once. Sent via the user's notification preferences
 - Field round-trip: `filing-deadline` and `regulatory-change` specs; transitions in `covered-elsewhere.json`.
 - UI: `CompliancePage.test.jsx`. E2E: `cypress/e2e/journey-10` … `journey-12`.
 
+## Framework content (Phase 3, D28)
+
+Requirement content is versioned: a platform administrator imports a CSV or JSON file (Administration › Framework content;
+`POST /platform/frameworks/{code}/content`) with a version label, effective dates, the source instrument and, once an ESG
+expert has checked it, who verified it. "Check file" is a dry run listing every row problem and what would be added,
+changed and retired; "Import version" applies it. Retired requirements stay (inactive) for history. Content is read-only
+for the application role; the write is `compliance.apply_framework_content` (security definer, re-checks
+`framework_content:import`). Bundled packs (`src/main/resources/framework-content`, loaded by Flyway `R__ref_12`):
+NGX 50, SEC NG 35, PenCom 24, CDP 82, GHG Protocol 40, SASB EM-EP 42 requirements, all pending SME verification; sources and
+doubts per pack in `framework-content/SOURCES.md`. NAICOM has none: no issued instrument was found.
+
 ## Not built yet
 
-SEC Nigeria, NGX, NAICOM, PenCom and FRCN requirement content (ESG SME); regulator feed ingestion; fiscal-year
+SME verification of the bundled packs and a NAICOM instrument (D28); regulator feed ingestion; fiscal-year
 alignment of the reporting year; a compliance-specific audit view.

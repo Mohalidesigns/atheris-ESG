@@ -6,9 +6,32 @@ esg:
     data-encryption-key: ${DATA_ENCRYPTION_KEY:S5gZx/LBue1vcvNZoRCnZrSAJI+G1tekOSj6v5Is6Y0=}
     cookie-secure: false
 
+  testing:
+    # Phase 3 (7): requests with X-ESG-Test-Run mark what they create as test data (E2E cleans up after itself).
+    test-data-marking: true
   files:
     storage: filesystem
     local-dir: ${java.io.tmpdir}/esg-test-files
+    scanner: sandbox
+    rescan:
+      enabled: false   # tests drive VirusScanService.runOnce() directly
+  webhooks:
+    dispatch:
+      enabled: false   # tests drive WebhookDispatcher directly
+    allow-http: true
+    allow-private-networks: true   # tests receive webhooks on a local server
+  privacy:
+    retention:
+      enabled: false   # tests call RetentionService.runAll(clock)
+  supply-chain:
+    reminders:
+      enabled: false   # tests drive CorrectiveActionService.runAll(clock) with a shifted clock
+  analytics:
+    scan:
+      enabled: false   # tests call AnomalyService.runAll(clock)
+  social:
+    escalation:
+      enabled: false   # tests drive GrievanceService.runAll(clock) with a shifted clock
   reporting:
     sla:
       enabled: false   # tests drive ApprovalSlaService.runAll() with a fixed clock

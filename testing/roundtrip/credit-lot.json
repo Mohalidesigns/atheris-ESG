@@ -1,0 +1,142 @@
+{
+  "id": "credit-lot",
+  "forms": [
+    "Credit lot"
+  ],
+  "actor": "ESG_MANAGER",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon-market/credits"
+  },
+  "read": {
+    "path": "/v1/carbon-market/credits/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon-market/credits/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Carbon Market"
+  },
+  "values": {
+    "projectId": "{PROJECT_CM}",
+    "vintage": 2023,
+    "serialPrefix": "RT-{u}",
+    "serialFrom": 1,
+    "serialTo": 500,
+    "acquiredOn": "2025-03-01",
+    "pricePerTonne": 12.5,
+    "currency": "USD",
+    "seller": "Broker Ltd",
+    "transactionRef": "PO-{u}",
+    "notes": "First purchase"
+  },
+  "changes": {
+    "vintage": 2024,
+    "serialPrefix": "RT-{u}-B",
+    "serialFrom": 101,
+    "serialTo": 700,
+    "acquiredOn": "2025-04-15",
+    "pricePerTonne": 9.75,
+    "currency": "EUR",
+    "seller": "Another broker",
+    "transactionRef": "PO-{u}-2",
+    "notes": "Re-booked"
+  },
+  "invalid": [
+    {
+      "field": "projectId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "vintage",
+      "value": 1980,
+      "rule": "1990 to 2100"
+    },
+    {
+      "field": "serialPrefix",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "serialFrom",
+      "value": -1,
+      "rule": ">= 0"
+    },
+    {
+      "field": "serialTo",
+      "value": 0,
+      "rule": "at or after the first serial"
+    },
+    {
+      "field": "acquiredOn",
+      "value": "2099-01-01",
+      "rule": "not in the future"
+    },
+    {
+      "field": "pricePerTonne",
+      "value": -1,
+      "rule": ">= 0"
+    },
+    {
+      "field": "currency",
+      "value": null,
+      "rule": "with the price"
+    },
+    {
+      "field": "notes",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "projectId": {
+        "label": "Project",
+        "kind": "select",
+        "display": "Fixture cookstoves"
+      },
+      "vintage": {
+        "label": "Vintage"
+      },
+      "serialPrefix": {
+        "label": "Issuance batch (serial prefix)"
+      },
+      "serialFrom": {
+        "label": "First serial"
+      },
+      "serialTo": {
+        "label": "Last serial"
+      },
+      "acquiredOn": {
+        "label": "Acquired on"
+      },
+      "pricePerTonne": {
+        "label": "Price per tCO2e (optional)"
+      },
+      "currency": {
+        "label": "Currency",
+        "kind": "select",
+        "display": "USD"
+      },
+      "seller": {
+        "label": "Seller (optional)"
+      },
+      "transactionRef": {
+        "label": "Transaction reference (optional)"
+      },
+      "notes": {
+        "label": "Notes (optional)"
+      }
+    }
+  }
+}

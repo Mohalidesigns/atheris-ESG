@@ -140,7 +140,7 @@ class ReportingApiTest extends ApiTestSupport {
       }
     }
     // Every variable a platform template uses is one the engine knows.
-    VariableEngine engine = new VariableEngine(jdbc, null);
+    VariableEngine engine = new VariableEngine(jdbc, null, null, null, null, null, null, null, null);
     for (JsonNode t : list) {
       for (JsonNode s : t.path("sections")) {
         assertThat(asTenantA(() -> engine.unknown(s.path("content").asText()))).as(t.path("key") + " / " + s.path("title")).isEmpty();
@@ -173,6 +173,11 @@ class ReportingApiTest extends ApiTestSupport {
     assertThat(r.path("snapshot").path("metric:electricity_kwh").path("basis").asText()).isEqualTo("2 approved data points");
     assertThat(r.path("snapshot").path("metric:employees_total").path("display").asText()).isEqualTo("130");
     assertThat(r.path("snapshot").path("carbon:scope1").path("display").asText()).isEqualTo("2.68 tCO2e");
+    // S7: the diesel factor is pending expert review, so the Scope 1 figure is marked provisional.
+    assertThat(r.path("snapshot").path("carbon:scope1").path("provisional").asText())
+        .isEqualTo("1 of 1 record (2.68 tCO2e) use emission factors pending expert review");
+    assertThat(r.path("snapshot").path("metric:electricity_kwh").path("provisional").isMissingNode()
+        || r.path("snapshot").path("metric:electricity_kwh").path("provisional").isNull()).isTrue();
     assertThat(r.path("snapshot").path("metric:water_withdrawal_m3").path("status").asText()).isEqualTo("missing");
     assertThat(section(r, "Energy").path("rendered").asText()).contains("Electricity consumed: 1,500 kWh");
     assertThat(section(r, "Water and waste").path("rendered").asText()).contains("Water withdrawn: [not reported]");
@@ -248,7 +253,7 @@ class ReportingApiTest extends ApiTestSupport {
       text = new PDFTextStripper().getText(doc);
     }
     assertThat(text).contains("Sustainability report 2039", "Version v1.0", "Electricity consumed: 1,750 kWh", "Scope 1 (direct): 2.68 tCO2e",
-        "We cut diesel use across our sites.", "Water withdrawn: [not reported]").doesNotContain("5,750");
+        "We cut diesel use across our sites.", "Water withdrawn: [not reported]", "PROVISIONAL").doesNotContain("5,750");
 
     // Excel: the Data sheet equals the snapshot, value by value.
     JsonNode xlsxJob = data(send("POST", "/v1/reports/" + id + "/generate", manager, "{\"format\":\"xlsx\"}").andExpect(status().isCreated()));
@@ -295,6 +300,10 @@ class ReportingApiTest extends ApiTestSupport {
   void approverCantApproveOwnSubmissionOrTwoSteps() throws Exception {
     String director = role("ESG_DIRECTOR");
     JsonNode r = submit(create("issb_s2", 2038, director), director);
+    // Phase 2: the submitter holds the step's role but is told why they can't act.
+    JsonNode step = currentStep(data(mvc.perform(get("/v1/reports/" + r.path("id").asText()).header("Authorization", director))));
+    assertThat(step.path("canAct").asBoolean()).isFalse();
+    assertThat(step.path("blockedReason").asText()).isEqualTo("You submitted this report — another person must approve it");
     act(r, director, "approve", null, 409);
     r = act(r, role("TENANT_ADMIN"), "approve", null, 403); // holds every permission but not the step's role
     // A user holding two roles of the chain can take only one step.
@@ -303,6 +312,8 @@ class ReportingApiTest extends ApiTestSupport {
       JsonNode m = submit(create("issb_s2", 2037, role("ESG_MANAGER")), role("ESG_MANAGER"));
       m = act(m, director, "approve", null, 200);
       m = act(m, role("BOARD_MEMBER"), "approve", null, 200);
+      JsonNode next = currentStep(data(mvc.perform(get("/v1/reports/" + m.path("id").asText()).header("Authorization", role("BOARD_MEMBER")))));
+      assertThat(next.path("blockedReason").asText()).isEqualTo("You approved an earlier step — another person must approve this one");
       act(m, role("BOARD_MEMBER"), "approve", null, 409);
       m = act(m, role("BOARD_MEMBER"), "reject", "Should not count", 409);
     } finally {

@@ -16,7 +16,7 @@ class JwtTokenProviderTest {
 
   @Test
   void accessTokenRoundTripsClaims() {
-    String token = provider.generateAccessToken("u-1", "t-1", List.of("ESG_ANALYST"), List.of("data_points:read"));
+    String token = provider.generateAccessToken("u-1", "t-1", List.of("ESG_ANALYST"), List.of("data_points:read"), false);
 
     Claims claims = provider.parseAccessToken(token).orElseThrow();
 
@@ -29,7 +29,7 @@ class JwtTokenProviderTest {
   @Test
   void mfaTokenIsNotAnAccessTokenAndViceVersa() {
     String mfa = provider.generateMfaToken("u-1", "t-1");
-    String access = provider.generateAccessToken("u-1", "t-1", List.of(), List.of());
+    String access = provider.generateAccessToken("u-1", "t-1", List.of(), List.of(), false);
 
     assertThat(provider.parseAccessToken(mfa)).isEmpty();
     assertThat(provider.parseMfaToken(access)).isEmpty();
@@ -40,7 +40,7 @@ class JwtTokenProviderTest {
   void tokenSignedWithAnotherKeyIsRejected() {
     JwtTokenProvider other = new JwtTokenProvider(
         "another-signing-key-0123456789abcdef0123456789abcdef0123456789ab", 60_000);
-    String foreign = other.generateAccessToken("u-1", "t-1", List.of(), List.of());
+    String foreign = other.generateAccessToken("u-1", "t-1", List.of(), List.of(), false);
 
     assertThat(provider.parseAccessToken(foreign)).isEmpty();
   }

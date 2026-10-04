@@ -39,6 +39,10 @@ export const reportingApi = apiSlice.injectEndpoints({
     reportVersion: build.query({
       query: ({ id, versionId }) => `/reports/${id}/versions/${versionId}`, transformResponse: unwrap,
     }),
+    /** Phase 3: the working version as a DRAFT-watermarked PDF (not stored, not an export). */
+    reportPreview: build.mutation({
+      query: (id) => ({ url: `/reports/${id}/preview`, responseHandler: (r) => r.blob(), cache: 'no-store' }),
+    }),
     generateReport: build.mutation({
       query: ({ id, format }) => ({ url: `/reports/${id}/generate`, method: 'POST', body: { format } }), transformResponse: unwrap,
       invalidatesTags: ['Report'],
@@ -49,5 +53,5 @@ export const reportingApi = apiSlice.injectEndpoints({
 export const {
   useReportTemplatesQuery, useReportsQuery, useReportQuery, useCreateReportMutation, useUpdateReportMutation, useSaveSectionsMutation,
   useRefreshReportMutation, useSubmitReportMutation, useDecideStepMutation, useReopenReportMutation, useDeleteReportMutation,
-  useReportVersionQuery, useLazyReportVersionQuery, useGenerateReportMutation,
+  useReportVersionQuery, useLazyReportVersionQuery, useGenerateReportMutation, useReportPreviewMutation,
 } = reportingApi;

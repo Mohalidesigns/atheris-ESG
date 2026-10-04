@@ -11,9 +11,12 @@ import java.util.UUID;
  * @param tenantWide true if at least one active assignment has no org scope; otherwise only {@code orgScopeRoots}
  *                   and their descendants are accessible
  * @param modules    the tenant's enabled modules (plan + add-ons − removals, always-on platform included)
+ * @param mfaRequired at least one active role is flagged {@code mfa_required} (SUPER_ADMIN, TENANT_ADMIN, ESG_DIRECTOR)
+ * @param platform   at least one active role has platform scope (SUPER_ADMIN): sees platform users in tenant lists
  */
 public record UserAccess(UUID userId, UUID tenantId, boolean active, Set<String> roles, Set<String> permissions,
-                         boolean tenantWide, Set<UUID> orgScopeRoots, Set<String> modules) {
+                         boolean tenantWide, Set<UUID> orgScopeRoots, Set<String> modules, boolean mfaRequired,
+                         boolean platform) {
 
     public boolean has(String permission) {
         return permissions.contains(permission);

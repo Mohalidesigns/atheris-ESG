@@ -24,11 +24,13 @@
     "region": "NG",
     "category": "spend_cat1_{u}",
     "factorValue": 0.42,
-    "unit": "kgCO2e/USD",
     "source": "Supplier EEIO study {u}",
     "validFrom": "2026-01-01",
     "factorMethod": "spend",
-    "spendCurrency": "USD"
+    "spendCurrency": "USD",
+    "activityLabel": "Round-trip spend {u}",
+    "activityScope": "scope_3",
+    "activityScope3Category": 1
   },
   "changes": {
     "spendCurrency": "GBP",
@@ -54,7 +56,8 @@
   "ui": {
     "fields": {
       "region": {
-        "label": "Country or region"
+        "label": "Country or region",
+        "display": "Nigeria (NG)"
       },
       "category": {
         "label": "Category"
@@ -81,6 +84,19 @@
         "kind": "select",
         "display": "USD"
       }
+    },
+    "notInEditForm": {
+      "activityLabel": "Only asked when the category is new",
+      "activityScope": "Only asked when the category is new",
+      "activityScope3Category": "Only asked when the category is new"
     }
+  },
+  "writeOnly": {
+    "activityLabel": "names a new activity (F11)",
+    "activityScope": "scope of a new activity (F11)",
+    "activityScope3Category": "Scope 3 category of a new activity (F11)"
+  },
+  "derived": {
+    "unit": "kgCO2e/USD"
   }
 }
