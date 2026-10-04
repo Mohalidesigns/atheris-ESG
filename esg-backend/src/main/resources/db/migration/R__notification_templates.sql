@@ -41,5 +41,39 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || 'A new whistleblower report ({{category}}) was received as case {{reference}}. Sign in to Atheris ESG to review it.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('POLICY_PUBLISHED', 'in_app', 'en', 'Policy to acknowledge: {{name}}', 'Version {{version}} is published. Read it and acknowledge it under My policies.'),
   ('POLICY_PUBLISHED', 'email', 'en', 'Policy to acknowledge: {{name}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'The policy "{{name}}" (version {{version}}) is published. Please read and acknowledge it in Atheris ESG (My policies).' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The policy "{{name}}" (version {{version}}) is published. Please read and acknowledge it in Atheris ESG (My policies).' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-33: social impact. No complainant details go into a notification.
+  ('GRIEVANCE_ESCALATED', 'in_app', 'en', 'Grievance {{reference}} escalated (level {{level}})', '{{reason}} Open Social Impact → Grievances.'),
+  ('GRIEVANCE_ESCALATED', 'email', 'en', 'Grievance {{reference}} escalated (level {{level}})',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Grievance {{reference}} ({{severity}}) was escalated to level {{level}}: {{reason}} It is now due by {{dueOn}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('SAFETY_INCIDENT_SERIOUS', 'in_app', 'en', 'Serious safety incident: {{title}}', 'A {{outcome}} incident was recorded at {{site}} on {{date}}. Open Social Impact → Health & safety.'),
+  ('SAFETY_INCIDENT_SERIOUS', 'email', 'en', 'Serious safety incident: {{title}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'A {{outcome}} incident ("{{title}}") was recorded at {{site}} on {{date}}. Sign in to Atheris ESG to follow the investigation.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('WORKFORCE_SNAPSHOT_SUBMITTED', 'in_app', 'en', 'Workforce figures to approve: {{site}}', 'Figures for {{period}} were submitted. Open Social Impact → Workforce.'),
+  ('WORKFORCE_SNAPSHOT_SUBMITTED', 'email', 'en', 'Workforce figures to approve: {{site}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Workforce figures for {{site}} ({{period}}) were submitted for approval. Sign in to Atheris ESG to review them.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-31: supply chain.
+  ('SUPPLIER_QUESTIONNAIRE_SUBMITTED', 'in_app', 'en', 'Questionnaire answered: {{supplier}}', '"{{title}}" is ready for review. Open Supply Chain → Questionnaires.'),
+  ('SUPPLIER_QUESTIONNAIRE_SUBMITTED', 'email', 'en', 'Questionnaire answered: {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || '{{supplier}} submitted the questionnaire "{{title}}". Sign in to Atheris ESG to review the scorecard.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('CORRECTIVE_ACTION_ASSIGNED', 'in_app', 'en', 'Corrective action for {{supplier}}', '"{{title}}" is yours, due {{due}}.'),
+  ('CORRECTIVE_ACTION_ASSIGNED', 'email', 'en', 'Corrective action for {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You own the corrective action "{{title}}" for {{supplier}}, due {{due}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('CORRECTIVE_ACTION_DUE', 'in_app', 'en', 'Corrective action {{when}}: {{supplier}}', '"{{title}}" {{when}}. Open Supply Chain → Corrective actions.'),
+  ('CORRECTIVE_ACTION_DUE', 'email', 'en', 'Corrective action {{when}}: {{supplier}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The corrective action "{{title}}" for {{supplier}} {{when}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-35: anomaly flags.
+  ('ANOMALY_DETECTED', 'in_app', 'en', 'Unusual value: {{metric}} at {{site}}', '{{detail}} ({{period}}). Open Analytics → Anomalies to explain it.'),
+  ('ANOMALY_DETECTED', 'email', 'en', 'Unusual value: {{metric}} at {{site}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'An approved value for {{metric}} at {{site}} ({{period}}) was flagged: {{detail}}. Sign in to Atheris ESG to explain it.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('ANOMALY_EXPLAINED', 'in_app', 'en', 'Explanation to review: {{metric}} at {{site}}', 'The flag for {{period}} was explained. Open Analytics → Anomalies.'),
+  ('ANOMALY_EXPLAINED', 'email', 'en', 'Explanation to review: {{metric}} at {{site}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The unusual value for {{metric}} at {{site}} ({{period}}) has been explained. Sign in to Atheris ESG to accept it or send it back.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-42: training.
+  ('TRAINING_ASSIGNED', 'in_app', 'en', 'Course assigned: {{course}}', '{{course}} ({{hours}} h){{due}}. Open Training → My learning.'),
+  ('TRAINING_ASSIGNED', 'email', 'en', 'Course assigned: {{course}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been enrolled in "{{course}}" ({{hours}} hours){{due}}. Sign in to Atheris ESG and open Training → My learning.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('TRAINING_CERTIFICATE', 'in_app', 'en', 'Certificate: {{course}}', 'You passed {{course}}. Your certificate code is {{code}}.'),
+  ('TRAINING_CERTIFICATE', 'email', 'en', 'Certificate: {{course}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Congratulations: you passed "{{course}}". Your certificate (code {{code}}) is in Training → My learning; anyone can check it at {{link}}.' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

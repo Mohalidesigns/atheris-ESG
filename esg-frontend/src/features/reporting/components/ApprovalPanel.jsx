@@ -4,8 +4,9 @@ import { applyProblem } from '../../../services/formErrors';
 import { useDecideStepMutation } from '../reportingApi';
 import { STEP_STATUS, decisionSchema } from '../schemas';
 import BlockedAction from '../../../components/feedback/BlockedAction';
+import { tr, formattingLocale } from '../../../i18n';
 
-const when = (t) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
+const when = (t) => (t ? new Date(t).toLocaleString(formattingLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
 /**
  * Approval workflow (TRD §6.5.3, TRD §7 ApprovalPanel): ESG Director review → Compliance review → Board sign-off, each
@@ -18,7 +19,7 @@ export default function ApprovalPanel({ report }) {
   const [error, setError] = useState('');
   const [fieldError, setFieldError] = useState('');
   if (!approval) {
-    return <Card><CardContent><Typography color="text.secondary">Not submitted for approval yet.</Typography></CardContent></Card>;
+    return <Card><CardContent><Typography color="text.secondary">{tr("Not submitted for approval yet.")}</Typography></CardContent></Card>;
   }
   const act = async (step, action) => {
     setError('');
@@ -38,10 +39,10 @@ export default function ApprovalPanel({ report }) {
     }
   };
   return (
-    <Card aria-label="Approval">
+    <Card aria-label={tr("Approval")}>
       <CardContent>
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-          Approval {approval.status === 'in_progress' ? `· step ${approval.currentStep} of ${approval.totalSteps}` : `· ${approval.status.replace('_', ' ')}`}
+          {tr("Approval")} {approval.status === 'in_progress' ? `· step ${approval.currentStep} of ${approval.totalSteps}` : `· ${approval.status.replace('_', ' ')}`}
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
         <Stepper orientation="vertical" activeStep={approval.status === 'in_progress' ? approval.currentStep - 1 : approval.totalSteps}>
@@ -49,27 +50,27 @@ export default function ApprovalPanel({ report }) {
             <Step key={s.id} completed={s.status === 'approved'} expanded>
               <StepLabel error={s.status === 'rejected' || s.status === 'changes_requested'}>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <strong>{s.label}</strong>
-                  <Chip size="small" color={STEP_STATUS[s.status]?.color} label={STEP_STATUS[s.status]?.label ?? s.status} />
-                  {s.overdue && <Chip size="small" color="error" label="Overdue" />}
+                  <strong>{tr(s.label)}</strong>
+                  <Chip size="small" color={STEP_STATUS[s.status]?.color} label={tr(STEP_STATUS[s.status]?.label) ?? s.status} />
+                  {s.overdue && <Chip size="small" color="error" label={tr("Overdue")} />}
                 </Box>
               </StepLabel>
               <StepContent>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {s.approver ? `${s.approver} · ${when(s.actedAt)}` : s.dueAt ? `Due ${when(s.dueAt)}` : 'Not started'}
+                  {s.approver ? `${s.approver} · ${when(s.actedAt)}` : s.dueAt ? `Due ${when(s.dueAt)}` : tr("Not started")}
                 </Typography>
                 {s.comments && <Typography variant="body2" sx={{ mt: 0.5 }}>“{s.comments}”</Typography>}
                 {s.blockedReason && (
-                  <Box sx={{ mt: 1 }}><BlockedAction label="Approve" reason={s.blockedReason} /></Box>
+                  <Box sx={{ mt: 1 }}><BlockedAction label={tr("Approve")} reason={s.blockedReason} /></Box>
                 )}
                 {s.canAct && (
                   <Box sx={{ mt: 1 }}>
-                    <TextField fullWidth size="small" multiline minRows={2} label="Comments" value={comments} onChange={(e) => setComments(e.target.value)}
-                      error={!!fieldError} helperText={fieldError || 'Required when sending it back'} />
+                    <TextField fullWidth size="small" multiline minRows={2} label={tr("Comments")} value={comments} onChange={(e) => setComments(e.target.value)}
+                      error={!!fieldError} helperText={fieldError || tr("Required when sending it back")} />
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Button size="small" variant="contained" disabled={isLoading} onClick={() => act(s, 'approve')}>Approve</Button>
-                      <Button size="small" disabled={isLoading} onClick={() => act(s, 'request_changes')}>Request changes</Button>
-                      <Button size="small" color="error" disabled={isLoading} onClick={() => act(s, 'reject')}>Reject</Button>
+                      <Button size="small" variant="contained" disabled={isLoading} onClick={() => act(s, 'approve')}>{tr("Approve")}</Button>
+                      <Button size="small" disabled={isLoading} onClick={() => act(s, 'request_changes')}>{tr("Request changes")}</Button>
+                      <Button size="small" color="error" disabled={isLoading} onClick={() => act(s, 'reject')}>{tr("Reject")}</Button>
                     </Box>
                   </Box>
                 )}

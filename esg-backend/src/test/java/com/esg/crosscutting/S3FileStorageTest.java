@@ -30,7 +30,8 @@ class S3FileStorageTest {
   void putOpenAndPresignedDownload() throws Exception {
     Assumptions.assumeTrue(dockerAvailable(), "Docker not available: skipping S3 test");
     try (GenericContainer<?> s3 = new GenericContainer<>(IMAGE).withExposedPorts(9090)
-        .waitingFor(Wait.forListeningPort())) {
+        // The port opens before S3Mock serves requests: wait for an HTTP answer, or the first call is reset.
+        .waitingFor(Wait.forHttp("/").forPort(9090).forStatusCodeMatching(code -> code < 500).withStartupTimeout(Duration.ofSeconds(60)))) {
       s3.start();
       String endpoint = "http://" + s3.getHost() + ":" + s3.getMappedPort(9090);
       // Encryption is off here: test servers don't run a KMS (it's on by default for AWS).

@@ -1,0 +1,46 @@
+{
+  "id": "carbon-market-settings",
+  "forms": [
+    "Offset ceiling"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "ESG_MANAGER",
+  "singleton": true,
+  "read": {
+    "path": "/v1/carbon-market/settings"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon-market/settings",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Carbon Market"
+  },
+  "values": {
+    "offsetCeilingPct": 15
+  },
+  "changes": {
+    "offsetCeilingPct": 10
+  },
+  "invalid": [
+    {
+      "field": "offsetCeilingPct",
+      "value": 101,
+      "rule": "0 to 100"
+    },
+    {
+      "field": "offsetCeilingPct",
+      "value": null,
+      "rule": "required"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "offsetCeilingPct": {
+        "label": "Offset ceiling (% of gross Scope 1+2)"
+      }
+    }
+  }
+}

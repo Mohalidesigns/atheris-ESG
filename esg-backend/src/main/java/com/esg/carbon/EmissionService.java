@@ -188,6 +188,48 @@ public class EmissionService {
         }
     }
 
+    /**
+     * WP-31: the Scope 3 record behind a supplier spend line, created or recalculated with the spend-based method
+     * (record_source 'supply_chain', so it's edited through the spend line, not here). Returns its id.
+     */
+    @Transactional
+    public UUID upsertForSupplierSpend(UUID spendId, EmissionRequest r) {
+        Calculation c = calculate(r);
+        List<UUID> existing = jdbc.queryForList("select id from carbon.emission_records where supplier_spend_id = ? and deleted_at is null",
+                UUID.class, spendId);
+        UUID id = existing.isEmpty() ? UUID.randomUUID() : existing.get(0);
+        if (existing.isEmpty()) {
+            jdbc.update("insert into carbon.emission_records (id, org_id, scope, scope3_category, source_activity, activity_data, "
+                            + "activity_unit, emission_factor_id, factor_version, factor_value, factor_unit, factor_level, gwp_set, "
+                            + "co2e_tonnes, co2_tonnes, ch4_tonnes, n2o_tonnes, reporting_period_start, reporting_period_end, "
+                            + "calculation_method, spend_amount, spend_currency, fx_rate, notes, record_source, supplier_spend_id, calculated_at) "
+                            + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'supply_chain', ?, now())",
+                    id, r.orgId(), r.scope(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(),
+                    c.factor().factorVersion(), c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(),
+                    c.result().co2eTonnes(), c.result().co2Tonnes(), c.result().ch4Tonnes(), c.result().n2oTonnes(),
+                    Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()), r.method(), c.spendAmount(),
+                    c.spendCurrency(), c.fxRate(), blank(r.notes()), spendId);
+        } else {
+            jdbc.update("update carbon.emission_records set org_id = ?, scope3_category = ?, source_activity = ?, activity_data = ?, activity_unit = ?, "
+                            + "emission_factor_id = ?, factor_version = ?, factor_value = ?, factor_unit = ?, factor_level = ?, gwp_set = ?, co2e_tonnes = ?, "
+                            + "co2_tonnes = ?, ch4_tonnes = ?, n2o_tonnes = ?, reporting_period_start = ?, reporting_period_end = ?, spend_amount = ?, "
+                            + "spend_currency = ?, fx_rate = ?, notes = ?, calculated_at = now(), version = version + 1 where id = ?",
+                    r.orgId(), r.scope3Category(), r.sourceActivity(), c.activity(), c.unit(), c.factor().id(), c.factor().factorVersion(),
+                    c.factor().factorValue(), c.factor().unit(), c.level(), c.result().gwpSet(), c.result().co2eTonnes(), c.result().co2Tonnes(),
+                    c.result().ch4Tonnes(), c.result().n2oTonnes(), Date.valueOf(r.reportingPeriodStart()), Date.valueOf(r.reportingPeriodEnd()),
+                    c.spendAmount(), c.spendCurrency(), c.fxRate(), blank(r.notes()), id);
+        }
+        recordLineage(id, c);
+        return id;
+    }
+
+    /** A removed spend line no longer backs a Scope 3 record. */
+    @Transactional
+    public void removeForSupplierSpend(UUID spendId) {
+        jdbc.update("update carbon.emission_records set deleted_at = now(), version = version + 1 where supplier_spend_id = ? and deleted_at is null",
+                spendId);
+    }
+
     /** Marks a record verified (carbon_data:approve): recalculation then leaves it alone. */
     @Transactional
     public EmissionResponse verify(UUID id, Long version) {
@@ -249,8 +291,11 @@ public class EmissionService {
                     result.n2oTonnes(), id);
             lineage.record("emission_factor", resolved.factor().id(), "emission_record", id, "recalculated_from",
                     Map.of("from", row.get("co2e_tonnes"), "to", result.co2eTonnes()));
-            changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
-                    + " → " + result.co2eTonnes() + " t");
+            // WP-51: a 10,000-record batch returned every line (~0.5 MB); the first 50 are listed, the count is exact.
+            if (changes.size() < Recalculation.LISTED) {
+                changes.add(row.get("source_activity") + " " + row.get("reporting_period_start") + ": " + row.get("co2e_tonnes")
+                        + " → " + result.co2eTonnes() + " t");
+            }
             updated++;
         }
         return new Recalculation(rows.size(), updated, changes);
@@ -388,12 +433,19 @@ public class EmissionService {
      * A record spanning several months is split pro rata by days, as on the Carbon Overview (F15), so periods add up.
      */
     public List<TrendPoint> trend(LocalDate from, LocalDate to, boolean quarterly) {
+        return trend(from, to, quarterly ? "quarter" : "year");
+    }
+
+    /** WP-50: the same split by {@code month}, {@code quarter} or {@code year} (months are "YYYY-MM"). */
+    public List<TrendPoint> trend(LocalDate from, LocalDate to, String granularity) {
+        boolean quarterly = "quarter".equals(granularity);
+        boolean monthly = "month".equals(granularity);
         StringBuilder where = new StringBuilder("where r.deleted_at is null and r.reporting_period_end >= ? and r.reporting_period_start <= ?");
         List<Object> args = new ArrayList<>(List.of(Date.valueOf(from), Date.valueOf(to)));
         appendOrgScope(where, args, "r.org_id");
         args.add(Date.valueOf(from.withDayOfMonth(1)));
         args.add(Date.valueOf(to));
-        String bucket = quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
+        String bucket = monthly ? "to_char(m, 'YYYY-MM')" : quarterly ? "to_char(m, 'YYYY') || '-Q' || extract(quarter from m)" : "to_char(m, 'YYYY')";
         Map<String, Map<String, BigDecimal>> byPeriod = new java.util.TreeMap<>();
         jdbc.query("select " + bucket + " as period, r.scope, sum(r.co2e_tonnes * "
                 + "((least(r.reporting_period_end, (m + interval '1 month' - interval '1 day')::date) - greatest(r.reporting_period_start, m::date) + 1)::numeric "
@@ -403,12 +455,20 @@ public class EmissionService {
                     byPeriod.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>()).put(rs.getString(2), rs.getBigDecimal(3));
                 }, args.toArray());
         List<TrendPoint> out = new ArrayList<>();
-        for (String period : periods(from, to, quarterly)) {
+        for (String period : monthly ? months(from, to) : periods(from, to, quarterly)) {
             Map<String, BigDecimal> s = byPeriod.getOrDefault(period, Map.of());
             BigDecimal s1 = s.getOrDefault("scope_1", BigDecimal.ZERO);
             BigDecimal s2 = s.getOrDefault("scope_2", BigDecimal.ZERO);
             BigDecimal s3 = s.getOrDefault("scope_3", BigDecimal.ZERO);
             out.add(new TrendPoint(period, scale(s1), scale(s2), scale(s3), scale(s1.add(s2).add(s3))));
+        }
+        return out;
+    }
+
+    private static List<String> months(LocalDate from, LocalDate to) {
+        List<String> out = new ArrayList<>();
+        for (LocalDate d = from.withDayOfMonth(1); !d.isAfter(to); d = d.plusMonths(1)) {
+            out.add(String.format("%04d-%02d", d.getYear(), d.getMonthValue()));
         }
         return out;
     }
@@ -594,7 +654,8 @@ public class EmissionService {
         EmissionResponse r = get(id);
         if (!"manual".equals(r.recordSource())) {
             throw ApiException.conflict("ESG-409-STATE", "This record comes from " + ("data_hub".equals(r.recordSource())
-                    ? "an approved Data Hub point; reopen the point to change it" : "a flaring record; edit that instead"));
+                    ? "an approved Data Hub point; reopen the point to change it" : "supply_chain".equals(r.recordSource())
+                    ? "supplier spend; edit the spend line in Supply Chain instead" : "a flaring record; edit that instead"));
         }
         if (r.verified()) {
             throw ApiException.conflict("ESG-409-STATE", "A verified record can't be changed");
