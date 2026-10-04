@@ -94,6 +94,10 @@ class ComplianceApiTest extends ApiTestSupport {
 
   @Test
   void gapAnalysisForEveryFrameworkWithContent() throws Exception {
+    // A year with no data at all: the board register and published policies (other tests add them) evidence GRI
+    // 2-9/2-10/2-11/2-23/2-26 for any year they cover, so clear them first.
+    asOwnerInTenantA("update governance.board_members set deleted_at = now() where deleted_at is null",
+        "update governance.governance_policies set deleted_at = now() where deleted_at is null and status = 'published'");
     for (String code : List.of("GRI", "ISSB_S1", "ISSB_S2", "TCFD", "CBN_NSBP")) {
       JsonNode r = gaps(code, 2041);
       int leaves = 0;
@@ -109,14 +113,21 @@ class ComplianceApiTest extends ApiTestSupport {
       assertThat(r.path("missing").asInt()).isEqualTo(leaves);
       assertThat(r.path("overallCompleteness").decimalValue()).isEqualByComparingTo("0");
     }
-    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high).
+    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high) — with no filing due inside 90 days (other
+    // tests, e.g. the dashboard's, may have created one; that would add the +10 deadline bonus).
+    asOwnerInTenantA("update compliance.filing_deadlines set deleted_at = now() where deleted_at is null and framework_id = "
+        + "(select id from compliance.regulatory_frameworks where code = 'CBN_NSBP') and deadline_date <= current_date + 90");
     JsonNode cbn = gaps("CBN_NSBP", 2041);
     assertThat(cbn.path("totalRequirements").asInt()).isEqualTo(9);
     assertThat(requirement(cbn, "P1").path("priorityScore").asInt()).isEqualTo(70);
     assertThat(cbn.path("highPriority").asInt()).isEqualTo(9);
-    // A framework whose content the SME hasn't supplied yet has nothing to analyse — and says so.
+    // A framework without content (no NAICOM instrument found, D28) has nothing to analyse — and says so.
+    JsonNode naicom = gaps("NAICOM", 2041);
+    assertThat(naicom.path("totalRequirements").asInt()).isZero();
+    assertThat(naicom.path("contentStatus").asText()).isEqualTo("pending_sme");
+    // Phase 3 (5): bundled packs give the local frameworks content, still pending SME verification.
     JsonNode sec = gaps("SEC_NG", 2041);
-    assertThat(sec.path("totalRequirements").asInt()).isZero();
+    assertThat(sec.path("totalRequirements").asInt()).isPositive();
     assertThat(sec.path("contentStatus").asText()).isEqualTo("pending_sme");
     mvc.perform(get("/v1/compliance/gaps?framework=NOPE&year=2041").header("Authorization", officer())).andExpect(status().isNotFound());
     mvc.perform(get("/v1/compliance/gaps?framework=GRI&year=1999").header("Authorization", officer()))
@@ -292,9 +303,9 @@ class ComplianceApiTest extends ApiTestSupport {
     List<String> previous = new ArrayList<>();
     settings.path("defaultFrameworkCodes").forEach(c -> previous.add(c.asText()));
     try {
-      send("PUT", "/v1/compliance/frameworks/active", officer(), "{\"codes\":[\"CBN_NSBP\",\"SEC_NG\"]}").andExpect(status().isOk());
+      send("PUT", "/v1/compliance/frameworks/active", officer(), "{\"codes\":[\"CBN_NSBP\",\"NAICOM\"]}").andExpect(status().isOk());
       JsonNode list = data(mvc.perform(get("/v1/compliance/status?year=2045").header("Authorization", officer())).andExpect(status().isOk()));
-      // Active first (incl. SEC NG, shown though it has no content yet), then the other frameworks with content.
+      // Active first (incl. NAICOM, shown though it has no content yet), then the other frameworks with content.
       assertThat(list.get(0).path("active").asBoolean()).isTrue();
       List<String> active = new ArrayList<>();
       List<String> all = new ArrayList<>();
@@ -304,8 +315,9 @@ class ComplianceApiTest extends ApiTestSupport {
           active.add(f.path("code").asText());
         }
       });
-      assertThat(active).containsExactlyInAnyOrder("CBN_NSBP", "SEC_NG");
-      assertThat(all).contains("GRI", "ISSB_S2", "TCFD").doesNotContain("NGX");
+      assertThat(active).containsExactlyInAnyOrder("CBN_NSBP", "NAICOM");
+      // Phase 3 (5): NGX, SEC NG and the other bundled packs now have content, so they're listed too.
+      assertThat(all).contains("GRI", "ISSB_S2", "TCFD", "NGX", "SEC_NG", "PENCOM", "CDP", "GHG_PROTOCOL", "SASB");
     } finally {
       send("PUT", "/v1/compliance/frameworks/active", officer(), json.writeValueAsString(java.util.Map.of("codes", previous)));
     }
@@ -447,6 +459,10 @@ class ComplianceApiTest extends ApiTestSupport {
         + "\"requiredActions\":\"Scope 3 inventory; board training\"}").andExpect(status().isOk()));
     assertThat(c.path("status").asText()).isEqualTo("assessed");
     assertThat(c.path("assessedBy").asText()).isEqualTo("Esg Director Fixture");
+    // Phase 2: the assessor is told why they can't sign off; the officer isn't.
+    assertThat(c.path("closeBlockedReason").asText()).isEqualTo("You assessed this change — another person must sign it off");
+    JsonNode asOfficer = data(mvc.perform(get("/v1/compliance/changes/" + id).header("Authorization", officer())));
+    assertThat(asOfficer.path("closeBlockedReason").isMissingNode() || asOfficer.path("closeBlockedReason").isNull()).isTrue();
     // Edits are locked once assessed; the assessor can't sign off their own assessment.
     send("PUT", "/v1/compliance/changes/" + id, officer(), body.replace("}", ",\"version\":" + c.path("version").asLong() + "}"))
         .andExpect(status().isConflict());

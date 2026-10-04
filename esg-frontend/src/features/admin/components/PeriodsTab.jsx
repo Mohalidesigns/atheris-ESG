@@ -11,6 +11,8 @@ import { useCreatePeriodMutation, useListPeriodsQuery, useSetPeriodLockMutation,
 import { periodSchema } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';
 import { applyServerFieldErrors } from '../../../services/formErrors';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr } from '../../../i18n';
 
 const empty = { name: '', periodType: 'quarterly', startDate: '', endDate: '' };
 
@@ -41,36 +43,36 @@ function PeriodDialog({ open, period, onClose }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogTitle>{editing ? `Edit ${period.name}` : 'New reporting period'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${period.name}` : tr("New reporting period")}</DialogTitle>
         <DialogContent>
           {serverError && <Alert severity="error" sx={{ mb: 2 }}>{serverError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={12}>
-              <TextField fullWidth size="small" label="Name" placeholder="Q1 2027" {...register('name')} error={!!errors.name} helperText={errors.name?.message} />
+              <TextField fullWidth size="small" label={tr("Name")} placeholder={tr("Q1 2027")} {...register('name')} error={!!errors.name} helperText={tr(errors.name?.message)} />
             </Grid>
             <Grid size={12}>
               <Controller name="periodType" control={control} render={({ field }) => (
-                <TextField select fullWidth size="small" label="Type" {...field} error={!!errors.periodType} helperText={errors.periodType?.message}>
-                  <MenuItem value="monthly">Monthly</MenuItem>
-                  <MenuItem value="quarterly">Quarterly</MenuItem>
-                  <MenuItem value="annual">Annual</MenuItem>
+                <TextField select fullWidth size="small" label={tr("Type")} {...field} error={!!errors.periodType} helperText={tr(errors.periodType?.message)}>
+                  <MenuItem value="monthly">{tr("Monthly")}</MenuItem>
+                  <MenuItem value="quarterly">{tr("Quarterly")}</MenuItem>
+                  <MenuItem value="annual">{tr("Annual")}</MenuItem>
                 </TextField>
               )} />
             </Grid>
             <Grid size={6}>
-              <TextField fullWidth size="small" type="date" label="Start" InputLabelProps={{ shrink: true }} {...register('startDate')}
-                error={!!errors.startDate} helperText={errors.startDate?.message} />
+              <TextField fullWidth size="small" type="date" label={tr("Start")} InputLabelProps={{ shrink: true }} {...register('startDate')}
+                error={!!errors.startDate} helperText={tr(errors.startDate?.message)} />
             </Grid>
             <Grid size={6}>
-              <TextField fullWidth size="small" type="date" label="End" InputLabelProps={{ shrink: true }} {...register('endDate')}
-                error={!!errors.endDate} helperText={errors.endDate?.message} />
+              <TextField fullWidth size="small" type="date" label={tr("End")} InputLabelProps={{ shrink: true }} {...register('endDate')}
+                error={!!errors.endDate} helperText={tr(errors.endDate?.message)} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
           <Button type="submit" variant="contained" disabled={createState.isLoading || updateState.isLoading}>
-            {editing ? 'Save changes' : 'Create period'}
+            {editing ? tr("Save changes") : tr("Create period")}
           </Button>
         </DialogActions>
       </form>
@@ -79,6 +81,7 @@ function PeriodDialog({ open, period, onClose }) {
 }
 
 export default function PeriodsTab() {
+  const confirm = useConfirm();
   const { data: periods = [], isLoading, isError, error } = useListPeriodsQuery();
   const [setLock] = useSetPeriodLockMutation();
   const [dialog, setDialog] = useState(undefined); // undefined closed, null create, object edit
@@ -86,7 +89,7 @@ export default function PeriodsTab() {
 
   const toggleLock = async (p) => {
     const locking = p.status === 'open';
-    if (locking && !window.confirm(`Lock ${p.name}? Data in this period can't be changed until it's unlocked.`)) return;
+    if (locking && !(await confirm({ title: tr("Lock this reporting period?"), item: p.name, message: tr("Data in this period can't be changed until it's unlocked."), confirmLabel: tr("Lock"), destructive: false }))) return;
     setActionError('');
     try {
       await setLock({ id: p.id, locked: locking }).unwrap();
@@ -96,25 +99,25 @@ export default function PeriodsTab() {
   };
 
   if (isLoading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>;
-  if (isError) return <Alert severity="error">{toFormError(error).message}</Alert>;
+  if (isError) return <Alert severity="error">{tr(toFormError(error).message)}</Alert>;
 
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="reporting_periods:create">
-          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog(null)}>New period</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setDialog(null)}>{tr("New period")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       <Card>
         {periods.length === 0 ? (
-          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">No reporting periods yet.</Typography>
+          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">{tr("No reporting periods yet.")}</Typography>
         ) : (
           <TableContainer>
-            <Table size="small">
+            <Table size="small" data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Name</TableCell><TableCell>Type</TableCell><TableCell>From</TableCell><TableCell>To</TableCell>
-                <TableCell>Status</TableCell><TableCell align="right">Actions</TableCell>
+                <TableCell>{tr("Name")}</TableCell><TableCell>{tr("Type")}</TableCell><TableCell>{tr("From")}</TableCell><TableCell>{tr("To")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell><TableCell align="right">{tr("Actions")}</TableCell>
               </TableRow></TableHead>
               <TableBody>
                 {periods.map((p) => (
@@ -124,7 +127,7 @@ export default function PeriodsTab() {
                     <TableCell>{p.startDate}</TableCell>
                     <TableCell>{p.endDate}</TableCell>
                     <TableCell>
-                      <Chip size="small" icon={p.status === 'locked' ? <Lock /> : <LockOpen />} label={p.status === 'locked' ? 'Locked' : 'Open'}
+                      <Chip size="small" icon={p.status === 'locked' ? <Lock /> : <LockOpen />} label={p.status === 'locked' ? tr("Locked") : tr("Open")}
                         sx={{ bgcolor: p.status === 'locked' ? '#FEE2E2' : '#E6F4EA', fontSize: '0.65rem' }} />
                     </TableCell>
                     <TableCell align="right">
@@ -134,7 +137,7 @@ export default function PeriodsTab() {
                         </Can>
                       )}
                       <Can permission="reporting_periods:approve">
-                        <Button size="small" onClick={() => toggleLock(p)}>{p.status === 'open' ? 'Lock' : 'Unlock'}</Button>
+                        <Button size="small" onClick={() => toggleLock(p)}>{p.status === 'open' ? tr("Lock") : tr("Unlock")}</Button>
                       </Can>
                     </TableCell>
                   </TableRow>

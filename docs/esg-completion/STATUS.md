@@ -2,10 +2,10 @@
 
 | Item | Value |
 |---|---|
-| Phase | **P1 Platform Foundation** (Gate G0 passed 1 Oct 2026) |
-| Updated | 2 October 2026 |
-| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (branch `feature/wp-52b-functional-fixes`, stacked on #12) |
-| Next | **Hardening Phase 2** (UX and consistency), then Phase 3 (capability), Phase 4 (WP-24 onwards). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| Phase | **P5 AI, Hardening & Release** — release candidate 1 for pilots (WP-50–54 done); Phase 4 completion: **WP-43 offline capture, WP-46 integrations and WP-45 languages done**; WP-44 deferred (D44) |
+| Updated | 3 October 2026 |
+| WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (PR #21, stacked on #20), **WP-40** Investor Portal (PR #22, stacked on #21), **WP-41** Carbon Market (PR #23, stacked on #22), **WP-42** Training (PR #24, stacked on #23). Phase 5: **WP-50** Grounded AI (PR #25, stacked on #24), **WP-51** Performance (PR #26, stacked on #25), **WP-52** Security & NDPA (PR #27, stacked on #26), **WP-53** Accessibility (PR #28, stacked on #27), **WP-54** UAT & release (branch `feature/wp-54-release`, stacked on #28) |
+| Next | **Pilot UAT** with `docs/release/uat/`, then decide Q54-1; professional review of the six draft translations (D45) before 1.0 final (WP-43, WP-45 and WP-46 done; WP-44 deferred by the product owner; connectors activated on request, D44; Q43-1 open). **Product owner:** production AI model and hardware, OCR for scanned reports (D38). **Product owner / ESG SME:** ICAN/CIBN/FRCN accreditation, course content, video hosting, webinars (D37). **Product owner:** ACMI / registry and exchange access for the carbon market adapters, Article 6 (D36). **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -13,13 +13,13 @@
 
 | KPI | Value | Source |
 |---|---|---|
-| Fields at L4+ / total fields | **188 / 188** active fields WORK end to end with tests (WP-23 rebuilt the Create New Report form on the real API and added the section editor, approval decision and export); every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`) or named API tests (`covered-elsewhere.json`); 10 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (22 at L4 meet every automated L5 item; L5 after human review). RTM overall (273 rows): **5 at L5, 57 at L4**, 20 at L3 | `RTM.csv` |
-| Pages with zero mock data / total pages | **16 / 16**: no page shows hard-coded data. Live data on 7 (Login, Admin, app shell, Dashboard, Data Hub, Carbon, Compliance); 9 modules without a backend show 'Not yet available' with their WP. **No-mock gate: ENFORCE in CI, 0 findings** (was 33 findings / 163 rows) | `NO_MOCK_REPORT.md` |
-| Endpoints implemented + tested / catalogue | TRD catalogue: **32 / 58** implemented (31 at L4), 26 missing. All code endpoints: **128 / 128 tested** (116 at L4, 12 at L3) | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **14 / 30**: 1 (tenant onboarding), 2 (12 roles × menus), 3 (collect → validate → approve), 4 (bulk Excel import), 5–9 (carbon), 10–12 (compliance: gap closes, GRI → ISSB, deadline alert), 13 (report → approved → PDF), 29 (audit trail); plus the hardening Phase 0 (5 tests) and Phase 1 (5 tests) specs. **36 Cypress tests** in 16 specs on a fresh seeded DB, retries off; MFA-required roles sign in with their TOTP code | `esg-frontend/cypress/` |
-| Test coverage | **Backend 89.0% lines** (674 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 339 tests** (Vitest + RTL) + **36 Cypress** | JaCoCo, Vitest |
-| Benchmark (evidence-based) | **0 / 265** vs 211 claimed | `BENCHMARK_REALITY.csv` |
+| Fields at L4+ / total fields | **520 / 520** active fields WORK end to end with tests; every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`, 49 specs) or named API tests (`covered-elsewhere.json`); 10 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (64 at L4 meet every automated L5 item; L5 after human review), 32 at L3, 49 MISSING (WP-44 deferred, partner/content/hosting dependencies). RTM overall (273 rows): **5 at L5, 134 at L4**, 50 at L3, 63 MISSING | `RTM.csv` |
+| Pages with zero mock data / total pages | **19 / 19**: no page shows hard-coded data and no module is a placeholder any more (Training was the last, WP-42). 18 pages at L4, 1 at L3. **No-mock gate: ENFORCE in CI, 0 findings** | `NO_MOCK_REPORT.md` |
+| Endpoints implemented + tested / catalogue | TRD catalogue: **57 / 58** implemented (56 at L4), 1 missing. Code endpoint rows (149 listed through WP-24): 137 at L4, 12 at L3; later module endpoints are traced through their TRD rows, API tests and `docs/modules/*.md` | type=trd_endpoint, type=endpoint |
+| E2E journeys passing / 30 | **28 / 30**: journeys 1–26, 28 and 29 (still to build: 27 USSD — WP-44, deferred (D44); 30 cross-tenant attacks, covered today at API level by `RlsIsolationTest` and the tenancy tests but not yet as a browser journey); plus the hardening Phase 0–2 specs and `wp-35-analytics`. **93 Cypress tests** in 38 specs on a fresh seeded DB, retries off | `esg-frontend/cypress/` |
+| Test coverage | **Backend 89.0% lines** (677 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 357 tests** (Vitest + RTL) + **40 Cypress** | JaCoCo, Vitest |
+| Benchmark (evidence-based) | **115 / 265** (43%) vs 211 claimed — re-scored for release 1.0-rc1 (`release_score_2026_10_03`); was 0 / 265 at WP-03 | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
 
 ---
@@ -303,6 +303,395 @@ Design choices for review: D18 in `DECISIONS.md`.
 
 ---
 
+## WP-45 — Interface languages (D45)
+
+Branch `feature/wp-45-i18n` (stacked on WP-46, PR #31). Design: D45. Module doc: `docs/modules/i18n.md`.
+
+| Deliverable | Where |
+|---|---|
+| `tr()` with English text as the key, on-demand bundles for fr, pt, ar, sw, ha, yo (2,850 interface texts, 100% drafted), draft status in each bundle's meta | `esg-frontend/src/i18n/` |
+| Arabic right to left: `<html dir>`, MUI direction, RTL emotion cache | `LanguageRoot.jsx` |
+| Locale formats for numbers, money (₦, KSh, R, GH₵), percentages and dates across 34 components | `src/i18n/format.js`, `formattingLocale()` |
+| Language picker on the sign-in page and account menu; choice saved on the account and applied on every device | `LanguagePicker.jsx`, `useAccountLanguage.js`, `PUT /api/v1/auth/me/language` |
+| Tooling: codemod (JSX text, text props, label fields and label-map lookups), extractor with CI check, ESLint no-literal-string | `scripts/i18n-codemod.mjs`, `scripts/i18n-extract.mjs`, `npm run i18n:check` in CI |
+
+Results: backend `mvn verify` 1,244 tests, 0 failures (1 skip: S3 test without Docker locally), 0 Checkstyle; frontend 489 tests, lint (incl. no-literal-string), no-mock gate 0 findings, `i18n:check` 100% for all six languages, bundle budget (entry 90.2 KB gz, sign-in JS 182.2 KB gz; each language a separate 150–170 KB chunk); Cypress full run 38 specs / 93 tests on a fresh database, all on the first attempt, including **journey 28** (French from the sign-in page, saved on the account, applied on a fresh device; Arabic RTL dashboard passes axe WCAG 2.1 AA; back to English).
+
+Found and fixed: filled information toasts were white on teal at 3.5:1 (WCAG AA needs 4.5:1) — now 5.4:1 (found by journey 28's Arabic axe check); choosing a language could be undone by the account-language hook while the save was in flight (the account state is now updated first); navigation, table headers, action buttons and option lists built from label maps weren't reaching `tr()` — the codemod and extractor now cover label maps.
+
+Open (D45): professional review of each translation; server messages, catalogue names, template-string text and reports stay English.
+
+---
+
+## WP-46 — Integrations (the integration line, D44)
+
+Branch `feature/wp-46-integrations` (stacked on WP-43, PR #30). Design: D44. WP-44 (SMS/USSD) skipped by the product owner (D44 (0)).
+
+| Deliverable | Where |
+|---|---|
+| Connector catalogue (ERP, accounting, HRIS, utility, SFTP "on request"; API keys and file templates "available now"); client requests → platform queue → in review / scheduled / active / declined; emails when SMTP is set | `com.esg.integrations.ConnectorService`, `PlatformIntegrationController`, `R__ref_17`, `ConnectorsPanel.jsx`, `PlatformRequestsTab.jsx` |
+| `ErpConnector` adapter contract for connectors built on request (rows → Data Hub import pipeline) | `ErpConnector.java` |
+| API keys: shown once, SHA-256 stored, scoped and intersected with the creator's current access, audited as the creator with the key named, expiry and revocation | `ApiKeyService`, `JwtAuthenticationFilter`, `ApiKeysPanel.jsx` |
+| Signed webhooks: transactional outbox, dispatcher with leases and retries (1 min → 12 h), switch-off after 20 failures, SSRF guard, delivery log, test and redelivery | `WebhookService`, `WebhookDispatcher`, `WebhookEventListener`, `WebhookUrlPolicy`, `WebhooksPanel.jsx` |
+| Source file templates (energy, utilities, workforce, waste); developer guide in-app and in docs; OpenAPI description for integrators in production | `ImportService.template(kind)`, `DeveloperPanel.jsx`, `docs/api/DEVELOPER_GUIDE.md` |
+
+Results: backend `mvn verify` 1,241 tests, 0 failures (1 skip: S3 test without Docker locally), 0 Checkstyle; frontend 480 tests, lint, no-mock gate 0 findings, bundle budget unchanged (entry 85.1 KB gz); Cypress full run 37 specs / 92 tests on a fresh database: 91 passed first time — `hardening-p2-ux` expected the Sandbox link to open the Services view, which was restored as the default and then passed with `wp-46-integrations` and `wp-53-accessibility` on re-run (all first attempt).
+
+Found and fixed: one broken delivery (a secret that no longer decrypts) stopped a tenant's whole webhook batch — each send is now isolated; the webhook test's LPG approvals in 2025 changed the AI forecast test's history — moved to a metric nothing else forecasts.
+
+Open: no named connector is built yet (by design: on request); per-key rate limits; IoT device registry (D44 OPEN).
+
+---
+
+## WP-43 — Offline capture (PWA)
+
+Branch `feature/wp-43-offline-pwa` (stacked on WP-54, PR #29). Design: D43; open question Q43-1.
+
+| Deliverable | Where |
+|---|---|
+| Installable PWA: Workbox precache of the app (168 files, 2.7 MB), manifest and icons; registered after load; API responses never cached | `esg-frontend/vite.config.js`, `src/main.jsx`, `public/pwa-*.png` |
+| IndexedDB outbox per user; data point form and incident report save there offline or when the server is unreachable (same validation); refused records come back with field errors | `src/features/offline/` (`outbox.js`, `saveOrQueue.js`), `DataPointDialog.jsx`, `SafetyTab.jsx` |
+| Automatic sync (sign-in, reconnect, every minute, "Sync now"); top-bar status; Data Hub → On this device; app opens offline for the last signed-in person (capture only) | `OfflineAgent.jsx`, `OfflineStatus.jsx`, `OfflineTab.jsx`, `OfflineCapturePage.jsx` |
+| `POST /api/v1/data/sync` (idempotent, ≤ 500), conflicts list and resolve; conflict key (tenant, org, metric, period); last write wins over an older editable draft, otherwise the person decides | `com.esg.offline`, `V039__offline_sync.sql` |
+
+Results: backend `mvn verify` 1,225 tests, 0 failures (1 skip: S3 test without Docker locally), 88.7% lines (offline package 82.4%), 0 Checkstyle; 500 records sync in 3.3 s (target < 30 s); frontend 474 tests, lint, no-mock gate 0 findings, bundle budget (entry 85.1 KB gz, sign-in JS 162.9 KB gz); Trivy on the lockfile: 0 HIGH/CRITICAL; Cypress 36 specs / 91 tests on a fresh database, all on the first attempt, including **journey 26** (the browser taken offline with DevTools network emulation: three points captured offline, synced on reconnect, a two-device conflict resolved with "Use mine").
+
+Found and fixed: journeys 19, 20 and WP-52 relied on focus or timing that the service worker's background caching upsets on the local preview server — they now close drawers with the Close button and wait for the acknowledgement to be saved; another suite's 2026 petrol point collided with the offline tests' dates (moved to 2025).
+
+Open: data collectors can't report incidents (Q43-1); no native apps (D13); evidence can't be attached offline.
+
+---
+
+## WP-54 — UAT and release (1.0 release candidate 1)
+
+Branch `feature/wp-54-release` (stacked on WP-53, PR #28). Design: D42. Release notes: `docs/release/RELEASE_NOTES_1.0-rc1.md`.
+
+| Deliverable | Where |
+|---|---|
+| UAT scripts per persona (ESG director, analyst, consultant, investor, site manager) — 124 cases + 25 shared accessibility/public-page checks, sign-off tables | `docs/release/uat/` |
+| Pilot onboarding kit | `docs/release/PILOT_ONBOARDING.md` |
+| User manual (19 chapters, role → menu table, glossary, known limits) | `docs/release/USER_MANUAL.md` |
+| Release notes | `docs/release/RELEASE_NOTES_1.0-rc1.md` |
+| Benchmark re-score: 115 / 265 evidence-based (43%) vs 211 claimed | `BENCHMARK_REALITY.csv` (`release_score_2026_10_03`) |
+| Deployment: backend/frontend/AI images (non-root), nginx with the tested headers, single-host pilot compose, env template, guide; CI builds images and checks served headers; header parity check | `deploy/`, `docs/release/DEPLOYMENT.md`, `scripts/check-security-headers.mjs` |
+| First platform administrator on a fresh installation (`auth.bootstrap_platform`, V038) — only while none exists | `PlatformBootstrap`, `PlatformBootstrapTest` |
+
+Results: backend `mvn verify` 1,216 tests, 0 failures (1 skip: S3 test without Docker locally), 88.8% lines, 0 Checkstyle; frontend 460 tests; Cypress 35 specs / 90 tests on a fresh database, all on the first attempt. Images not built locally (Docker Desktop down after the disk filled); CI builds them.
+
+Found: a fresh production database had no way to create the first administrator (fixed, D42); analysts can only read analytics (Q54-1, OPEN); the app showed the name "ESG Pro" in the title, sign-in page and sidebar (renamed to Atheris ESG by the product owner on 4 Oct 2026, D46).
+
+---
+
+## WP-53 — Accessibility and slow networks
+
+Branch `feature/wp-53-accessibility` (stacked on WP-52, PR #27). Design: D41. Details: `ACCESSIBILITY.md`.
+
+| Target | Result |
+|---|---|
+| WCAG 2.1 AA (axe-core, A+AA of WCAG 2.0/2.1) | 22 checks (15 module pages, 5 tabs, 3 public pages, 2 dialogs): 0 violations, from 17/17 failing; Lighthouse accessibility 100 |
+| Page load < 3 s on 3G (sign-in) | Lighthouse mobile ("fast 3G"): FCP 1.8 s, LCP 3.0 s — met; regular 3G (700 kbps): FCP 3.9 s, LCP 6.3 s — not met (285 KiB first visit) |
+
+Results: frontend 460 tests, lint, no-mock gate 0 findings, bundle budget (entry 85 KB gz ≤ 95; sign-in JS 162 KB gz ≤ 190); Cypress 35 specs / 90 tests on a fresh database, all on the first attempt. Backend unchanged.
+
+Found and fixed: low-contrast text tokens across the app; unnamed progress bars; no heading on Administration; a duplicate `MuiChip` theme key discarding styles; zod (via a privacy helper) and the whole app shell in the sign-in bundle.
+
+Open (D41): manual keyboard and screen-reader audit per persona (WP-54 UAT); regular-3G first visit (Brotli and HTML shell; repeat visits now load from the WP-43 service worker cache).
+
+---
+
+## WP-52 — Security and NDPA 2023
+
+Branch `feature/wp-52-security` (stacked on WP-51, PR #26). Design: D40. Migration V037; summary of scans and controls: `SECURITY.md`.
+
+| Area | Built | Tests |
+|---|---|---|
+| Dependencies | Trivy on the backend jar, frontend lockfile and AI requirements: 3 critical Tomcat CVEs, 1 critical Netty and 12 high fixed by pinning patched versions; pypdf, python-multipart upgraded; CI fails on any fixable HIGH/CRITICAL | CI `security` job |
+| Secrets | gitleaks over the whole history (0 leaks; k6 token leak fixed in WP-51); production refuses development secrets | CI, `ProductionSecretsPolicyTest` |
+| Headers / DAST | CSP and related headers on API and web app; fonts self-hosted; ZAP baseline in CI | E2E under the CSP; CI ZAP job |
+| Privacy notice | Versioned per tenant with DPO contact; shown at sign-in until acknowledged | `PrivacyApiTest`, UI, Cypress `wp-52-privacy` |
+| Data subject requests | Register with 30-day deadline; own-data JSON download; DPO export; erasure by anonymisation keeping the legal record | `PrivacyApiTest`, UI, Cypress |
+| Retention | Per-tenant periods for notifications, message logs, sessions, access-log IPs; nightly | `PrivacyApiTest` |
+
+Results: backend `mvn verify` 1,214 tests, 0 failures (1 skip: the S3 test needs Docker, which stopped when the disk filled), 88.8% lines (privacy package 89.3%), 0 Checkstyle; esg-ai 14 pytest; frontend 460 tests, lint, no-mock gate 0 findings; Cypress 34 specs / 68 tests on a fresh database, all on the first attempt.
+
+Found and fixed: new permission resources must map to a module or they are silently dropped (privacy → platform); Google Fonts sent every visitor's IP to Google (self-hosted now); the local disk filled (perf database and Trivy cache removed).
+
+Open (D40): Vault/secrets-manager wiring, edge WAF and rate limiting, production web-server headers (WP-54), external penetration test, DPIA for AI, legal review of the notice template and response times.
+
+---
+
+## WP-51 — Performance
+
+Branch `feature/wp-51-performance` (stacked on WP-50, PR #25). Design: D39. Migration V036 (indexes). Method and figures: `PERFORMANCE.md`; suite: `perf/`, `scripts/perf.sh`.
+
+| TRD §11.2.4 target | Result (one laptop instance, 1M current-year data points) |
+|---|---|
+| Submitting data points, P95 < 500 ms | 100 / 200 / 300 submissions/s → P95 13 / 11 / 95 ms, 0 errors; saturation 310/s at P95 626 ms (no think time) |
+| Dashboard over 1M points < 3 s | P95 1.56 s with 10 concurrent viewers (was 6.97 s) |
+| Report PDF over 50,000 points < 60 s | max 0.77 s |
+| Emission batch of 10,000 records < 5 min | 17.8 s |
+| Offline sync of 500 records < 30 s | 3.3 s (WP-43, `OfflineSyncApiTest`) |
+
+Results: backend `mvn verify` 1,204 tests, 0 failures, 88.9% lines, 0 Checkstyle (the S3 test now runs locally with Docker: its wait was made reliable); frontend 454 tests, lint; Cypress 33 specs / 67 tests on a fresh database, all on the first attempt.
+
+Found and fixed: `extract(year …)` filters scanned whole tables under RLS (rewritten as date bounds + V036 indexes); "which metrics have data" aggregated a year of points (per-metric `exists` on a covering index, ≈540 ms → <1 ms); recent activity walked the audit log (partial index on updates); the recalculation response listed every record (first 50 + count); k6 summaries carried the bearer token (stripped; gitleaks config added).
+
+Open (D39): production instance count, database sizing and PostgreSQL settings. (Offline sync measured in WP-43: 3.3 s for 500.)
+
+---
+
+## WP-50 — Grounded AI
+
+Branch `feature/wp-50-grounded-ai` (stacked on WP-42, PR #24). Design: D38 (runtime D12: Ollama + IBM Granite). Migration V035; service `esg-ai/` (FastAPI).
+
+| Capability | Built | Tests |
+|---|---|---|
+| AI service + adapter | Stateless FastAPI (statsmodels, scikit-learn, pypdf) behind `AiEngine`/`HttpAiEngine` with a service token; status under Integrations; down → ESG-503-AI-UNAVAILABLE, never a made-up answer | `HttpAiEngineTest`, esg-ai pytest, `AdminUserApiTest` |
+| Forecasts | ARIMA (AIC) or linear trend on the tenant's emissions or a metric, intervals, hold-out back-test; run keeps model and exact history; dismiss with a reason | `test_forecast.py` (golden), `AiApiTest`, UI, Cypress `wp-50-grounded-ai` |
+| Isolation Forest | Five years of values per metric across sites; isolated values of the year become AI-labelled flags (kind `ml`) in the existing review workflow | `test_iforest.py`, `AiApiTest`, UI, Cypress |
+| Report extraction | Granite proposes catalogue values with a verbatim quote; kept only if quote and number are on the cited page; a person accepts (and may correct) into a draft data point with the report as evidence, or rejects | `test_extract.py` (fake LLM), `AiApiTest`, UI, Cypress with live Granite locally |
+
+Results: backend `mvn verify` 1,204 tests, 0 failures, 88.9% lines (AI package 93.4%), 0 Checkstyle; esg-ai 14 pytest; frontend 454 tests, lint, no-mock gate 0 findings; Cypress 33 specs / 67 tests on a fresh database, all on the first attempt, with the real AI service and, locally, live Granite extraction (`wp-50-grounded-ai` new).
+
+Found and fixed: `data_hub.data_points` has no single-column key, so extracted values hold the draft's id without an FK; the test-database reset needed the new `ai` schema; React's lint rule moved the extraction polling switch out of an effect.
+
+Open (D38): OCR for scanned reports; ML estimation of missing measurements (BRD 5.2.9-08); production model and hardware; SME review of the contamination default and back-test thresholds. CI runs the AI service without a language model, so the live-extraction journey runs only where Ollama has the Granite model.
+
+---
+
+## WP-42 — Training & Capacity Building
+
+Branch `feature/wp-42-training` (stacked on WP-41, PR #23). Design: D37. Migration V034; `zxing` for the certificate QR code.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Courses | Text / PDF / video-link modules, MCQ quiz, pass mark, validity, prerequisites; draft → published → retired, copy to revise; content fixed after publishing (DB trigger) | round-trip `training-course`, `TrainingApiTest`, UI, Cypress journey 25 |
+| Learning paths | By role; required courses and competency gaps; assign to everyone holding the role | round-trip `learning-path`, `TrainingApiTest` |
+| Enrolment and completion | Self-enrol (prerequisites passed), assignment with due date and notification, modules then quiz (best score), classroom attendance refused in locked periods | `TrainingMathTest` (golden), `TrainingApiTest`, UI, Cypress journey 25 |
+| Certificates | 10-character code, PDF with QR to the public page (decoded in the test), public verification without a session (throttled, minimal fields), revocation with a reason | `TrainingApiTest`, UI, Cypress journey 25 |
+| Links | Social `training_hours_per_employee` (GRI 404-1) from training hours ÷ approved headcount; `training:*` report variables; dashboard Training card; team progress | `TrainingApiTest`, `FieldRoundTripTest` |
+
+Results: backend `mvn verify` 1,197 tests, 0 failures, 88.7% lines (training package 88.5%), 0 Checkstyle; frontend 448 tests, lint, no-mock gate 0 findings; Cypress 32 specs / 65 tests on a fresh database: 64 passed first time; journey 1 failed because a newly created data collector now also sees Training — its expected menu was updated and the spec re-run green (journey 25 new; journey 2's role-menu fixture updated).
+
+Found and fixed: `RbacMatrixTest` caught the training admin's new organisation-tree read (intended, table updated); the last placeholder page is gone, so `placeholderPages.test.jsx` was removed; journey 1's new-collector menu now includes Training; the round-trip reload generator now checks per-kind row cells (`onlyWhen`) and list cells (quiz options).
+
+Open (D37): video streaming/CDN, ICAN/CIBN/FRCN accreditation and LTI, case-study and practical assessments, webinar hosting, course content (none shipped).
+
+---
+
+## WP-41 — Carbon Market
+
+Branch `feature/wp-41-carbon-market` (stacked on WP-40, PR #22). Design: D36. Migration V033; IFRS S2-33 link in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Credit portfolio | Lots by project, vintage and serial block; price, seller; verification from a registry statement | round-trip `credit-lot`, `CarbonMarketApiTest`, UI, Cypress journey 24 |
+| No double counting | Serials can't be held twice or retired twice across all tenants (DB trigger, ESG-409-SERIAL) | `CarbonMarketApiTest` (same tenant and cross-tenant), Cypress journey 24 |
+| Retirements | Next free serials reserved → approved with registry reference by someone else (ESG-409-SOD) or cancelled; locked years refused | `CarbonMarketMathTest`, `CarbonMarketApiTest`, UI, Cypress journey 24 |
+| Offset projects | Tenant-entered, standards and registries, nature-based flag | round-trip `offset-project`, `CarbonMarketApiTest` |
+| Offset monitoring | Gross beside credits, net, share, offset-to-reduction ratio, over-reliance vs ceiling | `CarbonMarketMathTest` (golden), `CarbonMarketApiTest`, UI |
+| Internal carbon price | Shadow price / internal fee × emissions per organisation | round-trip `internal-price`, `carbon-market-settings`, `CarbonMarketApiTest` |
+| Registry and exchange | Adapters, Sandbox only, labelled in the UI and under Integrations | `CarbonMarketApiTest`, `AdminUserApiTest` |
+
+Results: backend `mvn verify` 1,155 tests, 0 failures, 88.7% lines (carbon market 85.2%), 0 Checkstyle; frontend 438 tests, lint, no-mock gate 0 findings; Cypress 31 specs / 64 tests on a fresh database (journey 24 new; journey 2's role-menu fixture updated for the manager's new Carbon Market menu and re-run).
+
+Found and fixed: an ambiguous column in the dashboard's holdings query (500 on the dashboard); `carbon_market:` couldn't be a report-variable source (the pattern takes letters only), so the variables are `offsets:*`.
+
+Open (D36): ACMI/registry and exchange connections; Article 6 corresponding adjustments; a separate transactions ledger (sales, transfers); a verified-developer project feed.
+
+---
+
+## WP-40 — Investor Portal
+
+Branch `feature/wp-40-investor` (stacked on WP-35, PR #21). Design: D35. Migration V032; IFC and AfDB templates in `R__ref_08`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Read-only investor experience | INVESTOR_VIEWER sees published scorecards, shared reports, their own open data rooms and items marked visible | `InvestorApiTest` (access), `InvestorPage.test.jsx`, Cypress journey 22 |
+| Scorecards | Weighted E/S/G from platform evidence, grade A+–F, frozen draft → published by someone else (ESG-409-SOD) → withdrawn with a reason; immutable once published (DB trigger) | `ScorecardMathTest` (golden), `InvestorApiTest`, round-trip `investor-settings`, Cypress journey 22 |
+| Shared reports | Approved report versions shared as PDFs stamped with the investor's name; revocable | `InvestorApiTest` journey 23, Cypress journey 23 |
+| DFI reports | IFC (PS1–8) and AfDB (OS1–10) templates create Reporting reports from tenant data | `InvestorApiTest` journey 23, Cypress journey 23 |
+| Data rooms | Expiry, investor members, watermarked PDF downloads, view/download/refusal log | `InvestorApiTest` journey 22, round-trip `data-room`, Cypress journey 22 |
+| Sustainable finance | Green/social/sustainability bonds with period-locked use-of-proceeds; SLB targets from KPIs; sukuk Shariah review | `InvestorApiTest`, round-trip `bond-slb`, `bond-sukuk`, UI |
+| IRIS+ impact metrics | Tenant-entered codes mapped to metrics or KPIs with this and last year's values | `InvestorApiTest`, round-trip `impact-metric` |
+
+Results: backend `mvn verify` 1,102 tests, 0 failures (1 S3 test skipped without Docker), 88.6% lines (investor package 88.0%), 0 Checkstyle; frontend 429 tests, lint, no-mock gate 0 findings; Cypress 30 specs / 63 tests on a fresh database, all on the first attempt (journeys 22 and 23 new).
+
+Found and fixed: a PDF that couldn't be read for watermarking failed the download with a misleading 401 (now refused at upload, 422 at download); an investor's room check read a members list that investors don't receive.
+
+Open (D35): cross-tenant investor portfolio; CDC/BII, FMO, Proparco and Afreximbank formats; generated post-issuance report documents; IRIS+ catalogue content; SME review of scorecard components and grade bands.
+
+---
+
+## WP-35 — Analytics (rules and statistics)
+
+Branch `feature/wp-35-analytics` (stacked on WP-31, PR #20). Design: D34. Migration V031; `R__ref_16_metric_analytics`; GRI 3-3 / TCFD MT-a links in `R__ref_11`; notification templates.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Anomaly detection on data points | z-score / IQR outliers against earlier periods of the same site, metric and period length; year-on-year variance; on approval, nightly and on demand; per-tenant sensitivity | `AnalyticsMathTest` (golden), `AnalyticsApiTest`, round-trip `analytics-settings`, Cypress `wp-35-analytics` |
+| Variance explanations | Explain (with evidence) → accept / return by someone else (ESG-409-SOD) or dismiss; cleared when the value is corrected; locked periods frozen | `AnalyticsApiTest` (SoD, lock, clearing, nightly run), `AnalyticsPage.test.jsx`, Cypress |
+| Custom KPI builder | Metric (÷ × + − metric) × multiplier from approved data per year, trend chart, target line and on-track status, SDG tags, `{{kpi:<code>}}` | round-trip `custom-kpi`, `AnalyticsMathTest.kpiTargetTracking`, `AnalyticsApiTest`, UI, Cypress |
+| Benchmark comparisons | Tenant-imported datasets with their source document (none built in), quartile bands by direction, internal ranking | round-trip `benchmark-dataset`, `AnalyticsMathTest`, `AnalyticsApiTest`, UI, Cypress |
+| ESG maturity index | Six dimensions 1–5 from platform evidence with next steps; snapshots | `MaturityModelTest` (golden), `AnalyticsApiTest`, UI, Cypress |
+| SDG alignment | Per-goal evidence and improvement score, tagged KPIs, priority goals | `AnalyticsMathTest`, `AnalyticsApiTest`, UI |
+| Links | Report variables `analytics:*`, `kpi:*`; GRI 3-3 and TCFD MT-a evidence; dashboard card | `AnalyticsApiTest` |
+
+Results: backend `mvn verify` 1,036 tests, 0 failures, 88.9% lines (analytics package 91.7%), 0 Checkstyle; frontend 418 tests, lint, no-mock gate 0 findings; Cypress 28 specs / 61 tests on a fresh database, all on the first attempt (`wp-35-analytics` new).
+
+Found and fixed: a rescan bumped a flag's version, so someone explaining it at the same time got a stale-version conflict (statistics refreshes no longer change the version); a flag with no baseline broke the list (500).
+
+Open (D34): predictions and Isolation Forest (WP-50); cross-tenant anonymised peer pool (product owner: NDPA consent, tenant sector code); SME review of maturity thresholds, metric directions and SDG score weights.
+
+---
+
+## WP-31 — Supply Chain ESG
+
+Branch `feature/wp-31-supply-chain` (stacked on WP-32, PR #19). Design: D33. Migration V030; GRI 2-6 link in `R__ref_11`; notification templates.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Supplier register | Tiers, full / simplified onboarding, local flag, score history, risk tier | round-trip `supplier`, `SupplyChainApiTest`, UI, journey 15 |
+| ESG questionnaires with evidence | Builder (weighted E/S/G, frozen once published); tokenised link with no account, answers, evidence, submit; link scoped to one questionnaire | round-trip `questionnaire-template`, `SupplyChainApiTest.aLinkOpensOnlyItsOwnQuestionnaire…`, UI, journey 15 |
+| Scoring (TRD §8.6) | Weighted pillars and total, gaps, risk tier; accepted by an approver | `SupplierScoringTest` (golden), `SupplyChainApiTest.journey15…` |
+| Corrective actions | Raise → assign → implement → verify (SoD) → close; reminders before, on and after the due date | round-trip `corrective-action`, `SupplyChainApiTest.journey15…` (time travel), journey 15 |
+| Spend → Scope 3 Category 1 | Spend lines and CSV/Excel import calculated by the Carbon engine (EEIO), kept in step | round-trip `supplier-spend`, `SupplyChainApiTest.supplierSpend…` |
+| Links | GRI 2-6 evidence, `supply:*` report variables, dashboard card | `SupplyChainApiTest` |
+
+Results: backend `mvn verify` 971 tests, 0 failures, 88.5% lines (supply chain package 82.2%), 0 Checkstyle; frontend 406 tests, lint, no-mock gate 0 findings; Cypress 27 specs / 60 tests on a fresh database, all on the first attempt (journey 15 new).
+
+Found and fixed: the audit-trail suite caught a table without its change-log trigger; an empty "good answer" select showed blank instead of "—".
+
+Open (D33): activity-based Category 1, peer benchmarking, supply-network map, NOGICD local-content reporting, SME review of the scoring and risk-tier thresholds.
+
+---
+
+## WP-32 — Risk & Materiality
+
+Branch `feature/wp-32-risk` (stacked on WP-33, PR #18). Design: D32. Migration V029; seed `R__ref_15_climate_scenarios`; risk compliance links in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Double materiality (impact × financial) | Stakeholder weights and ratings, thresholds, blend; positions computed from stored scores; SoD approval; GRI 3-1/3-2 evidence | `RiskMathTest` (golden), `RiskApiTest.journey14…`, round-trip `risk-assessment`, UI, journey 14 |
+| ESG risk register and heatmap | Inherent and residual scores, owners, review dates, topic links; 5×5 heatmaps at portfolio, entity (drill-down) and sector level | `RiskApiTest.riskRegisterFeedsHeatmaps…`, round-trip `risk`, UI |
+| Climate scenario analysis (feeds IFRS S2 strategy) | NGFS families; sourced carbon price paths; transition cost with and without the reduction target; physical risk per site under RCP 4.5/8.5; Sandbox climate data adapter | `RiskMathTest.transitionExposure…`, `RiskApiTest.scenarioAnalysis…`, round-trip `physical-risk`, UI |
+| Links | GRI 3-1/3-2, IFRS S2 10/22/25, TCFD STR-a/STR-c/RM-a evidence; `risk:*` report variables; dashboard card and activity | `RiskApiTest` |
+
+Results: backend `mvn verify` 902 tests, 0 failures (1 S3 skip), 88.9% lines (risk package 93.4%), 0 Checkstyle; frontend 398 tests, lint, no-mock gate 0 findings; Cypress 26 specs / 59 tests on a fresh database, all on the first attempt (journey 14 new).
+
+Found and fixed: a stakeholder group left unrated blocked saving a materiality topic (caught by journey 14); grievance, incident and workforce views failed outside a signed-in request (`CurrentUser.userIdOrNull`).
+
+Open (D32): ERM integration; a regional climate data provider (Sandbox today); a financed-portfolio heatmap; SME review of the scoring scales, thresholds, blend cap and risk bands.
+
+---
+
+## WP-33 — Social Impact
+
+Branch `feature/wp-33-social` (stacked on WP-34, PR #17). Design: D31. Migration V028; notification templates in `R__notification_templates`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Workforce diversity (feeds CBN NSBP P4) | Aggregate snapshots per site and period, SoD approval, women / management / senior, disability, age bands, mean pay gap (small groups withheld), turnover | `SocialCalculatorsTest`, `SocialApiTest.workforceFigures…CbnPrinciple4`, round-trip `workforce-snapshot`, UI |
+| Health and safety (LTIFR / TRIR) | Incident register, outcome classification, investigation workflow with SoD close, rates from approved hours, 5-year trend, exclusions shown | `SocialCalculatorsTest` (golden values), `SocialApiTest.journey16…`, round-trip `safety-incident`, UI, journey 16 |
+| Community investment projects | Budget vs dated spend (FX), beneficiaries, SDGs, PIA flag, geo-tagged photos with distance check | `SocialApiTest.journey17…`, round-trip `community-project`, journey 17 |
+| Grievances with escalation | SLA due dates, manual / daily / on-receipt escalation, SoD close, encrypted complainant details, history | `SocialApiTest.journey18…` (time-travel escalation), round-trip `grievance`, UI, journey 18 |
+| Links | Catalogue metrics from the module (CBN P4, GRI 401-1/403-9/405-1), `social:*` report variables, dashboard card and activity | `SocialApiTest`, `ComplianceApiTest`, `DashboardApiTest` |
+
+Results: backend `mvn verify` 840 tests, 0 failures (1 S3 skip), 88.7% lines (social package 87.6%), 0 Checkstyle; frontend 392 tests, lint, no-mock gate 0 findings; Cypress 25 specs / 58 tests on a fresh database, all on the first attempt (journeys 16, 17, 18 new).
+
+Found and fixed: a compliance test failed in CI depending on test order (the dashboard test's filing added the deadline bonus; fixed on WP-24 and merged up); an audit test could pick a day already holding an approved value from an earlier run (now retries another day).
+
+Open (D31): SROI, stakeholder engagement register, fair wage, human rights due diligence, social licence score, local content, PIA s.235 trust fund contributions; ethnicity data; contractor hours; public/SMS grievance intake; photo EXIF and embedded map; SME review of the SLA days, pay-gap threshold and rate definitions.
+
+---
+
+## WP-34 — Governance & Ethics
+
+Branch `feature/wp-34-governance` (stacked on WP-24, PR #16). Design: D30. Migration V027; seeds `R__ref_14_governance_rules`, governance compliance links in `R__ref_11`.
+
+| Capability | Built | Tests |
+|---|---|---|
+| Board composition (CAMA 2020: independence, gender, tenure) | Register, composition as at a date, skills matrix | `GovernanceApiTest.boardComposition…`, round-trip `board-member`, UI, journey 21 |
+| Governance code checker | 16 rules (CAMA / NCCG / King IV) with evidence, pending SME | `GovernanceApiTest`, UI, journey 21 |
+| Policy register with review dates | Lifecycle with SoD, documents, review dates, per-version acknowledgements, My policies | `GovernanceApiTest.aPolicyIsApproved…`, round-trip `policy`, UI, journey 20 |
+| Whistleblowing (anonymous, case workflow) | Public link, encryption, no IP, throttling, investigator-only RLS, audited views, board counts | `GovernanceApiTest.anAnonymousReport…`, `…Throttled`, UI, journey 19 |
+| Links | GRI 2-9/2-10/2-11/2-23/2-26 evidence, `governance:*` report variables, dashboard card | `GovernanceApiTest`, `DashboardPage.test.jsx` |
+
+Results: backend `mvn verify` 745 tests, 0 failures (1 S3 skip), 88.9% lines, 0 Checkstyle; frontend 383 tests, lint, no-mock gate 0 findings; Cypress 22 specs / 55 tests on a fresh database, all on the first attempt (journeys 19, 20, 21 new; journey 2 covers the new ETHICS_OFFICER menu).
+
+Found and fixed while testing: the anonymous channel's request path check missed some servlet setups, so the client IP was still recorded — caught by `GovernanceApiTest` and fixed before commit; the account menu opener had no button role or label (now "Account menu").
+
+Open (D30): related-party/AML, compensation benchmarking, board minutes; CAPTCHA; reporter evidence uploads; per-tenant whistleblower key; ETHICS_OFFICER role confirmation; SME review of the governance code rules.
+
+---
+
+## WP-24 — Executive dashboard
+
+Branch `feature/wp-24-executive-dashboard` (stacked on WP-52d, PR #15). Design: D29. Migration V026, seed `R__ref_13_metric_sdgs`.
+
+| Widget | Source | Tests |
+|---|---|---|
+| Emissions this year vs last (KPI) | `EmissionService.scopeTotals`, org-scoped | `DashboardApiTest`, `DashboardPage.test.jsx`, Cypress |
+| Emissions trend (5 years / 8 quarters, by scope) | `EmissionService.trend` (pro rata by days) | `DashboardApiTest.everyFigure…`, `…OrganisationScope`, UI, Cypress |
+| Compliance per framework + active average | `ComplianceService.status` (gap analysis) | `DashboardApiTest`, UI, Cypress |
+| SDG alignment (17 goals) | `reference.metric_sdgs` × approved points this year | `DashboardApiTest`, UI, Cypress |
+| Recent activity (links to records) | audit trail status changes, permission + org filtered | `DashboardApiTest`, UI, Cypress (link opens the point) |
+| Upcoming filings | `DeadlineService.list` (overdue + 90 days) | `DashboardApiTest.upcomingFilings…`, UI |
+| Review queue (KPI) | Data Hub counts (F14) | UI |
+
+Every section is omitted for roles without the module permission (`DashboardApiTest.sectionsFollow…`, Cypress board member).
+
+Results: backend `mvn verify` 700 tests, 0 failures (1 S3 skip), 89.1% lines, 0 Checkstyle; frontend 372 tests, lint; Cypress 19 specs / 51 tests (the full suite on a fresh database: 50 passed first time; the one failure, a fragile `{esc}` sent to a disabled option in the P0 spec, is fixed and that spec re-run green). `scripts/e2e.sh` now also stops the preview server it starts.
+
+Open (D29): ESG SME review of the metric → SDG links.
+
+---
+
+## WP-52d — Hardening Phase 3: missing capability
+
+Branch `feature/wp-52d-capability` (stacked on WP-52c, PR #14). Design: D28. Migration V025; Flyway `R__ref_12` (content packs).
+
+| # | What was missing | Built | Tests |
+|---|---|---|---|
+| 1 | No automated multi-user chains; seed users undocumented | Seed README lists all 12 users/roles; a corrected point's emission record supersedes the old one (lineage); E2E chains for data → emissions (5 fuels), report → 3 approvals → PDF + Excel, regulatory change assess → close | `CapabilityTest.approvedFuelAndElectricityPoints…`, Cypress `hardening-p3-capability` (1) |
+| 2 | One-by-one review only | `POST /data/points/bulk` (selection or a whole import), per-point results, refusals audited; selection + bulk bar; "Submit all imported drafts" | `CapabilityTest.bulkSteps…`, `DataHubPage.test.jsx` (3), Cypress (2) |
+| 3 | No preview before approval | `GET /reports/{id}/preview`: DRAFT watermark on every page, not stored | `CapabilityTest.aDraftReportPreviews…` (PDFBox), `ReportingPage.test.jsx`, Cypress |
+| 4 | Intensity card only said "approve revenue…" | `intensityGaps` in the summary; links to the form (metric + year preselected) or to the review queue | `CapabilityTest.theCarbonSummaryNames…`, `CarbonPage.test.jsx` (2), `DataHubPage.test.jsx`, Cypress (4) |
+| 5 | 7 of 12 frameworks empty | Versioned import pipeline (CSV/JSON, dry run, effective dates, SME flag, retirements, audited; write via definer function); 6 packs loaded pending SME (273 requirements); NAICOM: no instrument found | `CapabilityTest.aPlatformAdminImports…`, `FrameworkContentTest`, `ReferenceDataTest`, `ComplianceApiTest`, `FrameworkContentTab.test.jsx`, Cypress (5) |
+| 6 | Table free text (fixed in P0), no user/action filter, no export | User filter (`/audit/users`), CSV export, before → after summary per row | `CapabilityTest.theAuditLogFilters…`, `AuditCsvTest`, `AuditLogTab.test.jsx`, Cypress (6) |
+| 7 | E2E leftovers in dev DBs, no reset | `is_test` marking via `X-ESG-Test-Run` (local/test only), `auth.purge_test_data()`, purge after every Cypress spec, `make reset-dev` / `make clean-test-data`; V025 marks the 36 + 19 leftovers | `CapabilityTest.requestsMarkedAsATestRun…`, `TestDataPolicyTest`, Cypress (7) |
+| 8 | "Data source" held a person's name | Source = system (+ `meter`) with an owner; data points record the responsible person; a person's name is refused | `CapabilityTest.aDataSourceIsASystem…`, round-trip `data-point` / `data-source`, `ImportApiTest`, UI tests, Cypress (8) |
+
+Results: backend `mvn verify` 696 tests, 0 failures (1 S3 skip), 88.9% lines, 0 Checkstyle; frontend 370 tests, lint, no-mock gate 0 findings; Cypress 18 specs / 49 tests on a fresh database, all on the first attempt, each spec purging its own test data. On `esg_dev`, V025 + `make clean-test-data` removed the 36 "E2E Region/Site" organisations and 19 `e2e.*` users.
+
+Open (D28): ESG SME verification of the six packs and the SEC NG instrument choice; NAICOM has no issued instrument yet; Cypress kept instead of Playwright (D3).
+
+---
+
+## WP-52c — Hardening Phase 2: UX and consistency
+
+Branch `feature/wp-52c-ux-consistency` (stacked on WP-52b, PR #13). Design: D27.
+
+| # | What was wrong | Fix | Tests |
+|---|---|---|---|
+| 1 | 16 `window.confirm()` calls | `ConfirmProvider` / `useConfirm()`: one MUI dialog, destructive style, names the item | `TenancyTabs.test.jsx` (cancel/confirm, no native dialog), Cypress (fails on any native confirm) |
+| 2 | SoD-blocked actions hidden; reports/changes failed on click | Server reasons (`blockedActions`, `blockedReason`, `closeBlockedReason`); disabled buttons with tooltips | `DataPointWorkflowTest`, `ReportingApiTest`, `ComplianceApiTest`, `DataHubPage.test.jsx`, Cypress |
+| 3 | No confirmation after saves (e.g. Create user) | Toast from the API's message (or "Deleted") on every successful write | `TenancyTabs.test.jsx`, `AdminPage.test.jsx`, Cypress |
+| 4 | Unsorted list, no filters, new row lost, "ESG ANALYST ESG ANALYST" | Sorted by name; role/status filters (server); new user found and highlighted; chips name the organisation (two org scopes, not a duplicate) | `AdminUserApiTest.userListFilters…`, `AdminPage.test.jsx`, Cypress |
+| 5 | Ad-hoc humanising ("Lpg", "Iot") | `services/labels.js` | `labels.test.js` |
+| 6 | Value not flagged until a metric was picked; one file per pick | Value required on first submit; multiple files; types and limit shown | `schemas.test.js`, `EvidencePicker.test.jsx` |
+| 7 | Caret lost when the Insert menu opened | Caret remembered; spaces around the variable | `ReportingPage.test.jsx` |
+| 8 | Columns cut off at 1024–1280 px | Tables scroll; Actions/Open column pinned | (CSS; checked at 390 px in Cypress) |
+| 9 | Fixed sidebar, small dialogs on phones | Drawer + menu button below 900 px; full-screen dialogs below 600 px | `MainLayout.test.jsx`, Cypress at 390 px |
+| 10 | Popover survived navigation | State tied to the page; Escape closes | `MainLayout.test.jsx` |
+| 11 | Raw "Sandbox: not connected" text | Administration › Integrations (`GET /integrations`), Sandbox labels link to it | `AdminUserApiTest.integrationsReport…`, `AdminPage.test.jsx`, Cypress |
+
+Results: backend `mvn verify` 677 tests, 0 failures (1 S3 skip), 89.0% lines, 0 Checkstyle; frontend 357 tests, lint, no-mock gate 0 findings; Cypress 17 specs / 40 tests, all on the first attempt.
+
+Not verified by automation: the 1440/1280/1024/768 px layouts were checked by reasoning about the CSS, not by screenshots (Cypress runs at 1440 and the new spec at 390).
+
+---
+
 ## WP-52b — Hardening Phase 1: functional fixes
 
 Branch `feature/wp-52b-functional-fixes` (stacked on WP-52a, PR #12). Design: D26.
@@ -474,7 +863,7 @@ Open:
 - **ESG SME:** confirm the quality sub-score definitions and rule thresholds (D21 (4), (5)).
 - No FX provider: rates are entered by the tenant with a source (D21 (6)).
 - Rule warnings aren't refreshed when the other metric of a cross-check changes later (D21 (5)).
-- Offline capture (WP-43), SMS/USSD (WP-44), automated connectors (WP-41).
+- SMS/USSD (WP-44), automated connectors (WP-41). Offline capture done in WP-43 (D43).
 
 ---
 

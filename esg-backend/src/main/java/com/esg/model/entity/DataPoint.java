@@ -40,6 +40,10 @@ public class DataPoint {
     @Column(name = "source_id")
     private UUID sourceId;
 
+    /** Phase 3 (8): the person responsible for this value (the source is the system it came from). */
+    @Column(name = "owner_user_id")
+    private UUID ownerUserId;
+
     @Column(nullable = false, length = 10)
     private String category;
 
@@ -219,6 +223,8 @@ public class DataPoint {
     public void setEvidenceFileIds(UUID[] evidenceFileIds) { this.evidenceFileIds = evidenceFileIds; }
     public String getMetadata() { return metadata; }
     public void setMetadata(String metadata) { this.metadata = metadata; }
+    public UUID getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(UUID ownerUserId) { this.ownerUserId = ownerUserId; }
     public UUID getImportJobId() { return importJobId; }
     public void setImportJobId(UUID importJobId) { this.importJobId = importJobId; }
     public UUID getCreatedBy() { return createdBy; }

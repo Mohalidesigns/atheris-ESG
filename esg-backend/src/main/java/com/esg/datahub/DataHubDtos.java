@@ -19,7 +19,7 @@ import java.util.UUID;
 public final class DataHubDtos {
     private DataHubDtos() {}
 
-    public static final String SOURCE_TYPE_REGEX = "^(manual|csv|excel|api|erp|mobile|iot|sms)$";
+    public static final String SOURCE_TYPE_REGEX = "^(manual|csv|excel|api|erp|mobile|iot|sms|meter)$";
 
     /** A data point as the API returns it, with the actions the caller may take now. */
     public record DataPointResponse(UUID id, UUID orgId, String orgName, UUID sourceId, String sourceName, String category,
@@ -31,7 +31,29 @@ public final class DataHubDtos {
                                     String statusReason, UUID submittedBy, Instant submittedAt, UUID validatedBy,
                                     Instant validatedAt, UUID approvedBy, Instant approvedAt, List<UUID> evidenceFileIds,
                                     UUID importJobId, UUID createdBy, String createdByName, Instant createdAt,
-                                    Instant updatedAt, Long version, List<String> actions, String notes) {}
+                                    Instant updatedAt, Long version, List<String> actions, String notes,
+                                    java.util.Map<String, String> blockedActions, UUID ownerUserId, String ownerName) {}
+
+    /**
+     * Phase 3 (2): one workflow step on many points. Either {@code items} (the rows the user selected, with the
+     * versions they saw) or {@code importJobId} (every point of that import in a status the step applies to).
+     */
+    public record BulkActionRequest(
+            @NotBlank @Pattern(regexp = "^(submit|validate|approve|reject)$", message = "must be submit, validate, approve or reject") String action,
+            @Size(max = BULK_MAX_ITEMS, message = "at most " + BULK_MAX_ITEMS + " points per request") List<@jakarta.validation.Valid BulkItem> items,
+            UUID importJobId,
+            @Size(max = 1000) String reason) {}
+
+    public static final int BULK_MAX_ITEMS = 1000;
+    /** Most points one import-wide bulk action processes (an import holds at most this many rows). */
+    public static final int BULK_MAX_IMPORT = 10000;
+
+    public record BulkItem(@NotNull UUID id, @NotNull Long version) {}
+
+    /** The outcome of one point: done, or why not (the same code and message the single-item call would give). */
+    public record BulkResult(UUID id, boolean ok, String status, String errorCode, String message) {}
+
+    public record BulkActionResponse(String action, int requested, int succeeded, int failed, List<BulkResult> results) {}
 
     /** Body of a workflow step. A reason is required to reject or reopen. */
     public record TransitionRequest(Long version, @Size(max = 1000) String reason) {}
@@ -42,13 +64,15 @@ public final class DataHubDtos {
 
     public record DataSourceRequest(
             @NotBlank @Size(max = 255) String name,
-            @NotBlank @Pattern(regexp = SOURCE_TYPE_REGEX, message = "must be one of manual, csv, excel, api, erp, mobile, iot, sms") String sourceType,
+            @NotBlank @Pattern(regexp = SOURCE_TYPE_REGEX, message = "must be one of manual, csv, excel, api, erp, mobile, iot, sms, meter") String sourceType,
             @Size(max = 500) String description,
             @NotNull Boolean active,
+            UUID ownerUserId,
             Long version) {}
 
+    /** A source system (meter, ERP, IoT feed, manual entry…) and, separately, the person responsible for it (Phase 3). */
     public record DataSourceResponse(UUID id, String name, String sourceType, String description, boolean active,
-                                     Instant lastSyncAt, long dataPoints, Long version) {}
+                                     Instant lastSyncAt, long dataPoints, Long version, UUID ownerUserId, String ownerName) {}
 
     public record FxRateRequest(
             @NotBlank @Pattern(regexp = TenancyDtos.CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") String fromCurrency,

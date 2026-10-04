@@ -198,7 +198,10 @@ public class RegulatoryChangeService {
                 local(r.get("published_date")), local(r.get("effective_date")), local(r.get("assessment_due")), (UUID) r.get("owner_user_id"),
                 (String) r.get("owner_name"), (String) r.get("status"), (String) r.get("impact_level"), (String) r.get("impact_assessment"),
                 (String) r.get("required_actions"), (String) r.get("assessed_name"), instant(r.get("assessed_at")),
-                (String) r.get("closed_name"), instant(r.get("closed_at")), instant(r.get("created_at")), ((Number) r.get("version")).longValue());
+                (String) r.get("closed_name"), instant(r.get("closed_at")), instant(r.get("created_at")), ((Number) r.get("version")).longValue(),
+                // Phase 2: the assessor sees why they can't sign off (assessor ≠ closer, ESG-409-SOD).
+                "assessed".equals(r.get("status")) && TenantContext.getUserId() != null && me().equals(r.get("assessed_by"))
+                        ? "You assessed this change — another person must sign it off" : null);
     }
 
     private static UUID me() {

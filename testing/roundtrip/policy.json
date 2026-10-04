@@ -1,0 +1,144 @@
+{
+  "id": "policy",
+  "forms": [
+    "Governance policy"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/governance/policies"
+  },
+  "read": {
+    "path": "/v1/governance/policies/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/governance/policies/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include Governance, so the module refuses before the record is looked up"
+  },
+  "values": {
+    "name": "RT policy {u}",
+    "category": "code_of_conduct",
+    "policyVersion": "1.0",
+    "summary": "How we behave",
+    "content": "We act with integrity.",
+    "ownerUserId": "{USER_COMPLIANCE}",
+    "fileId": "{FILE_A}",
+    "reviewMonths": 12,
+    "effectiveDate": "{yyyy}-01-01",
+    "requiresAcknowledgement": true
+  },
+  "changes": {
+    "name": "RT policy {u} renamed",
+    "category": "whistleblowing",
+    "policyVersion": "1.1",
+    "summary": "Raising concerns",
+    "content": "Report concerns through the channel.",
+    "ownerUserId": "{USER_DIRECTOR}",
+    "reviewMonths": 24,
+    "effectiveDate": "{yyyy}-02-01",
+    "requiresAcknowledgement": false
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "category",
+      "value": "x",
+      "rule": "enum"
+    },
+    {
+      "field": "policyVersion",
+      "value": "1 0",
+      "rule": "pattern"
+    },
+    {
+      "field": "policyVersion",
+      "value": {
+        "$repeat": [
+          "1",
+          21
+        ]
+      },
+      "rule": "max 20"
+    },
+    {
+      "field": "reviewMonths",
+      "value": 0,
+      "rule": "min 1"
+    },
+    {
+      "field": "reviewMonths",
+      "value": 61,
+      "rule": "max 60"
+    },
+    {
+      "field": "ownerUserId",
+      "value": null,
+      "rule": "required"
+    },
+    {
+      "field": "ownerUserId",
+      "value": "b0000000-0000-4000-8000-0000000000b1",
+      "rule": "active user of the tenant"
+    },
+    {
+      "field": "summary",
+      "value": {
+        "$repeat": [
+          "x",
+          1001
+        ]
+      },
+      "rule": "max 1000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Policy name"
+      },
+      "category": {
+        "label": "Category",
+        "kind": "select",
+        "display": "Code of conduct"
+      },
+      "policyVersion": {
+        "label": "Version"
+      },
+      "summary": {
+        "label": "Summary (optional)"
+      },
+      "content": {
+        "label": "Policy text"
+      },
+      "ownerUserId": {
+        "label": "Policy owner",
+        "kind": "select",
+        "display": "Compliance Officer Fixture"
+      },
+      "fileId": {
+        "kind": "text",
+        "display": "evidence.pdf"
+      },
+      "reviewMonths": {
+        "label": "Review every (months)"
+      },
+      "effectiveDate": {
+        "label": "Effective from (optional)"
+      },
+      "requiresAcknowledgement": {
+        "label": "Staff must acknowledge it",
+        "kind": "switch"
+      }
+    }
+  }
+}

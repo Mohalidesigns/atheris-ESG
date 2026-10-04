@@ -14,8 +14,11 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useCreateFlaringMutation, useDeleteFlaringMutation, useFlaringQuery, useSatelliteCheckMutation, useUpdateFlaringMutation } from '../carbonApi';
 import { FLARING_REASONS, GAS_COMPONENTS, emptyFlaring, flaringSchema, toFlaringBody, toFlaringForm } from '../schemas';
+import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import SandboxChip from '../../../components/feedback/SandboxChip';
+import { tr, formattingLocale } from '../../../i18n';
 
-const t = (v) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
+const t = (v) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: 3 });
 
 export function FlaringDialog({ record, orgs, onClose }) {
   const editing = Boolean(record?.id);
@@ -41,43 +44,43 @@ export function FlaringDialog({ record, orgs, onClose }) {
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? 'Edit flaring record' : 'Record gas flaring'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit flaring record") : tr("Record gas flaring")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller name="facilityId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Facility" size="small" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Facility")} size="small" fullWidth error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
               )} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="volumeMcf" label="Volume flared" unit="Mcf" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="reportingPeriodStart" label="Period start" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="reportingPeriodEnd" label="Period end" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormNumberField control={control} name="volumeMcf" label={tr("Volume flared")} unit="Mcf" /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="reportingPeriodStart" label={tr("Period start")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="reportingPeriodEnd" label={tr("Period end")} /></Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <FormNumberField control={control} name="combustionEfficiency" label="Combustion efficiency" helperText="0.5–1; default 0.98" />
+              <FormNumberField control={control} name="combustionEfficiency" label={tr("Combustion efficiency")} helperText={tr("0.5–1; default 0.98")} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <FormSelect control={control} name="flaringReason" label="Reason"
+              <FormSelect control={control} name="flaringReason" label={tr("Reason")}
                 options={[{ value: '', label: 'Not recorded' }, ...FLARING_REASONS.map((r) => ({ value: r, label: r[0].toUpperCase() + r.slice(1) }))]} />
             </Grid>
             <Grid size={12}>
-              <Typography variant="subtitle2">Gas composition (mole %, from the latest gas analysis)</Typography>
-              {errors.gasComposition && <Alert severity="error" sx={{ my: 1, py: 0 }}>{errors.gasComposition.message}</Alert>}
+              <Typography variant="subtitle2">{tr("Gas composition (mole %, from the latest gas analysis)")}</Typography>
+              {errors.gasComposition && <Alert severity="error" sx={{ my: 1, py: 0 }}>{tr(errors.gasComposition.message)}</Alert>}
             </Grid>
             {GAS_COMPONENTS.map((g) => (
               <Grid key={g.key} size={{ xs: 6, sm: 3 }}>
                 <Controller name={`composition.${g.key}`} control={control} render={({ field, fieldState }) => (
-                  <TextField {...field} size="small" fullWidth label={g.label} inputProps={{ inputMode: 'decimal' }}
-                    error={!!fieldState.error} helperText={fieldState.error?.message} />
+                  <TextField {...field} size="small" fullWidth label={tr(g.label)} inputProps={{ inputMode: 'decimal' }}
+                    error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
                 )} />
               </Grid>
             ))}
-            <Grid size={12}><FormTextField control={control} name="notes" label="Notes (optional)" /></Grid>
+            <Grid size={12}><FormTextField control={control} name="notes" label={tr("Notes (optional)")} /></Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Recalculate and save' : 'Calculate and save'}</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Recalculate and save") : tr("Calculate and save")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -86,6 +89,7 @@ export function FlaringDialog({ record, orgs, onClose }) {
 
 /** Gas flaring (BRD-5.2.2-04, journey 7): CO2e from volume × composition × combustion efficiency. */
 export default function FlaringTab({ year, orgs }) {
+  const confirm = useConfirm();
   const { data = [], isLoading, isError, error, refetch } = useFlaringQuery({ year });
   const [remove] = useDeleteFlaringMutation();
   const [check] = useSatelliteCheckMutation();
@@ -105,17 +109,17 @@ export default function FlaringTab({ year, orgs }) {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="carbon_data:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Record flaring</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Record flaring")}</Button>
         </Can>
       </Box>
       {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
       <Card>
-        {data.length === 0 ? <EmptyState title={`No flaring recorded for ${year}`}>Record volumes flared with the gas analysis to calculate Scope 1 emissions.</EmptyState> : (
+        {data.length === 0 ? <EmptyState title={`No flaring recorded for ${year}`}>{tr("Record volumes flared with the gas analysis to calculate Scope 1 emissions.")}</EmptyState> : (
           <TableContainer>
-            <Table size="small" aria-label="Flaring records">
+            <Table size="small" aria-label={tr("Flaring records")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Facility</TableCell><TableCell>Period</TableCell><TableCell align="right">Mcf</TableCell>
-                <TableCell align="right">tCO2e</TableCell><TableCell>Reason</TableCell><TableCell>Satellite</TableCell><TableCell />
+                <TableCell>{tr("Facility")}</TableCell><TableCell>{tr("Period")}</TableCell><TableCell align="right">{tr("Mcf")}</TableCell>
+                <TableCell align="right">{tr("tCO2e")}</TableCell><TableCell>{tr("Reason")}</TableCell><TableCell>{tr("Satellite")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((f) => (
@@ -124,13 +128,15 @@ export default function FlaringTab({ year, orgs }) {
                     <TableCell>{f.reportingPeriodStart} – {f.reportingPeriodEnd}</TableCell>
                     <TableCell align="right">{t(f.volumeMcf)}</TableCell>
                     <TableCell align="right"><strong>{t(f.co2eTonnes)}</strong>
-                      <Typography variant="caption" display="block" color="text.secondary">CH4 slip {t(f.ch4Tonnes)} t · {f.gwpSet}</Typography></TableCell>
+                      <Typography variant="caption" display="block" color="text.secondary">{tr("CH4 slip")} {t(f.ch4Tonnes)} {tr("t ·")} {f.gwpSet}</Typography></TableCell>
                     <TableCell>{f.flaringReason ?? '—'}</TableCell>
                     <TableCell>
                       {f.satelliteCheck
-                        ? <Chip size="small" color="warning" variant="outlined" label={`${f.satelliteCheck.provider}: ${f.satelliteCheck.status.replace('_', ' ')}`}
-                            title={f.satelliteCheck.message} />
-                        : <Typography variant="caption" color="text.secondary">Not checked</Typography>}
+                        ? (f.satelliteCheck.provider === 'Sandbox'
+                          ? <SandboxChip label={`Sandbox: ${f.satelliteCheck.status.replace('_', ' ')}`} title={tr(f.satelliteCheck.message)} sx={{ height: 24, fontSize: '0.7rem' }} />
+                          : <Chip size="small" color="warning" variant="outlined" label={`${f.satelliteCheck.provider}: ${f.satelliteCheck.status.replace('_', ' ')}`}
+                            title={tr(f.satelliteCheck.message)} />)
+                        : <Typography variant="caption" color="text.secondary">{tr("Not checked")}</Typography>}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                       <Can permission="carbon_data:update">
@@ -141,7 +147,7 @@ export default function FlaringTab({ year, orgs }) {
                       </Can>
                       <Can permission="carbon_data:delete">
                         <IconButton size="small" aria-label={`Delete flaring ${f.facilityName} ${f.reportingPeriodStart}`}
-                          onClick={() => window.confirm('Delete this flaring record and its emissions?') && act(() => remove({ id: f.id, version: f.version }).unwrap())}>
+                          onClick={async () => (await confirm({ title: tr("Delete this flaring record?"), item: `${f.facilityName} · ${f.reportingPeriodStart}`, message: tr("Its emission record is deleted too.") })) && act(() => remove({ id: f.id, version: f.version }).unwrap())}>
                           <DeleteOutline fontSize="small" />
                         </IconButton>
                       </Can>

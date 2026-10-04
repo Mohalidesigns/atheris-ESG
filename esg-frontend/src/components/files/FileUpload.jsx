@@ -12,12 +12,16 @@ import {
 } from './filesApi';
 
 import { scanStatus } from './scanStatus';
+import SandboxChip from '../feedback/SandboxChip';
+import { useConfirm } from '../feedback/ConfirmProvider';
+import { tr, formattingLocale } from '../../i18n';
 
 /**
  * Evidence files attached to one record (resourceType + resourceId): list, upload, new version, download, delete.
  * Type and size are checked here exactly as the server checks them (fileRules.js ↔ FileTypePolicy.java).
  */
 export default function FileUpload({ resourceType, resourceId, label = 'Evidence files' }) {
+  const confirm = useConfirm();
   const input = useRef(null);
   const [versionOf, setVersionOf] = useState(null);
   const [error, setError] = useState('');
@@ -71,7 +75,7 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
   };
 
   const onDelete = async (f) => {
-    if (!window.confirm(`Delete ${f.originalName}? Earlier versions are kept for the audit trail.`)) return;
+    if (!(await confirm({ title: tr("Delete this file?"), item: f.originalName, message: tr("Earlier versions are kept for the audit trail.") }))) return;
     setError('');
     try {
       await remove({ id: f.id, resourceType, resourceId }).unwrap();
@@ -86,20 +90,20 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
         <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1 }}>{label}</Typography>
         <Can permission="files:create">
           <Button size="small" startIcon={busy ? <CircularProgress size={14} /> : <CloudUpload />} disabled={busy || !info}
-            onClick={() => pick(null)}>Upload</Button>
+            onClick={() => pick(null)}>{tr("Upload")}</Button>
         </Can>
       </Box>
       <input ref={input} type="file" hidden data-testid="file-input" onChange={onChosen}
         accept={info ? info.allowedExtensions.split(', ').map((x) => `.${x}`).join(',') : undefined} />
       {info && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          {info.allowedExtensions} · up to {formatBytes(info.maxBytes)} · Virus scanning: {info.virusScanning}
-          {info.virusScanningSandbox && <Chip size="small" label="Sandbox" color="warning" variant="outlined" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
+          {info.allowedExtensions} {tr("· up to")} {formatBytes(info.maxBytes)} {tr("· Virus scanning:")} {info.virusScanning}
+          {info.virusScanningSandbox && <SandboxChip sx={{ ml: 0.5 }} />}
         </Typography>
       )}
       {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
       {isLoading && <CircularProgress size={20} />}
-      {files && files.length === 0 && <Typography variant="body2" color="text.secondary">No files attached.</Typography>}
+      {files && files.length === 0 && <Typography variant="body2" color="text.secondary">{tr("No files attached.")}</Typography>}
       {files && files.length > 0 && (
         <List dense disablePadding>
           {files.map((f) => {
@@ -108,24 +112,24 @@ export default function FileUpload({ resourceType, resourceId, label = 'Evidence
             return (
               <ListItem key={f.id} disableGutters secondaryAction={
                 <>
-                  <Tooltip title={scan.downloadable ? 'Download' : `${scan.label}: can't be downloaded yet`}>
+                  <Tooltip title={scan.downloadable ? tr("Download") : `${scan.label}: can't be downloaded yet`}>
                     <span>
                       <IconButton size="small" aria-label={`Download ${f.originalName}`} disabled={!scan.downloadable}
                         onClick={() => onDownload(f)}><Download fontSize="small" /></IconButton>
                     </span>
                   </Tooltip>
                   <Can permission="files:create">
-                    <Tooltip title="Upload new version"><IconButton size="small" aria-label={`New version of ${f.originalName}`} disabled={busy} onClick={() => pick(f.id)}><UploadFile fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={tr("Upload new version")}><IconButton size="small" aria-label={`New version of ${f.originalName}`} disabled={busy} onClick={() => pick(f.id)}><UploadFile fontSize="small" /></IconButton></Tooltip>
                   </Can>
                   <Can permission="files:delete">
-                    <Tooltip title="Delete"><IconButton size="small" aria-label={`Delete ${f.originalName}`} onClick={() => onDelete(f)}><Delete fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={tr("Delete")}><IconButton size="small" aria-label={`Delete ${f.originalName}`} onClick={() => onDelete(f)}><Delete fontSize="small" /></IconButton></Tooltip>
                   </Can>
                 </>
               }>
                 <ListItemText
                   primary={<>{f.originalName} <Chip size="small" label={`v${f.currentVersion}`} sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} />
-                    <Chip size="small" label={scan.label} color={scan.color} variant="outlined" sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} /></>}
-                  secondary={`${formatBytes(f.sizeBytes)} · ${new Date(f.createdAt).toLocaleString()}`} />
+                    <Chip size="small" label={tr(scan.label)} color={scan.color} variant="outlined" sx={{ height: 18, fontSize: '0.6rem', ml: 0.5 }} /></>}
+                  secondary={`${formatBytes(f.sizeBytes)} · ${new Date(f.createdAt).toLocaleString(formattingLocale())}`} />
               </ListItem>
             );
           })}

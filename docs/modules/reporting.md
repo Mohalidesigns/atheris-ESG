@@ -44,6 +44,12 @@ Unknown variables are refused on save (client and server). Values with no data s
   fixed clock, validation, isolation); `VariableEngineTest`.
 - Field round-trip: `report` spec. UI: `ReportingPage.test.jsx`. E2E: `cypress/e2e/journey-13-report-approved-pdf.cy.js`.
 
+## Draft preview (Phase 3)
+
+"Preview draft PDF" (`GET /reports/{id}/preview`, `reports:read`) renders the report as it stands — working sections and
+data snapshot — with a DRAFT watermark on every page and a "not approved" banner. It isn't stored or listed as an export;
+Export PDF / Excel still need an approved version.
+
 ## Not built yet
 
 SEC Nigeria and NGX templates (ESG SME); WYSIWYG/drag-and-drop and collaborative editing; HTML, Word and XBRL exports (WP-30);

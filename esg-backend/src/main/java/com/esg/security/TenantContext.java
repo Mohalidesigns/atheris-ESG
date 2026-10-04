@@ -12,6 +12,16 @@ public class TenantContext {
     private static final ThreadLocal<String> USER_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> CLIENT_IP = new ThreadLocal<>();
     private static final ThreadLocal<String> USER_AGENT = new ThreadLocal<>();
+    private static final ThreadLocal<String> TEST_RUN = new ThreadLocal<>();
+
+    /** Phase 3 (7): the E2E run this request belongs to; rows it creates are marked is_test (local/test only). */
+    public static void setTestRun(String testRun) {
+        TEST_RUN.set(testRun);
+    }
+
+    public static String getTestRun() {
+        return TEST_RUN.get();
+    }
 
     /** Client details for the audit trail (V014); set for every request by JwtAuthenticationFilter. */
     public static void setClient(String ip, String userAgent) {
@@ -57,5 +67,6 @@ public class TenantContext {
         USER_ID.remove();
         CLIENT_IP.remove();
         USER_AGENT.remove();
+        TEST_RUN.remove();
     }
 }

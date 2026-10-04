@@ -114,5 +114,5 @@ public final class ComplianceDtos {
                                  String sourceUrl, LocalDate publishedDate, LocalDate effectiveDate, LocalDate assessmentDue,
                                  UUID ownerUserId, String ownerName, String status, String impactLevel, String impactAssessment,
                                  String requiredActions, String assessedBy, Instant assessedAt, String closedBy, Instant closedAt,
-                                 Instant createdAt, Long version) {}
+                                 Instant createdAt, Long version, String closeBlockedReason) {}
 }
