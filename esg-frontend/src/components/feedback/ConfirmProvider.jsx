@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { WarningAmber } from '@mui/icons-material';
+import { tr } from '../../i18n';
 
 const ConfirmContext = createContext(null);
 
@@ -35,11 +36,11 @@ export function ConfirmProvider({ children }) {
           <>
             <DialogTitle id="confirm-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {request.destructive && <WarningAmber color="error" />}
-              {request.title}
+              {tr(request.title)}
             </DialogTitle>
             <DialogContent>
               {request.item && <DialogContentText sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>{request.item}</DialogContentText>}
-              {request.message && <DialogContentText id="confirm-message">{request.message}</DialogContentText>}
+              {tr(request.message) && <DialogContentText id="confirm-message">{tr(request.message)}</DialogContentText>}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => close(false)} autoFocus>{request.cancelLabel}</Button>

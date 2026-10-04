@@ -78,7 +78,7 @@ describe('Journey 1: tenant admin onboards org tree, users and roles', () => {
 
     // 4. The new user signs in and sees only the collector's menus; the Data Hub offers only their site.
     cy.login(email, password);
-    cy.menu().should('deep.equal', ['Data Hub', 'Carbon Accounting']);
+    cy.menu().should('deep.equal', ['Data Hub', 'Carbon Accounting', 'Training']);
     cy.visit('/admin');
     cy.contains("You don't have access to this page").should('be.visible');
     cy.visit('/data-hub');

@@ -54,6 +54,17 @@ public class GlobalExceptionHandler {
         return problem(ex.getStatus(), ex.getCode(), ex.getMessage(), req, null);
     }
 
+    /** WP-50: the AI service can't be used now; never replaced by an invented answer (D38). */
+    @ExceptionHandler(com.esg.ai.AiEngine.AiUnavailable.class)
+    public ResponseEntity<ProblemDetail> handleAiUnavailable(com.esg.ai.AiEngine.AiUnavailable ex, HttpServletRequest req) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "ESG-503-AI-UNAVAILABLE", ex.getMessage(), req, null);
+    }
+
+    @ExceptionHandler(com.esg.ai.AiEngine.AiRefused.class)
+    public ResponseEntity<ProblemDetail> handleAiRefused(com.esg.ai.AiEngine.AiRefused ex, HttpServletRequest req) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "ESG-422-AI-INPUT", ex.getMessage(), req, null);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
         Map<String, String> errors = new LinkedHashMap<>();
@@ -112,6 +123,8 @@ public class GlobalExceptionHandler {
         return switch (state) {
             case "42501" -> problem(HttpStatus.FORBIDDEN, "ESG-403", "You do not have permission to perform this action", req, null);
             case "P0L01", "P0L02" -> problem(HttpStatus.CONFLICT, "ESG-409-LOCKED", firstLine(sql.getMessage()), req, null);
+            // WP-41: a carbon credit serial already held or retired (D36 (4)).
+            case "P0S01" -> problem(HttpStatus.CONFLICT, "ESG-409-SERIAL", firstLine(sql.getMessage()), req, null);
             case "P0V01" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-VERSION",
                     "This record was changed by someone else. Reload and try again.", path, null);
             case "23505" -> Problems.response(HttpStatus.CONFLICT, "ESG-409-DUPLICATE", "A record with these values already exists", path, null);

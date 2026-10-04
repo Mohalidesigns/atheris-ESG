@@ -8,6 +8,7 @@ import {
   useAuditResourcesQuery, useAuditUsersQuery, useExportAuditLogsMutation, useListAuditLogsQuery,
 } from '../auditApi';
 import { toFormError } from '../../../services/apiSlice';
+import { tr, formattingLocale } from '../../../i18n';
 
 // Audit actions: audit.log_change() (insert/update/delete), refused requests (denied, S3), failed virus scans (quarantined, S6).
 // no-mock-gate: config — audit action names written by the backend
@@ -40,14 +41,14 @@ function summary(entry) {
 /** Before → after per field. Updates hold only the changed fields (V014); inserts show the new row, deletes the old. */
 function Changes({ entry }) {
   const keys = fieldsOf(entry);
-  if (keys.length === 0) return <Typography variant="caption" color="text.secondary">No field values recorded.</Typography>;
+  if (keys.length === 0) return <Typography variant="caption" color="text.secondary">{tr("No field values recorded.")}</Typography>;
   const update = entry.action === 'update';
   return (
-    <Table size="small" aria-label="Changed fields">
+    <Table size="small" aria-label={tr("Changed fields")}>
       <TableHead><TableRow>
-        <TableCell>Field</TableCell>
-        {(update || entry.action === 'delete') && <TableCell>Before</TableCell>}
-        {entry.action !== 'delete' && <TableCell>After</TableCell>}
+        <TableCell>{tr("Field")}</TableCell>
+        {(update || entry.action === 'delete') && <TableCell>{tr("Before")}</TableCell>}
+        {entry.action !== 'delete' && <TableCell>{tr("After")}</TableCell>}
       </TableRow></TableHead>
       <TableBody>
         {keys.map((k) => (
@@ -104,44 +105,44 @@ export default function AuditLogTab() {
   return (
     <>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-        <TextField size="small" select label="Table" value={filters.resource} onChange={set('resource')} sx={{ minWidth: 240 }}
+        <TextField size="small" select label={tr("Table")} value={filters.resource} onChange={set('resource')} sx={{ minWidth: 240 }}
           SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 360 } } } }}>
-          <MenuItem value="">All tables</MenuItem>
-          {resources.map((r) => <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>)}
+          <MenuItem value="">{tr("All tables")}</MenuItem>
+          {resources.map((r) => <MenuItem key={r.value} value={r.value}>{tr(r.label)}</MenuItem>)}
         </TextField>
-        <TextField size="small" select label="Action" value={filters.action} onChange={set('action')} sx={{ minWidth: 150 }}>
-          {ACTIONS.map((a) => <MenuItem key={a.value || 'any'} value={a.value}>{a.label}</MenuItem>)}
+        <TextField size="small" select label={tr("Action")} value={filters.action} onChange={set('action')} sx={{ minWidth: 150 }}>
+          {ACTIONS.map((a) => <MenuItem key={a.value || 'any'} value={a.value}>{tr(a.label)}</MenuItem>)}
         </TextField>
-        <TextField size="small" select label="User" value={filters.userId} onChange={set('userId')} sx={{ minWidth: 200 }}
+        <TextField size="small" select label={tr("User")} value={filters.userId} onChange={set('userId')} sx={{ minWidth: 200 }}
           SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 360 } } } }}>
-          <MenuItem value="">Anyone</MenuItem>
+          <MenuItem value="">{tr("Anyone")}</MenuItem>
           {users.map((u) => <MenuItem key={u.id} value={u.id}>{u.name}</MenuItem>)}
         </TextField>
-        <TextField size="small" label="Record ID" value={filters.resourceId} onChange={set('resourceId')}
-          error={idInvalid} helperText={idInvalid ? 'Must be a UUID' : ' '} sx={{ width: 320 }} />
-        <TextField size="small" type="datetime-local" label="From" value={filters.from} onChange={set('from')}
+        <TextField size="small" label={tr("Record ID")} value={filters.resourceId} onChange={set('resourceId')}
+          error={idInvalid} helperText={idInvalid ? tr("Must be a UUID") : ' '} sx={{ width: 320 }} />
+        <TextField size="small" type="datetime-local" label={tr("From")} value={filters.from} onChange={set('from')}
           InputLabelProps={{ shrink: true }} />
-        <TextField size="small" type="datetime-local" label="To" value={filters.to} onChange={set('to')}
+        <TextField size="small" type="datetime-local" label={tr("To")} value={filters.to} onChange={set('to')}
           InputLabelProps={{ shrink: true }} />
         <Box sx={{ flexGrow: 1 }} />
         <Button size="small" variant="outlined" startIcon={<Download />} onClick={download} disabled={exporting.isLoading || idInvalid}
           sx={{ alignSelf: 'flex-start' }}>
-          Export CSV
+          {tr("Export CSV")}
         </Button>
       </Box>
       {exportError && <Alert severity="error" sx={{ mb: 2 }}>{exportError}</Alert>}
       <Card>
         {isFetching && !data && <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={28} /></Box>}
-        {isError && <Alert severity="error" action={<Button onClick={refetch}>Retry</Button>}>{toFormError(error).message}</Alert>}
+        {isError && <Alert severity="error" action={<Button onClick={refetch}>{tr("Retry")}</Button>}>{tr(toFormError(error).message)}</Alert>}
         {data && data.content.length === 0 && (
-          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">No audit entries match these filters.</Typography>
+          <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">{tr("No audit entries match these filters.")}</Typography>
         )}
         {data && data.content.length > 0 && (
           <TableContainer>
             <Table size="small">
               <TableHead><TableRow>
-                <TableCell padding="checkbox" /><TableCell>When</TableCell><TableCell>User</TableCell><TableCell>Action</TableCell>
-                <TableCell>Table</TableCell><TableCell>Changes</TableCell><TableCell>Record</TableCell><TableCell>Client</TableCell>
+                <TableCell padding="checkbox" /><TableCell>{tr("When")}</TableCell><TableCell>{tr("User")}</TableCell><TableCell>{tr("Action")}</TableCell>
+                <TableCell>{tr("Table")}</TableCell><TableCell>{tr("Changes")}</TableCell><TableCell>{tr("Record")}</TableCell><TableCell>{tr("Client")}</TableCell>
               </TableRow></TableHead>
               <TableBody>
                 {data.content.map((e) => (
@@ -154,11 +155,11 @@ export default function AuditLogTab() {
                         </IconButton>
                       </TableCell>
                       <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                        {new Date(e.createdAt).toLocaleString()}
+                        {new Date(e.createdAt).toLocaleString(formattingLocale())}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '0.8rem' }}>{e.userName ?? (e.userId ? e.userId : 'System')}</TableCell>
+                      <TableCell sx={{ fontSize: '0.8rem' }}>{e.userName ?? (e.userId ? e.userId : tr("System"))}</TableCell>
                       <TableCell>
-                        <Chip size="small" label={ACTION_LABELS[e.action] ?? e.action} sx={{ color: ACTION_COLOURS[e.action] ?? 'inherit', fontWeight: 700, fontSize: '0.65rem' }} />
+                        <Chip size="small" label={tr(ACTION_LABELS[e.action]) ?? e.action} sx={{ color: ACTION_COLOURS[e.action] ?? 'inherit', fontWeight: 700, fontSize: '0.65rem' }} />
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.75rem' }}>
                         {what(e)}
@@ -177,7 +178,7 @@ export default function AuditLogTab() {
                         <Collapse in={expanded === e.id} unmountOnExit>
                           <Box sx={{ py: 1.5 }}>
                             <Changes entry={e} />
-                            {e.userAgent && <Typography variant="caption" color="text.secondary">User agent: {e.userAgent}</Typography>}
+                            {e.userAgent && <Typography variant="caption" color="text.secondary">{tr("User agent:")} {e.userAgent}</Typography>}
                           </Box>
                         </Collapse>
                       </TableCell>

@@ -1,54 +1,54 @@
-category,capability,claimed_score,evidence_based_score,gap,evidence,target_phase
-Carbon Accounting,Scope 1 & 2 Calculation,4,0,4,"Untested activity×factor/1000 in CarbonAccountingService (no GWP); calculator UI hard-coded, does not save — untested partial code; would be ≤1 once tested",P2 (WP-21)
-Carbon Accounting,Scope 3 (Value Chain),3,0,3,No Scope 3 methods; scope3_category column only,P2 (WP-21)
-Carbon Accounting,Financed Emissions (PCAF),3,0,3,Nothing,P3 (P2 if bank pilot)
-Carbon Accounting,Africa-Specific Emission Factors,5,0,5,10 factors seeded (V1_006) and listed by GET /carbon/factors; untested; no versioning — untested partial code; would be ≤1 once tested,P1 (WP-17)
-Carbon Accounting,Gas Flaring Module (O&G),5,0,5,gas_flaring_records table only; button with no handler,P2 (WP-21)
-Carbon Accounting,Lifecycle Analysis (LCA),1,0,1,Nothing,not planned
-Carbon Accounting,SBTi Alignment & Tracking,3,0,3,reduction_targets table only; UI hard-coded,P2 (WP-21)
-Regulatory Compliance,Multi-Framework Mapping (GRI/SASB/TCFD/ISSB),4,0,4,"10 framework rows listed by API; no requirements, no mapping — untested partial code; would be ≤1 once tested",P2 (WP-22)
-Regulatory Compliance,CSRD / ESRS Compliance,2,0,2,Nothing,not planned
-Regulatory Compliance,"African Regulatory Templates (SEC Nigeria, NGX, CBN, etc.)",5,0,5,SEC_NG/NGX/CBN_NSBP rows with 0 requirements,P1 (WP-17) + P2 (WP-22)
-Regulatory Compliance,"Pan-African Compliance (Kenya, SA, Ghana, Tanzania)",5,0,5,Nothing seeded,P3
-Regulatory Compliance,Automated Gap Analysis,4,0,4,Endpoint returns hard-coded numbers (fake),P2 (WP-22)
-Regulatory Compliance,XBRL/iXBRL Tagging,3,0,3,Button only,P3 (WP-30)
-Regulatory Compliance,Regulatory Change Monitoring,4,0,4,Nothing,P2 (WP-22)
-Reporting & Disclosure,WYSIWYG Report Builder,4,0,4,Report list + create dialog; no editor; no backend,P3 (WP-30)
-Reporting & Disclosure,Multi-Format Export (PDF/HTML/XBRL/Word),4,0,4,Buttons only,P2 PDF/Excel; P3 rest
-Reporting & Disclosure,Multi-Language (incl. African Languages),5,0,5,"i18next installed, 0 imports",P4 (WP-45)
-Reporting & Disclosure,White-Label Capability,4,0,4,Nothing,P3 (WP-30)
-Reporting & Disclosure,"DFI Templates (AfDB, IFC, Afreximbank)",5,0,5,Hard-coded template list,P4 (WP-40)
-Data Management,Multi-Source API Ingestion,4,0,4,Single REST create endpoint; no connectors,P4 (WP-46)
-Data Management,Offline-First Mobile Data Capture,5,0,5,"dexie installed, unused; no service worker",P4 (WP-43)
-Data Management,SMS/USSD Data Input,5,0,5,Nothing,P4 (WP-44)
-Data Management,IoT Sensor Integration,3,0,3,Nothing,P4 (WP-46)
-Data Management,Data Quality Scoring & Anomaly Detection,3,0,3,Score formula with constant sub-scores; no anomaly detection — untested partial code; would be ≤1 once tested,P2 (WP-20) + P3 (WP-35)
-Data Management,"Pre-Built ERP Connectors (SAP, Oracle, etc.)",3,0,3,Nothing,P4 (WP-46)
-AI & Analytics,AI-Powered Predictive Analytics,2,0,2,Fabricated predictions on Analytics page (must be removed),P5 (WP-50)
-AI & Analytics,NLP Document Extraction,2,0,2,Nothing,P5 (WP-50)
-AI & Analytics,Agentic AI / Workflow Automation,1,0,1,Nothing,not planned
-AI & Analytics,Peer Benchmarking (African Context),5,0,5,Hard-coded charts,P3 (WP-35)
-AI & Analytics,ESG Maturity Scoring,4,0,4,Hard-coded scores,P3 (WP-35)
-AI & Analytics,Scenario Modelling / Decarbonisation Pathways,2,0,2,Hard-coded climate risk table,P3 (WP-32)
-Supply Chain,Supplier ESG Questionnaires & Scoring,4,0,4,suppliers/supplier_questionnaires tables only; UI hard-coded,P3 (WP-31)
-Supply Chain,Informal/SME Supplier Onboarding,5,0,5,Nothing,P3 (WP-31)
-Supply Chain,Supplier Risk Profiling,3,0,3,Hard-coded risk column,P3 (WP-31)
-Supply Chain,Local African Supply Chain Mapping,5,0,5,Nothing,P3 (WP-31)
-Social & Governance,Community Impact / Host Community Tracking,5,0,5,community_projects table only; UI hard-coded,P3 (WP-33)
-Social & Governance,DEI & Labour Rights Tracking,4,0,4,Hard-coded DEI chart,P3 (WP-33)
-Social & Governance,Board Governance & Ethics,3,0,3,board_members/governance_policies tables only; UI hard-coded,P3 (WP-34)
-Social & Governance,Whistleblower Channel,4,0,4,whistleblower_reports table; path permitted but no endpoint (403); no portal,P3 (WP-34)
-Social & Governance,CAMA 2020 / Nigerian Governance Codes,5,0,5,Nothing,P3 (WP-34)
-Carbon Markets,Carbon Credit Portfolio Management,4,0,4,Hard-coded credits table; no schema,P4 (WP-41)
-Carbon Markets,ACMI Integration (African Carbon Markets),5,0,5,Nothing,"P4 (WP-41, sandbox)"
-Carbon Markets,Nature-Based Solutions Registry,4,0,4,Hard-coded project cards,P4 (WP-41)
-Carbon Markets,Internal Carbon Pricing Calculator,3,0,3,Nothing,P4 (WP-41)
-Infrastructure & UX,Low-Bandwidth / 3G Optimisation,5,0,5,Lazy-loaded routes only; unmeasured,P5 (WP-53)
-Infrastructure & UX,"Multi-Currency (NGN, KES, ZAR, GHS)",5,0,5,tenants.billing_currency column only,P2 (WP-20)
-Infrastructure & UX,Data Residency (Africa),5,0,5,No deployment exists,P5 / D5
-Infrastructure & UX,Multi-Tenant SaaS with RLS,5,0,5,"tenant_id + manual filters on 23/35 tables; NO RLS; cross-tenant IDOR (S7, S8) — untested partial code; would be ≤1 once tested",P1 (WP-11)
-Pricing & Access,Affordable for African SMEs (<$5K/yr tier),5,0,5,Commercial; no billing/tiers in code,no WP — D15
-Pricing & Access,Local Currency Billing,5,0,5,Column only; no billing,no WP — D15
-Pricing & Access,Freemium / Pay-as-you-grow,5,0,5,No module entitlements,no WP — D15
-Training & Capacity,Contextualised e-Learning (African Market),5,0,5,Hard-coded course list; no content,P4 (WP-42)
-Training & Capacity,Regulator-Approved Certification Prep,5,0,5,Nothing; partnership dependency,P4 (WP-42)
+category,capability,claimed_score,evidence_based_score,gap,evidence,target_phase,release_score_2026_10_03,release_evidence_2026_10_03
+Carbon Accounting,Scope 1 & 2 Calculation,4,0,4,"Untested activity×factor/1000 in CarbonAccountingService (no GWP); calculator UI hard-coded, does not save — untested partial code; would be ≤1 once tested",P2 (WP-21),4,"Activity × factor with GWP sets, factor selection and lineage; golden tests (WP-21, CarbonCalculatorsTest); journeys 5–9"
+Carbon Accounting,Scope 3 (Value Chain),3,0,3,No Scope 3 methods; scope3_category column only,P2 (WP-21),3,"Spend-based Scope 3 (EEIO, D26) and supplier spend → Category 1 (WP-31); no activity-based Cat 1 or other categories automated"
+Carbon Accounting,Financed Emissions (PCAF),3,0,3,Nothing,P3 (P2 if bank pilot),3,"PCAF financed emissions with data-quality scores (PcafCalculator, FinancedService; tests)"
+Carbon Accounting,Africa-Specific Emission Factors,5,0,5,10 factors seeded (V1_006) and listed by GET /carbon/factors; untested; no versioning — untested partial code; would be ≤1 once tested,P1 (WP-17),3,Nigerian/African factor library in reference data with sources; ESG SME verification pending (D22)
+Carbon Accounting,Gas Flaring Module (O&G),5,0,5,gas_flaring_records table only; button with no handler,P2 (WP-21),3,"Gas flaring module with composition-based CO2e (FlaringCalculator, tests); satellite cross-check is a Sandbox adapter"
+Carbon Accounting,Lifecycle Analysis (LCA),1,0,1,Nothing,not planned,0,Not built
+Carbon Accounting,SBTi Alignment & Tracking,3,0,3,reduction_targets table only; UI hard-coded,P2 (WP-21),2,Reduction targets with linear pathways and progress (TargetService); no SBTi validation or sector pathways
+Regulatory Compliance,Multi-Framework Mapping (GRI/SASB/TCFD/ISSB),4,0,4,"10 framework rows listed by API; no requirements, no mapping — untested partial code; would be ≤1 once tested",P2 (WP-22),4,"Framework requirement mapping and cross-framework evidence (GRI ↔ ISSB/TCFD), gap analysis per framework; journeys 10–12"
+Regulatory Compliance,CSRD / ESRS Compliance,2,0,2,Nothing,not planned,0,No ESRS content pack
+Regulatory Compliance,"African Regulatory Templates (SEC Nigeria, NGX, CBN, etc.)",5,0,5,SEC_NG/NGX/CBN_NSBP rows with 0 requirements,P1 (WP-17) + P2 (WP-22),3,"SEC Nigeria, NGX, CBN NSBP and PenCom packs bundled (SME verification pending, D28); NAICOM has no issued instrument"
+Regulatory Compliance,"Pan-African Compliance (Kenya, SA, Ghana, Tanzania)",5,0,5,Nothing seeded,P3,0,"No Kenya, South Africa, Ghana or Tanzania packs yet (framework import supports adding them)"
+Regulatory Compliance,Automated Gap Analysis,4,0,4,Endpoint returns hard-coded numbers (fake),P2 (WP-22),4,"Automated gap analysis from Data Hub evidence and attestations, per framework and year; tests and journeys"
+Regulatory Compliance,XBRL/iXBRL Tagging,3,0,3,Button only,P3 (WP-30),0,No XBRL/iXBRL tagging (WP-30 not built)
+Regulatory Compliance,Regulatory Change Monitoring,4,0,4,Nothing,P2 (WP-22),2,Regulatory change register and deadlines; no regulator feed connected
+Reporting & Disclosure,WYSIWYG Report Builder,4,0,4,Report list + create dialog; no editor; no backend,P3 (WP-30),3,"Section editor with live variables, versions, approval chain and draft preview (WP-23); not a free-form WYSIWYG designer"
+Reporting & Disclosure,Multi-Format Export (PDF/HTML/XBRL/Word),4,0,4,Buttons only,P2 PDF/Excel; P3 rest,2,"PDF and Excel exports; no Word, HTML or XBRL"
+Reporting & Disclosure,Multi-Language (incl. African Languages),5,0,5,"i18next installed, 0 imports",P4 (WP-45),0,English only; i18n is WP-45
+Reporting & Disclosure,White-Label Capability,4,0,4,Nothing,P3 (WP-30),0,Not built
+Reporting & Disclosure,"DFI Templates (AfDB, IFC, Afreximbank)",5,0,5,Hard-coded template list,P4 (WP-40),3,"IFC Performance Standards and AfDB Operational Safeguards report templates filled from tenant data (WP-40); Afreximbank, BII, FMO open"
+Data Management,Multi-Source API Ingestion,4,0,4,Single REST create endpoint; no connectors,P4 (WP-46),2,"CSV/Excel bulk import with mapping and validation, REST API; no ERP/HRIS/utility connectors"
+Data Management,Offline-First Mobile Data Capture,5,0,5,"dexie installed, unused; no service worker",P4 (WP-43),0,Not built (WP-43)
+Data Management,SMS/USSD Data Input,5,0,5,Nothing,P4 (WP-44),0,Not built (WP-44); SMS used only for notifications
+Data Management,IoT Sensor Integration,3,0,3,Nothing,P4 (WP-46),0,Not built
+Data Management,Data Quality Scoring & Anomaly Detection,3,0,3,Score formula with constant sub-scores; no anomaly detection — untested partial code; would be ≤1 once tested,P2 (WP-20) + P3 (WP-35),4,"Quality scores, z-score/IQR and year-on-year flags with explanation workflow (WP-35) plus Isolation Forest AI flags (WP-50)"
+Data Management,"Pre-Built ERP Connectors (SAP, Oracle, etc.)",3,0,3,Nothing,P4 (WP-46),0,Not built (WP-46)
+AI & Analytics,AI-Powered Predictive Analytics,2,0,2,Fabricated predictions on Analytics page (must be removed),P5 (WP-50),3,"ARIMA / linear-trend emission and metric forecasts with intervals and back-test, labelled and traceable (WP-50)"
+AI & Analytics,NLP Document Extraction,2,0,2,Nothing,P5 (WP-50),3,"Report extraction with IBM Granite, kept only when the quote and number are on the cited page; human acceptance into drafts (WP-50)"
+AI & Analytics,Agentic AI / Workflow Automation,1,0,1,Nothing,not planned,0,Not built
+AI & Analytics,Peer Benchmarking (African Context),5,0,5,Hard-coded charts,P3 (WP-35),2,"Benchmarks against datasets the tenant imports, quartile bands, internal site ranking (WP-35); no pooled African peer data yet"
+AI & Analytics,ESG Maturity Scoring,4,0,4,Hard-coded scores,P3 (WP-35),3,Five-level ESG maturity index from platform evidence (WP-35); thresholds pending SME review
+AI & Analytics,Scenario Modelling / Decarbonisation Pathways,2,0,2,Hard-coded climate risk table,P3 (WP-32),3,"NGFS-style carbon price paths, physical-risk assessment and target pathways (WP-32, WP-21); parameter tables, not models"
+Supply Chain,Supplier ESG Questionnaires & Scoring,4,0,4,suppliers/supplier_questionnaires tables only; UI hard-coded,P3 (WP-31),4,"Questionnaire builder, tokenised supplier answers with evidence, weighted E/S/G scoring, corrective actions (WP-31); journey 15"
+Supply Chain,Informal/SME Supplier Onboarding,5,0,5,Nothing,P3 (WP-31),3,"Simplified questionnaire by link, no account needed (WP-31)"
+Supply Chain,Supplier Risk Profiling,3,0,3,Hard-coded risk column,P3 (WP-31),3,Risk tiers from scores and sector/country exposure (WP-31)
+Supply Chain,Local African Supply Chain Mapping,5,0,5,Nothing,P3 (WP-31),2,Local-content spend share; no supply-network map
+Social & Governance,Community Impact / Host Community Tracking,5,0,5,community_projects table only; UI hard-coded,P3 (WP-33),3,"Community projects with budgets, beneficiaries, geo-tagged evidence; grievances with escalation (WP-33); PIA trust-fund contributions open"
+Social & Governance,DEI & Labour Rights Tracking,4,0,4,Hard-coded DEI chart,P3 (WP-33),4,"Workforce diversity, pay gap, turnover, safety rates (LTIFR/TRIR) from approved records (WP-33); journeys 16–18"
+Social & Governance,Board Governance & Ethics,3,0,3,board_members/governance_policies tables only; UI hard-coded,P3 (WP-34),4,"Board composition and skills, governance code checker, policy lifecycle with acknowledgements (WP-34); journeys 20–21"
+Social & Governance,Whistleblower Channel,4,0,4,whistleblower_reports table; path permitted but no endpoint (403); no portal,P3 (WP-34),4,Anonymous encrypted portal with case reference and investigator workflow (WP-34); journey 19
+Social & Governance,CAMA 2020 / Nigerian Governance Codes,5,0,5,Nothing,P3 (WP-34),3,CAMA 2020 and SEC Nigeria Code rules in the code checker; rule set pending SME review (D30)
+Carbon Markets,Carbon Credit Portfolio Management,4,0,4,Hard-coded credits table; no schema,P4 (WP-41),4,"Lots, serials, retirements with no double counting across tenants, verification evidence (WP-41); journey 24"
+Carbon Markets,ACMI Integration (African Carbon Markets),5,0,5,Nothing,"P4 (WP-41, sandbox)",1,Registry adapter exists but only as a labelled Sandbox (no ACMI API access)
+Carbon Markets,Nature-Based Solutions Registry,4,0,4,Hard-coded project cards,P4 (WP-41),2,Tenant-entered offset projects with nature-based flag (WP-41); no verified project feed
+Carbon Markets,Internal Carbon Pricing Calculator,3,0,3,Nothing,P4 (WP-41),3,Shadow price / internal fee × emissions per organisation (WP-41)
+Infrastructure & UX,Low-Bandwidth / 3G Optimisation,5,0,5,Lazy-loaded routes only; unmeasured,P5 (WP-53),2,"Sign-in loads in 1.8 s FCP / 3.0 s LCP on fast 3G; regular 3G and offline not met (WP-53, D41)"
+Infrastructure & UX,"Multi-Currency (NGN, KES, ZAR, GHS)",5,0,5,tenants.billing_currency column only,P2 (WP-20),4,"Base currency per tenant, FX rates, conversion with original kept (NGN, KES, ZAR, GHS, XOF, EGP, USD, EUR, GBP)"
+Infrastructure & UX,Data Residency (Africa),5,0,5,No deployment exists,P5 / D5,1,Self-hosted AI keeps documents in the platform; hosting region is a deployment decision (D5 open)
+Infrastructure & UX,Multi-Tenant SaaS with RLS,5,0,5,"tenant_id + manual filters on 23/35 tables; NO RLS; cross-tenant IDOR (S7, S8) — untested partial code; would be ≤1 once tested",P1 (WP-11),5,"tenant_id + FORCE RLS on every business table, isolation suite over every table, cross-tenant API tests (WP-11 onwards)"
+Pricing & Access,Affordable for African SMEs (<$5K/yr tier),5,0,5,Commercial; no billing/tiers in code,no WP — D15,1,Starter plan and module entitlements exist (WP-19); prices and billing not built
+Pricing & Access,Local Currency Billing,5,0,5,Column only; no billing,no WP — D15,0,Billing not built
+Pricing & Access,Freemium / Pay-as-you-grow,5,0,5,No module entitlements,no WP — D15,1,Plans and per-module entitlements; no self-serve sign-up or billing
+Training & Capacity,Contextualised e-Learning (African Market),5,0,5,Hard-coded course list; no content,P4 (WP-42),2,"Learning platform with courses, quizzes, paths and verifiable certificates (WP-42); no course content shipped"
+Training & Capacity,Regulator-Approved Certification Prep,5,0,5,Nothing; partnership dependency,P4 (WP-42),0,"No accredited content or partnerships (ICAN/CIBN/FRCN open, D37)"

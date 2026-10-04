@@ -107,8 +107,9 @@ export const dataHubApi = apiSlice.injectEndpoints({
     importFailedRows: build.mutation({
       query: (id) => ({ url: `/data/import/${id}/failed-rows`, responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
+    // WP-46: ?kind=energy|utilities|workforce|waste — one template per source system's export (D44).
     importTemplate: build.mutation({
-      query: () => ({ url: '/data/import/template', responseHandler: (r) => r.text(), cache: 'no-store' }),
+      query: (kind) => ({ url: '/data/import/template', params: kind ? { kind } : undefined, responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
     startImport: build.mutation({
       query: ({ id, ...body }) => ({ url: `/data/import/${id}/start`, method: 'POST', body }),

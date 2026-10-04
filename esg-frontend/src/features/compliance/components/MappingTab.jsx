@@ -7,6 +7,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { useFrameworksQuery } from '../../reference/referenceApi';
 import { useMapFrameworksMutation } from '../complianceApi';
 import { GAP_STATUS } from '../schemas';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — labels for mapping relations
 const RELATION = { equivalent: 'Equivalent', partial: 'Partial', related: 'Related', shared_metric: 'Same data' };
@@ -49,36 +50,36 @@ export default function MappingTab({ year }) {
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         {select('sourceFramework', 'From')}
         {select('targetFramework', 'To')}
-        <Button variant="contained" onClick={run} disabled={isLoading}>Map {year}</Button>
+        <Button variant="contained" onClick={run} disabled={isLoading}>{tr("Map")} {year}</Button>
       </Box>
       {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
       {data && (
         <Card>
           <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle2" aria-label="Mapping summary">
-              {data.mappedRequirements} {data.targetFramework} requirements map from {data.sourceFramework}; {data.metViaSource} met through it in {data.year}.
+            <Typography variant="subtitle2" aria-label={tr("Mapping summary")}>
+              {data.mappedRequirements} {data.targetFramework} {tr("requirements map from")} {data.sourceFramework}; {data.metViaSource} {tr("met through it in")} {data.year}.
             </Typography>
           </Box>
-          {data.requirements.length === 0 ? <EmptyState title="No mappings between these frameworks yet" /> : (
+          {data.requirements.length === 0 ? <EmptyState title={tr("No mappings between these frameworks yet")} /> : (
             <TableContainer>
-              <Table size="small" aria-label="Mapped requirements">
+              <Table size="small" aria-label={tr("Mapped requirements")}>
                 <TableHead><TableRow>
-                  <TableCell>{data.targetFramework} requirement</TableCell><TableCell>Status</TableCell><TableCell>From {data.sourceFramework}</TableCell>
+                  <TableCell>{data.targetFramework} {tr("requirement")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell>{tr("From")} {data.sourceFramework}</TableCell>
                 </TableRow></TableHead>
                 <TableBody>
                   {data.requirements.map((r) => (
                     <TableRow key={r.code}>
-                      <TableCell><strong>{r.code}</strong> {r.title}</TableCell>
+                      <TableCell><strong>{r.code}</strong> {tr(r.title)}</TableCell>
                       <TableCell>
-                        <Chip size="small" color={GAP_STATUS[r.status]?.color} label={GAP_STATUS[r.status]?.label ?? r.status} />
-                        {r.satisfiedBy && <Typography variant="caption" display="block">via {r.satisfiedBy}</Typography>}
+                        <Chip size="small" color={GAP_STATUS[r.status]?.color} label={tr(GAP_STATUS[r.status]?.label) ?? r.status} />
+                        {r.satisfiedBy && <Typography variant="caption" display="block">{tr("via")} {r.satisfiedBy}</Typography>}
                       </TableCell>
                       <TableCell>
                         {r.sources.map((s) => (
                           <Box key={`${s.code}-${s.relation}`} sx={{ mb: 0.5 }}>
-                            <Typography variant="body2" component="span"><strong>{s.code}</strong> {s.title} </Typography>
-                            <Chip size="small" variant="outlined" label={RELATION[s.relation] ?? s.relation} sx={{ height: 20 }} />{' '}
-                            {s.status && <Chip size="small" color={GAP_STATUS[s.status]?.color} label={GAP_STATUS[s.status]?.label} sx={{ height: 20 }} />}
+                            <Typography variant="body2" component="span"><strong>{s.code}</strong> {tr(s.title)} </Typography>
+                            <Chip size="small" variant="outlined" label={tr(RELATION[s.relation]) ?? s.relation} sx={{ height: 20 }} />{' '}
+                            {s.status && <Chip size="small" color={GAP_STATUS[s.status]?.color} label={tr(GAP_STATUS[s.status]?.label)} sx={{ height: 20 }} />}
                           </Box>
                         ))}
                       </TableCell>

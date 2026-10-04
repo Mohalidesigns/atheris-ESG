@@ -1,0 +1,115 @@
+{
+  "id": "data-room",
+  "forms": [
+    "Data room"
+  ],
+  "actor": "ESG_DIRECTOR",
+  "readOnlyRole": "INVESTOR_VIEWER",
+  "create": {
+    "method": "POST",
+    "path": "/v1/investor/data-rooms"
+  },
+  "read": {
+    "path": "/v1/investor/data-rooms/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/investor/data-rooms/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Investor Portal"
+  },
+  "values": {
+    "name": "RT room {u}",
+    "purpose": "due_diligence",
+    "description": "Series B diligence",
+    "expiresOn": "2099-06-30",
+    "status": "open",
+    "watermark": true,
+    "memberIds": [
+      "{USER_INVESTOR}"
+    ]
+  },
+  "changes": {
+    "name": "RT room renamed {u}",
+    "purpose": "investor_relations",
+    "description": "Annual investor update",
+    "expiresOn": "2099-12-31",
+    "status": "closed",
+    "watermark": false,
+    "memberIds": []
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "purpose",
+      "value": "party",
+      "rule": "enum"
+    },
+    {
+      "field": "expiresOn",
+      "value": "2020-01-01",
+      "rule": "not in the past"
+    },
+    {
+      "field": "status",
+      "value": "archived",
+      "rule": "enum"
+    },
+    {
+      "field": "memberIds",
+      "value": [
+        "{USER_MANAGER}"
+      ],
+      "rule": "investor users only"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Room name"
+      },
+      "purpose": {
+        "label": "Purpose",
+        "kind": "select",
+        "display": "Due diligence"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "expiresOn": {
+        "label": "Expires on"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Open"
+      },
+      "watermark": {
+        "label": "Watermark PDF downloads",
+        "kind": "switch"
+      },
+      "memberIds": {
+        "label": "Investors with access",
+        "kind": "select",
+        "display": "Investor Viewer Fixture"
+      }
+    }
+  }
+}

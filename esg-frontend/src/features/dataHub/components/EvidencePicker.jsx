@@ -6,6 +6,7 @@ import { checkFile, formatBytes } from '../../../components/files/fileRules';
 import { useListFilesQuery, useStorageInfoQuery, useUploadFileMutation } from '../../../components/files/filesApi';
 import { MAX_EVIDENCE } from '../schemas';
 import { scanStatus } from '../../../components/files/scanStatus';
+import { tr } from '../../../i18n';
 
 /**
  * Evidence for a form (FIELD_INVENTORY F2.1; reused by Compliance attestations and filings). Files upload straight away
@@ -71,12 +72,12 @@ export default function EvidencePicker({
         <Button size="small" variant="outlined" onClick={() => input.current.click()}
           disabled={disabled || isLoading || value.length >= max}
           startIcon={isLoading ? <CircularProgress size={14} /> : <AttachFile />}>
-          Attach evidence
+          {tr("Attach evidence")}
         </Button>
       </Box>
       {info?.allowedExtensions && (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} aria-label="Accepted files">
-          {info.allowedExtensions} · up to {formatBytes(info.maxBytes)} each · {max} files at most
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} aria-label={tr("Accepted files")}>
+          {info.allowedExtensions} {tr("· up to")} {formatBytes(info.maxBytes)} {tr("each ·")} {max} {tr("files at most")}
         </Typography>
       )}
       {(problem || error) && <Alert severity="error" sx={{ mt: 1, py: 0 }}>{problem || error}</Alert>}

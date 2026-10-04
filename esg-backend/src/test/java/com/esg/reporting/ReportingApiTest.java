@@ -140,7 +140,7 @@ class ReportingApiTest extends ApiTestSupport {
       }
     }
     // Every variable a platform template uses is one the engine knows.
-    VariableEngine engine = new VariableEngine(jdbc, null, null, null, null, null);
+    VariableEngine engine = new VariableEngine(jdbc, null, null, null, null, null, null, null, null);
     for (JsonNode t : list) {
       for (JsonNode s : t.path("sections")) {
         assertThat(asTenantA(() -> engine.unknown(s.path("content").asText()))).as(t.path("key") + " / " + s.path("title")).isEmpty();

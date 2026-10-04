@@ -52,7 +52,39 @@ VALUES
   {"title": "Principle 7: Capacity building", "type": "data", "content": "Training per employee: {{metric:training_hours_per_employee}}\n\nDescribe how capacity to identify and manage E&S risks and opportunities is developed."},
   {"title": "Principle 8: Collaborative partnerships", "type": "narrative", "content": "Describe sector collaboration and partnerships."},
   {"title": "Principle 9: Reporting", "type": "data", "content": "CBN NSBP principles with complete information for the period: {{compliance:CBN_NSBP:met}} of {{compliance:CBN_NSBP:total}} ({{compliance:CBN_NSBP:completeness}})."}
- ]}$json$::jsonb, 9)
+ ]}$json$::jsonb, 9),
+-- WP-40 (D35): DFI annual E&S reports. The standards' titles only, as prompts; how each DFI wants the report laid out
+-- is for the ESG SME to confirm. CDC/BII, FMO, Proparco and Afreximbank formats are not loaded.
+('dfi_ifc_ps', NULL, 'IFC annual E&S performance report', 'IFC_PS',
+ 'Annual environmental and social performance report for IFC, organised by the IFC Performance Standards and filled from approved data.',
+ 'IFC Performance Standards on Environmental and Social Sustainability (2012) — structure by Atheris, pending ESG SME review', 'pending_sme',
+ $json$
+{"sections": [
+  {"title": "PS1: Assessment and management of E&S risks and impacts", "type": "data", "content": "Describe the E&S management system, policy, risk identification, management programmes, organisational capacity, emergency preparedness, stakeholder engagement and grievances for {{report:period}}.\n\nCommunity grievances open: {{social:grievances_open}}"},
+  {"title": "PS2: Labour and working conditions", "type": "data", "content": "Employees: {{metric:employees_total}} (women: {{metric:employees_female}})\nNew hires: {{metric:new_hires}}\nLost-time injury frequency rate: {{social:ltifr}}\nTotal recordable injury rate: {{social:trir}}\nFatalities: {{social:fatalities}}\n\nDescribe human resources policies, working conditions, worker organisations, retrenchment, the worker grievance mechanism and occupational health and safety."},
+  {"title": "PS3: Resource efficiency and pollution prevention", "type": "data", "content": "Electricity consumed: {{metric:electricity_kwh}}\nWater consumed: {{metric:water_consumption_m3}}\nWaste generated: {{metric:waste_generated_t}}\nScope 1 emissions: {{carbon:scope1}}\nScope 2 emissions (location-based): {{carbon:scope2_location}}\n\nDescribe resource efficiency measures, pollution prevention and greenhouse gas reduction."},
+  {"title": "PS4: Community health, safety and security", "type": "narrative", "content": "Describe risks to affected communities, infrastructure and equipment safety, hazardous materials, emergency preparedness and security personnel."},
+  {"title": "PS5: Land acquisition and involuntary resettlement", "type": "narrative", "content": "State whether any land acquisition or resettlement occurred in the period, and how it was managed."},
+  {"title": "PS6: Biodiversity conservation and sustainable management of living natural resources", "type": "narrative", "content": "Describe impacts on habitats and biodiversity and how they are avoided, minimised or offset."},
+  {"title": "PS7: Indigenous peoples", "type": "narrative", "content": "State whether the operations affect indigenous peoples, and how they are engaged."},
+  {"title": "PS8: Cultural heritage", "type": "narrative", "content": "Describe how cultural heritage is protected, including chance-find procedures."}
+ ]}$json$::jsonb, 8),
+('dfi_afdb_iss', NULL, 'AfDB annual E&S performance report', 'AFDB_ISS',
+ 'Annual environmental and social performance report for the African Development Bank, organised by the Operational Safeguards of its Integrated Safeguards System.',
+ 'African Development Bank, Integrated Safeguards System (2023), Operational Safeguards 1-10 — structure by Atheris, pending ESG SME review', 'pending_sme',
+ $json$
+{"sections": [
+  {"title": "OS1: Assessment and management of environmental and social risks and impacts", "type": "narrative", "content": "Describe the E&S management system and how risks and impacts were assessed and managed in {{report:period}}."},
+  {"title": "OS2: Labour and working conditions", "type": "data", "content": "Employees: {{metric:employees_total}} (women: {{metric:employees_female}})\nLost-time injury frequency rate: {{social:ltifr}}\nFatalities: {{social:fatalities}}\n\nDescribe working conditions, the worker grievance mechanism and occupational health and safety."},
+  {"title": "OS3: Resource efficiency and pollution prevention", "type": "data", "content": "Energy consumed: {{metric:energy_total_gj}}\nWater consumed: {{metric:water_consumption_m3}}\nScope 1 and 2 emissions: {{carbon:scope1}} and {{carbon:scope2_location}}\n\nDescribe resource efficiency and pollution prevention."},
+  {"title": "OS4: Community health, safety and security", "type": "narrative", "content": "Describe community health, safety and security risks and their management."},
+  {"title": "OS5: Land acquisition, restrictions on access to land and land use, and involuntary resettlement", "type": "narrative", "content": "State whether any land acquisition, access restriction or resettlement occurred, and how it was managed."},
+  {"title": "OS6: Habitat and biodiversity conservation and sustainable management of living natural resources", "type": "narrative", "content": "Describe impacts on habitats and biodiversity and their management."},
+  {"title": "OS7: Vulnerable groups", "type": "narrative", "content": "Describe how vulnerable groups affected by the operations are identified and engaged."},
+  {"title": "OS8: Cultural heritage", "type": "narrative", "content": "Describe how cultural heritage is protected."},
+  {"title": "OS9: Financial intermediaries", "type": "narrative", "content": "For financial intermediaries: describe the E&S management system applied to the portfolio."},
+  {"title": "OS10: Stakeholder engagement and information disclosure", "type": "data", "content": "Community grievances open: {{social:grievances_open}}\nCommunity investment: {{social:community_investment}}\n\nDescribe stakeholder engagement, information disclosure and grievance redress."}
+ ]}$json$::jsonb, 10)
 ON CONFLICT (template_key) WHERE tenant_id IS NULL DO UPDATE SET name = EXCLUDED.name, framework_code = EXCLUDED.framework_code,
   description = EXCLUDED.description, source = EXCLUDED.source, content_status = EXCLUDED.content_status,
   template_data = EXCLUDED.template_data, section_count = EXCLUDED.section_count, is_active = TRUE;
