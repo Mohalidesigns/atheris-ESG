@@ -36,8 +36,8 @@ insert into data_hub.approval_workflows (id, workflow_type, total_steps, initiat
   values ('a0000000-0000-4000-8000-0000000000d1', 'data_validation', 2, 'a0000000-0000-4000-8000-0000000000a1');
 insert into data_hub.approval_steps (workflow_id, step_number, approver_id)
   values ('a0000000-0000-4000-8000-0000000000d1', 1, 'a0000000-0000-4000-8000-0000000000a1');
-insert into data_hub.offline_sync_queue (user_id, device_id, payload)
-  values ('a0000000-0000-4000-8000-0000000000a1', 'device-1', '{}');
+insert into data_hub.offline_sync_queue (op_id, client_id, kind, user_id, device_id, captured_at, payload, status)
+  values (gen_random_uuid(), gen_random_uuid(), 'data_point', 'a0000000-0000-4000-8000-0000000000a1', 'device-1', now(), '{}', 'applied');
 
 insert into carbon.emission_factors (region, category, factor_value, unit, source, valid_from, is_custom, tenant_id, verification_status)
   values ('NG', 'custom_fuel', 1.5, 'kgCO2e/litre', 'Supplier fuel certificate 2026', '2026-01-01', true,
@@ -150,6 +150,72 @@ insert into files.file_metadata (id, original_name, content_type, size_bytes, sh
 insert into files.file_versions (file_id, version_no, storage_key, content_type, size_bytes, sha256)
   values ('a0000000-0000-4000-8000-0000000004f1', 1, 'fixture/evidence-v1.pdf', 'application/pdf', 4, repeat('0', 64));
 insert into files.file_access_log (file_id, version_no, action) values ('a0000000-0000-4000-8000-0000000004f1', 1, 'upload');
+
+-- WP-35 analytics (one row per tenant table for the RLS suite).
+insert into analytics.settings (z_threshold) values (3.00);
+insert into analytics.anomalies (org_id, data_point_id, metric_key, reporting_period_start, reporting_period_end, kind, method, value, change_pct)
+  values ('a0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-0000000000dd', 'electricity_kwh', '2026-01-01', '2026-03-31', 'variance', 'yoy', 1000, 40);
+insert into analytics.custom_kpis (id, code, name, pillar, metric_a, unit, direction) values ('a0000000-0000-4000-8000-000000000601', 'fixture_kpi', 'Fixture KPI', 'E', 'electricity_kwh', 'kWh', 'lower_better');
+insert into analytics.benchmark_datasets (id, name, publisher, publication_year, source_file_id)
+  values ('a0000000-0000-4000-8000-000000000401', 'Fixture benchmark', 'Fixture publisher', 2025, 'a0000000-0000-4000-8000-0000000004f1');
+insert into analytics.benchmark_values (dataset_id, metric_key, data_year, p25, median, p75)
+  values ('a0000000-0000-4000-8000-000000000401', 'employee_turnover_pct', 2025, 5, 10, 15);
+insert into analytics.maturity_scores (assessment_year, overall, level, dimensions) values (2025, 2.5, 2, '[]');
+insert into analytics.sdg_alignments (goal, rationale) values (13, 'Fixture priority');
+
+-- WP-40 investor portal (one row per tenant table for the RLS suite).
+insert into investor.settings (weight_e) values (40);
+insert into investor.scorecards (reporting_year, title, weight_e, weight_s, weight_g, total, grade, components)
+  values (2025, 'Fixture scorecard', 40, 30, 30, 55, 'C+', '[]');
+insert into investor.shared_reports (report_id, version_label, export_file_id)
+  values ('a0000000-0000-4000-8000-0000000000f1', 'v1.0', 'a0000000-0000-4000-8000-0000000004f1');
+insert into investor.data_rooms (id, name, purpose, expires_on) values ('a0000000-0000-4000-8000-000000000501', 'Fixture room', 'due_diligence', '2099-12-31');
+insert into investor.data_room_members (room_id, user_id) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000000a1');
+insert into investor.data_room_documents (room_id, file_id, title) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000004f1', 'Evidence');
+insert into investor.data_room_access_log (room_id, user_id, action) values ('a0000000-0000-4000-8000-000000000501', 'a0000000-0000-4000-8000-0000000000a1', 'view');
+insert into investor.bonds (id, instrument, name, issue_date, maturity_date, amount, currency, framework_reference)
+  values ('a0000000-0000-4000-8000-000000000502', 'green_bond', 'Fixture green bond', '2025-06-01', '2032-06-01', 1000000, 'NGN', 'ICMA Green Bond Principles (2021)');
+insert into investor.bond_allocations (bond_id, org_id, category, project, amount, allocated_on)
+  values ('a0000000-0000-4000-8000-000000000502', 'a0000000-0000-4000-8000-00000000000a', 'renewable_energy', 'Rooftop solar', 250000, '2026-02-01');
+insert into investor.impact_metrics (iris_code, name, metric_key) values ('OI0001', 'Fixture impact', 'employees_total');
+
+-- WP-41 carbon market (one row per tenant table for the RLS suite).
+insert into carbon_market.settings (offset_ceiling_pct) values (10);
+insert into carbon_market.offset_projects (id, name, standard, registry, registry_project_id, project_type, country_code)
+  values ('a0000000-0000-4000-8000-000000000701', 'Fixture cookstoves', 'gold_standard', 'Gold Standard Impact Registry', 'GS-FIXTURE-1', 'clean_cookstoves', 'NG');
+insert into carbon_market.credit_lots (id, project_id, vintage, serial_prefix, serial_key, serial_from, serial_to, acquired_on)
+  values ('a0000000-0000-4000-8000-000000000702', 'a0000000-0000-4000-8000-000000000701', 2024, 'FIXTURE-BATCH', 'gold_standard:FIXTURE-BATCH', 1, 1000, '2025-06-01');
+insert into carbon_market.retirements (lot_id, serial_key, serial_from, serial_to, purpose, claimed_year, beneficiary)
+  values ('a0000000-0000-4000-8000-000000000702', 'gold_standard:FIXTURE-BATCH', 1, 10, 'scope_1', 2026, 'Tenant A');
+insert into carbon_market.internal_prices (price_type, price, currency, effective_from, scopes) values ('shadow', 50, 'USD', '2025-01-01', '{scope_1,scope_2}');
+-- WP-42 training (one row per tenant table for the RLS suite): a draft course gets its module and question, then is published.
+insert into training.courses (id, code, title, category, delivery, duration_hours) values
+  ('a0000000-0000-4000-8000-000000000801', 'FIX-101', 'Fixture ESG basics', 'esg_fundamentals', 'online', 2);
+insert into training.course_modules (course_id, sort_order, title, kind, body, minutes)
+  values ('a0000000-0000-4000-8000-000000000801', 1, 'Fixture module', 'text', 'Fixture text', 30);
+insert into training.quiz_questions (course_id, sort_order, question, options, correct_index)
+  values ('a0000000-0000-4000-8000-000000000801', 1, 'Fixture question?', '{Yes,No}', 0);
+update training.courses set status = 'published', published_at = now() where id = 'a0000000-0000-4000-8000-000000000801';
+insert into training.learning_paths (name, target_role, course_ids)
+  values ('Fixture path', 'ESG_ANALYST', '{a0000000-0000-4000-8000-000000000801}');
+insert into training.enrollments (id, course_id, user_id, source, status, completed_on, hours, best_score, attempts)
+  values ('a0000000-0000-4000-8000-000000000802', 'a0000000-0000-4000-8000-000000000801', 'a0000000-0000-4000-8000-0000000000a1', 'self', 'passed',
+          '2026-03-01', 2, 100, 1);
+insert into training.quiz_attempts (enrollment_id, answers, score, passed) values ('a0000000-0000-4000-8000-000000000802', '{0}', 100, true);
+insert into training.certificates (enrollment_id, user_id, course_id, code, holder_name, course_title, score, issued_on)
+  values ('a0000000-0000-4000-8000-000000000802', 'a0000000-0000-4000-8000-0000000000a1', 'a0000000-0000-4000-8000-000000000801', 'FXTRAAAAAA',
+          'Fixture User', 'Fixture ESG basics', 100, '2026-03-01');
+-- WP-50 AI (one row per tenant table for the RLS suite): an extraction run over the fixture file and one proposed value.
+insert into ai.runs (id, kind, status, engine, parameters, input_summary, output, file_id, completed_at)
+  values ('a0000000-0000-4000-8000-000000000901', 'extraction', 'completed', 'fixture engine', '{}', '{}', '{}', 'a0000000-0000-4000-8000-0000000004f1', now());
+insert into ai.extracted_values (run_id, page, metric_key, value, unit, quote, confidence)
+  values ('a0000000-0000-4000-8000-000000000901', 1, 'electricity_kwh', 1000, 'kWh', 'Fixture electricity use was 1000 kWh.', 'high');
+-- WP-52 privacy (one row per tenant table for the RLS suite).
+insert into auth.privacy_notices (id, version, title, body, dpo_contact)
+  values ('a0000000-0000-4000-8000-000000000a01', 1, 'Fixture privacy notice', 'Fixture notice text.', 'dpo@fixture.test');
+insert into auth.privacy_acknowledgements (notice_id, user_id) values ('a0000000-0000-4000-8000-000000000a01', 'a0000000-0000-4000-8000-0000000000a1');
+insert into auth.data_subject_requests (reference, kind, subject_name, received_on, due_on) values ('DSR-FIX-0001', 'access', 'Fixture Person', '2026-01-05', '2026-02-04');
+insert into auth.retention_settings (notifications_days) values (365);
 -- WP-33: the fixture file placed as geo-tagged evidence on the fixture community project.
 insert into social.project_evidence (project_id, file_id, latitude, longitude, captured_on)
   values ('a0000000-0000-4000-8000-000000000301', 'a0000000-0000-4000-8000-0000000004f1', 4.8156, 7.0498, '2026-03-01');
@@ -211,3 +277,14 @@ insert into auth.user_roles (user_id, role_id)
 
 select set_config('app.current_tenant', '', false);
 select set_config('app.current_user', '', false);
+-- WP-46 integrations (one row per tenant table for the RLS suite).
+select set_config('app.current_tenant', '11111111-1111-4111-8111-111111111111', false);
+insert into integrations.integration_requests (id, reference, connector_key, system_details, data_needed, frequency, contact_name, contact_email)
+  values ('a0000000-0000-4000-8000-000000000b01', 'INT-2026-0001', 'sap_business_one', 'Fixture SAP B1 10.0, on-premise', '{energy_fuel}',
+          'monthly', 'Fixture User', 'fixture@fixture.test');
+insert into integrations.api_keys (id, name, key_prefix, key_hash, scopes, created_by)
+  values ('a0000000-0000-4000-8000-000000000b02', 'Fixture key', 'fxkey1', repeat('0', 64), '{data_points:read}', 'a0000000-0000-4000-8000-0000000000a1');
+insert into integrations.webhook_endpoints (id, name, url, events, secret_encrypted, is_active)
+  values ('a0000000-0000-4000-8000-000000000b03', 'Fixture hook', 'https://hooks.fixture.test/esg', '{data_point.approved}', 'not-a-real-secret', false);
+insert into integrations.webhook_deliveries (endpoint_id, event_id, event_type, payload, status)
+  values ('a0000000-0000-4000-8000-000000000b03', gen_random_uuid(), 'data_point.approved', '{}', 'delivered');

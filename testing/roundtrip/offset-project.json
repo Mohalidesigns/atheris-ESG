@@ -1,0 +1,140 @@
+{
+  "id": "offset-project",
+  "forms": [
+    "Offset project"
+  ],
+  "actor": "ESG_MANAGER",
+  "readOnlyRole": "AUDITOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/carbon-market/projects"
+  },
+  "read": {
+    "path": "/v1/carbon-market/projects/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/carbon-market/projects/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 403,
+    "note": "tenant B's plan doesn't include the Carbon Market"
+  },
+  "values": {
+    "name": "RT mangroves {u}",
+    "standard": "verra_vcs",
+    "registry": "Verra Registry",
+    "registryProjectId": "VCS-RT-{u}",
+    "projectType": "mangrove",
+    "countryCode": "NG",
+    "methodology": "VM0033",
+    "registryUrl": "https://registry.verra.org/project/1",
+    "description": "Niger Delta mangrove restoration",
+    "status": "active"
+  },
+  "changes": {
+    "name": "RT cookstoves {u}",
+    "standard": "gold_standard",
+    "registry": "Gold Standard Impact Registry",
+    "registryProjectId": "GS-RT-{u}",
+    "projectType": "clean_cookstoves",
+    "countryCode": "GH",
+    "methodology": "TPDDTEC",
+    "registryUrl": "https://registry.goldstandard.org/projects/2",
+    "description": "Efficient stoves",
+    "status": "archived"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "standard",
+      "value": "iso",
+      "rule": "enum"
+    },
+    {
+      "field": "registry",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "registryProjectId",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "projectType",
+      "value": "coal",
+      "rule": "enum"
+    },
+    {
+      "field": "countryCode",
+      "value": "NGA",
+      "rule": "2 letters"
+    },
+    {
+      "field": "registryUrl",
+      "value": "ftp://x",
+      "rule": "http(s)"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "status",
+      "value": "live",
+      "rule": "enum"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Project name"
+      },
+      "standard": {
+        "label": "Standard",
+        "kind": "select",
+        "display": "Verra (VCS)"
+      },
+      "registry": {
+        "label": "Registry"
+      },
+      "registryProjectId": {
+        "label": "Registry project ID"
+      },
+      "projectType": {
+        "label": "Project type",
+        "kind": "select",
+        "display": "Mangrove restoration"
+      },
+      "countryCode": {
+        "label": "Country code"
+      },
+      "methodology": {
+        "label": "Methodology (optional)"
+      },
+      "registryUrl": {
+        "label": "Registry link (optional)"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      }
+    }
+  }
+}

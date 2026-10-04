@@ -34,9 +34,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AccessService accessService;
     private final MfaPolicy mfaPolicy;
     private final TestDataPolicy testData;
+    private final com.esg.integrations.ApiKeyService apiKeys;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, AccessService accessService, MfaPolicy mfaPolicy,
-                                   TestDataPolicy testData) {
+                                   TestDataPolicy testData, com.esg.integrations.ApiKeyService apiKeys) {
+        this.apiKeys = apiKeys;
         this.tokenProvider = tokenProvider;
         this.accessService = accessService;
         this.mfaPolicy = mfaPolicy;
@@ -56,6 +58,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 TenantContext.setClient(request.getRemoteAddr(), request.getHeader("User-Agent"));
             }
             TenantContext.setTestRun(testData.runOf(request));
+            // WP-46 (D44): machine access with an API key (X-API-Key, or Authorization: ApiKey …) instead of a session.
+            String apiKey = extractApiKey(request);
+            if (apiKey != null && extractToken(request) == null) {
+                if (!authenticateApiKey(apiKey, request)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/problem+json");
+                    response.getWriter().write(com.esg.exception.Problems.json(org.springframework.http.HttpStatus.UNAUTHORIZED,
+                            "ESG-401-API-KEY", "The API key is unknown, revoked or expired", request.getRequestURI()));
+                    return;
+                }
+                filterChain.doFilter(request, response);
+                return;
+            }
             Optional<Claims> claims = Optional.ofNullable(extractToken(request)).flatMap(tokenProvider::parseAccessToken);
             if (claims.isPresent() && !authenticate(claims.get(), request)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -96,6 +111,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return true;
+    }
+
+    private boolean authenticateApiKey(String raw, HttpServletRequest request) {
+        Optional<com.esg.integrations.ApiKeyService.Authenticated> key = apiKeys.authenticate(raw);
+        if (key.isEmpty()) {
+            TenantContext.setTenantId(null);
+            TenantContext.setUserId(null);
+            return false;
+        }
+        // Audit rows show the key's creator as the user and the key as the client.
+        TenantContext.setClient(request.getRemoteAddr(), "API key " + key.get().name() + " (" + key.get().prefix() + ")");
+        UserPrincipal principal = new UserPrincipal(key.get().access(), key.get().keyId());
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return true;
+    }
+
+    private static String extractApiKey(HttpServletRequest request) {
+        String header = request.getHeader("X-API-Key");
+        if (StringUtils.hasText(header)) {
+            return header.trim();
+        }
+        String authorization = request.getHeader("Authorization");
+        if (StringUtils.hasText(authorization) && authorization.startsWith("ApiKey ")) {
+            return authorization.substring(7).trim();
+        }
+        return null;
     }
 
     private String extractToken(HttpServletRequest request) {

@@ -30,7 +30,7 @@ class RlsIsolationTest {
 
   private static final String BUSINESS_SCHEMAS =
       "'auth','data_hub','carbon','compliance','reporting','risk','supply_chain','social',"
-          + "'governance','analytics','investor','carbon_market','training','audit','files','notifications'";
+          + "'governance','analytics','investor','carbon_market','training','ai','integrations','audit','files','notifications'";
 
   /** Tables with a tenant_id column, excluding partitions (covered through their parent) and the login lookup. */
   private static List<String> tenantTables() throws SQLException {
@@ -38,7 +38,7 @@ class RlsIsolationTest {
         + "join pg_namespace n on n.oid = c.relnamespace "
         + "join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id' and not a.attisdropped "
         + "where c.relkind in ('r','p') and not c.relispartition and n.nspname in (" + BUSINESS_SCHEMAS + ") "
-        + "and c.oid::regclass::text <> 'auth.login_identities' order by 1";
+        + "and c.oid::regclass::text not in ('auth.login_identities', 'integrations.api_key_identities') order by 1";
     List<String> tables = new ArrayList<>();
     try (Connection owner = PostgresTestDatabase.ownerConnection();
         Statement st = owner.createStatement();
@@ -132,7 +132,7 @@ class RlsIsolationTest {
         + "from pg_class c join pg_namespace n on n.oid = c.relnamespace "
         + "join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id' and not a.attisdropped "
         + "where c.relkind in ('r','p') and n.nspname in (" + BUSINESS_SCHEMAS + ") "
-        + "and c.oid::regclass::text <> 'auth.login_identities'";
+        + "and c.oid::regclass::text not in ('auth.login_identities', 'integrations.api_key_identities')";
     List<String> problems = new ArrayList<>();
     try (Connection owner = PostgresTestDatabase.ownerConnection();
         Statement st = owner.createStatement();
@@ -247,6 +247,23 @@ class RlsIsolationTest {
         assertThat(rs.getString(1)).isEqualTo(TENANT_A);
       }
       assertThatThrownBy(() -> count(app, "select count(*) from auth.login_identities"))
+          .isInstanceOf(SQLException.class)
+          .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
+    }
+  }
+
+  @Test
+  void apiKeyLookupWorksWithoutTenantButTableIsNotReadable() throws SQLException {
+    // WP-46: an API key's tenant is found from its prefix before any tenant is in context, like a login (V040).
+    try (Connection app = PostgresTestDatabase.appConnection()) {
+      setTenant(app, "");
+      try (PreparedStatement ps = app.prepareStatement("select tenant_id from integrations.find_api_key(?)")) {
+        ps.setString(1, "fxkey1");
+        ResultSet rs = ps.executeQuery();
+        assertThat(rs.next()).isTrue();
+        assertThat(rs.getString(1)).isEqualTo(TENANT_A);
+      }
+      assertThatThrownBy(() -> count(app, "select count(*) from integrations.api_key_identities"))
           .isInstanceOf(SQLException.class)
           .satisfies(e -> assertThat(((SQLException) e).getSQLState()).isEqualTo("42501"));
     }

@@ -1,0 +1,96 @@
+{
+  "id": "learning-path",
+  "forms": [
+    "Learning path"
+  ],
+  "actor": "TRAINING_ADMIN",
+  "readOnlyRole": "ESG_DIRECTOR",
+  "create": {
+    "method": "POST",
+    "path": "/v1/training/paths"
+  },
+  "read": {
+    "path": "/v1/training/paths/{id}"
+  },
+  "update": {
+    "method": "PUT",
+    "path": "/v1/training/paths/{id}",
+    "versioned": true
+  },
+  "isolation": {
+    "status": 404,
+    "note": "RLS hides tenant A's path from tenant B"
+  },
+  "values": {
+    "name": "RT analyst path {u}",
+    "description": "Everything an analyst needs",
+    "targetRole": "ESG_ANALYST",
+    "courseIds": [
+      "{COURSE_TR}"
+    ],
+    "status": "active"
+  },
+  "changes": {
+    "name": "RT auditor path {u}",
+    "description": "For assurance",
+    "targetRole": "AUDITOR",
+    "status": "archived"
+  },
+  "invalid": [
+    {
+      "field": "name",
+      "value": "",
+      "rule": "required"
+    },
+    {
+      "field": "description",
+      "value": {
+        "$repeat": [
+          "x",
+          2001
+        ]
+      },
+      "rule": "max 2000"
+    },
+    {
+      "field": "targetRole",
+      "value": "INVESTOR_VIEWER",
+      "rule": "a working role"
+    },
+    {
+      "field": "courseIds",
+      "value": [],
+      "rule": "at least one"
+    },
+    {
+      "field": "status",
+      "value": "live",
+      "rule": "enum"
+    }
+  ],
+  "ui": {
+    "fields": {
+      "name": {
+        "label": "Path name"
+      },
+      "description": {
+        "label": "Description (optional)"
+      },
+      "targetRole": {
+        "label": "For role (optional)",
+        "kind": "select",
+        "display": "ESG ANALYST"
+      },
+      "courseIds": {
+        "label": "Courses",
+        "kind": "select",
+        "display": "Fixture ESG basics"
+      },
+      "status": {
+        "label": "Status",
+        "kind": "select",
+        "display": "Active"
+      }
+    }
+  }
+}

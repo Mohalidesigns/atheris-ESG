@@ -1,8 +1,12 @@
 package com.esg.reporting;
 
+import com.esg.analytics.AnalyticsInsights;
+import com.esg.carbonmarket.CarbonMarketInsights;
+import com.esg.training.TrainingInsights;
 import com.esg.compliance.ComplianceDtos.GapReport;
 import com.esg.compliance.ComplianceService;
 import com.esg.exception.ApiException;
+import com.esg.investor.ScorecardService;
 import com.esg.reporting.ReportingDtos.VariableValue;
 import com.esg.risk.RiskInsights;
 import com.esg.social.SocialMetricsService;
@@ -42,6 +46,14 @@ import org.springframework.stereotype.Component;
  *       CBN NSBP Principle 4 section fills from approved workforce figures;</li>
  *   <li>{@code risk:material_topics|material_topic_list|open_risks|high_risks|climate_risks|physical_high_risks|scenarios_analysed}
  *       — the approved materiality assessment of the period's end year, the risk register and scenario work (WP-32);</li>
+ *   <li>{@code analytics:maturity_score|maturity_level|anomalies_open|anomalies_accepted|variance_explanations} — the maturity
+ *       index of the period's end year and the anomaly flags of the period (WP-35); {@code kpi:<code>} — a custom KPI's
+ *       value for the period's end year;</li>
+ *   <li>{@code offsets:credits_retired|net_scope12|offset_share|offset_to_reduction} — credits retired against the period's end
+ *       year and what they mean beside gross emissions (WP-41);</li>
+ *   <li>{@code training:hours_total|hours_per_employee|completion_rate|certificates_issued} — training completed in the period's
+ *       end year (WP-42);</li>
+ *   <li>{@code investor:scorecard_grade|scorecard_score} — the newest published investor scorecard for the period's end year (WP-40);</li>
  *   <li>{@code report:title|period}, {@code tenant:name}.</li>
  * </ul>
  */
@@ -64,8 +76,17 @@ public class VariableEngine {
     private final SocialMetricsService social;
     private final RiskInsights risk;
     private final SupplierService supply;
+    private final AnalyticsInsights analytics;
+    private final ScorecardService scorecards;
+    private final CarbonMarketInsights carbonMarket;
+    private final TrainingInsights training;
 
-    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply) {
+    public VariableEngine(JdbcTemplate jdbc, ComplianceService compliance, SocialMetricsService social, RiskInsights risk, SupplierService supply,
+                          AnalyticsInsights analytics, ScorecardService scorecards, CarbonMarketInsights carbonMarket, TrainingInsights training) {
+        this.carbonMarket = carbonMarket;
+        this.training = training;
+        this.analytics = analytics;
+        this.scorecards = scorecards;
         this.risk = risk;
         this.supply = supply;
         this.jdbc = jdbc;
@@ -110,6 +131,12 @@ public class VariableEngine {
             case "social" -> SocialMetricsService.VARIABLES.contains(p[1]);
             case "risk" -> RiskInsights.VARIABLES.contains(p[1]);
             case "supply" -> SUPPLY.contains(p[1]);
+            case "analytics" -> AnalyticsInsights.VARIABLES.contains(p[1]);
+            case "investor" -> Set.of("scorecard_grade", "scorecard_score").contains(p[1]);
+            case "offsets" -> CarbonMarketInsights.VARIABLES.contains(p[1]);
+            case "training" -> TrainingInsights.VARIABLES.contains(p[1]);
+            case "kpi" -> Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where code = ? and deleted_at is null)",
+                    Boolean.class, p[1]));
             default -> false;
         };
     }
@@ -200,6 +227,28 @@ public class VariableEngine {
             }
             case "supply" -> {
                 return supply(p[1], end);
+            }
+            case "analytics" -> {
+                return analytics.variable(p[1], start, end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing("no accepted variance explanations in the period"));
+            }
+            case "offsets" -> {
+                return carbonMarket.variable(p[1], end.getYear()).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing("not enough data for " + end.getYear() + " (no emissions, or no reductions to compare with)"));
+            }
+            case "training" -> {
+                return training.variable(p[1], end.getYear()).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing("no training completed or assigned in " + end.getYear()));
+            }
+            case "investor" -> {
+                return scorecards.latestPublished(end.getYear()).map(sc -> "scorecard_grade".equals(p[1])
+                        ? new VariableValue(sc.grade(), null, null, "ok", "investor scorecard \"" + sc.title() + "\", published " + sc.publishedAt().toString().substring(0, 10), null)
+                        : new VariableValue(num(sc.total()) + " of 100", sc.total(), null, "ok", "investor scorecard \"" + sc.title() + "\"", null))
+                        .orElseGet(() -> missing("no published investor scorecard for " + end.getYear()));
+            }
+            case "kpi" -> {
+                return analytics.kpi(p[1], end).map(v -> new VariableValue(v.text(), v.number(), v.unit(), "ok", v.basis(), null))
+                        .orElseGet(() -> missing(analytics.kpiMissing(p[1], end)));
             }
             case "risk" -> {
                 return risk.variable(p[1], end).map(v -> v.number() == null

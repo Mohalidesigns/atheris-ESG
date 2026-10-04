@@ -1,0 +1,5 @@
+# WP-52: reviewed findings in history (commit e2dd12d, before the inline gitleaks:allow markers): the policy's list of
+# committed development values and stand-in values in its test. Not secrets; later commits mark them inline.
+e2dd12dab4b5143cf4164530409e3a6887fecf97:esg-backend/src/main/java/com/esg/security/ProductionSecretsPolicy.java:generic-api-key:19
+e2dd12dab4b5143cf4164530409e3a6887fecf97:esg-backend/src/test/java/com/esg/security/ProductionSecretsPolicyTest.java:generic-api-key:32
+e2dd12dab4b5143cf4164530409e3a6887fecf97:esg-backend/src/test/java/com/esg/security/ProductionSecretsPolicyTest.java:generic-api-key:33

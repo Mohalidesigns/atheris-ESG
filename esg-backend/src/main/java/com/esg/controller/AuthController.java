@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -98,6 +99,18 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse.UserDto>> me() {
         return ResponseEntity.ok(ApiResponse.ok(authService.me()));
     }
+
+    /** WP-45 (D45): anyone signed in chooses their own interface language (kept on their account for every device). */
+    @PutMapping("/me/language")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<AuthResponse.UserDto>> language(@jakarta.validation.Valid @RequestBody LanguageRequest body) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.setLanguage(body.preferredLanguage())));
+    }
+
+    public record LanguageRequest(
+            @jakarta.validation.constraints.NotBlank
+            @jakarta.validation.constraints.Pattern(regexp = com.esg.model.dto.AdminDtos.LANGUAGE_REGEX, message = "must be one of en, fr, pt, ar, sw, ha, yo")
+            String preferredLanguage) {}
 
     // ------------------------------------------------------------------ helpers
 

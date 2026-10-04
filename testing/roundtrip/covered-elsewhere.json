@@ -127,5 +127,105 @@
   ],
   "Spend import": [
     "com.esg.supplychain.SupplyChainApiTest#supplierSpendBecomesScope3Category1InCarbonAndCanBeImported"
+  ],
+  "Anomaly explanation and review": [
+    "com.esg.analytics.AnalyticsApiTest#anOutlierApprovedIsFlaggedThenExplainedAndAccepted",
+    "com.esg.analytics.AnalyticsApiTest#flagsInALockedPeriodCantChange"
+  ],
+  "Anomaly scan": [
+    "com.esg.analytics.AnalyticsApiTest#anOutlierApprovedIsFlaggedThenExplainedAndAccepted",
+    "com.esg.analytics.AnalyticsApiTest#aCorrectedValueClearsItsFlagsAndTheNightlyScanRuns"
+  ],
+  "Maturity assessment": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment"
+  ],
+  "SDG priority": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment"
+  ],
+  "Analytics filters (year, benchmark metric)": [
+    "com.esg.analytics.AnalyticsApiTest#kpisBenchmarksMaturityAndSdgAlignment",
+    "com.esg.analytics.AnalyticsApiTest#accessFollowsTheRoleMatrixAndTheTenant"
+  ],
+  "Investor scorecard": [
+    "com.esg.investor.InvestorApiTest#journey22AnInvestorSeesOnlyPublishedScorecardsAndTheirOwnDataRoom"
+  ],
+  "Data room document": [
+    "com.esg.investor.InvestorApiTest#journey22AnInvestorSeesOnlyPublishedScorecardsAndTheirOwnDataRoom"
+  ],
+  "Share report with investors": [
+    "com.esg.investor.InvestorApiTest#journey23AnIfcReportIsGeneratedFromTenantDataApprovedAndShared"
+  ],
+  "DFI report": [
+    "com.esg.investor.InvestorApiTest#journey23AnIfcReportIsGeneratedFromTenantDataApprovedAndShared"
+  ],
+  "Use-of-proceeds allocation": [
+    "com.esg.investor.InvestorApiTest#instrumentsTrackUseOfProceedsTargetsAndShariahReview"
+  ],
+  "Retirement request": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Retirement approval": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Credit lot verification": [
+    "com.esg.carbonmarket.CarbonMarketApiTest#journey24CreditsAreRecordedRetiredAndASerialCannotBeRetiredTwice"
+  ],
+  "Course assignment": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "Learning path assignment": [
+    "com.esg.training.TrainingApiTest#pathsGapsAndAccess"
+  ],
+  "Quiz answers": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "Classroom attendance": [
+    "com.esg.training.TrainingApiTest#classroomAttendanceIsRecordedByTheTrainingTeamAndRespectsLockedPeriods"
+  ],
+  "Certificate revocation": [
+    "com.esg.training.TrainingApiTest#journey25ACourseIsCompletedAndItsCertificateVerifiedByAnyone"
+  ],
+  "AI forecast": [
+    "com.esg.ai.AiApiTest#forecastsComeFromTheTenantsHistoryAndAreRecordedLabelledAndDismissable"
+  ],
+  "AI forecast dismissal": [
+    "com.esg.ai.AiApiTest#forecastsComeFromTheTenantsHistoryAndAreRecordedLabelledAndDismissable"
+  ],
+  "ML anomaly scan": [
+    "com.esg.ai.AiApiTest#isolationForestFindingsJoinTheAnomalyWorkflowLabelledAsAi"
+  ],
+  "Extracted value acceptance": [
+    "com.esg.ai.AiApiTest#extractedValuesReachTheDataHubOnlyWhenAPersonAcceptsThem"
+  ],
+  "Privacy notice": [
+    "com.esg.privacy.PrivacyApiTest#theNoticeIsAcknowledgedPerVersionAndPeopleCanDownloadTheirData"
+  ],
+  "Data subject request": [
+    "com.esg.privacy.PrivacyApiTest#requestsAreRegisteredWithADueDateAndAnsweredWithAnExport"
+  ],
+  "Data subject request answer": [
+    "com.esg.privacy.PrivacyApiTest#requestsAreRegisteredWithADueDateAndAnsweredWithAnExport"
+  ],
+  "Retention": [
+    "com.esg.privacy.PrivacyApiTest#retentionRemovesPersonalDataPastEachTenantsSettings"
+  ],
+  "Sync conflict decision": [
+    "com.esg.offline.OfflineSyncApiTest#twoDevicesConflictOnTheSameMetricAndPeriodAndThePersonDecides"
+  ],
+  "Connector request": [
+    "com.esg.integrations.IntegrationsApiTest#aClientRequestsAConnectorAndThePlatformTeamActivatesIt"
+  ],
+  "API key": [
+    "com.esg.integrations.IntegrationsApiTest#anApiKeyActsWithinItsScopesAsItsCreatorAndCanBeRevoked"
+  ],
+  "Webhook": [
+    "com.esg.integrations.IntegrationsApiTest#anApprovedDataPointIsSentSignedToTheSubscribedEndpoint",
+    "com.esg.integrations.IntegrationsApiTest#anEndpointThatKeepsFailingIsSwitchedOff"
+  ],
+  "Integration request status": [
+    "com.esg.integrations.IntegrationsApiTest#aClientRequestsAConnectorAndThePlatformTeamActivatesIt"
+  ],
+  "Account menu / sign-in: language": [
+    "com.esg.controller.LanguagePreferenceTest#aUserChoosesTheirOwnLanguage"
   ]
 }

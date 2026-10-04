@@ -3,6 +3,106 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-45 Languages (D45)
+
+- The interface is available in English, French, Portuguese, Arabic, Swahili, Hausa and Yoruba: choose it on the sign-in page or in the account menu. Signed in, the choice is kept on your account for every device.
+- Arabic is shown right to left.
+- Numbers, amounts (₦, KSh, R, GH₵, $, €), percentages and dates follow the chosen language.
+- The six translations are drafts that have not yet been reviewed by a professional translator; the language list says so. Messages from the server, catalogue names and generated reports stay in English for now.
+- The product is now called **Atheris ESG** everywhere in the app (browser title, sign-in page, menu); it was "ESG Pro". The demo tenant keeps its name.
+- Filled information messages (toasts) are darker so their text meets WCAG AA contrast.
+
+## Unreleased — WP-46 Integrations (D44)
+
+- Administration › Integrations now has Connectors, API keys, Webhooks, File templates and a Developer guide.
+- Connectors on request: ERP, accounting, HR and utility connectors (SAP, Oracle, Dynamics, QuickBooks, Sage, SeamlessHR, Workday and others) are listed and can be requested by a client's administrator; the Atheris team reviews, schedules and activates each one (Administration › Integration requests). Nothing is connected until a request is active.
+- API keys let a client's own systems — IoT gateways, meters, scripts, BI tools — read data and send readings as drafts, limited to chosen permissions and to what their creator may do; keys expire and can be revoked.
+- Webhooks tell a client's systems when data or a report is approved, an approved value is reopened or an incident is recorded — signed, retried for about a day, with a delivery log, test button and redelivery.
+- File templates for each source system (energy and fuel, utilities, workforce, waste).
+- SMS/USSD data entry (WP-44) is deferred by the product owner.
+
+## Unreleased — WP-43 Offline capture (D43)
+
+- The web app can be installed on a phone or tablet and opens without a connection; pages load from the device after the first visit.
+- Data points and incident reports saved without a connection are kept on the device and sent automatically when the connection returns (also at sign-in, every minute while something waits, and with "Sync now"); the top bar shows when you're offline and what is waiting.
+- Someone who signed in on the device before can open the app offline to capture data; nothing is sent until they are signed in again.
+- If the server already has a value for the same metric, organisation and period, a newer offline value replaces an older draft; otherwise Data Hub → On this device shows both and the person who captured it decides. Values in the approval workflow are never replaced from a device.
+- New: `POST /api/v1/data/sync`, `GET /api/v1/data/sync/conflicts`, `POST /api/v1/data/sync/conflicts/{id}/resolve`. 500 records sync in about 3 seconds.
+
+## Unreleased — WP-54 UAT and release, 1.0 release candidate 1 (D42)
+
+- Release candidate 1 for pilots: release notes, user manual, UAT scripts for five personas, a pilot onboarding kit and an evidence-based re-score of the benchmark (115 of 265).
+- Container images for the backend, web app and AI service, a single-host pilot setup and a deployment guide; the web server sends exactly the security headers the app is tested with.
+- A new installation creates its first platform administrator from start-up settings, once; afterwards the setting has no effect.
+
+## Unreleased — WP-53 Accessibility and slow networks (D41)
+
+- Every module page, key tabs, the public pages and dialogs are checked against WCAG 2.1 AA (axe-core) in the end-to-end suite.
+- Text that was too faint to read for many people now meets the contrast standard: secondary text, sidebar captions, Sandbox labels, warning and info chips, the user avatar and status chips; progress bars are announced by screen readers; Administration has a page heading.
+- The sign-in page downloads less before it appears (entry bundle 140 → 86 KB compressed): first paint 1.8 s on a fast-3G profile; a size budget in CI keeps it that way.
+
+## Unreleased — WP-52 Security and NDPA 2023 (D40)
+
+- Privacy notice: the organisation publishes it (with its data protection officer's contact) under Administration › Privacy; everyone is shown each new version when they sign in until they confirm they have read it.
+- Data subject requests (access, correction, erasure, objection, portability) are recorded with a 30-day deadline and flagged when overdue; the DPO can export a person's data or erase it. Erasure anonymises the account (name, contact details, sign-in secrets, roles, sessions, notifications, message logs; certificates anonymised and revoked) and keeps the audit trail and approved records as the law requires.
+- Anyone can download a copy of their own data from the account menu.
+- Retention settings: read notifications, sent email/SMS logs, ended sessions and IP addresses in file logs are removed after each organisation's chosen periods, every night.
+- Fix: the certificate QR test decodes the code from where it is drawn at 300 dpi (it failed on Linux CI); intentional development values in the secrets policy and its test are marked for the secrets scanner.
+- Security: patched Tomcat (three critical CVEs), Netty, Jackson, HttpCore and the PostgreSQL driver in the backend and pypdf/python-multipart in the AI service; secrets and dependency scans run in CI; production refuses to start with development secrets; strict security headers on the API and web app; fonts are served by the platform instead of Google.
+
+## Unreleased — WP-51 Performance (D39)
+
+- Performance suite (k6) for the TRD targets on a throwaway database with a million data points: `./scripts/perf.sh`; results and method in docs/esg-completion/PERFORMANCE.md.
+- Executive dashboard over a million data points: 6.97 s → 1.56 s (P95, 10 concurrent viewers). Year filters on data points and emissions now use indexes under Row-Level Security; "which metrics have data" questions use per-metric index lookups; recent activity has its own audit-log index.
+- Recalculating emissions lists the first 50 changes (with the full count) instead of every record.
+- Secrets scanning configuration (gitleaks); performance summaries no longer keep the sign-in token.
+
+## Unreleased — WP-50 Grounded AI (D38)
+
+- AI service (Python, FastAPI) behind an adapter; IBM Granite through Ollama reads reports. When it isn't running, AI features say so and nothing is estimated instead (ESG-503-AI-UNAVAILABLE).
+- Emission and metric forecasts: ARIMA or a linear trend on your own history, with an uncertainty band and a back-test of how well the method predicted recent periods; each forecast records the model and the exact history used and can be dismissed with a reason.
+- Machine-learning scan: an Isolation Forest flags values that stand out across sites and years; its flags are labelled AI-generated and are explained or dismissed like any other flag.
+- Report extraction: upload a sustainability report and get catalogue values with the page and exact quote they come from; values whose quote or number can't be found on the page are discarded; nothing enters the Data Hub until a person accepts a value (correcting it if needed), and it then starts as a draft.
+- Settings › Integrations shows the AI service's status. Every AI result is marked AI-generated with the engine that produced it.
+
+## Unreleased — WP-42 Training & Capacity Building (D37)
+
+- Courses written by each organisation (nothing is shipped): modules as text, PDF or a video link, a multiple-choice quiz and a pass mark; drafts are published, retired or copied to revise them, and published content can't change.
+- Learning paths for a role: people holding the role see its courses as required, and the path can be assigned to all of them at once.
+- Self-enrolment (prerequisites passed first) and assignment with a due date and a notification; learners mark modules done and take the quiz with unlimited attempts, keeping the best score; classroom courses are completed by recording attendance, refused for a locked period.
+- Certificates on passing with a 10-character code and a QR code on the PDF; anyone can check a code at /verify-certificate without signing in and sees only holder, course, organisation, dates and status; revocation needs a reason.
+- My learning (hours this year and gaps against role paths), team progress, a dashboard card and `training:*` report variables; training hours now fill GRI 404-1 training hours per employee from approved headcount. Every working role can take training; ESG directors can assign it.
+
+## Unreleased — WP-41 Carbon Market (D36)
+
+- Offset projects (Verra VCS, Gold Standard, Plan Vivo, CDM, Article 6.4, ACMI-endorsed) entered with their registry ID; nature-based projects flagged. Nothing is seeded.
+- Credit lots recorded by issuance batch and serial range, with price, seller and verification from an attached registry statement.
+- No double counting: the same serials can't be held in two lots or retired twice, in this or any other organisation on the platform (ESG-409-SERIAL).
+- Retirements: the next free serials are reserved against a year and purpose (Scope 1, 2, 3 or voluntary), approved with the registry's retirement reference by someone other than the requester, or cancelled to release them; locked years can't be offset.
+- Offset monitoring: credits beside gross Scope 1+2 (never netted out of the inventory), net figure, offset share, offset-to-reduction ratio and an over-reliance flag against the tenant's ceiling.
+- Internal carbon price (shadow price or internal fee) with the cost of each organisation's emissions in the scopes covered.
+- ACMI/registry and carbon exchange are adapters with labelled Sandbox implementations, also listed under Integrations. Dashboard card; `offsets:*` report variables; retirements evidence IFRS S2 climate targets. ESG directors approve retirements; ESG managers record credits.
+
+## Unreleased — WP-40 Investor Portal (D35)
+
+- Investors are invited as users with the Investor viewer role and see only what the company publishes or shares with them.
+- ESG scorecards: weighted E, S and G pillars built from the platform's records (data coverage, maturity, framework completeness, KPIs on track, anomaly flags resolved), graded A+ to F; generated as a draft, published by someone else, fixed once published, withdrawable with a reason.
+- Approved reports can be shared with investors, who download the PDF stamped with their name; DFI reports for IFC (Performance Standards 1–8) and AfDB (Operational Safeguards 1–10) are created from tenant data and go through normal approval.
+- Data rooms with an expiry date, investor members, watermarked PDF downloads and a log of every view, download and refusal; a PDF that can't be watermarked is refused rather than handed out unmarked.
+- Sustainable finance instruments: green, social and sustainability bonds with use-of-proceeds allocations by ICMA category (period-locked), sustainability-linked bonds tied to a KPI target with met/missed status, and sukuk with their Shariah review.
+- IRIS+ impact metrics mapped to catalogue metrics or KPIs; scorecard publications appear in Recent activity; `investor:*` report variables. ESG directors can now set the scorecard weights.
+
+## Unreleased — WP-35 Analytics (D34)
+
+- Anomaly flags on data: each submitted or approved value is compared with earlier periods of the same site and metric (z-score and IQR) and with the same period a year earlier; flags are raised when a point is approved, nightly and on demand, with sensitivity set per tenant.
+- Variance explanations: a flag is explained (with evidence), then accepted or sent back by an approver who didn't write the explanation; false positives can be dismissed with a reason; a corrected value clears its flag; locked periods can't change.
+- Custom KPI builder: a metric alone or combined with another (÷ × + −), scaled, calculated each year from approved data, with a target line, on-track status, SDG tags and a `{{kpi:<code>}}` report variable.
+- Benchmarks from datasets the tenant imports with their publisher, year and source document (none are built in); each site is placed in a quartile band, and sites are ranked against each other.
+- ESG maturity index (1–5, six dimensions) with the evidence behind each score and the next step; snapshots for the history.
+- SDG alignment per goal from the linked metrics' evidence and direction of change, with tagged KPIs and priority goals.
+- Dashboard Analytics card; `analytics:*` report variables; a KPI with a target evidences GRI 3-3 and TCFD Metrics & Targets (a). ESG directors can now configure analytics.
+- Fixed: three organisation-scope tests assumed Site 1 had no sub-sites and failed once another test added one (CI on #21); they now check that nothing outside the scope appears.
+
 ## Unreleased — WP-31 Supply Chain ESG (D33)
 
 - Supplier register with full or simplified (SME / informal sector) onboarding, tiers, local-supplier flag, score history and risk tier.

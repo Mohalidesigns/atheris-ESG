@@ -58,13 +58,20 @@ public class DashboardService {
     private final com.esg.social.SocialMetricsService social;
     private final com.esg.risk.RiskInsights risk;
     private final com.esg.supplychain.SupplierService supply;
+    private final com.esg.analytics.AnalyticsInsights analytics;
+    private final com.esg.carbonmarket.CarbonMarketInsights carbonMarket;
+    private final com.esg.training.TrainingInsights training;
 
     public DashboardService(JdbcTemplate jdbc, EmissionService emissions, ComplianceService compliance, DeadlineService deadlines,
                             OrgScopeService orgScope, Clock clock, com.esg.governance.BoardService board,
                             com.esg.governance.PolicyService policies, com.esg.governance.WhistleblowerService cases,
                             com.esg.social.SocialMetricsService social, com.esg.risk.RiskInsights risk,
-                            com.esg.supplychain.SupplierService supply) {
+                            com.esg.supplychain.SupplierService supply, com.esg.analytics.AnalyticsInsights analytics,
+                            com.esg.carbonmarket.CarbonMarketInsights carbonMarket, com.esg.training.TrainingInsights training) {
+        this.carbonMarket = carbonMarket;
+        this.training = training;
         this.supply = supply;
+        this.analytics = analytics;
         this.social = social;
         this.risk = risk;
         this.board = board;
@@ -91,7 +98,10 @@ public class DashboardService {
                 CurrentUser.hasPermission("governance:read") ? governance(today) : null,
                 CurrentUser.hasPermission("social:read") ? social(year) : null,
                 CurrentUser.hasPermission("risk:read") ? risk.overview() : null,
-                CurrentUser.hasPermission("supply_chain:read") ? supply.overview(year) : null);
+                CurrentUser.hasPermission("supply_chain:read") ? supply.overview(year) : null,
+                CurrentUser.hasPermission("analytics:read") ? analytics.overview(year) : null,
+                CurrentUser.hasPermission("carbon_market:read") ? carbonMarket.overview(year) : null,
+                CurrentUser.hasPermission("training:update") ? training.overview(year) : null);
     }
 
     DashboardDtos.Social social(int year) {
@@ -170,8 +180,8 @@ public class DashboardService {
             where.append(" and p.org_id = any(?::uuid[])");
             args.add(scope.orgIds().stream().map(UUID::toString).toArray(String[]::new));
         }
-        Set<String> evidenced = new TreeSet<>(jdbc.queryForList("select distinct p.metric_key from data_hub.data_points p " + where,
-                String.class, args.toArray()));
+        Set<String> evidenced = new TreeSet<>(jdbc.queryForList("select m.metric_key from reference.metrics m where exists (select 1 "
+                + "from data_hub.data_points p " + where + " and p.metric_key = m.metric_key)", String.class, args.toArray()));
         Map<Integer, Sdg> goals = new LinkedHashMap<>();
         Map<Integer, List<String[]>> links = new LinkedHashMap<>();
         jdbc.query("select g.goal, g.title, ms.metric_key, m.name from reference.sdgs g "
@@ -211,7 +221,8 @@ public class DashboardService {
             new Source("social.workforce_snapshots", "status", "social:read", "workforce"),
             new Source("social.safety_incidents", "status", "social:read", "incident"),
             new Source("social.grievances", "status", "social:read", "grievance"),
-            new Source("risk.risk_assessments", "status", "risk:read", "materiality"));
+            new Source("risk.risk_assessments", "status", "risk:read", "materiality"),
+            new Source("investor.scorecards", "status", "investor:share", "scorecard"));
 
     /** Recent workflow steps (status changes from the audit trail) the caller may see, newest first. */
     List<Activity> activity() {
@@ -315,6 +326,11 @@ public class DashboardService {
                 case "draft" -> "approved".equals(from) ? "reopened" : "in_review".equals(from) ? "sent back" : null;
                 default -> null;
             };
+            case "scorecard" -> switch (to) {
+                case "published" -> "published to investors";
+                case "withdrawn" -> "withdrew from investors";
+                default -> null;
+            };
             case "grievance" -> switch (to) {
                 case "acknowledged" -> "acknowledged";
                 case "investigating" -> "resolved".equals(from) || "closed".equals(from) ? "reopened" : "started investigating";
@@ -350,6 +366,7 @@ public class DashboardService {
                     + "from risk.risk_assessments where id = ? and deleted_at is null", id);
             case "grievance" -> jdbc.queryForList("select reference || ' · ' || title as title, org_id from social.grievances where id = ? "
                     + "and deleted_at is null", id);
+            case "scorecard" -> jdbc.queryForList("select 'ESG scorecard · ' || title as title from investor.scorecards where id = ?", id);
             default -> jdbc.queryForList("select name as title from auth.reporting_periods where id = ?", id);
         };
         if (rows.isEmpty()) {
@@ -369,6 +386,7 @@ public class DashboardService {
             case "incident" -> "/social?tab=safety&incident=" + id;
             case "grievance" -> "/social?tab=grievances&grievance=" + id;
             case "materiality" -> "/risk?tab=materiality&assessment=" + id;
+            case "scorecard" -> "/investor?tab=scorecards&scorecard=" + id;
             default -> "/admin?tab=periods";
         });
         return row;

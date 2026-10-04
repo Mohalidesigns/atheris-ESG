@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Typography } from '@mui/material';
 import { Construction } from '@mui/icons-material';
 import { toFormError } from '../../services/apiSlice';
+import { tr } from '../../i18n';
 
 /** Shared loading / empty / error / not-yet-built states (WP-16). Pages never fill gaps with sample data. */
 export function LoadingState({ label = 'Loading…' }) {
@@ -23,8 +24,8 @@ export function EmptyState({ title = 'Nothing here yet', children, action }) {
 
 export function ErrorState({ error, onRetry }) {
   return (
-    <Alert severity="error" action={onRetry ? <Button color="inherit" size="small" onClick={onRetry}>Retry</Button> : undefined}>
-      {toFormError(error).message}
+    <Alert severity="error" action={onRetry ? <Button color="inherit" size="small" onClick={onRetry}>{tr("Retry")}</Button> : undefined}>
+      {tr(toFormError(error).message)}
     </Alert>
   );
 }
@@ -40,7 +41,7 @@ export function NotYetAvailable({ title, plannedIn, children, compact = false })
       <Box>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{title}</Typography>
-          <Chip size="small" label="Not yet available" sx={{ height: 20, fontSize: '0.65rem' }} />
+          <Chip size="small" label={tr("Not yet available")} sx={{ height: 20, fontSize: '0.65rem' }} />
           {plannedIn && <Chip size="small" variant="outlined" label={plannedIn} sx={{ height: 20, fontSize: '0.65rem' }} />}
         </Box>
         {children && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{children}</Typography>}

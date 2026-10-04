@@ -427,7 +427,8 @@ class FieldRoundTripTest extends ApiTestSupport {
       }
       if (node.isTextual()) {
         return JsonNodeFactory.instance.textNode(node.asText()
-            .replace("{u}", unique).replace("{yyyy}", year)
+            .replace("{u}", unique).replace("{U}", unique.toUpperCase()).replace("{yyyy}", year)
+            .replace("{COURSE_TR}", "a0000000-0000-4000-8000-000000000801")
             .replace("{ORG_HQ}", ORG_HQ).replace("{ORG_SITE_1}", ORG_SITE_1).replace("{ORG_SITE_2}", ORG_SITE_2)
             .replace("{SOURCE_A}", SOURCE_A).replace("{FILE_A}", FILE_A)
             .replace("{USER_COMPLIANCE}", roleUserId("COMPLIANCE_OFFICER")).replace("{USER_DIRECTOR}", roleUserId("ESG_DIRECTOR"))
@@ -435,7 +436,9 @@ class FieldRoundTripTest extends ApiTestSupport {
             .replace("{TOPIC_A}", "a0000000-0000-4000-8000-000000000102")
             .replace("{SUPPLIER_A}", "a0000000-0000-4000-8000-000000000201").replace("{QUESTIONNAIRE_A}", "a0000000-0000-4000-8000-000000000204")
             .replace("{QUESTION_A}", "a0000000-0000-4000-8000-000000000203")
-            .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4"));
+            .replace("{TEMPLATE_A}", "a0000000-0000-4000-8000-0000000000f4")
+            .replace("{KPI_A}", "a0000000-0000-4000-8000-000000000601").replace("{USER_INVESTOR}", roleUserId("INVESTOR_VIEWER"))
+            .replace("{PROJECT_CM}", "a0000000-0000-4000-8000-000000000701"));
       }
       if (node.isObject() && node.has("$repeat")) {
         return JsonNodeFactory.instance.textNode(node.path("$repeat").get(0).asText().repeat(node.path("$repeat").get(1).asInt()));

@@ -18,6 +18,7 @@ import { reasonSchema } from '../schemas';
 import StatusChip from './StatusChip';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import BlockedAction from '../../../components/feedback/BlockedAction';
+import { tr, formattingLocale } from '../../../i18n';
 
 // no-mock-gate: config — labels for the quality sub-scores and workflow buttons
 const SUB_SCORES = [
@@ -26,7 +27,7 @@ const SUB_SCORES = [
 ];
 const ACTION_LABELS = { submit: 'Submit', validate: 'Validate', approve: 'Approve', reject: 'Reject', reopen: 'Reopen', delete: 'Delete draft', edit: 'Edit' };
 
-const when = (iso) => (iso ? new Date(iso).toLocaleString() : '');
+const when = (iso) => (iso ? new Date(iso).toLocaleString(formattingLocale()) : '');
 const pct = (n) => Math.round(Number(n ?? 0) * 100);
 
 /** Reject / reopen need a reason, mirrored from the server (required, ≤1000). `count`: a bulk reject of that many points. */
@@ -45,20 +46,20 @@ export function ReasonDialog({ action, onCancel, onConfirm, count }) {
     <Dialog open onClose={onCancel} maxWidth="xs" fullWidth>
       <form onSubmit={submit} noValidate>
         <DialogTitle>
-          {action === 'reject' ? (count ? `Reject ${count} data point${count === 1 ? '' : 's'}` : 'Reject data point') : 'Reopen approved data point'}
+          {action === 'reject' ? (count ? `Reject ${count} data point${count === 1 ? '' : 's'}` : tr("Reject data point")) : tr("Reopen approved data point")}
         </DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {action === 'reject' ? 'The submitter sees this reason and can correct the data.'
-              : 'The point goes back to draft so it can be corrected; the reason is kept in its history.'}
+            {action === 'reject' ? tr("The submitter sees this reason and can correct the data.")
+              : tr("The point goes back to draft so it can be corrected; the reason is kept in its history.")}
           </Typography>
-          <FormTextField control={control} name="reason" label="Reason" multiline minRows={2} autoFocus />
+          <FormTextField control={control} name="reason" label={tr("Reason")} multiline minRows={2} autoFocus />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel}>{tr("Cancel")}</Button>
           <Button type="submit" variant="contained" color={action === 'reject' ? 'error' : 'primary'}>
-            {ACTION_LABELS[action]}
+            {tr(ACTION_LABELS[action])}
           </Button>
         </DialogActions>
       </form>
@@ -82,7 +83,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
     if (action === 'reject' || action === 'reopen') return setAsking(action);
     try {
       if (action === 'delete') {
-        if (!(await confirm({ title: 'Delete this draft?', item: `${dp.metricName ?? dp.metricKey} · ${dp.orgName} · ${dp.reportingPeriodStart}` }))) return undefined;
+        if (!(await confirm({ title: tr("Delete this draft?"), item: `${dp.metricName ?? dp.metricKey} · ${dp.orgName} · ${dp.reportingPeriodStart}` }))) return undefined;
         await remove({ id: dp.id, version: dp.version }).unwrap();
         return onClose();
       }
@@ -99,11 +100,11 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
   return (
     <Drawer anchor="right" open={Boolean(id)} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="h6" sx={{ flex: 1, fontWeight: 700 }}>{dp?.metricName ?? 'Data point'}</Typography>
-        <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+        <Typography variant="h6" sx={{ flex: 1, fontWeight: 700 }}>{dp?.metricName ?? tr("Data point")}</Typography>
+        <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
       </Box>
       <Divider />
-      <Box sx={{ p: 2, overflowY: 'auto' }} role="region" aria-label="Data point details">
+      <Box sx={{ p: 2, overflowY: 'auto' }} role="region" aria-label={tr("Data point details")}>
         {isLoading && <LoadingState />}
         {isError && <ErrorState error={error} onRetry={refetch} />}
         {dp && (
@@ -114,17 +115,17 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
             </Box>
             {dp.statusReason && (
               <Alert severity={dp.validationStatus === 'rejected' ? 'warning' : 'info'}>
-                {dp.validationStatus === 'rejected' ? 'Rejected: ' : 'Reopened: '}{dp.statusReason}
+                {dp.validationStatus === 'rejected' ? tr("Rejected: ") : tr("Reopened: ")}{dp.statusReason}
               </Alert>
             )}
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700 }} aria-label="Value">
-                {dp.numericValue != null ? Number(dp.numericValue).toLocaleString() : dp.textValue}{' '}
+              <Typography variant="h4" sx={{ fontWeight: 700 }} aria-label={tr("Value")}>
+                {dp.numericValue != null ? Number(dp.numericValue).toLocaleString(formattingLocale()) : dp.textValue}{' '}
                 <Typography component="span" variant="h6" color="text.secondary">{dp.unit}</Typography>
               </Typography>
               {dp.originalCurrency && (
-                <Typography variant="body2" color="text.secondary" aria-label="Conversion">
-                  {Number(dp.originalAmount).toLocaleString()} {dp.originalCurrency} × {Number(dp.fxRate)} ({dp.fxRateDate}; {dp.fxRateSource})
+                <Typography variant="body2" color="text.secondary" aria-label={tr("Conversion")}>
+                  {Number(dp.originalAmount).toLocaleString(formattingLocale())} {dp.originalCurrency} × {Number(dp.fxRate)} ({dp.fxRateDate}; {dp.fxRateSource})
                 </Typography>
               )}
               <Typography variant="body2" sx={{ mt: 1 }}>
@@ -132,7 +133,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
                 {dp.subCategory ? ` · ${dp.subCategory}` : ''}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Source system: {dp.sourceName ?? 'not recorded'} · Responsible: {dp.ownerName ?? '—'} · Entered by {dp.createdByName ?? '—'} on {when(dp.createdAt)}
+                {tr("Source system:")} {dp.sourceName ?? tr("not recorded")} {tr("· Responsible:")} {dp.ownerName ?? '—'} {tr("· Entered by")} {dp.createdByName ?? '—'} {tr("on")} {when(dp.createdAt)}
               </Typography>
             </Box>
 
@@ -143,18 +144,18 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
                   <Button key={a} size="small" disabled={moving}
                     variant={['approve', 'validate', 'submit'].includes(a) ? 'contained' : 'outlined'}
                     color={a === 'reject' || a === 'delete' ? 'error' : 'primary'} onClick={() => act(a)}>
-                    {ACTION_LABELS[a] ?? a}
+                    {tr(ACTION_LABELS[a]) ?? a}
                   </Button>
                 ))}
                 {Object.entries(dp.blockedActions ?? {}).map(([a, reason]) => (
-                  <BlockedAction key={a} label={ACTION_LABELS[a] ?? a} reason={reason} />
+                  <BlockedAction key={a} label={tr(ACTION_LABELS[a]) ?? a} reason={reason} />
                 ))}
               </Box>
             )}
 
             {q && (
-              <Box aria-label="Quality score">
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Data quality {pct(dp.qualityScore)}%</Typography>
+              <Box aria-label={tr("Quality score")}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Data quality")} {pct(dp.qualityScore)}%</Typography>
                 {SUB_SCORES.map(([key, label, weight]) => (
                   <Box key={key} sx={{ mb: 0.75 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -169,16 +170,16 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
             )}
 
             {warnings.length > 0 && (
-              <Alert severity="warning" aria-label="Rule warnings">
-                {warnings.map((w) => <div key={w.code}>{w.message}</div>)}
+              <Alert severity="warning" aria-label={tr("Rule warnings")}>
+                {warnings.map((w) => <div key={w.code}>{tr(w.message)}</div>)}
               </Alert>
             )}
 
-            <FileUpload resourceType="data_point" resourceId={dp.id} label="Evidence" />
+            <FileUpload resourceType="data_point" resourceId={dp.id} label={tr("Evidence")} />
 
             <Box>
-              <Typography variant="subtitle2">History</Typography>
-              <List dense aria-label="History">
+              <Typography variant="subtitle2">{tr("History")}</Typography>
+              <List dense aria-label={tr("History")}>
                 {history.map((h, i) => (
                   <ListItem key={`${h.at}-${i}`} disableGutters>
                     <ListItemText

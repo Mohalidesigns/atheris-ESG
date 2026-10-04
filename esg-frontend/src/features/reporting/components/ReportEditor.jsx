@@ -13,18 +13,20 @@ import { toFormError } from '../../../services/apiSlice';
 import { applyProblem } from '../../../services/formErrors';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useFrameworksQuery, useMetricsQuery } from '../../reference/referenceApi';
+import { useKpisQuery } from '../../analytics/analyticsApi';
 import {
   useDeleteReportMutation, useGenerateReportMutation, useReportPreviewMutation, useLazyReportVersionQuery, useRefreshReportMutation, useReopenReportMutation, useReportQuery,
   useSaveSectionsMutation, useSubmitReportMutation,
 } from '../reportingApi';
 import {
-  CARBON_VARIABLES, COMPLIANCE_MEASURES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
+  ANALYTICS_VARIABLES, CARBON_VARIABLES, COMPLIANCE_MEASURES, OFFSET_VARIABLES, GOVERNANCE_VARIABLES, RISK_VARIABLES, SOCIAL_VARIABLES, SUPPLY_VARIABLES, TRAINING_VARIABLES, REPORT_STATUS, VERSION_EVENT, diffLines, sectionsSchema, toSectionsBody,
 } from '../schemas';
 import ApprovalPanel from './ApprovalPanel';
 import ReportDialog from './ReportDialog';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
+import { tr, formattingLocale } from '../../../i18n';
 
-const when = (t) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
+const when = (t) => (t ? new Date(t).toLocaleString(formattingLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
 function Rendered({ text }) {
   return (text ?? '').split(/\n\s*\n/).map((p, i) => (
@@ -33,7 +35,7 @@ function Rendered({ text }) {
 }
 
 /** Simple narrative editor: text with paragraphs and "- " bullets, plus an "Insert data" menu for {{variables}}. */
-function SectionEditor({ control, index, remove, move, count, metrics, frameworks }) {
+function SectionEditor({ control, index, remove, move, count, metrics, frameworks, kpis, analytics }) {
   const [anchor, setAnchor] = useState(null);
   // Phase 2: the caret is remembered as the user types or clicks, because opening the Insert menu takes the focus away.
   const caret = useRef(null);
@@ -67,14 +69,14 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
             <Grid container spacing={1} alignItems="flex-start">
               <Grid size={{ xs: 12, md: 7 }}>
                 <Controller name={`sections.${index}.title`} control={control} render={({ field: t, fieldState: fs }) => (
-                  <TextField {...t} fullWidth size="small" label="Section title" error={!!fs.error} helperText={fs.error?.message} />
+                  <TextField {...t} fullWidth size="small" label={tr("Section title")} error={!!fs.error} helperText={tr(fs.error?.message)} />
                 )} />
               </Grid>
               <Grid size={{ xs: 8, md: 3 }}>
                 <Controller name={`sections.${index}.type`} control={control} render={({ field: t }) => (
-                  <TextField {...t} select fullWidth size="small" label="Type">
-                    <MenuItem value="narrative">Narrative</MenuItem>
-                    <MenuItem value="data">Data</MenuItem>
+                  <TextField {...t} select fullWidth size="small" label={tr("Type")}>
+                    <MenuItem value="narrative">{tr("Narrative")}</MenuItem>
+                    <MenuItem value="data">{tr("Data")}</MenuItem>
                   </TextField>
                 )} />
               </Grid>
@@ -85,30 +87,37 @@ function SectionEditor({ control, index, remove, move, count, metrics, framework
               </Grid>
               <Grid size={12}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-                  <Button size="small" startIcon={<FormatListBulleted />} onClick={() => insert('\n- ', false)}>Bullet</Button>
-                  <Button size="small" startIcon={<DataObject />} onClick={(e) => setAnchor(e.currentTarget)}>Insert data</Button>
+                  <Button size="small" startIcon={<FormatListBulleted />} onClick={() => insert('\n- ', false)}>{tr("Bullet")}</Button>
+                  <Button size="small" startIcon={<DataObject />} onClick={(e) => setAnchor(e.currentTarget)}>{tr("Insert data")}</Button>
                   <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { maxHeight: 360 } } }}>
-                    <MenuItem disabled>Emissions (Carbon)</MenuItem>
-                    {Object.entries(CARBON_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{carbon:${k}}}`)}>{l}</MenuItem>)}
-                    <MenuItem disabled>Governance</MenuItem>
-                    {Object.entries(GOVERNANCE_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{governance:${k}}}`)}>{l}</MenuItem>)}
-                    <MenuItem disabled>Risk & materiality</MenuItem>
-                    {Object.entries(RISK_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{risk:${k}}}`)}>{l}</MenuItem>)}
-                    <MenuItem disabled>Supply chain</MenuItem>
-                    {Object.entries(SUPPLY_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{supply:${k}}}`)}>{l}</MenuItem>)}
-                    <MenuItem disabled>Social</MenuItem>
-                    {Object.entries(SOCIAL_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{social:${k}}}`)}>{l}</MenuItem>)}
-                    <MenuItem disabled>Compliance</MenuItem>
+                    <MenuItem disabled>{tr("Emissions (Carbon)")}</MenuItem>
+                    {Object.entries(CARBON_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{carbon:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Carbon credits")}</MenuItem>
+                    {Object.entries(OFFSET_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{offsets:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Training")}</MenuItem>
+                    {Object.entries(TRAINING_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{training:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Governance")}</MenuItem>
+                    {Object.entries(GOVERNANCE_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{governance:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Risk & materiality")}</MenuItem>
+                    {Object.entries(RISK_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{risk:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Supply chain")}</MenuItem>
+                    {Object.entries(SUPPLY_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{supply:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    {analytics && <MenuItem disabled>{tr("Analytics")}</MenuItem>}
+                    {analytics && Object.entries(ANALYTICS_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{analytics:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    {kpis.map((k) => <MenuItem key={k.id} onClick={() => insert(`{{kpi:${k.code}}}`)}>{tr("KPI:")} {k.name}</MenuItem>)}
+                    <MenuItem disabled>{tr("Social")}</MenuItem>
+                    {Object.entries(SOCIAL_VARIABLES).map(([k, l]) => <MenuItem key={k} onClick={() => insert(`{{social:${k}}}`)}>{tr(l)}</MenuItem>)}
+                    <MenuItem disabled>{tr("Compliance")}</MenuItem>
                     {frameworks.map((f) => (
                       <MenuItem key={f} onClick={() => insert(`{{compliance:${f}:completeness}}`)}>{f} {COMPLIANCE_MEASURES.completeness}</MenuItem>
                     ))}
-                    <MenuItem disabled>Data Hub metrics</MenuItem>
+                    <MenuItem disabled>{tr("Data Hub metrics")}</MenuItem>
                     {metrics.map((m) => <MenuItem key={m.metricKey} onClick={() => insert(`{{metric:${m.metricKey}}}`)}>{m.name}</MenuItem>)}
                   </Menu>
                 </Box>
-                <TextField {...field} id={`section-${index}-content`} inputRef={textarea} fullWidth multiline minRows={4} label="Text"
+                <TextField {...field} id={`section-${index}-content`} inputRef={textarea} fullWidth multiline minRows={4} label={tr("Text")}
                   inputProps={{ onSelect: remember, onKeyUp: remember, onClick: remember, onBlur: remember }}
-                  error={!!fieldState.error} helperText={fieldState.error?.message ?? 'Blank line = new paragraph; {{…}} values are filled from approved data'} />
+                  error={!!fieldState.error} helperText={tr(fieldState.error?.message) ?? tr("Blank line = new paragraph; {{…}} values are filled from approved data")} />
               </Grid>
             </Grid>
           </CardContent>
@@ -123,7 +132,9 @@ function ContentTab({ report }) {
   const editable = report.status === 'draft' && can('reports:update');
   const { data: metricList = [] } = useMetricsQuery();
   const { data: frameworkList = [] } = useFrameworksQuery();
-  const ctx = useMemo(() => ({ metricKeys: metricList.map((m) => m.metricKey), frameworks: frameworkList.map((f) => f.code) }), [metricList, frameworkList]);
+  const { data: kpiList } = useKpisQuery(undefined, { skip: !can('analytics:read') });
+  const ctx = useMemo(() => ({ metricKeys: metricList.map((m) => m.metricKey), frameworks: frameworkList.map((f) => f.code),
+    kpiCodes: kpiList ? kpiList.map((k) => k.code) : null }), [metricList, frameworkList, kpiList]);
   const [save, { isLoading }] = useSaveSectionsMutation();
   const [formError, setFormError] = useState('');
   const { control, handleSubmit, setError } = useForm({
@@ -146,7 +157,7 @@ function ContentTab({ report }) {
         {report.sections.map((s) => (
           <Grid key={s.id} size={12}>
             <Card aria-label={`Section ${s.title}`}><CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{s.title}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{tr(s.title)}</Typography>
               <Rendered text={s.rendered} />
             </CardContent></Card>
           </Grid>
@@ -161,19 +172,19 @@ function ContentTab({ report }) {
         {fields.map((f, i) => (
           <Grid key={f.id} size={12}>
             <SectionEditor control={control} index={i} remove={remove} move={move} count={fields.length}
-              metrics={metricList} frameworks={ctx.frameworks.filter((c) => frameworkList.find((x) => x.code === c)?.requirementCount > 0)} />
+              metrics={metricList} kpis={kpiList ?? []} analytics={Boolean(kpiList)} frameworks={ctx.frameworks.filter((c) => frameworkList.find((x) => x.code === c)?.requirementCount > 0)} />
           </Grid>
         ))}
       </Grid>
       <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-        <Button startIcon={<Add />} onClick={() => append({ title: '', type: 'narrative', content: '' })}>Add section</Button>
+        <Button startIcon={<Add />} onClick={() => append({ title: '', type: 'narrative', content: '' })}>{tr("Add section")}</Button>
         <Box sx={{ flex: 1 }} />
-        <Button type="submit" variant="contained" disabled={isLoading}>Save sections</Button>
+        <Button type="submit" variant="contained" disabled={isLoading}>{tr("Save sections")}</Button>
       </Box>
-      <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Preview (saved version)</Typography>
+      <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>{tr("Preview (saved version)")}</Typography>
       {report.sections.map((s) => (
         <Box key={s.id} sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{s.title}</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{tr(s.title)}</Typography>
           <Rendered text={s.rendered} />
         </Box>
       ))}
@@ -188,23 +199,23 @@ function DataTab({ report }) {
     <Card>
       <CardContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Values captured {when(report.snapshotAt)} for {report.reportingPeriodStart} – {report.reportingPeriodEnd}. They change only when you refresh the draft.
+          {tr("Values captured")} {when(report.snapshotAt)} {tr("for")} {report.reportingPeriodStart} – {report.reportingPeriodEnd}{tr(". They change only when you refresh the draft.")}
         </Typography>
         {provisional.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 1 }} aria-label="Provisional values">
-            {provisional.length} value{provisional.length === 1 ? '' : 's'} use{provisional.length === 1 ? 's' : ''} emission factors still pending expert review:
-            {' '}{provisional.map(([k]) => k).join(', ')}. The PDF and Excel exports mark them provisional.
+          <Alert severity="warning" sx={{ mb: 1 }} aria-label={tr("Provisional values")}>
+            {provisional.length} {tr("value")}{provisional.length === 1 ? '' : 's'} {tr("use")}{provisional.length === 1 ? 's' : ''} {tr("emission factors still pending expert review:")}
+            {' '}{provisional.map(([k]) => k).join(', ')}{tr(". The PDF and Excel exports mark them provisional.")}
           </Alert>
         )}
-        <Table size="small" aria-label="Data snapshot">
-          <TableHead><TableRow><TableCell>Value</TableCell><TableCell>Reported</TableCell><TableCell>Basis</TableCell></TableRow></TableHead>
+        <Table size="small" aria-label={tr("Data snapshot")}>
+          <TableHead><TableRow><TableCell>{tr("Value")}</TableCell><TableCell>{tr("Reported")}</TableCell><TableCell>{tr("Basis")}</TableCell></TableRow></TableHead>
           <TableBody>
             {rows.map(([k, v]) => (
               <TableRow key={k}>
                 <TableCell sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem' }}>{k}</TableCell>
                 <TableCell>
-                  {v.status === 'ok' ? <strong>{v.display}</strong> : <Chip size="small" color="warning" variant="outlined" label="Not reported" />}
-                  {v.provisional && <Chip size="small" color="warning" variant="outlined" label="Provisional" sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
+                  {v.status === 'ok' ? <strong>{v.display}</strong> : <Chip size="small" color="warning" variant="outlined" label={tr("Not reported")} />}
+                  {v.provisional && <Chip size="small" color="warning" variant="outlined" label={tr("Provisional")} sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
                 </TableCell>
                 <TableCell>
                   <Typography variant="caption">{v.basis}</Typography>
@@ -243,33 +254,33 @@ function VersionsTab({ report }) {
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, md: 5 }}>
         <Card>
-          <Table size="small" aria-label="Versions">
-            <TableHead><TableRow><TableCell padding="checkbox" /><TableCell>Version</TableCell><TableCell>What</TableCell><TableCell>Who / when</TableCell></TableRow></TableHead>
+          <Table size="small" aria-label={tr("Versions")}>
+            <TableHead><TableRow><TableCell padding="checkbox" /><TableCell>{tr("Version")}</TableCell><TableCell>{tr("What")}</TableCell><TableCell>{tr("Who / when")}</TableCell></TableRow></TableHead>
             <TableBody>
               {report.versions.map((v) => (
                 <TableRow key={v.id}>
                   <TableCell padding="checkbox">
                     <Checkbox size="small" checked={picked.includes(v.id)} onChange={() => toggle(v.id)} inputProps={{ 'aria-label': `Compare ${v.label} ${v.event}` }} />
                   </TableCell>
-                  <TableCell><strong>{v.label}</strong></TableCell>
-                  <TableCell>{VERSION_EVENT[v.event] ?? v.event}{v.comment && <Typography variant="caption" display="block">{v.comment}</Typography>}</TableCell>
+                  <TableCell><strong>{tr(v.label)}</strong></TableCell>
+                  <TableCell>{tr(VERSION_EVENT[v.event]) ?? v.event}{v.comment && <Typography variant="caption" display="block">{v.comment}</Typography>}</TableCell>
                   <TableCell><Typography variant="caption">{v.createdBy}<br />{when(v.createdAt)}</Typography></TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-          <Box sx={{ p: 1 }}><Button size="small" disabled={picked.length !== 2} onClick={run}>Compare selected</Button></Box>
+          <Box sx={{ p: 1 }}><Button size="small" disabled={picked.length !== 2} onClick={run}>{tr("Compare selected")}</Button></Box>
         </Card>
       </Grid>
       <Grid size={{ xs: 12, md: 7 }}>
         {problem && <Alert severity="error">{problem}</Alert>}
         {compare && (
-          <Card aria-label="Version comparison"><CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>{compare.a.label} → {compare.b.label}</Typography>
-            {sectionDiffs.length === 0 && <Typography color="text.secondary">No differences in the text.</Typography>}
+          <Card aria-label={tr("Version comparison")}><CardContent>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr(compare.a.label)} → {tr(compare.b.label)}</Typography>
+            {sectionDiffs.length === 0 && <Typography color="text.secondary">{tr("No differences in the text.")}</Typography>}
             {sectionDiffs.map((d) => (
               <Box key={d.title} sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{d.title}</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{tr(d.title)}</Typography>
                 {d.lines.filter((l) => l.type !== 'same').map((l, i) => (
                   <Typography key={i} variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.8rem',
                     bgcolor: l.type === 'added' ? 'success.light' : 'error.light', px: 0.5 }}>
@@ -308,9 +319,9 @@ function ExportsTab({ report }) {
   return (
     <Card>
       {problem && <Alert severity="error" sx={{ m: 1 }}>{problem}</Alert>}
-      {report.exports.length === 0 ? <CardContent><Typography color="text.secondary">No exports yet. An approved report can be exported to PDF or Excel.</Typography></CardContent> : (
-        <Table size="small" aria-label="Exports" data-sticky-actions>
-          <TableHead><TableRow><TableCell>Version</TableCell><TableCell>Format</TableCell><TableCell>Status</TableCell><TableCell>Who / when</TableCell><TableCell /></TableRow></TableHead>
+      {report.exports.length === 0 ? <CardContent><Typography color="text.secondary">{tr("No exports yet. An approved report can be exported to PDF or Excel.")}</Typography></CardContent> : (
+        <Table size="small" aria-label={tr("Exports")} data-sticky-actions>
+          <TableHead><TableRow><TableCell>{tr("Version")}</TableCell><TableCell>{tr("Format")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell>{tr("Who / when")}</TableCell><TableCell /></TableRow></TableHead>
           <TableBody>
             {report.exports.map((j) => (
               <TableRow key={j.id}>
@@ -362,13 +373,13 @@ export default function ReportEditor({ id, onBack }) {
   const neverApproved = !report.versions.some((v) => v.event === 'approved');
   return (
     <Box>
-      <Button startIcon={<ArrowBack />} onClick={onBack} sx={{ mb: 1 }}>All reports</Button>
+      <Button startIcon={<ArrowBack />} onClick={onBack} sx={{ mb: 1 }}>{tr("All reports")}</Button>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 2 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>{report.title}</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>{tr(report.title)}</Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mt: 0.5 }}>
-            <Chip size="small" color={status.color} label={status.label} aria-label="Report status" />
-            <Chip size="small" variant="outlined" label={report.versionLabel} aria-label="Report version" />
+            <Chip size="small" color={status.color} label={tr(status.label)} aria-label={tr("Report status")} />
+            <Chip size="small" variant="outlined" label={report.versionLabel} aria-label={tr("Report version")} />
             <Typography variant="caption" color="text.secondary">
               {report.templateName}{report.frameworkCode ? ` · ${report.frameworkCode}` : ''} · {report.reportingPeriodStart} – {report.reportingPeriodEnd}
             </Typography>
@@ -377,29 +388,29 @@ export default function ReportEditor({ id, onBack }) {
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           {report.status === 'draft' && (
             <Can permission="reports:update">
-              <Button size="small" onClick={() => setEditing(true)}>Edit details</Button>
-              <Tooltip describeChild title="Capture the latest approved data for the period">
-                <Button size="small" disabled={rf.isLoading} onClick={() => act(() => refresh({ id, version: report.version }).unwrap(), 'Data refreshed.')}>Refresh data</Button>
+              <Button size="small" onClick={() => setEditing(true)}>{tr("Edit details")}</Button>
+              <Tooltip describeChild title={tr("Capture the latest approved data for the period")}>
+                <Button size="small" disabled={rf.isLoading} onClick={() => act(() => refresh({ id, version: report.version }).unwrap(), 'Data refreshed.')}>{tr("Refresh data")}</Button>
               </Tooltip>
               <Button size="small" variant="contained" disabled={sb.isLoading}
-                onClick={() => act(() => submit({ id, version: report.version }).unwrap(), 'Submitted for approval.')}>Submit for approval</Button>
+                onClick={() => act(() => submit({ id, version: report.version }).unwrap(), 'Submitted for approval.')}>{tr("Submit for approval")}</Button>
             </Can>
           )}
           {report.status === 'draft' && neverApproved && (
             <Can permission="reports:delete">
-              <Button size="small" color="error" onClick={async () => (await confirm({ title: 'Delete this draft report?', item: report.title, message: 'The draft and its versions are removed. This can\'t be undone.' })) && act(async () => {
+              <Button size="small" color="error" onClick={async () => (await confirm({ title: tr("Delete this draft report?"), item: report.title, message: tr("The draft and its versions are removed. This can't be undone.") })) && act(async () => {
                 await remove({ id, version: report.version }).unwrap();
                 onBack();
-              })}>Delete</Button>
+              })}>{tr("Delete")}</Button>
             </Can>
           )}
           {report.status === 'approved' && (
             <Can permission="reports:update">
-              <Button size="small" disabled={ro.isLoading} onClick={() => act(() => reopen({ id, version: report.version }).unwrap(), 'Reopened as a new draft revision.')}>Reopen for revision</Button>
+              <Button size="small" disabled={ro.isLoading} onClick={() => act(() => reopen({ id, version: report.version }).unwrap(), 'Reopened as a new draft revision.')}>{tr("Reopen for revision")}</Button>
             </Can>
           )}
           {report.status !== 'approved' && (
-            <Tooltip describeChild title="The report as it stands now, watermarked DRAFT. The final PDF is available once it is approved.">
+            <Tooltip describeChild title={tr("The report as it stands now, watermarked DRAFT. The final PDF is available once it is approved.")}>
               <Button size="small" variant="outlined" disabled={pv.isLoading} onClick={() => act(async () => {
                 // An authenticated PDF can't be a plain link: fetch it, then show it in a new tab (or save it).
                 const blob = await preview(id).unwrap();
@@ -411,7 +422,7 @@ export default function ReportEditor({ id, onBack }) {
                   a.click();
                 }
                 setTimeout(() => URL.revokeObjectURL(url), 60000);
-              }, 'Draft preview opened (watermarked DRAFT).')}>Preview draft PDF</Button>
+              }, 'Draft preview opened (watermarked DRAFT).')}>{tr("Preview draft PDF")}</Button>
             </Tooltip>
           )}
           {!neverApproved && (
@@ -419,23 +430,23 @@ export default function ReportEditor({ id, onBack }) {
               <Button size="small" variant="outlined" disabled={gen.isLoading} onClick={() => act(async () => {
                 await generate({ id, format: 'pdf' }).unwrap();
                 setTab(4);
-              }, 'PDF generated from the approved version.')}>Export PDF</Button>
+              }, 'PDF generated from the approved version.')}>{tr("Export PDF")}</Button>
               <Button size="small" variant="outlined" disabled={gen.isLoading} onClick={() => act(async () => {
                 await generate({ id, format: 'xlsx' }).unwrap();
                 setTab(4);
-              }, 'Excel generated from the approved version.')}>Export Excel</Button>
+              }, 'Excel generated from the approved version.')}>{tr("Export Excel")}</Button>
             </Can>
           )}
         </Box>
       </Box>
-      {message && <Alert severity={message.severity} sx={{ mb: 2 }}>{message.text}</Alert>}
-      {report.status === 'in_review' && <Alert severity="info" sx={{ mb: 2 }}>Awaiting approval: the report can't be changed until it is approved or sent back.</Alert>}
+      {message && <Alert severity={message.severity} sx={{ mb: 2 }}>{tr(message.text)}</Alert>}
+      {report.status === 'in_review' && <Alert severity="info" sx={{ mb: 2 }}>{tr("Awaiting approval: the report can't be changed until it is approved or sent back.")}</Alert>}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}>
-        <Tab label="Content" />
-        <Tab label="Data" />
-        <Tab label="Approval" />
-        <Tab label="Versions" />
-        <Tab label="Exports" />
+        <Tab label={tr("Content")} />
+        <Tab label={tr("Data")} />
+        <Tab label={tr("Approval")} />
+        <Tab label={tr("Versions")} />
+        <Tab label={tr("Exports")} />
       </Tabs>
       {tab === 0 && <ContentTab key={`${report.id}-${report.version}-${report.status}`} report={report} />}
       {tab === 1 && <DataTab report={report} />}
