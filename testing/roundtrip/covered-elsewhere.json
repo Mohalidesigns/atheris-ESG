@@ -224,5 +224,8 @@
   ],
   "Integration request status": [
     "com.esg.integrations.IntegrationsApiTest#aClientRequestsAConnectorAndThePlatformTeamActivatesIt"
+  ],
+  "Account menu / sign-in: language": [
+    "com.esg.controller.LanguagePreferenceTest#aUserChoosesTheirOwnLanguage"
   ]
 }
