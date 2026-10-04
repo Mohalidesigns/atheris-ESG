@@ -7,6 +7,7 @@ import { applyProblem } from '../../../services/formErrors';
 import EvidencePicker from '../../dataHub/components/EvidencePicker';
 import { useAttestMutation } from '../complianceApi';
 import { ATTEST_STATUS, MAX_EVIDENCE, attestationSchema, toAttestationBody } from '../schemas';
+import { tr } from '../../../i18n';
 
 /**
  * Records a requirement's status for the year (PUT /compliance/attestations): complete with evidence, in progress,
@@ -37,28 +38,27 @@ export default function AttestDialog({ framework, year, requirement, onClose }) 
       <form onSubmit={submit} noValidate>
         <DialogTitle>{framework} {requirement.code} · {year}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>{requirement.title}</Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>{tr(requirement.title)}</Typography>
           {quantitative && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              This requirement is met by approved data in the Data Hub. Mark it complete only when some of its data is approved and
-              the rest doesn't apply to you, or not applicable with the reason.
+              {tr("This requirement is met by approved data in the Data Hub. Mark it complete only when some of its data is approved and the rest doesn't apply to you, or not applicable with the reason.")}
             </Alert>
           )}
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2}>
-            <Grid size={12}><FormSelect control={control} name="status" label="Status" options={options} /></Grid>
-            <Grid size={12}><FormTextField control={control} name="notes" label="Notes" multiline minRows={3} /></Grid>
+            <Grid size={12}><FormSelect control={control} name="status" label={tr("Status")} options={options} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="notes" label={tr("Notes")} multiline minRows={3} /></Grid>
             <Grid size={12}>
               <Controller name="evidenceFileIds" control={control} render={({ field, fieldState }) => (
                 <EvidencePicker value={field.value} onChange={field.onChange} error={fieldState.error?.message} resourceType="compliance_attestation"
-                  max={MAX_EVIDENCE} caption="Evidence (the disclosure, policy, board minutes)" />
+                  max={MAX_EVIDENCE} caption={tr("Evidence (the disclosure, policy, board minutes)")} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>Save status</Button>
+          <Button onClick={onClose}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>{tr("Save status")}</Button>
         </DialogActions>
       </form>
     </Dialog>

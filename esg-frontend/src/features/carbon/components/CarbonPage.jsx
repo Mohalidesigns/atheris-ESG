@@ -9,6 +9,7 @@ import FinancedTab from './FinancedTab';
 import FlaringTab from './FlaringTab';
 import InstrumentsTab from './InstrumentsTab';
 import TargetsTab from './TargetsTab';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — tab labels
 const TABS = ['Overview', 'Emission records', 'Gas flaring', 'Reduction targets', 'RECs & PPAs', 'Financed (PCAF)', 'Emission factors'];
@@ -22,9 +23,9 @@ export default function CarbonPage() {
   const { data: orgs = [] } = useListOrganisationsQuery();
   return (
     <Box>
-      <PageHeader title="Carbon Accounting" subtitle="Scope 1, 2 and 3 emissions, GHG Protocol aligned"
+      <PageHeader title={tr("Carbon Accounting")} subtitle={tr("Scope 1, 2 and 3 emissions, GHG Protocol aligned")}
         actions={(
-          <TextField select size="small" label="Year" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
+          <TextField select size="small" label={tr("Year")} value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ minWidth: 110 }}>
             {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </TextField>
         )} />

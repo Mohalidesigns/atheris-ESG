@@ -54,6 +54,17 @@ public class GlobalExceptionHandler {
         return problem(ex.getStatus(), ex.getCode(), ex.getMessage(), req, null);
     }
 
+    /** WP-50: the AI service can't be used now; never replaced by an invented answer (D38). */
+    @ExceptionHandler(com.esg.ai.AiEngine.AiUnavailable.class)
+    public ResponseEntity<ProblemDetail> handleAiUnavailable(com.esg.ai.AiEngine.AiUnavailable ex, HttpServletRequest req) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "ESG-503-AI-UNAVAILABLE", ex.getMessage(), req, null);
+    }
+
+    @ExceptionHandler(com.esg.ai.AiEngine.AiRefused.class)
+    public ResponseEntity<ProblemDetail> handleAiRefused(com.esg.ai.AiEngine.AiRefused ex, HttpServletRequest req) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "ESG-422-AI-INPUT", ex.getMessage(), req, null);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
         Map<String, String> errors = new LinkedHashMap<>();

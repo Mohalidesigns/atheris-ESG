@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Investor portal form rules. Mirror the server exactly: InvestorDtos (Bean Validation) + ScorecardService,
@@ -149,7 +150,7 @@ export const toImpactBody = (v) => ({ irisCode: v.irisCode.trim(), name: v.name.
   visibleToInvestors: v.visibleToInvestors });
 
 export const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
-export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 1) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';
 export const saveBlob = (blobData, name) => {
   const href = URL.createObjectURL(blobData);

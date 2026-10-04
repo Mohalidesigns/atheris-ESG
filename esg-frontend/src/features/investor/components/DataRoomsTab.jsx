@@ -17,6 +17,7 @@ import {
   useRemoveRoomDocumentMutation, useRoomAccessLogQuery, useUpdateDataRoomMutation,
 } from '../investorApi';
 import { PURPOSES, ROOM_STATUS, emptyRoom, lagosToday, problemText, roomSchema, saveBlob, toRoomBody, toRoomForm } from '../schemas';
+import { tr } from '../../../i18n';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
@@ -43,20 +44,20 @@ export function RoomDialog({ room, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="sm" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${room.name}` : 'New data room'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${room.name}` : tr("New data room")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={12}><FormTextField control={control} name="name" label="Room name" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="purpose" label="Purpose" options={options(PURPOSES)} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="expiresOn" label="Expires on" /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="status" label="Status" options={options(ROOM_STATUS)} /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="name" label={tr("Room name")} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="purpose" label={tr("Purpose")} options={options(PURPOSES)} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormDateField control={control} name="expiresOn" label={tr("Expires on")} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="status" label={tr("Status")} options={options(ROOM_STATUS)} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
             <Grid size={12}>
               <Controller name="memberIds" control={control} render={({ field, fieldState }) => (
-                <TextField select fullWidth size="small" label="Investors with access" value={field.value} inputRef={field.ref} onBlur={field.onBlur}
+                <TextField select fullWidth size="small" label={tr("Investors with access")} value={field.value} inputRef={field.ref} onBlur={field.onBlur}
                   onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error}
-                  helperText={fieldState.error?.message ?? (people.length ? 'Users with the Investor viewer role' : 'Invite investors as users with the Investor viewer role first')}
+                  helperText={tr(fieldState.error?.message) ?? (people.length ? tr("Users with the Investor viewer role") : tr("Invite investors as users with the Investor viewer role first"))}
                   SelectProps={{ multiple: true, displayEmpty: true, renderValue: (sel) => (sel.length ? sel.map((id) => names[id] ?? 'Investor').join(', ') : 'Nobody yet') }}
                   slotProps={{ inputLabel: { shrink: true } }}>
                   {people.map((p) => <MenuItem key={p.id} value={p.id}>{p.name} · {p.email}</MenuItem>)}
@@ -65,14 +66,14 @@ export function RoomDialog({ room, onClose }) {
             </Grid>
             <Grid size={12}>
               <Controller name="watermark" control={control} render={({ field }) => (
-                <FormControlLabel control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} label="Watermark PDF downloads" />
+                <FormControlLabel control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />} label={tr("Watermark PDF downloads")} />
               )} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create room'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create room")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -100,8 +101,8 @@ function AddDocument({ roomId }) {
   };
   return (
     <Box>
-      <input ref={input} type="file" hidden onChange={chosen} aria-label="Room document" />
-      <Button size="small" startIcon={<UploadFile />} disabled={up.isLoading || a.isLoading} onClick={() => input.current.click()}>Add a document</Button>
+      <input ref={input} type="file" hidden onChange={chosen} aria-label={tr("Room document")} />
+      <Button size="small" startIcon={<UploadFile />} disabled={up.isLoading || a.isLoading} onClick={() => input.current.click()}>{tr("Add a document")}</Button>
       {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
     </Box>
   );
@@ -119,7 +120,7 @@ function RoomDrawer({ roomId, manager, onClose, onEdit }) {
   };
   return (
     <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 620 } } }}>
-      <Box sx={{ p: 3 }} role="region" aria-label="Data room">
+      <Box sx={{ p: 3 }} role="region" aria-label={tr("Data room")}>
         {isLoading && <LoadingState />}
         {error && <Alert severity="error">{problemText(error)}</Alert>}
         {room && (
@@ -127,20 +128,20 @@ function RoomDrawer({ roomId, manager, onClose, onEdit }) {
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{room.name}</Typography>
-                <Typography variant="body2" color="text.secondary">{PURPOSES[room.purpose]} · open until {room.expiresOn}{room.watermark ? ' · PDFs watermarked' : ''}</Typography>
-                {(room.status === 'closed' || room.expired) && <Chip size="small" color="warning" sx={{ mt: 0.5 }} label={room.expired ? 'Expired' : 'Closed'} />}
+                <Typography variant="body2" color="text.secondary">{tr(PURPOSES[room.purpose])} {tr("· open until")} {room.expiresOn}{room.watermark ? tr(" · PDFs watermarked") : ''}</Typography>
+                {(room.status === 'closed' || room.expired) && <Chip size="small" color="warning" sx={{ mt: 0.5 }} label={room.expired ? tr("Expired") : tr("Closed")} />}
               </Box>
               <Box>
-                {manager && <IconButton aria-label="Edit room" onClick={() => onEdit(room)}><Edit /></IconButton>}
-                <IconButton aria-label="Close" onClick={onClose}><Close /></IconButton>
+                {manager && <IconButton aria-label={tr("Edit room")} onClick={() => onEdit(room)}><Edit /></IconButton>}
+                <IconButton aria-label={tr("Close")} onClick={onClose}><Close /></IconButton>
               </Box>
             </Box>
-            {room.description && <Typography variant="body2" sx={{ mt: 1 }}>{room.description}</Typography>}
+            {tr(room.description) && <Typography variant="body2" sx={{ mt: 1 }}>{tr(room.description)}</Typography>}
             {failure && <Alert severity="error" sx={{ mt: 2 }}>{failure}</Alert>}
             <Divider sx={{ my: 2 }} />
-            <Typography variant="subtitle2">Documents</Typography>
-            {room.documents.length === 0 ? <Typography variant="body2" color="text.secondary">No documents yet.</Typography> : (
-              <List dense aria-label="Room documents">
+            <Typography variant="subtitle2">{tr("Documents")}</Typography>
+            {room.documents.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("No documents yet.")}</Typography> : (
+              <List dense aria-label={tr("Room documents")}>
                 {room.documents.map((d) => (
                   <ListItem key={d.id} secondaryAction={(
                     <Box>
@@ -157,17 +158,17 @@ function RoomDrawer({ roomId, manager, onClose, onEdit }) {
             {manager && (
               <>
                 <Divider sx={{ my: 2 }} />
-                <Typography variant="subtitle2">Investors with access</Typography>
-                <Typography variant="body2">{room.members.length ? room.members.map((m) => `${m.name} (${m.email})`).join(', ') : 'Nobody yet'}</Typography>
-                <Typography variant="subtitle2" sx={{ mt: 2 }}>Access log</Typography>
-                {log.length === 0 ? <Typography variant="body2" color="text.secondary">Nobody has opened the room yet.</Typography> : (
-                  <Table size="small" aria-label="Access log">
+                <Typography variant="subtitle2">{tr("Investors with access")}</Typography>
+                <Typography variant="body2">{room.members.length ? room.members.map((m) => `${m.name} (${m.email})`).join(', ') : tr("Nobody yet")}</Typography>
+                <Typography variant="subtitle2" sx={{ mt: 2 }}>{tr("Access log")}</Typography>
+                {log.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("Nobody has opened the room yet.")}</Typography> : (
+                  <Table size="small" aria-label={tr("Access log")}>
                     <TableBody>
                       {log.map((l, i) => (
                         <TableRow key={i}>
                           <TableCell>{l.at.slice(0, 16).replace('T', ' ')}</TableCell>
                           <TableCell>{l.userName}<Typography variant="caption" display="block" color="text.secondary">{l.email}</Typography></TableCell>
-                          <TableCell>{l.action === 'refused' ? 'refused (closed or expired)' : l.action}{l.documentTitle ? `: ${l.documentTitle}` : ''}{l.watermarked ? ' · watermarked' : ''}</TableCell>
+                          <TableCell>{l.action === 'refused' ? tr("refused (closed or expired)") : l.action}{l.documentTitle ? `: ${l.documentTitle}` : ''}{l.watermarked ? tr(" · watermarked") : ''}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -190,31 +191,31 @@ export default function DataRoomsTab({ rooms, manager }) {
   const [open, setOpen] = useState(null);
   const [error, setError] = useState('');
   const onDelete = async (r) => {
-    if (!(await confirm({ title: 'Delete this data room?', item: r.name, message: 'Investors lose access straight away; the access log is kept.' }))) return;
+    if (!(await confirm({ title: tr("Delete this data room?"), item: r.name, message: tr("Investors lose access straight away; the access log is kept.") }))) return;
     try { await remove(r.id).unwrap(); } catch (err) { setError(problemText(err)); }
   };
   return (
     <>
       {manager && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>New data room</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("New data room")}</Button>
         </Box>
       )}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
       <Card>
-        {rooms.length === 0 ? <CardContent><EmptyState title="No data rooms">{manager ? 'Create a room, add documents and give investors access.' : 'You have not been given access to a data room.'}</EmptyState></CardContent> : (
+        {rooms.length === 0 ? <CardContent><EmptyState title={tr("No data rooms")}>{manager ? tr("Create a room, add documents and give investors access.") : tr("You have not been given access to a data room.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Data rooms">
-              <TableHead><TableRow><TableCell>Room</TableCell><TableCell>Purpose</TableCell><TableCell>Expires</TableCell><TableCell>Documents</TableCell><TableCell /></TableRow></TableHead>
+            <Table size="small" aria-label={tr("Data rooms")}>
+              <TableHead><TableRow><TableCell>{tr("Room")}</TableCell><TableCell>{tr("Purpose")}</TableCell><TableCell>{tr("Expires")}</TableCell><TableCell>{tr("Documents")}</TableCell><TableCell /></TableRow></TableHead>
               <TableBody>
                 {rooms.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{r.name}{(r.status === 'closed' || r.expired) && <Chip size="small" sx={{ ml: 1 }} label={r.expired ? 'Expired' : 'Closed'} />}</TableCell>
-                    <TableCell>{PURPOSES[r.purpose]}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{r.name}{(r.status === 'closed' || r.expired) && <Chip size="small" sx={{ ml: 1 }} label={r.expired ? tr("Expired") : tr("Closed")} />}</TableCell>
+                    <TableCell>{tr(PURPOSES[r.purpose])}</TableCell>
                     <TableCell>{r.expiresOn}</TableCell>
                     <TableCell>{r.documents.length}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                      <Button size="small" onClick={() => setOpen(r.id)} aria-label={`Open ${r.name}`}>Open</Button>
+                      <Button size="small" onClick={() => setOpen(r.id)} aria-label={`Open ${r.name}`}>{tr("Open")}</Button>
                       {manager && <IconButton size="small" aria-label={`Delete ${r.name}`} onClick={() => onDelete(r)}><Delete fontSize="small" /></IconButton>}
                     </TableCell>
                   </TableRow>

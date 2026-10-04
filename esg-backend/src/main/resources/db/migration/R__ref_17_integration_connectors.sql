@@ -1,0 +1,38 @@
+-- WP-46 (D44): connectors offered to tenants. "on_request" ones are not connected to anything yet: a tenant requests
+-- one (Administration › Integrations), the platform team builds or configures it behind the ErpConnector adapter and
+-- activates it for that tenant. "available" ones need no set-up by us. Pending ESG/IT SME review of the list.
+INSERT INTO reference.integration_connectors (connector_key, name, category, method, description, data_provided, availability, sort_order) VALUES
+  ('api_push', 'REST API and IoT push (API key)', 'iot', 'push',
+   'Your own systems, IoT gateways and smart meters send readings to the Data Hub API with a scoped API key.',
+   'Any catalogue metric as draft data points (energy, fuel, water, waste, production)', 'available', 10),
+  ('csv_templates', 'File templates (CSV / Excel)', 'file', 'file',
+   'Export from any ERP, HR or utility system into the Data Hub import templates and upload the file.',
+   'Energy and fuel, utilities, workforce, waste — one template per source', 'available', 20),
+  ('sftp_drop', 'Scheduled file drop (SFTP)', 'file', 'sftp',
+   'Your system places the same template files on a secure SFTP folder on a schedule; they are imported automatically.',
+   'The same data as the file templates, without manual uploads', 'on_request', 30),
+  ('sap_s4hana', 'SAP S/4HANA', 'erp', 'api', 'Reads fuel, energy and materials postings and procurement spend from SAP S/4HANA.',
+   'Fuel and energy purchases, procurement spend (Scope 3), production volumes', 'on_request', 40),
+  ('sap_business_one', 'SAP Business One', 'erp', 'api', 'Reads purchases and inventory movements from SAP Business One (Service Layer).',
+   'Fuel and energy purchases, procurement spend (Scope 3)', 'on_request', 50),
+  ('oracle_erp', 'Oracle Fusion Cloud ERP / E-Business Suite', 'erp', 'api', 'Reads payables and procurement data from Oracle ERP.',
+   'Procurement spend (Scope 3), fuel and energy purchases', 'on_request', 60),
+  ('oracle_netsuite', 'Oracle NetSuite', 'erp', 'api', 'Reads vendor bills and item receipts from NetSuite.',
+   'Procurement spend (Scope 3), fuel and energy purchases', 'on_request', 70),
+  ('dynamics_365', 'Microsoft Dynamics 365 Finance / Business Central', 'erp', 'api', 'Reads purchase invoices and item ledger entries from Dynamics 365.',
+   'Procurement spend (Scope 3), fuel and energy purchases', 'on_request', 80),
+  ('quickbooks_online', 'QuickBooks Online', 'accounting', 'api', 'Reads bills and expenses by account from QuickBooks Online.',
+   'Spend by category (Scope 3), fuel and utility bills', 'on_request', 90),
+  ('sage', 'Sage (50, 300, Intacct)', 'accounting', 'api', 'Reads purchase ledger and expenses from Sage.',
+   'Spend by category (Scope 3), fuel and utility bills', 'on_request', 100),
+  ('seamlesshr', 'SeamlessHR', 'hris', 'api', 'Reads headcount, gender, age band, joiners and leavers from SeamlessHR.',
+   'Workforce snapshot, turnover, diversity', 'on_request', 110),
+  ('workday', 'Workday HCM', 'hris', 'api', 'Reads workforce data from Workday.', 'Workforce snapshot, turnover, diversity, training hours', 'on_request', 120),
+  ('sap_successfactors', 'SAP SuccessFactors', 'hris', 'api', 'Reads workforce and learning data from SuccessFactors.',
+   'Workforce snapshot, turnover, diversity, training hours', 'on_request', 130),
+  ('electricity_discos', 'Electricity distribution companies (meter and bill data)', 'utility', 'api',
+   'Reads metered consumption and bills from your electricity distribution company where it offers an interface.',
+   'Grid electricity (kWh) per site and month', 'on_request', 140)
+ON CONFLICT (connector_key) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, method = EXCLUDED.method,
+  description = EXCLUDED.description, data_provided = EXCLUDED.data_provided, availability = EXCLUDED.availability,
+  sort_order = EXCLUDED.sort_order;
