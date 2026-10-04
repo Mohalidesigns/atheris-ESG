@@ -39,7 +39,7 @@ describe('Hardening Phase 0: security and integrity', () => {
     cy.get(`[aria-label="Roles for ${roles.ESG_ANALYST.email}"]`).click();
     cy.get('[role="dialog"]').contains('label', 'Role').parent().find('[role="combobox"]').click();
     cy.get('[role="listbox"]').should('contain', 'TENANT ADMIN').and('not.contain', 'SUPER ADMIN');
-    cy.get('[role="option"]').first().type('{esc}');
+    cy.get('body').type('{esc}'); // close the list (the first option can be a disabled, already-held role)
   });
 
   it('S3/S2: a refused action and a settings change are in the Audit log, findable by name', () => {
@@ -93,7 +93,7 @@ describe('Hardening Phase 0: security and integrity', () => {
     cy.uniqueDay().then((day) => {
       cy.login(roles.ESG_DIRECTOR.email);
       cy.carbonTab('Emission records', 2026);
-      cy.calculateEmission({ activity: 'Diesel generator', org: 'Lagos HQ', day, amount: 10 });
+      cy.calculateEmission({ activity: 'Diesel (AGO) in generators', org: 'Lagos HQ', day, amount: 10 });
       cy.get('[aria-label="Calculation result"]').should('contain', 'Provisional factor');
     });
   });

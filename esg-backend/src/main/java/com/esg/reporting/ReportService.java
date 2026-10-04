@@ -65,7 +65,11 @@ public class ReportService {
     private final ObjectMapper json;
     private final Clock clock;
 
-    public ReportService(JdbcTemplate jdbc, VariableEngine engine, NotificationService notifications, ObjectMapper json, Clock clock) {
+    private final org.springframework.context.ApplicationEventPublisher events;
+
+    public ReportService(JdbcTemplate jdbc, VariableEngine engine, NotificationService notifications, ObjectMapper json, Clock clock,
+                         org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.jdbc = jdbc;
         this.engine = engine;
         this.notifications = notifications;
@@ -281,6 +285,7 @@ public class ReportService {
                 jdbc.update("update reporting.reports set status = 'approved', approved_at = now(), version_major = version_major + 1, version_minor = 0, "
                         + "report_version = 'v' || (version_major + 1) || '.0' where id = ?", id);
                 recordVersion(id, "approved", blank(r.comments()));
+                events.publishEvent(new ReportEvents.Approved(id));
                 notifications.notifyAfterCommit(submitter, "REPORT_APPROVED", Map.of("title", title, "version", get(id).versionLabel()));
             }
         } else {
@@ -339,7 +344,7 @@ public class ReportService {
     }
 
     /** The latest approved version: what exports render. */
-    VersionDetail latestApproved(UUID reportId) {
+    public VersionDetail latestApproved(UUID reportId) {
         List<UUID> ids = jdbc.queryForList("select id from reporting.report_versions where report_id = ? and event = 'approved' "
                 + "order by created_at desc limit 1", UUID.class, reportId);
         if (ids.isEmpty()) {
@@ -392,10 +397,15 @@ public class ReportService {
                 (rs, i) -> {
                     Timestamp due = rs.getTimestamp(10);
                     boolean open = "in_progress".equals(wStatus) && rs.getInt(2) == current && "pending".equals(rs.getString(5));
-                    boolean canAct = open && me != null && !me.equals(submitter) && !actedBy.contains(me) && hasRole(me, rs.getString(4));
+                    boolean role = open && me != null && hasRole(me, rs.getString(4));
+                    boolean canAct = role && !me.equals(submitter) && !actedBy.contains(me);
+                    // Phase 2: the step's role holder who may not act (segregation of duties) is told why.
+                    String blocked = !role || canAct ? null : me.equals(submitter)
+                            ? "You submitted this report — another person must approve it"
+                            : "You approved an earlier step — another person must approve this one";
                     return new Step(rs.getObject(1, UUID.class), rs.getInt(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
                             instant(rs.getTimestamp(7)), rs.getString(8), instant(rs.getTimestamp(9)), due == null ? null : due.toInstant(),
-                            open && due != null && due.toInstant().isBefore(now), canAct);
+                            open && due != null && due.toInstant().isBefore(now), canAct, blocked);
                 }, workflow);
         return new Approval(workflow, wStatus, current, (Integer) w.get(0).get("total_steps"), steps);
     }

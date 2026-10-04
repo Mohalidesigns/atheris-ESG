@@ -21,13 +21,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * Reads the first sheet of an .xlsx file (Apache POI) or a .csv file (OpenCSV) as rows of strings (TRD §8.1).
  * Excel dates become ISO dates and numbers keep their full precision, so both formats parse the same way.
  */
-final class TabularReader {
+public final class TabularReader {
 
-    static final int MAX_ROWS = 5000;
+    public static final int MAX_ROWS = 5000;
 
     private TabularReader() {}
 
-    static List<List<String>> read(InputStream in, String format) throws IOException {
+    public static List<List<String>> read(InputStream in, String format) throws IOException {
         return "xlsx".equals(format) ? readXlsx(in) : readCsv(in);
     }
 

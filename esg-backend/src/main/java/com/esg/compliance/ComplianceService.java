@@ -23,6 +23,8 @@ import com.esg.exception.FieldValidationException;
 import com.esg.reference.FrameworkCatalogService;
 import com.esg.reference.ReferenceDtos.Framework;
 import com.esg.security.TenantContext;
+import com.esg.risk.RiskInsights;
+import com.esg.social.SocialMetricsService;
 import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -54,17 +56,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class ComplianceService {
 
     /** Metrics the Carbon module supplies: met for a year when emission records of the scope exist (D23 (2)). */
+    /** Prefix of non-metric evidence in the engine's metric lists (reference.requirement_data_sources, F7). */
+    static final String SOURCE = "source:";
+
     static final Map<String, String> CARBON_METRICS = Map.of(
             "scope1_tco2e", "scope_1", "scope2_location_tco2e", "scope_2", "scope3_tco2e", "scope_3");
 
     private final JdbcTemplate jdbc;
     private final FrameworkCatalogService catalog;
     private final Clock clock;
+    private final SocialMetricsService social;
+    private final RiskInsights risk;
 
-    public ComplianceService(JdbcTemplate jdbc, FrameworkCatalogService catalog, Clock clock) {
+    public ComplianceService(JdbcTemplate jdbc, FrameworkCatalogService catalog, Clock clock, SocialMetricsService social, RiskInsights risk) {
+        this.risk = risk;
         this.jdbc = jdbc;
         this.catalog = catalog;
         this.clock = clock;
+        this.social = social;
     }
 
     // ---------------------------------------------------------------- gap analysis
@@ -133,7 +142,8 @@ public class ComplianceService {
         Framework f = catalog.framework(r.framework());
         List<Map<String, Object>> reqs = jdbc.queryForList("select r.id, exists (select 1 from compliance.framework_requirements c "
                         + "where c.parent_req_id = r.id and c.is_active) as heading, r.data_type = 'quantitative' and exists (select 1 "
-                        + "from reference.metric_requirements m where m.requirement_id = r.id) as quantitative "
+                        + "from reference.metric_requirements m where m.requirement_id = r.id union all select 1 "
+                        + "from reference.requirement_data_sources d where d.requirement_id = r.id) as quantitative "
                         + "from compliance.framework_requirements r "
                         + "where r.framework_id = ? and r.requirement_code = ? and r.is_active", f.id(), r.requirementCode());
         if (reqs.isEmpty()) {
@@ -295,10 +305,16 @@ public class ComplianceService {
         jdbc.query("select requirement_id, metric_key from reference.metric_requirements order by metric_key",
                 rs -> { metrics.computeIfAbsent(rs.getObject(1, UUID.class), k -> new ArrayList<>()).add(rs.getString(2)); });
         Map<String, MetricState> states = new HashMap<>();
-        jdbc.query("select metric_key, bool_or(validation_status = 'approved'), bool_or(validation_status in ('draft', 'submitted', 'validated')) "
-                        + "from data_hub.data_points where deleted_at is null and extract(year from reporting_period_end) = ? group by metric_key",
-                rs -> { states.put(rs.getString(1), new MetricState(rs.getBoolean(2), rs.getBoolean(3))); }, year);
-        jdbc.query("select scope from carbon.emission_records where deleted_at is null and extract(year from reporting_period_end) = ? "
+        // WP-51: per-metric index lookups (idx_data_points_metric_status_end) instead of aggregating a year of points.
+        String has = "exists (select 1 from data_hub.data_points d where d.metric_key = m.metric_key and d.deleted_at is null "
+                + "and d.reporting_period_end between ? and ? and d.validation_status ";
+        jdbc.query("select m.metric_key, " + has + "= 'approved'), " + has + "in ('draft', 'submitted', 'validated')) from reference.metrics m",
+                rs -> {
+                    if (rs.getBoolean(2) || rs.getBoolean(3)) {
+                        states.put(rs.getString(1), new MetricState(rs.getBoolean(2), rs.getBoolean(3)));
+                    }
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)));
+        jdbc.query("select scope from carbon.emission_records where deleted_at is null and reporting_period_end between ? and ? "
                 + "group by scope", rs -> {
                     String scope = rs.getString(1);
                     CARBON_METRICS.forEach((metric, s) -> {
@@ -306,7 +322,56 @@ public class ComplianceService {
                             states.merge(metric, new MetricState(true, false), (x, y) -> new MetricState(true, x.pending()));
                         }
                     });
-                }, year);
+                }, java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1)), java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31)));
+        // WP-33 (D31): approved workforce figures, the incident register and project expenditure evidence the catalogue
+        // metrics the Social module produces (GRI 401-1, 403-9, 405-1, CBN NSBP P4).
+        for (String metric : social.available(year)) {
+            states.merge(metric, new MetricState(true, false), (x, y) -> new MetricState(true, x.pending()));
+        }
+        // WP-31 (D33): an active supplier on the register during the year evidences the value chain (GRI 2-6).
+        if (year <= today().getYear() && Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from supply_chain.suppliers "
+                + "where deleted_at is null and status = 'active' and created_at < ?)", Boolean.class,
+                java.sql.Timestamp.valueOf(java.time.LocalDate.of(year + 1, 1, 1).atStartOfDay())))) {
+            states.put(SOURCE + "supply_chain.suppliers", new MetricState(true, false));
+        }
+        // WP-32 (D32): an approved materiality assessment, climate risks in the register, scenario analysis.
+        for (String source : risk.evidence(year)) {
+            states.put(SOURCE + source, new MetricState(true, false));
+        }
+        // F7: requirements evidenced by platform data other than metrics, e.g. an active reduction target for the year.
+        jdbc.query("select data_source, requirement_id from reference.requirement_data_sources", rs -> {
+            metrics.computeIfAbsent(rs.getObject(2, UUID.class), k -> new ArrayList<>()).add(SOURCE + rs.getString(1));
+        });
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from carbon.reduction_targets where deleted_at is null "
+                + "and base_year <= ? and target_year >= ?)", Boolean.class, year, year))) {
+            states.put(SOURCE + "carbon.reduction_targets", new MetricState(true, false));
+        }
+        // WP-41 (D36): credits retired against the year (the use of carbon credits disclosed with climate targets).
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from carbon_market.retirements where status = 'retired' and claimed_year = ?)",
+                Boolean.class, year))) {
+            states.put(SOURCE + "carbon_market.retirements", new MetricState(true, false));
+        }
+        // WP-35 (D34): an active custom KPI with a target, set up by the end of the year and aiming at it or later.
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from analytics.custom_kpis where deleted_at is null and status = 'active' "
+                + "and target_year >= ? and created_at < ?)", Boolean.class, year, java.sql.Timestamp.valueOf(java.time.LocalDate.of(year + 1, 1, 1).atStartOfDay())))) {
+            states.put(SOURCE + "analytics.custom_kpis", new MetricState(true, false));
+        }
+        // WP-34 (D30): the board register (someone on the board during the year), published policies, and a published
+        // whistleblowing policy.
+        java.sql.Date yearStart = java.sql.Date.valueOf(java.time.LocalDate.of(year, 1, 1));
+        java.sql.Date yearEnd = java.sql.Date.valueOf(java.time.LocalDate.of(year, 12, 31));
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.board_members where deleted_at is null "
+                + "and appointed_on <= ? and (left_on is null or left_on >= ?))", Boolean.class, yearEnd, yearStart))) {
+            states.put(SOURCE + "governance.board_members", new MetricState(true, false));
+        }
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.governance_policies where deleted_at is null "
+                + "and status = 'published')", Boolean.class))) {
+            states.put(SOURCE + "governance.governance_policies", new MetricState(true, false));
+        }
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from governance.governance_policies where deleted_at is null "
+                + "and status = 'published' and category = 'whistleblowing')", Boolean.class))) {
+            states.put(SOURCE + "governance.whistleblowing_policy", new MetricState(true, false));
+        }
         Map<UUID, Attestation> attestations = new HashMap<>();
         jdbc.query("select requirement_id, status from compliance.tenant_compliance_status where reporting_year = ?",
                 rs -> { attestations.put(rs.getObject(1, UUID.class), new Attestation(rs.getString(2))); }, year);
@@ -319,6 +384,16 @@ public class ComplianceService {
                         rs.getObject(5, UUID.class), rs.getString(6), rs.getString(7), rs.getString(8), rs.getString(9)));
         Map<String, String> names = new HashMap<>();
         jdbc.query("select metric_key, name from reference.metrics", rs -> { names.put(rs.getString(1), rs.getString(2)); });
+        names.put(SOURCE + "carbon.reduction_targets", "a GHG reduction target (Carbon → Reduction targets)");
+        names.put(SOURCE + "governance.board_members", "the board register (Governance → Board)");
+        names.put(SOURCE + "governance.governance_policies", "a published policy (Governance → Policies)");
+        names.put(SOURCE + "supply_chain.suppliers", "the supplier register (Supply Chain → Suppliers)");
+        names.put(SOURCE + "risk.materiality_assessment", "an approved double materiality assessment (Risk → Materiality)");
+        names.put(SOURCE + "risk.risk_register", "climate-related risks in the risk register (Risk → Risk register)");
+        names.put(SOURCE + "risk.climate_scenarios", "climate scenario analysis (Risk → Climate scenarios)");
+        names.put(SOURCE + "governance.whistleblowing_policy", "a published whistleblowing policy (Governance → Policies)");
+        names.put(SOURCE + "analytics.custom_kpis", "a KPI with a target (Analytics → KPIs)");
+        names.put(SOURCE + "carbon_market.retirements", "carbon credits retired against the year (Carbon Market → Retirements)");
         return new Context(year, metrics, states, attestations, edges, names);
     }
 

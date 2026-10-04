@@ -6,7 +6,7 @@ describe('Journey 6: Scope 1 diesel generator', () => {
     cy.uniqueDay().then((day) => {
       cy.login(roles.ESG_DIRECTOR.email);
       cy.carbonTab('Emission records', day.slice(0, 4));
-      cy.calculateEmission({ activity: 'Diesel generator', org: 'Lagos HQ', day, amount: 1000 });
+      cy.calculateEmission({ activity: 'Diesel (AGO) in generators', org: 'Lagos HQ', day, amount: 1000 });
       // The NG factor is CO2e-only (published as CO2e), so it is applied as published: 1000 × 2.68 ÷ 1000 = 2.68 t.
       cy.get('[aria-label="Calculation result"]').within(() => {
         cy.contains('h3', /^2\.68\s*tCO2e$/);

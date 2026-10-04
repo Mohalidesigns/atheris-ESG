@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { loggedOut, sessionStarted } from '../features/auth/slices/authSlice';
+import { toastShown } from '../store/uiSlice';
 
 // Base URL from VITE_API_BASE_URL; defaults to the same-origin path the Vite dev server proxies (vite.config.js).
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -41,6 +42,22 @@ export async function refreshSession(api, extraOptions) {
 
 const AUTH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/mfa/setup', '/auth/mfa/verify'];
 
+// Writes that are calculations or housekeeping, not something the user saved: no success toast.
+const SILENT = [/^\/auth\//, /^\/public\//, /\/preview$/, /\/read(-all)?$/, /\/satellite-check$/, /^\/carbon\/calculate$/, /^\/compliance\/map$/,
+  /\/reminders\/run$/, /^\/files$/, /\/versions$/, /^\/data\/sync$/];
+
+/**
+ * Phase 2: every successful create, update or delete confirms itself with a toast — the server's message ("User
+ * created", "Roles updated", …), or "Deleted" for a delete (204, no body). Errors are shown by the forms.
+ */
+function toastFor(args, result, api) {
+  const method = (typeof args === 'string' ? 'GET' : args.method ?? 'GET').toUpperCase();
+  const url = typeof args === 'string' ? args : args.url;
+  if (method === 'GET' || result.error || SILENT.some((re) => re.test(url))) return;
+  const message = result.data?.message ?? (method === 'DELETE' ? 'Deleted' : null);
+  if (message) api.dispatch(toastShown({ message }));
+}
+
 export const MFA_REQUIRED_NOTICE = 'Your role requires two-factor authentication. Sign in again to set it up.';
 
 /**
@@ -61,6 +78,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       result = await rawBaseQuery(args, api, extraOptions);
     }
   }
+  toastFor(args, result, api);
   return result;
 };
 
@@ -88,6 +106,6 @@ export function toFormError(error) {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate'],
+  tagTypes: ['Me', 'User', 'UserRoles', 'Role', 'Organisation', 'Period', 'Settings', 'Tenant', 'Notification', 'NotificationPrefs', 'File', 'Audit', 'DataPoint', 'Emission', 'Factor', 'Reference', 'Framework', 'Gap', 'Subscription', 'DataSource', 'FxRate', 'Import', 'DataPointHistory', 'Flaring', 'Instrument', 'Target', 'Financed', 'ComplianceStatus', 'Deadline', 'RegChange', 'Owner', 'Report', 'ReportTemplate', 'Board', 'Policy', 'MyPolicy', 'Case', 'Workforce', 'Incident', 'Project', 'Grievance', 'SocialOverview', 'Assessment', 'RiskItem', 'Scenario', 'Physical', 'RiskOverview', 'Supplier', 'SupplyTemplate', 'SupplierQuestionnaire', 'SupplyAction', 'SupplySpend', 'SupplyOverview', 'Anomaly', 'Kpi', 'BenchmarkDataset', 'Maturity', 'SdgPriority', 'AnalyticsSettings', 'AnalyticsOverview', 'InvestorScorecard', 'InvestorSettings', 'SharedReport', 'DataRoom', 'Bond', 'ImpactMetric', 'OffsetProject', 'CreditLot', 'Retirement', 'InternalPrice', 'CarbonMarketSettings', 'TrainingCourse', 'TrainingPath', 'Enrollment', 'Certificate', 'AiStatus', 'AiRun', 'PrivacyNotice', 'SubjectRequest', 'Retention', 'SyncConflict', 'IntegrationRequest', 'ApiKey', 'Webhook', 'WebhookDelivery', 'PlatformIntegrationRequest'],
   endpoints: () => ({}),
 });

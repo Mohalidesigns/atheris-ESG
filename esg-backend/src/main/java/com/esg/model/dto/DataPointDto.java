@@ -24,6 +24,7 @@ public class DataPointDto {
     @NotBlank @Size(max = 100) private String metricKey;
     @Digits(integer = 14, fraction = 6) private BigDecimal numericValue;
     @Size(max = 2000) private String textValue;
+    @Size(max = 1000) private String notes;
     /** Optional: the metric's unit; if sent it must match. */
     @Size(max = 50) private String unit;
     @NotNull private LocalDate reportingPeriodStart;
@@ -32,6 +33,8 @@ public class DataPointDto {
     private String validationStatus;
     private String metadata;
     private UUID sourceId;
+    /** Responsible person (Phase 3): defaults to the source's owner, then to the person entering it. */
+    private UUID ownerUserId;
     @Pattern(regexp = TenancyDtos.CURRENCY_REGEX, message = "must be one of NGN, USD, EUR, GBP, KES, ZAR, GHS, XOF, EGP") private String currency;
     @Size(max = 10, message = "at most 10 evidence files") private List<UUID> evidenceFileIds;
     /** Required on update (optimistic locking). */
@@ -45,6 +48,8 @@ public class DataPointDto {
     public void setOrgId(UUID orgId) { this.orgId = orgId; }
     public String getCategory() { return this.category; }
     public void setCategory(String category) { this.category = category; }
+    public String getNotes() { return this.notes; }
+    public void setNotes(String notes) { this.notes = notes; }
     public String getSubCategory() { return this.subCategory; }
     public void setSubCategory(String subCategory) { this.subCategory = subCategory; }
     public String getMetricKey() { return this.metricKey; }
@@ -67,6 +72,8 @@ public class DataPointDto {
     public void setMetadata(String metadata) { this.metadata = metadata; }
     public UUID getSourceId() { return this.sourceId; }
     public void setSourceId(UUID sourceId) { this.sourceId = sourceId; }
+    public UUID getOwnerUserId() { return this.ownerUserId; }
+    public void setOwnerUserId(UUID ownerUserId) { this.ownerUserId = ownerUserId; }
     public String getCurrency() { return this.currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public List<UUID> getEvidenceFileIds() { return this.evidenceFileIds; }

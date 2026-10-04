@@ -10,9 +10,12 @@ import { FormDateField, FormNumberField, FormSelect, FormTextField } from '../..
 import { applyProblem } from '../../../services/formErrors';
 import { CURRENCIES } from '../../admin/schemas';
 import { useScope3CategoriesQuery } from '../../reference/referenceApi';
-import { useCreateEmissionMutation, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation } from '../carbonApi';
-import { FACTOR_LEVELS, SCOPES, activityLabel, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
+import {
+  useCreateEmissionMutation, useEmissionActivitiesQuery, useFactorsQuery, usePreviewEmissionMutation, useUpdateEmissionMutation,
+} from '../carbonApi';
+import { FACTOR_LEVELS, SCOPES, emissionSchema, emptyEmission, factorActivityUnit, toEmissionBody, toEmissionForm } from '../schemas';
 import ProvisionalBadge from './ProvisionalBadge';
+import { tr, formattingLocale } from '../../../i18n';
 
 // no-mock-gate: config — wizard step labels (TRD §7.4: scope → activity → factor → calculate → save)
 const STEPS = ['Scope', 'Activity', 'Amount', 'Factor & result'];
@@ -24,19 +27,20 @@ const STEP_FIELDS = [
 ];
 // Small per-gas tonnages (CH4, N2O) keep 6 significant digits rather than vanishing at 6 decimals.
 const t = (v) => (v == null ? '—'
-  : Number(v).toLocaleString(undefined, Math.abs(Number(v)) < 1 ? { maximumSignificantDigits: 6 } : { maximumFractionDigits: 6 }));
+  : Number(v).toLocaleString(formattingLocale(), Math.abs(Number(v)) < 1 ? { maximumSignificantDigits: 6 } : { maximumFractionDigits: 6 }));
 
 /**
  * Emission Calculator (TRD §7.4; FIELD_INVENTORY F1.5, F1.6, F2.2): scope → activity (with organisation and period) →
  * amount → factor and result, then save. The result comes from the server (POST /carbon/emissions/preview), so it is
  * exactly what saving stores. `record` = edit an existing manual record.
  */
-export default function EmissionCalculator({ open, onClose, orgs, record = null }) {
+export default function EmissionCalculator({ open, onClose, orgs, record = null, onAddFactor }) {
   const editing = Boolean(record);
   const [step, setStep] = useState(0);
   const [preview, setPreview] = useState(null);
   const [formError, setFormError] = useState('');
   const { data: factors = [] } = useFactorsQuery();
+  const { data: catalogue = [] } = useEmissionActivitiesQuery();
   const { data: categories = [] } = useScope3CategoriesQuery();
   const [runPreview, previewState] = usePreviewEmissionMutation();
   const [create, createState] = useCreateEmissionMutation();
@@ -45,17 +49,22 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
     defaultValues: record ? toEmissionForm(record) : emptyEmission,
     resolver: zodResolver(emissionSchema),
   });
-  const [scope, method, activity] = useWatch({ control, name: ['scope', 'calculationMethod', 'sourceActivity'] });
+  const [scope, method, activity, scope3Category] = useWatch({ control, name: ['scope', 'calculationMethod', 'sourceActivity', 'scope3Category'] });
   const spend = method === 'spend_based';
 
-  // Activities: one per factor category the tenant can use, for the chosen method.
+  // F5: activities of the chosen scope (and Scope 3 category) and method that have at least one factor; the unit
+  // comes from the factor. Server-side, a mismatching scope is refused too.
   const activities = useMemo(() => {
-    const byCategory = new Map();
+    const factorFor = new Map();
     factors.filter((f) => (f.factorMethod ?? 'activity') === (spend ? 'spend' : 'activity')).forEach((f) => {
-      if (!byCategory.has(f.category)) byCategory.set(f.category, f);
+      if (!factorFor.has(f.category)) factorFor.set(f.category, f);
     });
-    return [...byCategory.values()].sort((a, b) => a.category.localeCompare(b.category));
-  }, [factors, spend]);
+    return catalogue
+      .filter((a) => a.scope === scope && (scope !== 'scope_3' || String(a.scope3Category) === String(scope3Category)))
+      .filter((a) => factorFor.has(a.category))
+      .map((a) => ({ category: a.category, label: a.label, unit: factorFor.get(a.category).unit }));
+  }, [factors, catalogue, spend, scope, scope3Category]);
+  const noActivities = catalogue.length > 0 && activities.length === 0 && (scope !== 'scope_3' || scope3Category);
   const categoryFactors = factors.filter((f) => f.category === activity);
   const unit = factorActivityUnit(activities.find((a) => a.category === activity)?.unit);
 
@@ -112,7 +121,7 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
   return (
     <Dialog open={open} onClose={() => onClose(false)} maxWidth="md" fullWidth>
       <form onSubmit={save} noValidate>
-        <DialogTitle>{editing ? 'Edit emission record' : 'Emission calculator'}</DialogTitle>
+        <DialogTitle>{editing ? tr("Edit emission record") : tr("Emission calculator")}</DialogTitle>
         <DialogContent>
           <Stepper activeStep={step} sx={{ mb: 3 }}>{STEPS.map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}</Stepper>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
@@ -120,20 +129,20 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
           <Box hidden={step !== 0}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormSelect control={control} name="scope" label="Scope" options={SCOPES} />
+                <FormSelect control={control} name="scope" label={tr("Scope")} options={SCOPES} />
               </Grid>
               {scope === 'scope_3' && (
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormSelect control={control} name="scope3Category" label="Scope 3 category"
+                  <FormSelect control={control} name="scope3Category" label={tr("Scope 3 category")}
                     options={categories.map((c) => ({ value: String(c.category), label: `${c.category}. ${c.name}` }))} />
                 </Grid>
               )}
               <Grid size={12}>
                 <Controller name="calculationMethod" control={control} render={({ field }) => (
-                  <ToggleButtonGroup exclusive size="small" value={field.value} aria-label="Method"
+                  <ToggleButtonGroup exclusive size="small" value={field.value} aria-label={tr("Method")}
                     onChange={(_, v) => { if (v) { field.onChange(v); setValue('sourceActivity', ''); setValue('emissionFactorId', ''); } }}>
-                    <ToggleButton value="activity_based">Activity-based (litres, kWh, km…)</ToggleButton>
-                    <ToggleButton value="spend_based">Spend-based (amount spent)</ToggleButton>
+                    <ToggleButton value="activity_based">{tr("Activity-based (litres, kWh, km…)")}</ToggleButton>
+                    <ToggleButton value="spend_based">{tr("Spend-based (amount spent)")}</ToggleButton>
                   </ToggleButtonGroup>
                 )} />
               </Grid>
@@ -143,51 +152,59 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
           <Box hidden={step !== 1}>
             <Grid container spacing={2}>
               <Grid size={12}>
-                <FormSelect control={control} name="sourceActivity" label="Activity"
-                  helperText={spend && activities.length === 0 ? 'No spend-based factors yet: add one in Emission factors (kgCO2e per currency unit)' : undefined}
-                  options={activities.map((a) => ({ value: a.category, label: `${activityLabel(a.category)} (${a.unit})` }))} />
+                {noActivities ? (
+                  <Alert severity="info" aria-label={tr("No factors")}
+                    action={onAddFactor && <Button color="inherit" size="small" onClick={() => { onClose(false); onAddFactor(); }}>{tr("Add a custom factor")}</Button>}>
+                    {tr("No")} {spend ? 'spend-based' : 'activity-based'} {tr("factors for")} {scope === 'scope_3'
+                      ? `Scope 3 category ${scope3Category}` : tr(SCOPES.find((s) => s.value === scope)?.label) ?? scope} {tr("— add a custom factor")}
+                    {spend ? tr(" (kgCO2e per currency unit)") : ''} {tr("in Emission factors.")}
+                  </Alert>
+                ) : (
+                  <FormSelect control={control} name="sourceActivity" label={tr("Activity")}
+                    options={activities.map((a) => ({ value: a.category, label: `${a.label} (${a.unit})` }))} />
+                )}
               </Grid>
               <Grid size={12}>
                 <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                  <OrgTreeSelect {...field} orgs={orgs} label="Organisation" size="small" fullWidth
-                    error={!!fieldState.error} helperText={fieldState.error?.message} />
+                  <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} size="small" fullWidth
+                    error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
                 )} />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label="Period start" /></Grid>
-              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label="Period end" /></Grid>
+              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodStart" label={tr("Period start")} /></Grid>
+              <Grid size={{ xs: 12, sm: 6 }}><FormDateField control={control} name="reportingPeriodEnd" label={tr("Period end")} /></Grid>
             </Grid>
           </Box>
 
           <Box hidden={step !== 2}>
             <Grid container spacing={2}>
               {/* Both sets stay mounted (one hidden) so switching method never drops a field's value from the form. */}
-              <Grid size={{ xs: 12, sm: 7 }} hidden={!spend}><FormNumberField control={control} name="spendAmount" label="Amount spent" /></Grid>
+              <Grid size={{ xs: 12, sm: 7 }} hidden={!spend}><FormNumberField control={control} name="spendAmount" label={tr("Amount spent")} /></Grid>
               <Grid size={{ xs: 12, sm: 5 }} hidden={!spend}>
-                <FormSelect control={control} name="spendCurrency" label="Currency" options={CURRENCIES.map((c) => ({ value: c, label: c }))} />
+                <FormSelect control={control} name="spendCurrency" label={tr("Currency")} options={CURRENCIES.map((c) => ({ value: c, label: c }))} />
               </Grid>
-              <Grid size={{ xs: 12, sm: 7 }} hidden={spend}><FormNumberField control={control} name="activityData" label="Activity data" unit={unit} /></Grid>
+              <Grid size={{ xs: 12, sm: 7 }} hidden={spend}><FormNumberField control={control} name="activityData" label={tr("Activity data")} unit={unit} /></Grid>
               <Grid size={{ xs: 12, sm: 5 }} hidden={spend}>
-                <FormTextField control={control} name="activityUnit" label="Unit" disabled helperText="Set by the emission factor" />
+                <FormTextField control={control} name="activityUnit" label={tr("Unit")} disabled helperText={tr("Set by the emission factor")} />
               </Grid>
             </Grid>
           </Box>
 
           <Box hidden={step !== 3}>
             {preview && (
-              <Box aria-label="Calculation result" sx={{ mb: 2 }}>
+              <Box aria-label={tr("Calculation result")} sx={{ mb: 2 }}>
                 <Typography variant="h3" sx={{ fontWeight: 700 }}>
-                  {t(preview.co2eTonnes)} <Typography component="span" variant="h6" color="text.secondary">tCO2e</Typography>
+                  {t(preview.co2eTonnes)} <Typography component="span" variant="h6" color="text.secondary">{tr("tCO2e")}</Typography>
                 </Typography>
                 <Table size="small" sx={{ mt: 1 }}>
                   <TableBody>
-                    <TableRow><TableCell>Activity</TableCell>
+                    <TableRow><TableCell>{tr("Activity")}</TableCell>
                       <TableCell>{t(preview.activityData)} {preview.activityUnit}{preview.fxRate ? ` (converted at ${t(preview.fxRate)})` : ''}</TableCell></TableRow>
-                    <TableRow><TableCell>Emission factor</TableCell>
-                      <TableCell>{t(preview.factor.value)} {preview.factor.unit} · {preview.factor.region} · version {preview.factor.version}
-                        {' '}({FACTOR_LEVELS[preview.factor.level] ?? preview.factor.level})
+                    <TableRow><TableCell>{tr("Emission factor")}</TableCell>
+                      <TableCell>{t(preview.factor.value)} {preview.factor.unit} · {preview.factor.region} {tr("· version")} {preview.factor.version}
+                        {' '}({tr(FACTOR_LEVELS[preview.factor.level]) ?? preview.factor.level})
                         <ProvisionalBadge reviewStatus={preview.factor.reviewStatus} sx={{ ml: 0.5 }} /></TableCell></TableRow>
-                    <TableRow><TableCell>Source</TableCell><TableCell>{preview.factor.source}</TableCell></TableRow>
-                    <TableRow><TableCell>GWP</TableCell>
+                    <TableRow><TableCell>{tr("Source")}</TableCell><TableCell>{preview.factor.source}</TableCell></TableRow>
+                    <TableRow><TableCell>{tr("GWP")}</TableCell>
                       <TableCell>{preview.perGas ? `${preview.gwpSet} (CO2 ${t(preview.co2Tonnes)} t, CH4 ${t(preview.ch4Tonnes)} t, N2O ${t(preview.n2oTonnes)} t)`
                         : `as published${preview.gwpSet ? ` (${preview.gwpSet})` : ''}`}</TableCell></TableRow>
                   </TableBody>
@@ -197,30 +214,30 @@ export default function EmissionCalculator({ open, onClose, orgs, record = null 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 8 }}>
                 <Controller name="emissionFactorId" control={control} render={({ field, fieldState }) => (
-                  <TextField select fullWidth size="small" label="Emission factor" {...field}
+                  <TextField select fullWidth size="small" label={tr("Emission factor")} {...field}
                     onChange={(e) => { field.onChange(e.target.value); }}
-                    error={!!fieldState.error} helperText={fieldState.error?.message ?? 'Automatic: tenant → country → region → global'}>
-                    <MenuItem value="">Automatic (recommended)</MenuItem>
+                    error={!!fieldState.error} helperText={tr(fieldState.error?.message) ?? tr("Automatic: tenant → country → region → global")}>
+                    <MenuItem value="">{tr("Automatic (recommended)")}</MenuItem>
                     {categoryFactors.map((f) => (
-                      <MenuItem key={f.id} value={f.id}>{f.region} · {t(f.factorValue)} {f.unit} · v{f.factorVersion} · {f.source}</MenuItem>
+                      <MenuItem key={f.id} value={f.id}>{f.region} · {t(f.factorValue)} {f.unit} {tr("· v")}{f.factorVersion} · {f.source}</MenuItem>
                     ))}
                   </TextField>
                 )} />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
-                <Button onClick={recalcPreview} disabled={previewState.isLoading}>Recalculate</Button>
+                <Button onClick={recalcPreview} disabled={previewState.isLoading}>{tr("Recalculate")}</Button>
               </Grid>
-              <Grid size={12}><FormTextField control={control} name="notes" label="Notes (optional)" /></Grid>
+              <Grid size={12}><FormTextField control={control} name="notes" label={tr("Notes (optional)")} /></Grid>
             </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose(false)}>Cancel</Button>
-          {step > 0 && <Button onClick={() => setStep((s) => s - 1)}>Back</Button>}
-          {step < 3 && <Button variant="contained" onClick={next} disabled={previewState.isLoading}>{step === 2 ? 'Calculate' : 'Next'}</Button>}
+          <Button onClick={() => onClose(false)}>{tr("Cancel")}</Button>
+          {step > 0 && <Button onClick={() => setStep((s) => s - 1)}>{tr("Back")}</Button>}
+          {step < 3 && <Button variant="contained" onClick={next} disabled={previewState.isLoading}>{step === 2 ? tr("Calculate") : tr("Next")}</Button>}
           {step === 3 && (
             <Button type="submit" variant="contained" disabled={createState.isLoading || updateState.isLoading}>
-              {editing ? 'Save changes' : 'Save record'}
+              {editing ? tr("Save changes") : tr("Save record")}
             </Button>
           )}
         </DialogActions>

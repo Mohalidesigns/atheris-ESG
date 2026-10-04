@@ -89,6 +89,135 @@ class CarbonApiTest extends ApiTestSupport {
     }
   }
 
+  // ------------------------------------------------------------------ Phase 1 (WP-52b)
+
+  @Test
+  void spendBasedScope3UsesTheEpaEeioFactors() throws Exception {
+    // F4: business travel spend (category 6) has a platform factor: US EPA v1.3, NAICS 481111, 0.644 kgCO2e per USD.
+    JsonNode r = emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_3\",\"scope3Category\":6,\"calculationMethod\":\"spend_based\","
+        + "\"sourceActivity\":\"spend_air_travel\",\"spendAmount\":1000,\"spendCurrency\":\"USD\"," + period() + "}");
+    assertThat(r.path("co2eTonnes").decimalValue()).isEqualByComparingTo("0.644");
+    assertThat(r.path("factor").path("source").asText()).contains("US EPA").contains("10.23719/1531143");
+    assertThat(r.path("factor").path("reviewStatus").asText()).isEqualTo("pending_sme");
+    // Every spend activity the platform offers has a factor.
+    JsonNode activities = data(mvc.perform(get("/v1/carbon/factors/activities").header("Authorization", director())));
+    JsonNode factors = data(mvc.perform(get("/v1/carbon/factors").header("Authorization", director())));
+    java.util.Set<String> withFactor = new java.util.HashSet<>();
+    factors.forEach(f -> withFactor.add(f.path("category").asText()));
+    activities.forEach(a -> assertThat(withFactor).as(a.path("category").asText()).contains(a.path("category").asText()));
+  }
+
+  @Test
+  void theActivityMustBelongToTheChosenScope() throws Exception {
+    // F5: diesel is Scope 1, so it can't be calculated as Scope 2; air travel belongs to Scope 3 category 6.
+    postJson("/v1/carbon/emissions/preview", "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_2\",\"sourceActivity\":\"diesel_generator\","
+        + "\"activityData\":10," + period() + "}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.sourceActivity").value("Diesel (AGO) in generators is a Scope 1 activity, not Scope 2"));
+    postJson("/v1/carbon/emissions/preview", "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_3\",\"scope3Category\":1,"
+        + "\"sourceActivity\":\"air_travel_longhaul\",\"activityData\":10," + period() + "}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.sourceActivity").value(org.hamcrest.Matchers.containsString("category 6")));
+    JsonNode activities = data(mvc.perform(get("/v1/carbon/factors/activities").header("Authorization", director())));
+    java.util.Map<String, String> scopes = new java.util.HashMap<>();
+    activities.forEach(a -> scopes.put(a.path("category").asText(), a.path("scope").asText()));
+    assertThat(scopes).containsEntry("diesel_generator", "scope_1").containsEntry("electricity_grid", "scope_2")
+        .containsEntry("air_travel_domestic", "scope_3").containsEntry("custom_fuel", "scope_1");
+  }
+
+  @Test
+  void targetActualsIncludeTheBaseYearAndMatchTheOverview() throws Exception {
+    // F6: a target whose base year has data shows that year's actual (the Overview's Scope 1 + 2), not "No data yet".
+    int year = 2086; // a year no other test (e.g. the compliance gap tests) relies on being empty
+    String p = "\"reportingPeriodStart\":\"" + year + "-02-01\",\"reportingPeriodEnd\":\"" + year + "-02-28\"";
+    emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"diesel_generator\",\"activityData\":1000," + p + "}");
+    emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_2\",\"sourceActivity\":\"electricity_grid\",\"activityData\":10000," + p + "}");
+    JsonNode summary = data(mvc.perform(get("/v1/carbon/emissions/summary?year=" + year).header("Authorization", director())));
+    java.math.BigDecimal overview = summary.path("scope1").decimalValue().add(summary.path("scope2Location").decimalValue());
+
+    JsonNode target = data(postJson("/v1/carbon/targets", "{\"targetName\":\"Base-year target " + DAY.incrementAndGet() + "\","
+        + "\"targetType\":\"absolute\",\"scope\":\"scope_1_2\",\"baseYear\":" + year + ",\"baseValue\":90,\"targetYear\":" + (year + 4)
+        + ",\"targetValue\":45,\"pathway\":\"linear\"}").andExpect(status().isCreated()));
+    assertThat(target.path("progressYear").asInt()).isEqualTo(year);
+    assertThat(target.path("currentValue").decimalValue()).isEqualByComparingTo(overview);
+    assertThat(target.path("status").asText()).isNotEqualTo("no_data");
+    JsonNode basePoint = target.path("pathwayPoints").get(0);
+    assertThat(basePoint.path("actual").decimalValue()).isEqualByComparingTo(overview);
+    assertThat(target.path("baselineWarning").isMissingNode() || target.path("baselineWarning").isNull()).isFalse(); // 90 vs ~7 t
+
+    // A base value far below what was measured (the tester's 90 t vs 1,917 t) gave −4,060% and a 500 (numeric overflow):
+    // progress is held to ±999.99% and the target says the base value looks wrong.
+    JsonNode tiny = data(postJson("/v1/carbon/targets", "{\"targetName\":\"Tiny baseline " + DAY.incrementAndGet() + "\","
+        + "\"targetType\":\"absolute\",\"scope\":\"scope_1_2\",\"baseYear\":" + year + ",\"baseValue\":0.01,\"targetYear\":" + (year + 4)
+        + ",\"targetValue\":0.005,\"pathway\":\"linear\"}").andExpect(status().isCreated()));
+    assertThat(tiny.path("progressPct").decimalValue()).isEqualByComparingTo("-999.99");
+    assertThat(tiny.path("status").asText()).isEqualTo("off_track");
+    assertThat(tiny.path("baselineWarning").asText()).contains("differ from the base value entered (0.01)");
+    mvc.perform(get("/v1/carbon/targets").header("Authorization", director())).andExpect(status().isOk());
+  }
+
+  @Test
+  void monthlyEmissionsSplitMultiMonthRecordsByDays() throws Exception {
+    // F15: a Q1 record (90 days) is spread over January (31), February (28) and March (31), not put in January.
+    int year = 2087;
+    emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"diesel_generator\",\"activityData\":9000,"
+        + "\"reportingPeriodStart\":\"" + year + "-01-01\",\"reportingPeriodEnd\":\"" + year + "-03-31\"}");
+    JsonNode summary = data(mvc.perform(get("/v1/carbon/emissions/summary?year=" + year).header("Authorization", director())));
+    java.util.Map<String, java.math.BigDecimal> months = new java.util.HashMap<>();
+    summary.path("byMonth").forEach(m -> months.put(m.path("key").asText(), m.path("co2eTonnes").decimalValue()));
+    java.math.BigDecimal total = summary.path("scope1").decimalValue(); // 24.12 t
+    assertThat(months.get(year + "-01")).isEqualByComparingTo(total.multiply(java.math.BigDecimal.valueOf(31))
+        .divide(java.math.BigDecimal.valueOf(90), 6, java.math.RoundingMode.HALF_UP));
+    assertThat(months.get(year + "-02")).isEqualByComparingTo(total.multiply(java.math.BigDecimal.valueOf(28))
+        .divide(java.math.BigDecimal.valueOf(90), 6, java.math.RoundingMode.HALF_UP));
+    assertThat(months.values().stream().reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add))
+        .isCloseTo(total, org.assertj.core.data.Offset.offset(new java.math.BigDecimal("0.000005")));
+  }
+
+  @Test
+  void financedSectorComesFromTheTaxonomy() throws Exception {
+    // F9: free text is refused; the ISIC section code is stored.
+    postJson("/v1/carbon/financed", "{\"reportingYear\":2026,\"assetClass\":\"business_loans_unlisted_equity\",\"counterparty\":\"x\","
+        + "\"sector\":\"Power\",\"outstandingAmount\":1,\"denominatorValue\":2,\"currency\":\"NGN\",\"counterpartyEmissions\":1,"
+        + "\"dataQualityScore\":3,\"emissionsSource\":\"x\"}")
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.sector").value("Choose a sector from the list"));
+  }
+
+  @Test
+  void customFactorsUseKnownActivitiesCountriesAndUnits() throws Exception {
+    // F11: unknown country, a unit that doesn't fit the activity, and a new category without its name and scope.
+    postJson("/v1/carbon/factors", "{\"region\":\"ZZ\",\"category\":\"diesel_generator\",\"factorValue\":2.7,\"unit\":\"kgCO2e/litre\","
+        + "\"source\":\"s\",\"validFrom\":\"2026-01-01\"}")
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.region").exists());
+    postJson("/v1/carbon/factors", "{\"region\":\"NG\",\"category\":\"diesel_generator\",\"factorValue\":2.7,\"unit\":\"kgCO2e/kg\","
+        + "\"source\":\"s\",\"validFrom\":\"2026-01-01\"}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.unit").value("must be kgCO2e/litre for Diesel (AGO) in generators"));
+    String category = "captive_turbine_" + DAY.incrementAndGet();
+    postJson("/v1/carbon/factors", "{\"region\":\"NG\",\"category\":\"" + category + "\",\"factorValue\":0.4,\"unit\":\"kgCO2e/kWh\","
+        + "\"source\":\"s\",\"validFrom\":\"2026-01-01\"}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.activityLabel").exists()).andExpect(jsonPath("$.errors.activityScope").exists());
+    postJson("/v1/carbon/factors", "{\"region\":\"GH\",\"category\":\"" + category + "\",\"factorValue\":0.4,\"unit\":\"kgCO2e/kWh\","
+        + "\"source\":\"OEM datasheet\",\"validFrom\":\"2026-01-01\",\"activityLabel\":\"Captive gas turbine\",\"activityScope\":\"scope_1\"}")
+        .andExpect(status().isCreated());
+    JsonNode activities = data(mvc.perform(get("/v1/carbon/factors/activities").header("Authorization", director())));
+    boolean found = false;
+    for (JsonNode a : activities) {
+      if (a.path("category").asText().equals(category)) {
+        assertThat(a.path("scope").asText()).isEqualTo("scope_1");
+        assertThat(a.path("activityUnit").asText()).isEqualTo("kWh");
+        assertThat(a.path("custom").asBoolean()).isTrue();
+        found = true;
+      }
+    }
+    assertThat(found).isTrue();
+    // The country list is ISO 3166 plus the factor regions.
+    JsonNode regions = data(mvc.perform(get("/v1/carbon/factors/regions").header("Authorization", director())));
+    assertThat(regions.size()).isGreaterThan(240);
+    assertThat(regions.toString()).contains("\"code\":\"NG\",\"name\":\"Nigeria\"").contains("WEST_AFRICA");
+  }
+
   @Test
   void previewCalculatesWithoutSaving() throws Exception {
     String body = "{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_1\",\"sourceActivity\":\"heavy_fuel_oil\","
@@ -146,11 +275,12 @@ class CarbonApiTest extends ApiTestSupport {
 
   @Test
   void journey8Scope3SpendBasedWithATenantSpendFactor() throws Exception {
-    // No EEIO dataset is loaded (WP-17): the tenant enters its own spend factor, with its source.
+    // The tenant enters its own spend factor, with its source, for a new Scope 3 category 1 activity (F11).
     String category = "purchased_goods_spend_" + DAY.incrementAndGet();
     data(postJson("/v1/carbon/factors", "{\"region\":\"NG\",\"category\":\"" + category + "\",\"factorValue\":0.5,"
         + "\"unit\":\"kgCO2e/USD\",\"source\":\"Supplier LCA 2026\",\"validFrom\":\"2026-01-01\",\"factorMethod\":\"spend\","
-        + "\"spendCurrency\":\"USD\"}").andExpect(status().isCreated()));
+        + "\"spendCurrency\":\"USD\",\"activityLabel\":\"Purchased goods\",\"activityScope\":\"scope_3\",\"activityScope3Category\":1}")
+        .andExpect(status().isCreated()));
     JsonNode r = emission("{\"orgId\":\"" + ORG_HQ + "\",\"scope\":\"scope_3\",\"scope3Category\":1,\"calculationMethod\":\"spend_based\","
         + "\"sourceActivity\":\"" + category + "\",\"spendAmount\":2000,\"spendCurrency\":\"USD\"," + period() + "}");
     assertThat(r.path("co2eTonnes").decimalValue()).isEqualByComparingTo("1");
@@ -319,7 +449,7 @@ class CarbonApiTest extends ApiTestSupport {
   @Test
   void pcafFinancedEmissions() throws Exception {
     JsonNode pos = data(postJson("/v1/carbon/financed", "{\"reportingYear\":2026,\"assetClass\":\"business_loans_unlisted_equity\","
-        + "\"counterparty\":\"Ikeja Cement Plc\",\"sector\":\"Cement\",\"outstandingAmount\":25000000,\"denominatorValue\":100000000,"
+        + "\"counterparty\":\"Ikeja Cement Plc\",\"sector\":\"C\",\"outstandingAmount\":25000000,\"denominatorValue\":100000000,"
         + "\"currency\":\"NGN\",\"counterpartyEmissions\":40000,\"dataQualityScore\":2,\"emissionsSource\":\"Audited GHG report 2025\"}")
         .andExpect(status().isCreated()));
     assertThat(pos.path("attributionFactor").decimalValue()).isEqualByComparingTo("0.25");

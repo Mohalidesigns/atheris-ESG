@@ -20,7 +20,7 @@ public class TenantAwareDataSource extends DelegatingDataSource {
 
     private static final String SET_CONTEXT =
             "select set_config('app.current_tenant', ?, false), set_config('app.current_user', ?, false), "
-                    + "set_config('app.client_ip', ?, false), set_config('app.user_agent', ?, false)";
+                    + "set_config('app.client_ip', ?, false), set_config('app.user_agent', ?, false), set_config('app.test_run', ?, false)";
 
     public TenantAwareDataSource(DataSource target) {
         super(target);
@@ -42,6 +42,7 @@ public class TenantAwareDataSource extends DelegatingDataSource {
             statement.setString(2, valueOrEmpty(TenantContext.getUserId()));
             statement.setString(3, valueOrEmpty(TenantContext.getClientIp()));
             statement.setString(4, valueOrEmpty(TenantContext.getUserAgent()));
+            statement.setString(5, valueOrEmpty(TenantContext.getTestRun()));
             statement.execute();
         } catch (SQLException e) {
             connection.close();

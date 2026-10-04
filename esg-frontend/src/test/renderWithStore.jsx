@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
 import { makeStore } from '../store/store';
 import lightTheme from '../theme/lightTheme';
+import { ConfirmProvider } from '../components/feedback/ConfirmProvider';
+import Toaster from '../components/feedback/Toaster';
 
 export const userWith = (permissions, extra = {}) => ({
   id: 'u-1', email: 'ada@example.com', firstName: 'Ada', lastName: 'Eze', tenantId: 't-1', tenantName: 'Tenant',
@@ -22,7 +24,10 @@ export function renderWithStore(ui, { preloadedState, route = '/' } = {}) {
   const utils = render(
     <Provider store={store}>
       <ThemeProvider theme={lightTheme}>
-        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        <ConfirmProvider>
+          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+          <Toaster />
+        </ConfirmProvider>
       </ThemeProvider>
     </Provider>,
   );

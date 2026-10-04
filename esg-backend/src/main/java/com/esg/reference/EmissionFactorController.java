@@ -26,7 +26,10 @@ public class EmissionFactorController {
 
     private final EmissionFactorService service;
 
-    public EmissionFactorController(EmissionFactorService service) {
+    private final EmissionActivityService activities;
+
+    public EmissionFactorController(EmissionFactorService service, EmissionActivityService activities) {
+        this.activities = activities;
         this.service = service;
     }
 
@@ -35,6 +38,20 @@ public class EmissionFactorController {
     public ResponseEntity<ApiResponse<List<ReferenceDtos.EmissionFactor>>> list(@RequestParam(required = false) String region,
                                                                                @RequestParam(required = false) String category) {
         return ResponseEntity.ok(ApiResponse.ok(service.list(region, category)));
+    }
+
+    /** Activities (factor categories) with their GHG scope and unit (WP-52b F5/F11). */
+    @GetMapping("/activities")
+    @PreAuthorize("hasAuthority('carbon_data:read') or hasAuthority('reference_data:read')")
+    public ResponseEntity<ApiResponse<List<ReferenceDtos.EmissionActivity>>> activities() {
+        return ResponseEntity.ok(ApiResponse.ok(activities.list()));
+    }
+
+    /** ISO countries and factor regions for the custom factor picker (F11). */
+    @GetMapping("/regions")
+    @PreAuthorize("hasAuthority('carbon_data:read') or hasAuthority('reference_data:read')")
+    public ResponseEntity<ApiResponse<List<ReferenceDtos.FactorRegion>>> regions() {
+        return ResponseEntity.ok(ApiResponse.ok(activities.regions()));
     }
 
     @GetMapping("/resolve")

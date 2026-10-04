@@ -68,9 +68,18 @@ public class UserAdminService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> list(String search, int page, int size) {
+        return list(search, null, null, page, size);
+    }
+
+    /** Sorted by first name, then last name (Phase 2); optional role and status (active | inactive) filters. */
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> list(String search, String role, String status, int page, int size) {
+        if (status != null && !status.isBlank() && !status.matches("^(active|inactive)$")) {
+            throw com.esg.exception.FieldValidationException.of("status", "must be active or inactive");
+        }
         String q = search == null || search.isBlank() ? "" : "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
         Page<User> result = users.search(TenantContext.requireTenantId(), q, CurrentUser.access().platform(),
-                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100)));
+                role == null ? "" : role.trim(), status == null ? "" : status.trim(), PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100)));
         Map<UUID, List<RoleAssignmentResponse>> roles = assignments(result.getContent().stream().map(User::getId).toList());
         return new PageResponse<>(result.getContent().stream().map(u -> toResponse(u, roles)).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());

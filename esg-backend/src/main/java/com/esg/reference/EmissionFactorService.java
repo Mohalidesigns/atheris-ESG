@@ -32,9 +32,11 @@ public class EmissionFactorService {
             + "co2_factor, ch4_factor, n2o_factor, factor_method, spend_currency";
 
     private final JdbcTemplate jdbc;
+    private final EmissionActivityService activities;
 
-    public EmissionFactorService(JdbcTemplate jdbc) {
+    public EmissionFactorService(JdbcTemplate jdbc, EmissionActivityService activities) {
         this.jdbc = jdbc;
+        this.activities = activities;
     }
 
     public List<EmissionFactor> list(String region, String category) {
@@ -93,10 +95,11 @@ public class EmissionFactorService {
     @Transactional
     public EmissionFactor createCustom(CustomFactorRequest r) {
         checkDates(r);
+        checkActivity(r, null);
         UUID id = jdbc.queryForObject("insert into carbon.emission_factors (region, category, sub_category, factor_value, unit, "
                 + "source, valid_from, valid_to, is_custom, tenant_id, verification_status, factor_method, spend_currency) "
                 + "values (?, ?, ?, ?, ?, ?, ?, ?, true, ?, 'tenant_provided', ?, ?) returning id", UUID.class,
-                r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.unit().trim(), r.source().trim(),
+                r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.effectiveUnit(), r.source().trim(),
                 r.validFrom(), r.validTo(), TenantContext.requireTenantId(), r.method(), spendCurrency(r));
         return get(id);
     }
@@ -108,6 +111,7 @@ public class EmissionFactorService {
     @Transactional
     public EmissionFactor updateCustom(UUID id, CustomFactorRequest r) {
         checkDates(r);
+        checkActivity(r, id);
         EmissionFactor current = get(id);
         if (!current.custom()) {
             throw ApiException.forbidden("Platform emission factors are read-only");
@@ -117,7 +121,7 @@ public class EmissionFactorService {
         }
         boolean used = Boolean.TRUE.equals(jdbc.queryForObject(
                 "select exists (select 1 from carbon.emission_records where emission_factor_id = ?)", Boolean.class, id));
-        boolean valueChanged = current.factorValue().compareTo(r.factorValue()) != 0 || !current.unit().equals(r.unit().trim())
+        boolean valueChanged = current.factorValue().compareTo(r.factorValue()) != 0 || !current.unit().equals(r.effectiveUnit())
                 || !current.category().equals(r.category()) || !current.region().equals(r.region())
                 || !current.factorMethod().equals(r.method()) || !java.util.Objects.equals(current.spendCurrency(), spendCurrency(r));
         if (used && valueChanged) {
@@ -128,7 +132,7 @@ public class EmissionFactorService {
         int updated = jdbc.update("update carbon.emission_factors set region = ?, category = ?, sub_category = ?, factor_value = ?, "
                 + "unit = ?, source = ?, valid_from = ?, valid_to = ?, factor_method = ?, spend_currency = ?, version = version + 1, "
                 + "updated_at = now() where id = ? and version = ? and is_custom",
-                r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.unit().trim(), r.source().trim(),
+                r.region(), r.category(), blankToNull(r.subCategory()), r.factorValue(), r.effectiveUnit(), r.source().trim(),
                 r.validFrom(), r.validTo(), r.method(), spendCurrency(r), id, r.version());
         if (updated == 0) {
             throw ApiException.conflict("ESG-409-VERSION", "Someone else changed this factor. Reload and try again.");
@@ -146,6 +150,61 @@ public class EmissionFactorService {
         }
         if (!spend && r.spendCurrency() != null && !r.spendCurrency().isBlank()) {
             throw FieldValidationException.of("spendCurrency", "only applies to spend-based factors");
+        }
+    }
+
+    /**
+     * F11: the region must be an ISO country or a factor region; the category an existing activity (its method and unit
+     * must match) or a new one declared with its name and GHG scope, which is then added for the tenant.
+     */
+    private void checkActivity(CustomFactorRequest r, UUID factorId) {
+        java.util.Map<String, String> errors = new java.util.LinkedHashMap<>();
+        if (!EmissionActivityService.knownRegion(r.region())) {
+            errors.put("region", "Choose a country or region from the list");
+        }
+        boolean spend = "spend".equals(r.method());
+        String unit = r.unit() == null ? "" : r.unit().trim();
+        String per = unit.startsWith("kgCO2e/") ? unit.substring("kgCO2e/".length()) : "";
+        java.util.Optional<ReferenceDtos.EmissionActivity> activity = activities.find(r.category());
+        if (spend) {
+            if (!unit.isBlank() && r.spendCurrency() != null && !per.equals(r.spendCurrency())) {
+                errors.put("unit", "must be kgCO2e/" + r.spendCurrency() + " for a spend-based factor in " + r.spendCurrency());
+            }
+        } else if (per.isBlank()) {
+            errors.put("unit", unit.isBlank() ? "is required" : "must be kgCO2e per unit, e.g. kgCO2e/litre");
+        }
+        if (activity.isPresent()) {
+            ReferenceDtos.EmissionActivity a = activity.get();
+            if (!a.factorMethod().equals(r.method())) {
+                errors.put("factorMethod", a.label() + " is " + ("spend".equals(a.factorMethod()) ? "spend-based" : "activity-based"));
+            } else if (!spend && a.activityUnit() != null && !per.isBlank() && !a.activityUnit().equals(per)) {
+                // A tenant's own activity follows its only factor; once others share it, the unit is fixed like a platform one.
+                boolean onlyFactor = a.custom() && Boolean.FALSE.equals(jdbc.queryForObject("select exists (select 1 from "
+                        + "carbon.emission_factors where tenant_id is not null and category = ? and id is distinct from ?)",
+                        Boolean.class, r.category(), factorId));
+                if (onlyFactor && errors.isEmpty()) {
+                    jdbc.update("update carbon.emission_activities set activity_unit = ? where tenant_id is not null and category = ?",
+                            per, r.category());
+                } else {
+                    errors.putIfAbsent("unit", "must be kgCO2e/" + a.activityUnit() + " for " + a.label());
+                }
+            }
+        } else {
+            if (r.activityLabel() == null || r.activityLabel().isBlank()) {
+                errors.put("activityLabel", "Name the new activity, or choose an existing one");
+            }
+            if (r.activityScope() == null || r.activityScope().isBlank()) {
+                errors.put("activityScope", "Choose the GHG scope of the new activity");
+            } else if ("scope_3".equals(r.activityScope()) && r.activityScope3Category() == null) {
+                errors.put("activityScope3Category", "Choose the Scope 3 category");
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new FieldValidationException(errors);
+        }
+        if (activity.isEmpty()) {
+            activities.createTenantActivity(r.category(), r.activityLabel(), r.activityScope(), r.activityScope3Category(),
+                    r.method(), per);
         }
     }
 

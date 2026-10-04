@@ -62,7 +62,7 @@ public final class ReportingDtos {
     public record Section(UUID id, String title, String type, String content, String rendered, int sortOrder) {}
 
     public record Step(UUID id, int stepNumber, String label, String role, String status, String approver, Instant actedAt, String comments,
-                       Instant activatedAt, Instant dueAt, boolean overdue, boolean canAct) {}
+                       Instant activatedAt, Instant dueAt, boolean overdue, boolean canAct, String blockedReason) {}
 
     public record Approval(UUID workflowId, String status, int currentStep, int totalSteps, List<Step> steps) {}
 

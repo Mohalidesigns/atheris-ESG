@@ -51,6 +51,14 @@ export const carbonApi = apiSlice.injectEndpoints({
       }),
       gwp: build.query({ query: () => '/carbon/gwp', transformResponse: unwrap }),
 
+      /** Activities (factor categories) with their GHG scope, Scope 3 category and unit (F5/F11). */
+      emissionActivities: build.query({
+        query: () => '/carbon/factors/activities',
+        transformResponse: unwrap,
+        providesTags: ['Factor'],
+      }),
+      /** ISO countries and factor regions for the custom factor picker (F11). */
+      factorRegions: build.query({ query: () => '/carbon/factors/regions', transformResponse: unwrap }),
       factors: build.query({
         query: ({ region, category } = {}) => ({ url: '/carbon/factors', params: { region, category } }),
         transformResponse: unwrap,
@@ -92,7 +100,7 @@ export const carbonApi = apiSlice.injectEndpoints({
 export const {
   useEmissionsQuery, useEmissionsSummaryQuery, usePreviewEmissionMutation, useCreateEmissionMutation, useUpdateEmissionMutation,
   useDeleteEmissionMutation, useVerifyEmissionMutation, useRecalculateMutation, useGwpQuery,
-  useFactorsQuery, useCreateFactorMutation, useUpdateFactorMutation,
+  useFactorsQuery, useCreateFactorMutation, useUpdateFactorMutation, useEmissionActivitiesQuery, useFactorRegionsQuery,
   useFlaringQuery, useCreateFlaringMutation, useUpdateFlaringMutation, useDeleteFlaringMutation, useSatelliteCheckMutation,
   useInstrumentsQuery, useCreateInstrumentMutation, useUpdateInstrumentMutation, useDeleteInstrumentMutation,
   useTargetsQuery, useCreateTargetMutation, useUpdateTargetMutation, useDeleteTargetMutation,

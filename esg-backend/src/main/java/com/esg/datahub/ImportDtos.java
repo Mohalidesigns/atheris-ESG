@@ -14,7 +14,7 @@ public final class ImportDtos {
 
     /** Target fields a column can map to. */
     public static final List<String> FIELDS = List.of("organisation", "metric", "value", "currency", "periodStart",
-            "periodEnd", "subCategory");
+            "periodEnd", "subCategory", "notes", "owner");
 
     public record ImportJobResponse(UUID id, String fileName, String fileFormat, String status, List<String> columns,
                                     JsonNode sampleRows, Map<String, String> suggestedMapping, JsonNode mapping,

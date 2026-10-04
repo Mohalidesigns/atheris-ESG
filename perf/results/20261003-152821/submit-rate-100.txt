@@ -1,0 +1,44 @@
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{step:create}
+    ✓ 'p(95)<500' p(95)=12.45ms
+
+    http_req_duration{step:submit}
+    ✓ 'p(95)<500' p(95)=13.47ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 12003   198.932751/s
+    checks_succeeded...: 100.00% 12003 out of 12003
+    checks_failed......: 0.00%   0 out of 12003
+
+    ✓ signed in
+    ✓ created 201
+    ✓ submitted 200
+
+    HTTP
+    http_req_duration..............: avg=9.54ms  min=5.92ms med=8.44ms  max=315.97ms p(90)=10.23ms p(95)=13ms   
+      { expected_response:true }...: avg=9.54ms  min=5.92ms med=8.44ms  max=315.97ms p(90)=10.23ms p(95)=13ms   
+      { step:create }..............: avg=8.79ms  min=5.92ms med=7.57ms  max=158.14ms p(90)=8.91ms  p(95)=12.45ms
+      { step:submit }..............: avg=10.23ms min=6.62ms med=9.18ms  max=121.85ms p(90)=10.54ms p(95)=13.47ms
+    http_req_failed................: 0.00% 0 out of 12003
+    http_reqs......................: 12003 198.932751/s
+
+    EXECUTION
+    iteration_duration.............: avg=19.25ms min=12.7ms med=16.98ms max=241.18ms p(90)=19.48ms p(95)=25.82ms
+    iterations.....................: 6001  99.458088/s
+    vus............................: 1     min=1          max=10 
+    vus_max........................: 200   min=200        max=200
+
+    NETWORK
+    data_received..................: 18 MB 292 kB/s
+    data_sent......................: 20 MB 328 kB/s
+
+
+

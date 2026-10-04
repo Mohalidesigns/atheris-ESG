@@ -140,7 +140,7 @@ class ReportingApiTest extends ApiTestSupport {
       }
     }
     // Every variable a platform template uses is one the engine knows.
-    VariableEngine engine = new VariableEngine(jdbc, null);
+    VariableEngine engine = new VariableEngine(jdbc, null, null, null, null, null, null, null, null);
     for (JsonNode t : list) {
       for (JsonNode s : t.path("sections")) {
         assertThat(asTenantA(() -> engine.unknown(s.path("content").asText()))).as(t.path("key") + " / " + s.path("title")).isEmpty();
@@ -300,6 +300,10 @@ class ReportingApiTest extends ApiTestSupport {
   void approverCantApproveOwnSubmissionOrTwoSteps() throws Exception {
     String director = role("ESG_DIRECTOR");
     JsonNode r = submit(create("issb_s2", 2038, director), director);
+    // Phase 2: the submitter holds the step's role but is told why they can't act.
+    JsonNode step = currentStep(data(mvc.perform(get("/v1/reports/" + r.path("id").asText()).header("Authorization", director))));
+    assertThat(step.path("canAct").asBoolean()).isFalse();
+    assertThat(step.path("blockedReason").asText()).isEqualTo("You submitted this report — another person must approve it");
     act(r, director, "approve", null, 409);
     r = act(r, role("TENANT_ADMIN"), "approve", null, 403); // holds every permission but not the step's role
     // A user holding two roles of the chain can take only one step.
@@ -308,6 +312,8 @@ class ReportingApiTest extends ApiTestSupport {
       JsonNode m = submit(create("issb_s2", 2037, role("ESG_MANAGER")), role("ESG_MANAGER"));
       m = act(m, director, "approve", null, 200);
       m = act(m, role("BOARD_MEMBER"), "approve", null, 200);
+      JsonNode next = currentStep(data(mvc.perform(get("/v1/reports/" + m.path("id").asText()).header("Authorization", role("BOARD_MEMBER")))));
+      assertThat(next.path("blockedReason").asText()).isEqualTo("You approved an earlier step — another person must approve this one");
       act(m, role("BOARD_MEMBER"), "approve", null, 409);
       m = act(m, role("BOARD_MEMBER"), "reject", "Should not count", 409);
     } finally {

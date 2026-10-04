@@ -1,0 +1,17 @@
+{
+  "_comment": "Bundled framework content packs (Phase 3, D28), loaded by db.migration.R__ref_12_framework_content as 'pending SME verification'. Sources and doubts per pack: SOURCES.md. Changing a CSV needs a new versionLabel here (loaded versions are never rewritten).",
+  "packs": [
+    { "framework": "NGX", "file": "NGX.csv", "versionLabel": "2019", "effectiveFrom": "2019-01-01",
+      "source": "NGX (formerly NSE) Sustainability Disclosure Guidelines, SEC-approved 9 Nov 2018, effective 1 Jan 2019" },
+    { "framework": "SEC_NG", "file": "SEC_NG.csv", "versionLabel": "2026-09", "effectiveFrom": "2026-09-23",
+      "source": "SEC Nigeria circular 'Implementation of the IFRS Sustainability Disclosure Standards in Nigeria' (23 Sep 2026); FRC Roadmap (Amended 2026); FRC SRG 1 (2026)" },
+    { "framework": "PENCOM", "file": "PENCOM.csv", "versionLabel": "2025-09", "effectiveFrom": "2025-09-22",
+      "source": "PenCom Revised Regulation on Investment of Pension Fund Assets (Sep 2025) s.3.15; Revised Guideline on Corporate Governance for LPFOs (22 Sep 2025) ss.6.0, 7.2 incorporating NCCG 2018 Principles 26 and 28" },
+    { "framework": "CDP", "file": "CDP.csv", "versionLabel": "2024", "effectiveFrom": "2024-04-30",
+      "source": "CDP Full Corporate Questionnaire 2024 (modules 1-7 and 13, climate-relevant questions)" },
+    { "framework": "GHG_PROTOCOL", "file": "GHG_PROTOCOL.csv", "versionLabel": "2004-rev+S2G-2015", "effectiveFrom": "2015-01-20",
+      "source": "GHG Protocol Corporate Accounting and Reporting Standard, Revised Edition (WBCSD/WRI 2004) and Scope 2 Guidance (WRI/WBCSD 2015)" },
+    { "framework": "SASB", "file": "SASB.csv", "versionLabel": "EM-EP-2023-12", "effectiveFrom": "2023-12-01",
+      "source": "SASB Standards, Oil & Gas - Exploration & Production (EM-EP), version 2023-12 (IFRS Foundation)" }
+  ]
+}

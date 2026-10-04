@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReportingPage from './ReportingPage';
 import { authenticated, renderWithStore } from '../../../test/renderWithStore';
@@ -85,7 +85,7 @@ describe('ReportingPage', () => {
       templateId: 't-gri', title: 'Sustainability report 2026', description: null, reportingPeriodStart: '2026-01-01', reportingPeriodEnd: '2026-12-31',
     }));
     expect(await screen.findByLabelText('Report status')).toHaveTextContent('Draft');
-  });
+  }, 15000); // many steps (template preview, form, create, open): slow under the full parallel run
 
   it('draft editor: unknown variables are refused, data can be inserted, sections save with their ids', async () => {
     let saved;
@@ -102,6 +102,18 @@ describe('ReportingPage', () => {
     await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
     expect(text).toHaveValue('Water: {{metric:water_withdrawal_m3}}');
+    // Phase 2: inserted at the caret, not at the start, with a space on each side where needed.
+    await userEvent.clear(text);
+    await userEvent.type(text, 'Used:litres');
+    text.setSelectionRange(5, 5);
+    fireEvent.select(text);
+    await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
+    expect(text).toHaveValue('Used: {{metric:water_withdrawal_m3}} litres');
+    await userEvent.clear(text);
+    await userEvent.type(text, 'Water: ');
+    await userEvent.click(within(second).getByRole('button', { name: 'Insert data' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Water withdrawn' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save sections' }));
     await waitFor(() => expect(saved).toEqual({
       version: 3, sections: [
@@ -178,6 +190,21 @@ describe('ReportingPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Reopen for revision' }));
     await waitFor(() => expect(reopened).toEqual({ version: 3 }));
+  });
+
+  it('a draft previews as a watermarked PDF in a new tab; the final export stays hidden until approval (Phase 3)', async () => {
+    const opened = vi.fn(() => ({}));
+    vi.stubGlobal('open', opened);
+    URL.createObjectURL = vi.fn(() => 'blob:preview-1');
+    URL.revokeObjectURL = vi.fn();
+    const calls = fakeApi(routes(report(), { 'GET /reports/r1/preview': () => [200, '%PDF-1.4'] }));
+    renderWithStore(<ReportingPage />, { preloadedState: authenticated(['reports:read']), route: '/?report=r1' });
+    await userEvent.click(await screen.findByRole('button', { name: 'Preview draft PDF' }));
+    await waitFor(() => expect(opened).toHaveBeenCalledWith('blob:preview-1', '_blank', 'noopener'));
+    expect(calls.some((c) => c.key === 'GET /reports/r1/preview')).toBe(true);
+    expect(await screen.findByText('Draft preview opened (watermarked DRAFT).')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Export PDF' })).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
   });
 
   it('read-only users see the report without editing or approval actions', async () => {

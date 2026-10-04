@@ -24,17 +24,66 @@ export const CARBON_VARIABLES = {
   scope1: 'Scope 1 emissions', scope2_location: 'Scope 2 emissions (location-based)', scope3: 'Scope 3 emissions',
   total_location: 'Total emissions (location-based)', flaring: 'Gas flaring emissions',
 };
+// no-mock-gate: config — governance variables (VariableEngine, WP-34)
+export const GOVERNANCE_VARIABLES = {
+  board_size: 'Board size', board_independent_pct: 'Independent directors %', board_female_pct: 'Women on the board %',
+  policies_published: 'Published policies', whistleblower_cases: 'Whistleblower cases received',
+};
+// no-mock-gate: config — social variables (VariableEngine / SocialMetricsService.VARIABLES, WP-33)
+export const SOCIAL_VARIABLES = {
+  headcount: 'Headcount', women_pct: 'Women %', women_management_pct: 'Women in management %', women_senior_pct: 'Women in senior roles %',
+  disability_pct: 'Employees with disability %', pay_gap_pct: 'Gender pay gap (mean) %', turnover_pct: 'Employee turnover %',
+  hours_worked: 'Hours worked', ltifr: 'LTIFR', trir: 'TRIR', lost_time_injuries: 'Lost-time injuries', recordable_cases: 'Recordable cases',
+  fatalities: 'Fatalities', community_investment: 'Community investment', beneficiaries: 'Community project beneficiaries',
+  grievances_received: 'Grievances received', grievances_resolved: 'Grievances resolved', grievances_open: 'Grievances open at period end',
+};
+// no-mock-gate: config — risk variables (VariableEngine / RiskInsights.VARIABLES, WP-32)
+export const RISK_VARIABLES = {
+  material_topics: 'Number of material topics', material_topic_list: 'List of material topics', open_risks: 'Open risks',
+  high_risks: 'High and very high risks', climate_risks: 'Open climate risks', physical_high_risks: 'Sites at high physical risk',
+  scenarios_analysed: 'Climate scenarios analysed',
+};
+// no-mock-gate: config — supply chain variables (VariableEngine.SUPPLY, WP-31)
+export const SUPPLY_VARIABLES = {
+  suppliers: 'Suppliers on the register', suppliers_assessed: 'Suppliers assessed', high_risk_suppliers: 'High-risk suppliers',
+  average_score: 'Average supplier ESG score', open_actions: 'Open corrective actions', local_spend_pct: 'Local spend %',
+  scope3_cat1_tonnes: 'Scope 3 Category 1 from supplier spend',
+};
+// no-mock-gate: config — analytics variables (WP-35; AnalyticsInsights.VARIABLES)
+export const ANALYTICS_VARIABLES = {
+  maturity_score: 'ESG maturity score', maturity_level: 'ESG maturity level', anomalies_open: 'Anomaly flags not yet resolved',
+  anomalies_accepted: 'Anomaly flags explained and accepted', variance_explanations: 'Accepted variance explanations (text)',
+};
+// no-mock-gate: config — carbon credit variables (WP-41; CarbonMarketInsights.VARIABLES)
+export const OFFSET_VARIABLES = {
+  credits_retired: 'Carbon credits retired (tCO2e)', net_scope12: 'Net Scope 1+2 after credits', offset_share: 'Credits as % of gross Scope 1+2',
+  offset_to_reduction: 'Offset-to-reduction ratio',
+};
+// no-mock-gate: config — training variables (WP-42; TrainingInsights.VARIABLES)
+export const TRAINING_VARIABLES = {
+  hours_total: 'Training hours completed', hours_per_employee: 'Training hours per person', completion_rate: 'Training completion rate (%)',
+  certificates_issued: 'Training certificates issued',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
 const VAR = /\{\{\s*([a-z]+):([A-Za-z0-9_]+(?::[a-z]+)?)\s*\}\}/g;
 
 /** Variables in the text that VariableEngine wouldn't know (same rules as the server). */
-export const unknownVariables = (text, { metricKeys = [], frameworks = [] } = {}) => {
+export const unknownVariables = (text, { metricKeys = [], frameworks = [], kpiCodes = null } = {}) => {
   const unknown = [];
   for (const [, source, key] of (text ?? '').matchAll(VAR)) {
     const ok = (source === 'metric' && metricKeys.includes(key))
       || (source === 'carbon' && key in CARBON_VARIABLES)
+      || (source === 'governance' && key in GOVERNANCE_VARIABLES)
+      || (source === 'social' && key in SOCIAL_VARIABLES)
+      || (source === 'risk' && key in RISK_VARIABLES)
+      || (source === 'supply' && key in SUPPLY_VARIABLES)
+      || (source === 'analytics' && key in ANALYTICS_VARIABLES)
+      || (source === 'offsets' && key in OFFSET_VARIABLES)
+      || (source === 'training' && key in TRAINING_VARIABLES)
+      // KPI codes: checked when the user can list KPIs; otherwise the server checks them on save.
+      || (source === 'kpi' && (kpiCodes == null || kpiCodes.includes(key)))
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)
       || (source === 'report' && ['title', 'period'].includes(key))
       || (source === 'tenant' && key === 'name');

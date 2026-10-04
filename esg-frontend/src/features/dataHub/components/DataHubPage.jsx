@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { Add, Warning as WarningIcon } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import Can from '../../../components/rbac/Can';
 import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';
@@ -16,8 +17,11 @@ import DataPointDialog from './DataPointDialog';
 import DataPointDrawer from './DataPointDrawer';
 import DataSourcesTab from './DataSourcesTab';
 import FxRatesTab from './FxRatesTab';
+import OfflineTab from '../../offline/components/OfflineTab';
 import ImportWizard from './ImportWizard';
 import StatusChip from './StatusChip';
+import BulkActions from './BulkActions';
+import { tr, formattingLocale } from '../../../i18n';
 
 const CATEGORY_COLOURS = { E: '#2D7D46', S: '#1A365D', G: '#B7791F' };
 const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
@@ -29,7 +33,7 @@ function Count({ label, status }) {
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Typography variant="caption" color="text.secondary">{label}</Typography>
         <Typography variant="h4" sx={{ fontWeight: 700, color: STATUS[status]?.color ?? '#1A365D' }}>
-          {isLoading ? '…' : isError ? '—' : (data?.totalElements ?? 0).toLocaleString()}
+          {isLoading ? '…' : isError ? '—' : (data?.totalElements ?? 0).toLocaleString(formattingLocale())}
         </Typography>
       </CardContent>
     </Card>
@@ -37,8 +41,10 @@ function Count({ label, status }) {
 }
 
 /** A server-paged list of data points with fixed and user filters; "Open" shows the detail drawer. */
-function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage }) {
+function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, emptyMessage, selectable = false }) {
   const table = useServerTable({ defaultSort: { field: 'createdAt', direction: 'desc' } });
+  // Phase 3 (2): selected rows (kept across pages) for the bulk bar.
+  const [selected, setSelected] = useState(() => new Map());
   const params = Object.fromEntries(Object.entries({ ...filters, ...fixed }).filter(([, v]) => v));
   const query = useDataPointsQuery({ ...table.params, ...params });
   const columns = [
@@ -60,12 +66,12 @@ function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, e
       render: (dp) => (
         <>
           <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
-            {dp.numericValue != null ? Number(dp.numericValue).toLocaleString() : dp.textValue}
+            {dp.numericValue != null ? Number(dp.numericValue).toLocaleString(formattingLocale()) : dp.textValue}
           </Typography>
           <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>{dp.unit}</Typography>
           {dp.originalCurrency && (
             <Typography variant="caption" display="block" color="text.secondary">
-              {Number(dp.originalAmount).toLocaleString()} {dp.originalCurrency}
+              {Number(dp.originalAmount).toLocaleString(formattingLocale())} {dp.originalCurrency}
             </Typography>
           )}
         </>
@@ -89,11 +95,18 @@ function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, e
       field: 'open', header: '', align: 'right',
       render: (dp) => (
         <Button size="small" onClick={() => onOpen(dp.id)}
-          aria-label={`Open ${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}`}>Open</Button>
+          aria-label={`Open ${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}`}>{tr("Open")}</Button>
       ),
     },
   ];
-  return <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage} />;
+  return (
+    <>
+      {selectable && <BulkActions selected={selected} onDone={() => setSelected(new Map())} />}
+      <DataTable columns={columns} query={query} table={table} ariaLabel={ariaLabel} emptyTitle={emptyTitle} emptyMessage={emptyMessage}
+        rowsPerPageOptions={[10, 20, 50, 100]}
+        selection={selectable ? { selected, onChange: setSelected, rowLabel: (dp) => `${dp.metricName ?? dp.metricKey} ${dp.reportingPeriodStart}` } : undefined} />
+    </>
+  );
 }
 
 function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
@@ -102,41 +115,41 @@ function DataTab({ metrics, orgs, onOpen, filters, setFilters }) {
   return (
     <>
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Drafts" status="draft" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Awaiting validation" status="submitted" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Awaiting approval" status="validated" /></Grid>
-        <Grid size={{ xs: 6, md: 3 }}><Count label="Approved" status="approved" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Drafts")} status="draft" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Awaiting validation")} status="submitted" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Awaiting approval")} status="validated" /></Grid>
+        <Grid size={{ xs: 6, md: 3 }}><Count label={tr("Approved")} status="approved" /></Grid>
       </Grid>
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <TextField select size="small" label="Pillar" value={filters.category} onChange={set('category')} sx={{ minWidth: 140 }}>
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="E">Environmental</MenuItem>
-            <MenuItem value="S">Social</MenuItem>
-            <MenuItem value="G">Governance</MenuItem>
+          <TextField select size="small" label={tr("Pillar")} value={filters.category} onChange={set('category')} sx={{ minWidth: 140 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            <MenuItem value="E">{tr("Environmental")}</MenuItem>
+            <MenuItem value="S">{tr("Social")}</MenuItem>
+            <MenuItem value="G">{tr("Governance")}</MenuItem>
           </TextField>
-          <TextField select size="small" label="Status" value={filters.status} onChange={set('status')} sx={{ minWidth: 150 }}>
-            <MenuItem value="">All</MenuItem>
-            {Object.entries(STATUS).map(([s, v]) => <MenuItem key={s} value={s}>{v.label}</MenuItem>)}
+          <TextField select size="small" label={tr("Status")} value={filters.status} onChange={set('status')} sx={{ minWidth: 150 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
+            {Object.entries(STATUS).map(([s, v]) => <MenuItem key={s} value={s}>{tr(v.label)}</MenuItem>)}
           </TextField>
-          <TextField select size="small" label="Metric" value={filters.metricKey} onChange={set('metricKey')} sx={{ minWidth: 200 }}>
-            <MenuItem value="">All</MenuItem>
+          <TextField select size="small" label={tr("Metric")} value={filters.metricKey} onChange={set('metricKey')} sx={{ minWidth: 200 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
             {metrics.map((m) => <MenuItem key={m.metricKey} value={m.metricKey}>{m.name}</MenuItem>)}
           </TextField>
-          <TextField select size="small" label="Organisation" value={filters.orgId} onChange={set('orgId')} sx={{ minWidth: 180 }}>
-            <MenuItem value="">All</MenuItem>
+          <TextField select size="small" label={tr("Organisation")} value={filters.orgId} onChange={set('orgId')} sx={{ minWidth: 180 }}>
+            <MenuItem value="">{tr("All")}</MenuItem>
             {orgs.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
           </TextField>
-          <TextField size="small" type="date" label="From" value={filters.from} onChange={set('from')} InputLabelProps={{ shrink: true }} />
-          <TextField size="small" type="date" label="To" value={filters.to} onChange={set('to')} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" type="date" label={tr("From")} value={filters.from} onChange={set('from')} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" type="date" label={tr("To")} value={filters.to} onChange={set('to')} InputLabelProps={{ shrink: true }} />
           {filters.importJobId && (
-            <Chip label="From one import" onDelete={() => setFilters((f) => ({ ...f, importJobId: '' }))} />
+            <Chip label={tr("From one import")} onDelete={() => setFilters((f) => ({ ...f, importJobId: '' }))} />
           )}
-          {filtered && <Button size="small" onClick={() => setFilters(emptyFilters)}>Clear filters</Button>}
+          {filtered && <Button size="small" onClick={() => setFilters(emptyFilters)}>{tr("Clear filters")}</Button>}
         </CardContent>
       </Card>
-      <PointsList filters={filters} onOpen={onOpen} ariaLabel="Data points" emptyTitle="No data points yet"
-        emptyMessage={filtered ? 'No data points match these filters.' : 'Add the first data point or import a file.'} />
+      <PointsList selectable filters={filters} onOpen={onOpen} ariaLabel={tr("Data points")} emptyTitle={tr("No data points yet")}
+        emptyMessage={filtered ? tr("No data points match these filters.") : tr("Add the first data point or import a file.")} />
     </>
   );
 }
@@ -145,14 +158,14 @@ function ReviewTab({ onOpen }) {
   return (
     <>
       <Can permission="data_points:validate">
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Awaiting validation</Typography>
-        <PointsList fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel="Awaiting validation"
-          emptyTitle="Nothing to validate" emptyMessage="Submitted data points appear here." />
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>{tr("Awaiting validation")}</Typography>
+        <PointsList selectable fixed={{ status: 'submitted' }} onOpen={onOpen} ariaLabel={tr("Awaiting validation")}
+          emptyTitle={tr("Nothing to validate")} emptyMessage={tr("Submitted data points appear here.")} />
       </Can>
       <Can permission="data_points:approve">
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 3, mb: 1 }}>Awaiting approval</Typography>
-        <PointsList fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel="Awaiting approval"
-          emptyTitle="Nothing to approve" emptyMessage="Validated data points appear here." />
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 3, mb: 1 }}>{tr("Awaiting approval")}</Typography>
+        <PointsList selectable fixed={{ status: 'validated' }} onOpen={onOpen} ariaLabel={tr("Awaiting approval")}
+          emptyTitle={tr("Nothing to approve")} emptyMessage={tr("Validated data points appear here.")} />
       </Can>
     </>
   );
@@ -165,16 +178,32 @@ const TABS = [
   { value: 'import', label: 'Import', anyOf: ['data_points:create'] },
   { value: 'sources', label: 'Sources', anyOf: ['data_sources:read'] },
   { value: 'rates', label: 'Exchange rates', anyOf: ['fx_rates:read'] },
+  // WP-43: records saved offline on this device, and conflicts waiting for a decision.
+  { value: 'device', label: 'On this device', anyOf: ['data_points:create'] },
 ];
 
 /** M1 ESG Data Hub (WP-20): collect → validate → approve, with quality scores, import, sources and exchange rates. */
 export default function DataHubPage() {
   const permissions = useSelector((s) => s.auth.user?.permissions) ?? [];
   const tabs = TABS.filter((t) => t.anyOf.some((p) => permissions.includes(p)));
-  const [tab, setTab] = useState('data');
+  // ?tab=review (e.g. from the Dashboard's review card, F14) opens that tab.
+  const [params, setParams] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') ?? 'data');
+  // A link to another tab while the page is open (e.g. the top bar's offline chip → ?tab=device) switches to it.
+  const tabParam = params.get('tab');
+  const [seenTabParam, setSeenTabParam] = useState(tabParam);
+  if (tabParam !== seenTabParam) {
+    setSeenTabParam(tabParam);
+    if (tabParam) setTab(tabParam);
+  }
   const [filters, setFilters] = useState(emptyFilters);
-  const [editing, setEditing] = useState(undefined); // undefined closed, null new, object edit
-  const [openId, setOpenId] = useState(null);
+  // ?add=<metric>&from=&to= (Phase 3: the Carbon intensity prompt) opens the form with that metric and period.
+  const preset = params.get('add') && permissions.includes('data_points:create')
+    ? { metricKey: params.get('add'), reportingPeriodStart: params.get('from') ?? '', reportingPeriodEnd: params.get('to') ?? '' }
+    : null;
+  const [editing, setEditing] = useState(preset ? null : undefined); // undefined closed, null new, object edit
+  // ?point=<id> (e.g. from the dashboard's activity feed) opens that point's details.
+  const [openId, setOpenId] = useState(params.get('point'));
   const { data: metrics = [] } = useMetricsQuery();
   const { data: orgs = [] } = useListOrganisationsQuery();
   const current = tabs.some((t) => t.value === tab) ? tab : tabs[0]?.value;
@@ -182,16 +211,16 @@ export default function DataHubPage() {
 
   return (
     <Box>
-      <PageHeader title="ESG Data Hub" subtitle="Collect, validate and approve ESG data"
+      <PageHeader title={tr("ESG Data Hub")} subtitle={tr("Collect, validate and approve ESG data")}
         actions={(
           <Can permission="data_points:create">
             <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setEditing(null)} disabled={!metrics.length}>
-              Add data point
+              {tr("Add data point")}
             </Button>
           </Can>
         )} />
       <Tabs value={current} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile>
-        {tabs.map((t) => <Tab key={t.value} value={t.value} label={t.label} />)}
+        {tabs.map((t) => <Tab key={t.value} value={t.value} label={tr(t.label)} />)}
       </Tabs>
 
       {current === 'data' && <DataTab metrics={sortedMetrics} orgs={orgs} onOpen={setOpenId} filters={filters} setFilters={setFilters} />}
@@ -201,11 +230,16 @@ export default function DataHubPage() {
       )}
       {current === 'sources' && <DataSourcesTab />}
       {current === 'rates' && <FxRatesTab />}
+      {current === 'device' && <OfflineTab metrics={sortedMetrics} orgs={orgs} />}
 
       <DataPointDrawer id={openId} onClose={() => setOpenId(null)} onEdit={(dp) => setEditing(dp)} />
-      {editing !== undefined && (
-        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing}
-          onClose={(saved) => { setEditing(undefined); if (saved?.id) setOpenId(saved.id); }} />
+      {editing !== undefined && metrics.length > 0 && (
+        <DataPointDialog open metrics={metrics} orgs={orgs} point={editing} preset={editing ? null : preset}
+          onClose={(saved) => {
+            setEditing(undefined);
+            if (preset) setParams({}, { replace: true });
+            if (saved?.id) setOpenId(saved.id);
+          }} />
       )}
     </Box>
   );

@@ -23,14 +23,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Platform-scope users are left out unless {@code includePlatform} (the caller is one) (S5).
      */
     @Query(value = "select * from auth.users u where u.tenant_id = :tenantId and (:includePlatform or not auth.is_platform_user(u.id)) "
-            + "and (:q = '' or lower(u.email) like :q or lower(u.first_name) like :q or lower(u.last_name) like :q) "
-            + "order by lower(u.last_name), lower(u.first_name), u.id",
+            + FILTERS + "order by lower(u.first_name), lower(u.last_name), u.id",
             countQuery = "select count(*) from auth.users u where u.tenant_id = :tenantId "
-            + "and (:includePlatform or not auth.is_platform_user(u.id)) "
-            + "and (:q = '' or lower(u.email) like :q or lower(u.first_name) like :q or lower(u.last_name) like :q)",
+            + "and (:includePlatform or not auth.is_platform_user(u.id)) " + FILTERS,
             nativeQuery = true)
     Page<User> search(@Param("tenantId") UUID tenantId, @Param("q") String q,
-                      @Param("includePlatform") boolean includePlatform, Pageable pageable);
+                      @Param("includePlatform") boolean includePlatform, @Param("role") String role,
+                      @Param("status") String status, Pageable pageable);
+
+    /** Phase 2 user list filters: text, role (name; '' = any), status (active | inactive | '' = any). */
+    String FILTERS = "and (:q = '' or lower(u.email) like :q or lower(u.first_name) like :q or lower(u.last_name) like :q "
+            + "or lower(u.first_name || ' ' || u.last_name) like :q) "
+            + "and (:role = '' or exists (select 1 from auth.user_roles ur join auth.roles r on r.id = ur.role_id "
+            + "where ur.user_id = u.id and r.name = :role)) "
+            + "and (:status = '' or (:status = 'active') = (u.is_active and u.deleted_at is null)) ";
 
     @Query(value = "select auth.is_platform_user(:id)", nativeQuery = true)
     boolean isPlatformUser(@Param("id") UUID id);

@@ -28,3 +28,8 @@ Thumbs.db
 # Office lock files
 .~lock.*#
 var/
+# WP-50 AI service
+esg-ai/.venv/
+esg-ai/**/__pycache__/
+esg-ai/.pytest_cache/
+perf/results/*/backend.log
