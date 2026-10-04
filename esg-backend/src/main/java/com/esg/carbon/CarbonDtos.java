@@ -65,7 +65,10 @@ public final class CarbonDtos {
                                    LocalDate reportingPeriodEnd, String notes, boolean verified, Instant calculatedAt,
                                    Instant createdAt, Long version) {}
 
-    public record Recalculation(int checked, int updated, List<String> changes) {}
+    /** {@code changes}: the first {@link #LISTED} changed records; {@code updated} counts them all. */
+    public record Recalculation(int checked, int updated, List<String> changes) {
+        public static final int LISTED = 50;
+    }
 
     /** The calculator's result step: exactly what saving would store, without storing it. */
     public record Preview(BigDecimal activityData, String activityUnit, BigDecimal spendAmount, String spendCurrency, BigDecimal fxRate,

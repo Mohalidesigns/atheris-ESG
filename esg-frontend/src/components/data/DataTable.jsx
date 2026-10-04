@@ -3,6 +3,7 @@ import {
 } from '@mui/material';
 import { EmptyState, ErrorState, LoadingState } from '../states/States';
 import { normalizePage } from './useServerTable';
+import { tr } from '../../i18n';
 
 /**
  * Server-backed table (WP-16): the server pages, sorts and filters; this renders one page with loading,
@@ -56,9 +57,9 @@ export default function DataTable({
                       <TableSortLabel active={table.sort?.field === c.field}
                         direction={table.sort?.field === c.field ? table.sort.direction : 'asc'}
                         onClick={() => table.toggleSort(c.field)}>
-                        {c.header}
+                        {tr(c.header)}
                       </TableSortLabel>
-                    ) : c.header}
+                    ) : tr(c.header)}
                   </TableCell>
                 ))}
               </TableRow>

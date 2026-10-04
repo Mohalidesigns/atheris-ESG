@@ -1,0 +1,47 @@
+time="2026-10-03T15:34:27+01:00" level=warning msg="The test has generated metrics with 100082 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-10-03T15:35:02+01:00" level=warning msg="The test has generated metrics with 200027 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{step:create}
+    ✗ 'p(95)<500' p(95)=629.28ms
+
+    http_req_duration{step:submit}
+    ✗ 'p(95)<500' p(95)=623.38ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 55963   620.907201/s
+    checks_succeeded...: 100.00% 55963 out of 55963
+    checks_failed......: 0.00%   0 out of 55963
+
+    ✓ signed in
+    ✓ created 201
+    ✓ submitted 200
+
+    HTTP
+    http_req_duration..............: avg=268.65ms min=5.05ms  med=229.8ms  max=1.66s p(90)=516.37ms p(95)=626.36ms
+      { expected_response:true }...: avg=268.65ms min=5.05ms  med=229.8ms  max=1.66s p(90)=516.37ms p(95)=626.36ms
+      { step:create }..............: avg=268.49ms min=5.05ms  med=228.9ms  max=1.64s p(90)=516.91ms p(95)=629.28ms
+      { step:submit }..............: avg=268.82ms min=5.53ms  med=230.67ms max=1.66s p(90)=515.98ms p(95)=623.38ms
+    http_req_failed................: 0.00% 0 out of 55963
+    http_reqs......................: 55963 620.907201/s
+
+    EXECUTION
+    iteration_duration.............: avg=537.68ms min=10.77ms med=508.13ms max=2.34s p(90)=927.67ms p(95)=1.07s   
+    iterations.....................: 27981 310.448053/s
+    vus............................: 3     min=3          max=200
+    vus_max........................: 200   min=200        max=200
+
+    NETWORK
+    data_received..................: 82 MB 914 kB/s
+    data_sent......................: 92 MB 1.0 MB/s
+
+
+
+time="2026-10-03T15:35:24+01:00" level=error msg="thresholds on metrics 'http_req_duration{step:create}, http_req_duration{step:submit}' have been crossed"

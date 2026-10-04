@@ -39,7 +39,8 @@ export const dataHubApi = apiSlice.injectEndpoints({
         url: `/data/points/${id}/${action}`, method: 'PUT', body: { version, ...(reason ? { reason } : {}) },
       }),
       transformResponse: unwrap,
-      invalidatesTags: (_r, _e, { id }) => ['DataPoint', { type: 'DataPointHistory', id }],
+      // Approving a point scans it for anomalies (WP-35): the flags and the analytics overview change too.
+      invalidatesTags: (_r, _e, { id }) => ['DataPoint', { type: 'DataPointHistory', id }, 'Anomaly', 'AnalyticsOverview'],
     }),
     /**
      * Phase 3 bulk step: { action, items: [{id, version}] } or { action, importJobId }, reason for reject. Each point is
@@ -106,8 +107,9 @@ export const dataHubApi = apiSlice.injectEndpoints({
     importFailedRows: build.mutation({
       query: (id) => ({ url: `/data/import/${id}/failed-rows`, responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
+    // WP-46: ?kind=energy|utilities|workforce|waste — one template per source system's export (D44).
     importTemplate: build.mutation({
-      query: () => ({ url: '/data/import/template', responseHandler: (r) => r.text(), cache: 'no-store' }),
+      query: (kind) => ({ url: '/data/import/template', params: kind ? { kind } : undefined, responseHandler: (r) => r.text(), cache: 'no-store' }),
     }),
     startImport: build.mutation({
       query: ({ id, ...body }) => ({ url: `/data/import/${id}/start`, method: 'POST', body }),

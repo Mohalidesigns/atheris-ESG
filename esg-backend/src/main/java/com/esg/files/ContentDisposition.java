@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 public final class ContentDisposition {
     private ContentDisposition() {}
 
-    static String attachment(String fileName) {
+    public static String attachment(String fileName) {
         return header("attachment", fileName);
     }
 

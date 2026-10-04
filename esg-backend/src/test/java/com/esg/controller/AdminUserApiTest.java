@@ -303,19 +303,25 @@ class AdminUserApiTest extends ApiTestSupport {
         .andExpect(jsonPath("$.data[?(@.key == 'virus_scanner')].status").value(org.hamcrest.Matchers.contains("sandbox")))
         .andExpect(jsonPath("$.data[?(@.key == 'satellite_flaring')].status").value(org.hamcrest.Matchers.contains("sandbox")))
         .andExpect(jsonPath("$.data[?(@.key == 'regulator_feed')].status").value(org.hamcrest.Matchers.contains("not_configured")))
-        .andExpect(jsonPath("$.data.length()").value(5));
+        // WP-41: the carbon credit registry and exchange (Sandbox adapters, D36).
+        .andExpect(jsonPath("$.data[?(@.key == 'carbon_registry')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        .andExpect(jsonPath("$.data[?(@.key == 'carbon_exchange')].status").value(org.hamcrest.Matchers.contains("sandbox")))
+        // WP-50: the AI service (the test profile configures none, D38).
+        .andExpect(jsonPath("$.data[?(@.key == 'ai_service')].status").value(org.hamcrest.Matchers.contains("not_configured")))
+        .andExpect(jsonPath("$.data.length()").value(8));
     mvc.perform(get("/v1/integrations").header("Authorization", bearerForRole("DATA_COLLECTOR"))).andExpect(status().isForbidden());
   }
 
   @Test
-  void rolesEndpointListsTheElevenTenantRolesWithPermissions() throws Exception {
+  void rolesEndpointListsTheTwelveTenantRolesWithPermissions() throws Exception {
+    // WP-34 added ETHICS_OFFICER (designated whistleblower investigators).
     mvc.perform(get("/v1/admin/roles").header("Authorization", admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data", hasSize(11)))
+        .andExpect(jsonPath("$.data", hasSize(12)))
         .andExpect(jsonPath("$.data[0].name").value("TENANT_ADMIN"))
         .andExpect(jsonPath("$.data[0].mfaRequired").value(true));
     mvc.perform(get("/v1/admin/roles").header("Authorization", bearerForRole("SUPER_ADMIN")))
-        .andExpect(jsonPath("$.data", hasSize(12)));
+        .andExpect(jsonPath("$.data", hasSize(13)));
   }
 
   private String superAdminRoleId() throws Exception {

@@ -94,6 +94,10 @@ class ComplianceApiTest extends ApiTestSupport {
 
   @Test
   void gapAnalysisForEveryFrameworkWithContent() throws Exception {
+    // A year with no data at all: the board register and published policies (other tests add them) evidence GRI
+    // 2-9/2-10/2-11/2-23/2-26 for any year they cover, so clear them first.
+    asOwnerInTenantA("update governance.board_members set deleted_at = now() where deleted_at is null",
+        "update governance.governance_policies set deleted_at = now() where deleted_at is null and status = 'published'");
     for (String code : List.of("GRI", "ISSB_S1", "ISSB_S2", "TCFD", "CBN_NSBP")) {
       JsonNode r = gaps(code, 2041);
       int leaves = 0;
@@ -109,7 +113,10 @@ class ComplianceApiTest extends ApiTestSupport {
       assertThat(r.path("missing").asInt()).isEqualTo(leaves);
       assertThat(r.path("overallCompleteness").decimalValue()).isEqualByComparingTo("0");
     }
-    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high).
+    // CBN NSBP: 9 principles, mandatory narrative → 40 + 30 = 70 (high) — with no filing due inside 90 days (other
+    // tests, e.g. the dashboard's, may have created one; that would add the +10 deadline bonus).
+    asOwnerInTenantA("update compliance.filing_deadlines set deleted_at = now() where deleted_at is null and framework_id = "
+        + "(select id from compliance.regulatory_frameworks where code = 'CBN_NSBP') and deadline_date <= current_date + 90");
     JsonNode cbn = gaps("CBN_NSBP", 2041);
     assertThat(cbn.path("totalRequirements").asInt()).isEqualTo(9);
     assertThat(requirement(cbn, "P1").path("priorityScore").asInt()).isEqualTo(70);

@@ -7,6 +7,7 @@ import { useNotificationPreferencesQuery, useUpdateNotificationPreferencesMutati
 import { toFormError } from '../../../services/apiSlice';
 import { humanize } from '../../../services/labels';
 import SandboxChip from '../../../components/feedback/SandboxChip';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — channels allowed by NotificationDtos.PreferenceUpdate
 const CHANNELS = [
@@ -46,18 +47,18 @@ export default function NotificationPreferencesDialog({ open, onClose }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Notification preferences</DialogTitle>
+      <DialogTitle>{tr("Notification preferences")}</DialogTitle>
       <DialogContent>
         {isLoading && <CircularProgress size={24} />}
-        {isError && <Alert severity="error">{toFormError(error).message}</Alert>}
+        {isError && <Alert severity="error">{tr(toFormError(error).message)}</Alert>}
         {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
         {data && (
           <Table size="small">
             <TableHead><TableRow>
-              <TableCell>Notification</TableCell>
+              <TableCell>{tr("Notification")}</TableCell>
               {CHANNELS.map((c) => (
                 <TableCell key={c.value} align="center">
-                  {c.label}
+                  {tr(c.label)}
                   {sandbox[c.value] && <SandboxChip sx={{ ml: 0.5 }} />}
                 </TableCell>
               ))}
@@ -76,7 +77,7 @@ export default function NotificationPreferencesDialog({ open, onClose }) {
                     );
                     return (
                       <TableCell key={c.value} align="center">
-                        {p.available ? box : <Tooltip title="This channel is not configured"><span>{box}</span></Tooltip>}
+                        {p.available ? box : <Tooltip title={tr("This channel is not configured")}><span>{box}</span></Tooltip>}
                       </TableCell>
                     );
                   })}
@@ -87,8 +88,8 @@ export default function NotificationPreferencesDialog({ open, onClose }) {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={onSave} disabled={saving || !data}>Save</Button>
+        <Button onClick={onClose}>{tr("Cancel")}</Button>
+        <Button variant="contained" onClick={onSave} disabled={saving || !data}>{tr("Save")}</Button>
       </DialogActions>
     </Dialog>
   );

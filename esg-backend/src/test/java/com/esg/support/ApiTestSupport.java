@@ -34,7 +34,7 @@ public abstract class ApiTestSupport {
   /** Fixture role users in tenant A (fixture.sql): role name → user id. */
   public static final List<String> ROLES = List.of("SUPER_ADMIN", "TENANT_ADMIN", "ESG_DIRECTOR", "ESG_MANAGER",
       "ESG_ANALYST", "DATA_COLLECTOR", "AUDITOR", "INVESTOR_VIEWER", "CONSULTANT", "BOARD_MEMBER",
-      "COMPLIANCE_OFFICER", "TRAINING_ADMIN");
+      "COMPLIANCE_OFFICER", "TRAINING_ADMIN", "ETHICS_OFFICER");
 
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) {

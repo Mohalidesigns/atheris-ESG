@@ -8,7 +8,7 @@ reporting periods and one user per built-in role.
 
 Password for every `@esgpro.ng` user: `LocalDev!2026` (**dev-only**; the seed resets it on every start).
 
-One user per built-in role (Phase 3; the E2E suite signs in as each of them, `esg-frontend/cypress/fixtures/roles.json`):
+One user per built-in role (13) (Phase 3; the E2E suite signs in as each of them, `esg-frontend/cypress/fixtures/roles.json`):
 
 | User | Name | Role | Scope |
 |---|---|---|---|
@@ -24,9 +24,12 @@ One user per built-in role (Phase 3; the E2E suite signs in as each of them, `es
 | `consultant@esgpro.ng` | Kunle Consultant | CONSULTANT | whole tenant |
 | `board@esgpro.ng` | Bisi Board | BOARD_MEMBER | whole tenant |
 | `training@esgpro.ng` | Tunde Training | TRAINING_ADMIN | whole tenant |
+| `ethics@esgpro.ng` | Funmi Ethics | ETHICS_OFFICER | whole tenant (whistleblower cases) |
 
 Approval chains you can walk with these users: data point Emeka (enter, submit) → Chidi (validate) → Adaeze (approve);
-report Amina (create, submit) → Adaeze → Kemi → Bisi; regulatory change Kemi (assess) → Adaeze (close).
+report Amina (create, submit) → Adaeze → Kemi → Bisi; regulatory change Kemi (assess) → Adaeze (close); policy Adaeze
+(create, submit) → Bisi (approve) → Adaeze (publish) → everyone acknowledges; whistleblower report (anonymous, public link
+`/whistleblower/esg-demo`) → Funmi (investigate).
 
 ## Reset and clean up
 
@@ -43,6 +46,7 @@ secret to any authenticator app (TOTP, SHA-1, 6 digits, 30 s), or let the E2E su
 | `adaeze.usman@esgpro.ng` | ESG_DIRECTOR | `ATHERISLOCALDEVDIRECTORTOTPAAAAA` |
 | `tenant.admin@esgpro.ng` | TENANT_ADMIN | `ATHERISLOCALDEVTENANTADMINTOTPAA` |
 | `super.admin@esgpro.ng` | SUPER_ADMIN | `ATHERISLOCALDEVSUPERADMINTOTPAAA` |
+| `ethics@esgpro.ng` | ETHICS_OFFICER | `ATHERISLOCALDEVETHICSOFFICERTOTP` |
 
 The secrets are stored encrypted with the local default `DATA_ENCRYPTION_KEY` (`application-local.yml`). If you
 override that key, these users can't sign in: reset their MFA from Admin → Users (another admin) or reset the
