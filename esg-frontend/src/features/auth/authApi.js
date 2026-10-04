@@ -1,5 +1,8 @@
 import { apiSlice, refreshOnce, unwrap } from '../../services/apiSlice';
-import { loggedOut, mfaChallenged, sessionStarted } from './slices/authSlice';
+import { loggedOut, mfaChallenged, offlineSessionStarted, sessionStarted, userUpdated } from './slices/authSlice';
+
+// WP-43: the offline store is loaded only when needed, so the sign-in page doesn't download it.
+const offline = () => import('../offline/outbox');
 
 /** Applies a login/verify/refresh response: tokens start a session, a challenge moves to the MFA step. */
 async function applyAuthResponse(queryFulfilled, dispatch) {
@@ -30,8 +33,11 @@ export const authApi = apiSlice.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
           dispatch(sessionStarted(data));
-        } catch {
-          dispatch(loggedOut());
+        } catch (failure) {
+          // WP-43: no connection — open for offline capture as the person who last signed in on this device, if any.
+          const unreachable = failure?.error?.status === 'FETCH_ERROR';
+          const profile = await offline().then((m) => (unreachable ? m.lastProfile() : m.forgetSession().then(() => null))).catch(() => null);
+          dispatch(profile ? offlineSessionStarted(profile) : loggedOut());
         }
       },
     }),
@@ -44,12 +50,26 @@ export const authApi = apiSlice.injectEndpoints({
       transformResponse: unwrap,
       onQueryStarted: (_, { dispatch, queryFulfilled }) => applyAuthResponse(queryFulfilled, dispatch),
     }),
+    // WP-45: the user's interface language, kept on their account.
+    setMyLanguage: build.mutation({
+      query: (preferredLanguage) => ({ url: '/auth/me/language', method: 'PUT', body: { preferredLanguage } }),
+      transformResponse: unwrap,
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(userUpdated({ preferredLanguage: data.preferredLanguage }));
+        } catch {
+          // the choice still applies on this device
+        }
+      },
+    }),
     logout: build.mutation({
       query: () => ({ url: '/auth/logout', method: 'POST' }),
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
         } finally {
+          await offline().then((m) => m.forgetSession()).catch(() => {});
           dispatch(loggedOut());
           dispatch(apiSlice.util.resetApiState());
         }
@@ -59,5 +79,5 @@ export const authApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useLoginMutation, useRestoreSessionMutation, useSetupMfaMutation, useVerifyMfaMutation, useLogoutMutation,
+  useLoginMutation, useRestoreSessionMutation, useSetupMfaMutation, useVerifyMfaMutation, useLogoutMutation, useSetMyLanguageMutation,
 } = authApi;

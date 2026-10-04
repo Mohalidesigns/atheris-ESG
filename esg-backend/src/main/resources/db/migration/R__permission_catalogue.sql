@@ -40,6 +40,10 @@ FROM (VALUES
   ('carbon_market:update', 'Update carbon credits'), ('carbon_market:approve', 'Retire carbon credits'),
   ('training:create', 'Create courses'), ('training:read', 'View training'), ('training:update', 'Update courses'),
   ('training:configure', 'Manage training programme'),
+  ('privacy:read', 'View privacy notices, data subject requests and retention (NDPA)'),
+  ('privacy:manage', 'Publish privacy notices, handle data subject requests (export, erasure), set retention (NDPA)'),
+  ('integrations:read', 'View integrations: connector requests, API keys, webhooks and their deliveries'),
+  ('integrations:manage', 'Request connectors, create and revoke API keys, manage webhooks'),
   ('users:create', 'Create users'), ('users:read', 'View users'), ('users:update', 'Update users'),
   ('users:delete', 'Deactivate users'), ('users:read_pii', 'See user contact details (field-level)'),
   ('roles:read', 'View roles and permissions'), ('roles:assign', 'Assign and revoke roles'),
@@ -188,7 +192,10 @@ SELECT r, 'training', 'read' FROM unnest(ARRAY['ESG_DIRECTOR', 'ESG_MANAGER', 'E
 UNION ALL SELECT 'ESG_DIRECTOR', 'training', 'update'
 UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'create'
 UNION ALL SELECT 'TRAINING_ADMIN', 'files', 'read'
-UNION ALL SELECT 'TRAINING_ADMIN', 'org_structure', 'read';
+UNION ALL SELECT 'TRAINING_ADMIN', 'org_structure', 'read'
+-- WP-52 (D40): the compliance officer acts as the data protection officer (TENANT_ADMIN has all permissions).
+UNION ALL SELECT 'COMPLIANCE_OFFICER', 'privacy', 'read'
+UNION ALL SELECT 'COMPLIANCE_OFFICER', 'privacy', 'manage';
 
 -- Re-sync every existing tenant.
 SELECT auth.sync_system_roles(id) FROM auth.tenants;

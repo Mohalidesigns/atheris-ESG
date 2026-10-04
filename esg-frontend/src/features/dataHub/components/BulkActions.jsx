@@ -8,6 +8,7 @@ import { toFormError } from '../../../services/apiSlice';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { useBulkDataPointsMutation } from '../dataHubApi';
 import { ReasonDialog } from './DataPointDrawer';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — bulk workflow steps (DataPointBulkService) with their labels and the permission each needs
 const STEPS = [
@@ -25,24 +26,23 @@ function Results({ result, rows, onClose }) {
   const step = STEPS.find((s) => s.action === result.action);
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth aria-labelledby="bulk-result-title">
-      <DialogTitle id="bulk-result-title">{step.label}: {result.succeeded} of {result.requested} {step.done}</DialogTitle>
+      <DialogTitle id="bulk-result-title">{tr(step.label)}: {result.succeeded} {tr("of")} {result.requested} {step.done}</DialogTitle>
       <DialogContent>
         {failed.length === 0 ? (
-          <Alert severity="success">All {result.requested} data points were {step.done}.</Alert>
+          <Alert severity="success">{tr("All")} {result.requested} {tr("data points were")} {step.done}.</Alert>
         ) : (
           <>
             <Alert severity="warning" sx={{ mb: 2 }}>
-              {failed.length} data point{failed.length === 1 ? ' was' : 's were'} not {step.done}. Each was checked on its own,
-              like a single {step.label.toLowerCase()}; the others went through.
+              {failed.length} {tr("data point")}{failed.length === 1 ? ' was' : tr("s were")} {tr("not")} {step.done}{tr(". Each was checked on its own, like a single")} {step.label.toLowerCase()}{tr("; the others went through.")}
             </Alert>
             <TableContainer>
-              <Table size="small" aria-label="Not processed">
-                <TableHead><TableRow><TableCell>Data point</TableCell><TableCell>Why not</TableCell><TableCell>Code</TableCell></TableRow></TableHead>
+              <Table size="small" aria-label={tr("Not processed")}>
+                <TableHead><TableRow><TableCell>{tr("Data point")}</TableCell><TableCell>{tr("Why not")}</TableCell><TableCell>{tr("Code")}</TableCell></TableRow></TableHead>
                 <TableBody>
                   {failed.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>{rows.get(r.id) ? label(rows.get(r.id)) : r.id}</TableCell>
-                      <TableCell>{r.message}</TableCell>
+                      <TableCell>{tr(r.message)}</TableCell>
                       <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{r.errorCode}</TableCell>
                     </TableRow>
                   ))}
@@ -52,7 +52,7 @@ function Results({ result, rows, onClose }) {
           </>
         )}
       </DialogContent>
-      <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
+      <DialogActions><Button onClick={onClose}>{tr("Close")}</Button></DialogActions>
     </Dialog>
   );
 }
@@ -103,25 +103,25 @@ export default function BulkActions({ selected, onDone }) {
   return (
     <>
       {selected.size > 0 && (
-        <Paper variant="outlined" role="region" aria-label="Bulk actions"
+        <Paper variant="outlined" role="region" aria-label={tr("Bulk actions")}
           sx={{ p: 1.5, mb: 1.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'action.hover' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 1 }}>{selected.size} selected</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, mr: 1 }}>{selected.size} {tr("selected")}</Typography>
           {steps.map((s) => {
             const n = eligible(s.action).length;
             return (
               <Button key={s.action} size="small" variant={s.action === 'reject' ? 'outlined' : 'contained'}
                 color={s.action === 'reject' ? 'error' : 'primary'} disabled={n === 0 || isLoading} onClick={() => start(s)}>
-                {s.label} ({n})
+                {tr(s.label)} ({n})
               </Button>
             );
           })}
           {blocked > 0 && (
             <Typography variant="caption" color="text.secondary">
-              {blocked} you can't review: you entered, submitted or validated {blocked === 1 ? 'it' : 'them'}
+              {blocked} {tr("you can't review: you entered, submitted or validated")} {blocked === 1 ? 'it' : 'them'}
             </Typography>
           )}
           <Box sx={{ flexGrow: 1 }} />
-          <Button size="small" onClick={() => onDone()} disabled={isLoading}>Clear selection</Button>
+          <Button size="small" onClick={() => onDone()} disabled={isLoading}>{tr("Clear selection")}</Button>
           {error && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
         </Paper>
       )}

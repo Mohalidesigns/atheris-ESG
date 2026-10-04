@@ -1,8 +1,16 @@
-# Production: all secrets via environment variables (DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS).
+# Production: all secrets via environment variables from the secrets manager (DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET,
+# DATA_ENCRYPTION_KEY, ESG_AI_TOKEN, CORS_ALLOWED_ORIGINS). ProductionSecretsPolicy refuses development values (WP-52).
 springdoc:
   swagger-ui:
     enabled: false
+  api-docs:
+    # WP-46 (D44): served to signed-in integrators only (esg.api-docs.public=false); never public (WP-52).
+    enabled: true
 
 logging:
   level:
     com.esg: INFO
+
+esg:
+  api-docs:
+    public: false
