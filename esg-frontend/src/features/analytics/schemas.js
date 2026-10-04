@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { formattingLocale } from '../../i18n';
 
 /**
  * Analytics form rules. Mirror the server exactly: AnalyticsDtos (Bean Validation) + KpiService.check and
@@ -13,9 +14,9 @@ export const ANOMALY_STATUS = {
   open: { label: 'Open', color: 'warning' }, explained: { label: 'Explained', color: 'info' }, accepted: { label: 'Accepted', color: 'success' },
   dismissed: { label: 'Dismissed', color: 'default' }, cleared: { label: 'Cleared', color: 'default' },
 };
-export const ANOMALY_KINDS = { outlier: 'Outlier', variance: 'Year-on-year change' };
+export const ANOMALY_KINDS = { outlier: 'Outlier', variance: 'Year-on-year change', ml: 'Machine learning (AI)' };
 export const ANOMALY_ACTIONS = { explain: 'Explain', accept: 'Accept explanation', return: 'Send back', dismiss: 'Dismiss as false positive' };
-export const METHODS = { z_score: 'z-score', iqr: 'IQR fences', both: 'z-score and IQR', yoy: 'same period last year' };
+export const METHODS = { z_score: 'z-score', iqr: 'IQR fences', both: 'z-score and IQR', yoy: 'same period last year', iforest: 'Isolation Forest (AI)' };
 export const BANDS = { 1: 'Best quarter', 2: 'Second quarter', 3: 'Third quarter', 4: 'Bottom quarter' };
 export const SDG_GOALS = Array.from({ length: 17 }, (_, i) => i + 1);
 
@@ -145,6 +146,6 @@ export const toSettingsBody = (v) => ({ zscoreThreshold: Number(v.zscoreThreshol
 
 export const explainSchema = z.object({ note: z.string().trim().min(1, 'Write the explanation').max(2000, 'At most 2000 characters') });
 export const prioritySchema = z.object({ rationale: z.string().trim().min(1, 'Say why this goal is a priority').max(1000, 'At most 1000 characters') });
-export const fmt = (v, digits = 2) => (v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits }));
+export const fmt = (v, digits = 2) => (v == null ? '—' : Number(v).toLocaleString(formattingLocale(), { maximumFractionDigits: digits }));
 export const lagosYear = () => Number(new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }).slice(0, 4));
 export const problemText = (err) => err?.data?.detail ?? Object.values(err?.data?.errors ?? {})[0] ?? 'Something went wrong';

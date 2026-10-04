@@ -15,7 +15,7 @@
 - Data/Numbers: Roboto Mono for audit IDs and figures
 **Global Navigation Bar (consistent across all screens):**
 - Fixed leftside navbar with navy blue background (#1A365D)
-- Left: Logo placeholder "ESG Pro" with shield icon
+- Left: Logo "Atheris ESG" with shield icon
 - left navigation
 - Right side: Search icon, Notification bell with badge, User avatar dropdown showing "Adaeze
 Kunle Usman -  Auditor"

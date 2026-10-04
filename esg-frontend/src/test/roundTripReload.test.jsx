@@ -38,6 +38,11 @@ import { WeightsDialog } from '../features/investor/components/ScorecardsTab';
 import { BondDialog } from '../features/investor/components/BondsTab';
 import { RoomDialog } from '../features/investor/components/DataRoomsTab';
 import { ImpactDialog } from '../features/investor/components/ImpactTab';
+import { ProjectDialog as OffsetProjectDialog } from '../features/carbonMarket/components/ProjectsTab';
+import { CourseDialog } from '../features/training/components/CourseDialog';
+import { PathDialog } from '../features/training/components/PathsTab';
+import { LotDialog } from '../features/carbonMarket/components/CreditsTab';
+import { PriceDialog, CeilingDialog } from '../features/carbonMarket/components/PricingTab';
 import { authenticated, renderWithStore } from './renderWithStore';
 import { fakeApi, ok } from './fakeApi';
 
@@ -68,10 +73,12 @@ const QUESTIONNAIRE_A = 'a0000000-0000-4000-8000-000000000204';
 const QUESTION_A = 'a0000000-0000-4000-8000-000000000203';
 const KPI_A = 'a0000000-0000-4000-8000-000000000601';
 const USER_INVESTOR = 'a1000000-0000-4000-8000-000000000008';
+const PROJECT_CM = 'a0000000-0000-4000-8000-000000000701';
+const COURSE_TR = 'a0000000-0000-4000-8000-000000000801';
 
 const resolve = (v) => {
   if (typeof v === 'string') {
-    return v.replaceAll('{u}', 'rt0001').replaceAll('{yyyy}', '2301')
+    return v.replaceAll('{u}', 'rt0001').replaceAll('{U}', 'RT0001').replaceAll('{yyyy}', '2301').replaceAll('{COURSE_TR}', COURSE_TR)
       .replaceAll('{ORG_HQ}', ORG_HQ).replaceAll('{ORG_SITE_1}', ORG_SITE_1).replaceAll('{ORG_SITE_2}', ORG_SITE_2)
       .replaceAll('{SOURCE_A}', SOURCE_A).replaceAll('{FILE_A}', FILE_A)
       .replaceAll('{USER_COMPLIANCE}', USER_COMPLIANCE).replaceAll('{USER_DIRECTOR}', USER_DIRECTOR)
@@ -79,7 +86,8 @@ const resolve = (v) => {
       .replaceAll('{USER_MANAGER}', USER_MANAGER).replaceAll('{PROJECT_A}', PROJECT_A)
       .replaceAll('{TOPIC_A}', TOPIC_A)
       .replaceAll('{SUPPLIER_A}', SUPPLIER_A).replaceAll('{QUESTIONNAIRE_A}', QUESTIONNAIRE_A).replaceAll('{QUESTION_A}', QUESTION_A)
-      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR);
+      .replaceAll('{KPI_A}', KPI_A).replaceAll('{USER_INVESTOR}', USER_INVESTOR)
+      .replaceAll('{PROJECT_CM}', PROJECT_CM);
   }
   if (Array.isArray(v)) return v.map(resolve);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x)]));
@@ -393,6 +401,23 @@ const openers = {
     renderWithStore(<ImpactDialog metric={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
+  'offset-project': async (record) => {
+    renderWithStore(<OffsetProjectDialog project={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'credit-lot': async (record) => {
+    fakeApi({ 'GET /carbon-market/projects': () => ok([{ id: PROJECT_CM, name: 'Fixture cookstoves', status: 'active' }]) });
+    renderWithStore(<LotDialog lot={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'internal-price': async (record) => {
+    renderWithStore(<PriceDialog price={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'carbon-market-settings': async (record) => {
+    renderWithStore(<CeilingDialog settings={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
   'corrective-action': async (record) => {
     fakeApi({
       'GET /supply-chain/suppliers': () => ok([{ id: SUPPLIER_A, name: 'Supplier A' }]),
@@ -401,6 +426,16 @@ const openers = {
       [`GET /supply-chain/questionnaires/${QUESTIONNAIRE_A}`]: () => ok({ id: QUESTIONNAIRE_A, questions: [{ id: QUESTION_A, question: 'Do you measure energy use?' }] }),
     });
     renderWithStore(<ActionDialog action={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'training-course': async (record) => {
+    fakeApi({ 'GET /training/courses': () => ok([]) });
+    renderWithStore(<CourseDialog course={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
+    return screen.findByRole('dialog');
+  },
+  'learning-path': async (record) => {
+    fakeApi({ 'GET /training/courses': () => ok([{ id: COURSE_TR, code: 'FIX-101', title: 'Fixture ESG basics', status: 'published' }]) });
+    renderWithStore(<PathDialog path={record} onClose={() => {}} />, { preloadedState: authenticated(ALL) });
     return screen.findByRole('dialog');
   },
   report: async (record) => {
@@ -440,13 +475,16 @@ describe('UI reload generator: edit forms show every saved value', () => {
         // A row editor (workforce lines): each saved row's cells, labelled "<column>, line <n>".
         for (const [i, row] of value.entries()) {
           for (const [key, col] of Object.entries(ui.columns)) {
+            // onlyWhen: a cell shown only for some rows (a course module's text or video link, by its kind).
+            if (col.onlyWhen && Object.entries(col.onlyWhen).some(([k, v]) => row[k] !== v)) continue;
             const name = `${col.label}, line ${i + 1}`;
             if (col.kind === 'select') expect(form.getByRole('combobox', { name }), `${spec.id}.${field}[${i}].${key}`).toHaveTextContent(col.options[String(row[key])]);
             else if (col.kind === 'switch') {
               if (row[key]) expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toBeChecked();
               else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).not.toBeChecked();
             }
-            else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : String(row[key]));
+            // A list in one cell (a quiz question's options) is edited one item per line.
+            else expect(form.getByLabelText(name), `${spec.id}.${field}[${i}].${key}`).toHaveValue(row[key] == null ? '' : Array.isArray(row[key]) ? row[key].join('\n') : String(row[key]));
           }
         }
       } else if (ui.kind === 'toggle') {

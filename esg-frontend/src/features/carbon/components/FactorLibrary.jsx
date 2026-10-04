@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../../components/states
 import { useFactorsQuery } from '../carbonApi';
 import CustomFactorDialog from './CustomFactorDialog';
 import RecalculateDialog from './RecalculateDialog';
+import { tr } from '../../../i18n';
 
 const STATUS = {
   pending_sme: { label: 'Pending SME review', color: 'warning' },
@@ -28,26 +29,26 @@ export default function FactorLibrary() {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <TextField size="small" label="Filter by category or place" value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ width: 280 }} />
+        <TextField size="small" label={tr("Filter by category or place")} value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ width: 280 }} />
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Can permission="carbon_data:update">
-            <Button size="small" startIcon={<Calculate />} onClick={() => setRecalculating(true)}>Recalculate emissions</Button>
+            <Button size="small" startIcon={<Calculate />} onClick={() => setRecalculating(true)}>{tr("Recalculate emissions")}</Button>
           </Can>
           <Can permission="emission_factors:manage">
-            <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Add custom factor</Button>
+            <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Add custom factor")}</Button>
           </Can>
         </Box>
       </Box>
       <Card>
         {isLoading && <LoadingState />}
         {isError && <ErrorState error={error} onRetry={refetch} />}
-        {data && rows.length === 0 && <EmptyState title="No factors match" />}
+        {data && rows.length === 0 && <EmptyState title={tr("No factors match")} />}
         {rows.length > 0 && (
           <TableContainer>
-            <Table size="small" aria-label="Emission factors" data-sticky-actions>
+            <Table size="small" aria-label={tr("Emission factors")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Category</TableCell><TableCell>Place</TableCell><TableCell align="right">Factor</TableCell>
-                <TableCell>Source</TableCell><TableCell>Valid</TableCell><TableCell>Status</TableCell><TableCell />
+                <TableCell>{tr("Category")}</TableCell><TableCell>{tr("Place")}</TableCell><TableCell align="right">{tr("Factor")}</TableCell>
+                <TableCell>{tr("Source")}</TableCell><TableCell>{tr("Valid")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {rows.map((f) => (
@@ -62,7 +63,7 @@ export default function FactorLibrary() {
                       <strong>{f.factorValue}</strong> <Typography component="span" variant="caption" color="text.secondary">{f.unit}</Typography>
                       {f.ch4Factor != null && (
                         <Typography variant="caption" display="block" color="text.secondary">
-                          CO2 {f.co2Factor} · CH4 {f.ch4Factor} · N2O {f.n2oFactor}
+                          {tr("CO2")} {f.co2Factor} {tr("· CH4")} {f.ch4Factor} {tr("· N2O")} {f.n2oFactor}
                         </Typography>
                       )}
                     </TableCell>
@@ -75,7 +76,7 @@ export default function FactorLibrary() {
                       </Box>
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{f.validFrom} → {f.validTo ?? 'open'}</TableCell>
-                    <TableCell><Chip size="small" variant="outlined" color={STATUS[f.verificationStatus]?.color} label={STATUS[f.verificationStatus]?.label ?? f.verificationStatus} /></TableCell>
+                    <TableCell><Chip size="small" variant="outlined" color={STATUS[f.verificationStatus]?.color} label={tr(STATUS[f.verificationStatus]?.label) ?? f.verificationStatus} /></TableCell>
                     <TableCell align="right">
                       {f.custom && (
                         <Can permission="emission_factors:manage">
@@ -91,9 +92,7 @@ export default function FactorLibrary() {
         )}
       </Card>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-        Platform values stay "Pending SME review" until an ESG subject-matter expert signs them off. Fuels with per-gas values are
-        converted with your GWP set (Admin → Settings). DEFRA transport and platform spend-based (EEIO) factors are not loaded yet:
-        add your own spend factors as custom factors.
+        {tr("Platform values stay \"Pending SME review\" until an ESG subject-matter expert signs them off. Fuels with per-gas values are converted with your GWP set (Admin → Settings). DEFRA transport and platform spend-based (EEIO) factors are not loaded yet: add your own spend factors as custom factors.")}
       </Typography>
       {editing !== undefined && <CustomFactorDialog open factor={editing} onClose={() => setEditing(undefined)} />}
       {recalculating && <RecalculateDialog onClose={() => setRecalculating(false)} />}

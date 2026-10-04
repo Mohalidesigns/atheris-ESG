@@ -8,6 +8,7 @@ import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
 import { useSubmitWhistleblowerReportMutation, useWhistleblowerStatusMutation } from '../governanceApi';
 import { CASE_CATEGORIES, CASE_STATUS, statusCheckSchema, submissionSchema } from '../schemas';
+import { tr, formattingLocale } from '../../../i18n';
 
 function Report({ tenant }) {
   const [submit, { isLoading }] = useSubmitWhistleblowerReportMutation();
@@ -26,25 +27,25 @@ function Report({ tenant }) {
   });
   if (receipt) {
     return (
-      <Alert severity="success" aria-label="Report received">
-        <Typography sx={{ fontWeight: 700 }}>Your report has been received.</Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>Write these down now — they are shown only once and are the only way to follow your case:</Typography>
-        <Typography sx={{ fontFamily: 'Roboto Mono', mt: 1 }}>Case reference: <strong aria-label="Case reference">{receipt.caseReference}</strong></Typography>
-        <Typography sx={{ fontFamily: 'Roboto Mono' }}>Secret: <strong aria-label="Secret">{receipt.secret}</strong></Typography>
-        <Button size="small" sx={{ mt: 1 }} onClick={() => setReceipt(null)}>Make another report</Button>
+      <Alert severity="success" aria-label={tr("Report received")}>
+        <Typography sx={{ fontWeight: 700 }}>{tr("Your report has been received.")}</Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>{tr("Write these down now — they are shown only once and are the only way to follow your case:")}</Typography>
+        <Typography sx={{ fontFamily: 'Roboto Mono', mt: 1 }}>{tr("Case reference:")} <strong aria-label={tr("Case reference")}>{receipt.caseReference}</strong></Typography>
+        <Typography sx={{ fontFamily: 'Roboto Mono' }}>{tr("Secret:")} <strong aria-label={tr("Secret")}>{receipt.secret}</strong></Typography>
+        <Button size="small" sx={{ mt: 1 }} onClick={() => setReceipt(null)}>{tr("Make another report")}</Button>
       </Alert>
     );
   }
   return (
     <form onSubmit={send} noValidate>
       {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
-      <FormSelect control={control} name="category" label="What is it about?"
+      <FormSelect control={control} name="category" label={tr("What is it about?")}
         options={Object.entries(CASE_CATEGORIES).map(([value, label]) => ({ value, label }))} />
       <Box sx={{ mt: 2 }}>
-        <FormTextField control={control} name="description" label="What happened?" multiline minRows={6}
-          helperText="What, where, when and who was involved. Don't include your name unless you want to be identified." />
+        <FormTextField control={control} name="description" label={tr("What happened?")} multiline minRows={6}
+          helperText={tr("What, where, when and who was involved. Don't include your name unless you want to be identified.")} />
       </Box>
-      <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={isLoading}>Send report</Button>
+      <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={isLoading}>{tr("Send report")}</Button>
     </form>
   );
 }
@@ -67,14 +68,14 @@ function Status({ tenant }) {
   return (
     <form onSubmit={send} noValidate>
       {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
-      <FormTextField control={control} name="caseReference" label="Case reference" />
-      <Box sx={{ mt: 2 }}><FormTextField control={control} name="secret" label="Secret" type="password" /></Box>
-      <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={isLoading}>Check status</Button>
+      <FormTextField control={control} name="caseReference" label={tr("Case reference")} />
+      <Box sx={{ mt: 2 }}><FormTextField control={control} name="secret" label={tr("Secret")} type="password" /></Box>
+      <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={isLoading}>{tr("Check status")}</Button>
       {result && (
-        <Alert severity="info" sx={{ mt: 2 }} aria-label="Case status">
-          <Chip size="small" color={CASE_STATUS[result.status].color} label={CASE_STATUS[result.status].label} />
+        <Alert severity="info" sx={{ mt: 2 }} aria-label={tr("Case status")}>
+          <Chip size="small" color={CASE_STATUS[result.status].color} label={tr(CASE_STATUS[result.status].label)} />
           {result.publicUpdate && <Typography variant="body2" sx={{ mt: 1 }}>{result.publicUpdate}</Typography>}
-          <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Last updated {new Date(result.updatedAt).toLocaleString()}</Typography>
+          <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>{tr("Last updated")} {new Date(result.updatedAt).toLocaleString(formattingLocale())}</Typography>
         </Alert>
       )}
     </form>
@@ -89,14 +90,13 @@ export default function WhistleblowerPortal() {
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Card>
         <CardContent>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Report a concern</Typography>
-          <Alert severity="info" icon={<Lock />} sx={{ my: 2 }} aria-label="Privacy">
-            Anonymous: you don't sign in, and we don't record your name, email, IP address or device. Your report is encrypted
-            and only the organisation's designated ethics officers can read it.
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>{tr("Report a concern")}</Typography>
+          <Alert severity="info" icon={<Lock />} sx={{ my: 2 }} aria-label={tr("Privacy")}>
+            {tr("Anonymous: you don't sign in, and we don't record your name, email, IP address or device. Your report is encrypted and only the organisation's designated ethics officers can read it.")}
           </Alert>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-            <Tab label="Make a report" />
-            <Tab label="Check a report" />
+            <Tab label={tr("Make a report")} />
+            <Tab label={tr("Check a report")} />
           </Tabs>
           {tab === 0 ? <Report tenant={tenant} /> : <Status tenant={tenant} />}
         </CardContent>

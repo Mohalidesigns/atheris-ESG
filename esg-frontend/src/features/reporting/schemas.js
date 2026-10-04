@@ -54,6 +54,16 @@ export const ANALYTICS_VARIABLES = {
   maturity_score: 'ESG maturity score', maturity_level: 'ESG maturity level', anomalies_open: 'Anomaly flags not yet resolved',
   anomalies_accepted: 'Anomaly flags explained and accepted', variance_explanations: 'Accepted variance explanations (text)',
 };
+// no-mock-gate: config — carbon credit variables (WP-41; CarbonMarketInsights.VARIABLES)
+export const OFFSET_VARIABLES = {
+  credits_retired: 'Carbon credits retired (tCO2e)', net_scope12: 'Net Scope 1+2 after credits', offset_share: 'Credits as % of gross Scope 1+2',
+  offset_to_reduction: 'Offset-to-reduction ratio',
+};
+// no-mock-gate: config — training variables (WP-42; TrainingInsights.VARIABLES)
+export const TRAINING_VARIABLES = {
+  hours_total: 'Training hours completed', hours_per_employee: 'Training hours per person', completion_rate: 'Training completion rate (%)',
+  certificates_issued: 'Training certificates issued',
+};
 // no-mock-gate: config — compliance variable measures
 export const COMPLIANCE_MEASURES = { completeness: 'completeness %', met: 'requirements met', total: 'requirements' };
 
@@ -70,6 +80,8 @@ export const unknownVariables = (text, { metricKeys = [], frameworks = [], kpiCo
       || (source === 'risk' && key in RISK_VARIABLES)
       || (source === 'supply' && key in SUPPLY_VARIABLES)
       || (source === 'analytics' && key in ANALYTICS_VARIABLES)
+      || (source === 'offsets' && key in OFFSET_VARIABLES)
+      || (source === 'training' && key in TRAINING_VARIABLES)
       // KPI codes: checked when the user can list KPIs; otherwise the server checks them on save.
       || (source === 'kpi' && (kpiCodes == null || kpiCodes.includes(key)))
       || (source === 'compliance' && key.split(':').length === 2 && frameworks.includes(key.split(':')[0]) && key.split(':')[1] in COMPLIANCE_MEASURES)

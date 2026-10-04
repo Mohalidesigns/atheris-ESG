@@ -18,6 +18,7 @@ import { useCreateRiskMutation, useDeleteRiskMutation, useHeatmapQuery, useRiskP
 import {
   BANDS, HORIZONS, IMPACT, LIKELIHOOD, RISK_CATEGORIES, RISK_STATUS, emptyRisk, problemText, riskSchema, toRiskBody, toRiskForm,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 const opts = (map, empty) => [...(empty !== undefined ? [{ value: '', label: empty }] : []),
   ...Object.entries(map).map(([value, label]) => ({ value: String(value), label: typeof label === 'string' ? label : label.label }))];
@@ -47,47 +48,47 @@ export function RiskDialog({ risk, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="md" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${risk.title}` : 'Add risk'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${risk.title}` : tr("Add risk")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="title" label="Title" /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label="Status" options={opts(RISK_STATUS)} /></Grid>
+            <Grid size={{ xs: 12, sm: 8 }}><FormTextField control={control} name="title" label={tr("Title")} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="status" label={tr("Status")} options={opts(RISK_STATUS)} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller name="orgId" control={control} render={({ field, fieldState }) => (
-                <OrgTreeSelect {...field} orgs={orgs} label="Organisation" size="small" fullWidth error={!!fieldState.error} helperText={fieldState.error?.message} />
+                <OrgTreeSelect {...field} orgs={orgs} label={tr("Organisation")} size="small" fullWidth error={!!fieldState.error} helperText={tr(fieldState.error?.message)} />
               )} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="category" label="Category" options={opts(RISK_CATEGORIES)} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="category" label={tr("Category")} options={opts(RISK_CATEGORIES)} /></Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormSelect control={control} name="sectorCode" label="Sector (optional)"
+              <FormSelect control={control} name="sectorCode" label={tr("Sector (optional)")}
                 options={[{ value: '', label: 'Not set' }, ...sectors.map((s) => ({ value: s.code, label: `${s.code} · ${s.name}` }))]} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="timeHorizon" label="Time horizon" options={opts(HORIZONS)} /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="likelihood" label="Likelihood" options={opts(LIKELIHOOD)} /></Grid>
-            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="impact" label="Impact" options={opts(IMPACT)} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><FormSelect control={control} name="timeHorizon" label={tr("Time horizon")} options={opts(HORIZONS)} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="likelihood" label={tr("Likelihood")} options={opts(LIKELIHOOD)} /></Grid>
+            <Grid size={{ xs: 6, sm: 3 }}><FormSelect control={control} name="impact" label={tr("Impact")} options={opts(IMPACT)} /></Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <FormSelect control={control} name="residualLikelihood" label="Likelihood after controls (optional)" options={opts(LIKELIHOOD, 'Not assessed')} />
+              <FormSelect control={control} name="residualLikelihood" label={tr("Likelihood after controls (optional)")} options={opts(LIKELIHOOD, 'Not assessed')} />
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
-              <FormSelect control={control} name="residualImpact" label="Impact after controls (optional)" options={opts(IMPACT, 'Not assessed')} />
+              <FormSelect control={control} name="residualImpact" label={tr("Impact after controls (optional)")} options={opts(IMPACT, 'Not assessed')} />
             </Grid>
-            <Grid size={12}><FormTextField control={control} name="controls" label="Controls (optional)" multiline minRows={2} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="controls" label={tr("Controls (optional)")} multiline minRows={2} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="ownerUserId" label="Owner (optional)"
+              <FormSelect control={control} name="ownerUserId" label={tr("Owner (optional)")}
                 options={[{ value: '', label: 'No owner' }, ...people.map((p) => ({ value: p.id, label: p.name }))]} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormDateField control={control} name="reviewDate" label="Review date (optional)" /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormDateField control={control} name="reviewDate" label={tr("Review date (optional)")} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormSelect control={control} name="topicId" label="Material topic (optional)"
+              <FormSelect control={control} name="topicId" label={tr("Material topic (optional)")}
                 options={[{ value: '', label: 'None' }, ...topics.map((t) => ({ value: t.id, label: t.name }))]} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Add risk'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Add risk")}</Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -99,7 +100,7 @@ export function HeatmapGrid({ grid, label }) {
   return (
     <Table size="small" aria-label={label} sx={{ width: 'auto', '& td, & th': { textAlign: 'center', p: 0.75, minWidth: 44 } }}>
       <TableHead>
-        <TableRow><TableCell>L \ I</TableCell>{[1, 2, 3, 4, 5].map((i) => <TableCell key={i}>{i}</TableCell>)}</TableRow>
+        <TableRow><TableCell>{tr("L \\ I")}</TableCell>{[1, 2, 3, 4, 5].map((i) => <TableCell key={i}>{i}</TableCell>)}</TableRow>
       </TableHead>
       <TableBody>
         {[5, 4, 3, 2, 1].map((l) => (
@@ -130,43 +131,43 @@ function Heatmaps() {
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Heatmap</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{tr("Heatmap")}</Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <ToggleButtonGroup size="small" exclusive value={level} onChange={(_, v) => { if (v) { setLevel(v); setPath([]); } }} aria-label="Heatmap level">
-              <ToggleButton value="portfolio">Portfolio</ToggleButton>
-              <ToggleButton value="entity">Entity</ToggleButton>
-              <ToggleButton value="sector">Sector</ToggleButton>
+            <ToggleButtonGroup size="small" exclusive value={level} onChange={(_, v) => { if (v) { setLevel(v); setPath([]); } }} aria-label={tr("Heatmap level")}>
+              <ToggleButton value="portfolio">{tr("Portfolio")}</ToggleButton>
+              <ToggleButton value="entity">{tr("Entity")}</ToggleButton>
+              <ToggleButton value="sector">{tr("Sector")}</ToggleButton>
             </ToggleButtonGroup>
-            <FormControlLabel label="After controls" control={<Switch checked={residual} onChange={(e) => setResidual(e.target.checked)} />} />
+            <FormControlLabel label={tr("After controls")} control={<Switch checked={residual} onChange={(e) => setResidual(e.target.checked)} />} />
           </Box>
         </Box>
         {!h ? <LoadingState /> : (
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 5 }}>
-              <HeatmapGrid grid={h.grid} label="Risk heatmap" />
-              <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }} aria-label="Risks by band">
-                {Object.entries(h.byBand).map(([b, n]) => <Chip key={b} size="small" color={BANDS[b].color} label={`${BANDS[b].label}: ${n}`} />)}
+              <HeatmapGrid grid={h.grid} label={tr("Risk heatmap")} />
+              <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }} aria-label={tr("Risks by band")}>
+                {Object.entries(h.byBand).map(([b, n]) => <Chip key={b} size="small" color={BANDS[b].color} label={`${tr(BANDS[b].label)}: ${n}`} />)}
               </Box>
             </Grid>
             {level !== 'portfolio' && (
               <Grid size={{ xs: 12, md: 7 }}>
                 {level === 'entity' && (
                   <Breadcrumbs sx={{ mb: 1 }}>
-                    <Link component="button" onClick={() => setPath([])}>All organisations</Link>
-                    {path.map((p, i) => <Link key={p.id} component="button" onClick={() => setPath(path.slice(0, i + 1))}>{p.label}</Link>)}
+                    <Link component="button" onClick={() => setPath([])}>{tr("All organisations")}</Link>
+                    {path.map((p, i) => <Link key={p.id} component="button" onClick={() => setPath(path.slice(0, i + 1))}>{tr(p.label)}</Link>)}
                   </Breadcrumbs>
                 )}
-                <Table size="small" aria-label={level === 'entity' ? 'Risks by organisation' : 'Risks by sector'}>
-                  <TableHead><TableRow><TableCell>{level === 'entity' ? 'Organisation' : 'Sector'}</TableCell><TableCell align="right">Open risks</TableCell>
-                    <TableCell>Highest</TableCell><TableCell /></TableRow></TableHead>
+                <Table size="small" aria-label={level === 'entity' ? tr("Risks by organisation") : tr("Risks by sector")}>
+                  <TableHead><TableRow><TableCell>{level === 'entity' ? tr("Organisation") : tr("Sector")}</TableCell><TableCell align="right">{tr("Open risks")}</TableCell>
+                    <TableCell>{tr("Highest")}</TableCell><TableCell /></TableRow></TableHead>
                   <TableBody>
                     {h.groups.map((g) => (
                       <TableRow key={g.key}>
-                        <TableCell>{g.label}</TableCell>
+                        <TableCell>{tr(g.label)}</TableCell>
                         <TableCell align="right">{g.risks}</TableCell>
-                        <TableCell>{g.maxBand ? <Chip size="small" color={BANDS[g.maxBand].color} label={`${BANDS[g.maxBand].label} (${g.maxScore})`} /> : '—'}</TableCell>
+                        <TableCell>{g.maxBand ? <Chip size="small" color={BANDS[g.maxBand].color} label={`${tr(BANDS[g.maxBand].label)} (${g.maxScore})`} /> : '—'}</TableCell>
                         <TableCell align="right">
-                          {g.hasChildren && <Button size="small" onClick={() => setPath([...path, { id: g.orgId, label: g.label }])} aria-label={`Drill into ${g.label}`}>Drill down</Button>}
+                          {g.hasChildren && <Button size="small" onClick={() => setPath([...path, { id: g.orgId, label: g.label }])} aria-label={`Drill into ${g.label}`}>{tr("Drill down")}</Button>}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -195,34 +196,34 @@ export default function RiskRegisterTab() {
       <Heatmaps />
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Can permission="risk:create">
-          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>Add risk</Button>
+          <Button size="small" variant="contained" startIcon={<Add />} onClick={() => setEditing(null)}>{tr("Add risk")}</Button>
         </Can>
       </Box>
       {failure && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setFailure('')}>{failure}</Alert>}
       <Card>
-        {data.length === 0 ? <CardContent><EmptyState title="No risks recorded">Record ESG and climate risks with their likelihood, impact and controls.</EmptyState></CardContent> : (
+        {data.length === 0 ? <CardContent><EmptyState title={tr("No risks recorded")}>{tr("Record ESG and climate risks with their likelihood, impact and controls.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Risk register" data-sticky-actions>
+            <Table size="small" aria-label={tr("Risk register")} data-sticky-actions>
               <TableHead><TableRow>
-                <TableCell>Risk</TableCell><TableCell>Category</TableCell><TableCell>Organisation</TableCell><TableCell>Inherent</TableCell><TableCell>After controls</TableCell>
-                <TableCell>Status</TableCell><TableCell>Owner</TableCell><TableCell />
+                <TableCell>{tr("Risk")}</TableCell><TableCell>{tr("Category")}</TableCell><TableCell>{tr("Organisation")}</TableCell><TableCell>{tr("Inherent")}</TableCell><TableCell>{tr("After controls")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell><TableCell>{tr("Owner")}</TableCell><TableCell />
               </TableRow></TableHead>
               <TableBody>
                 {data.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{r.title}<Typography variant="caption" display="block" color="text.secondary">{HORIZONS[r.timeHorizon]}{r.topicName ? ` · ${r.topicName}` : ''}</Typography></TableCell>
-                    <TableCell>{RISK_CATEGORIES[r.category]}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{tr(r.title)}<Typography variant="caption" display="block" color="text.secondary">{tr(HORIZONS[r.timeHorizon])}{r.topicName ? ` · ${r.topicName}` : ''}</Typography></TableCell>
+                    <TableCell>{tr(RISK_CATEGORIES[r.category])}</TableCell>
                     <TableCell>{r.orgName}</TableCell>
-                    <TableCell><Chip size="small" color={BANDS[r.band].color} label={`${r.score} · ${BANDS[r.band].label}`} /></TableCell>
-                    <TableCell>{r.residualScore == null ? '—' : <Chip size="small" variant="outlined" color={BANDS[r.residualBand].color} label={`${r.residualScore} · ${BANDS[r.residualBand].label}`} />}</TableCell>
-                    <TableCell><Chip size="small" color={RISK_STATUS[r.status].color} label={RISK_STATUS[r.status].label} />{r.reviewDue && <Chip size="small" color="warning" label="Review due" sx={{ ml: 0.5 }} />}</TableCell>
+                    <TableCell><Chip size="small" color={BANDS[r.band].color} label={`${r.score} · ${tr(BANDS[r.band].label)}`} /></TableCell>
+                    <TableCell>{r.residualScore == null ? '—' : <Chip size="small" variant="outlined" color={BANDS[r.residualBand].color} label={`${r.residualScore} · ${tr(BANDS[r.residualBand].label)}`} />}</TableCell>
+                    <TableCell><Chip size="small" color={RISK_STATUS[r.status].color} label={tr(RISK_STATUS[r.status].label)} />{r.reviewDue && <Chip size="small" color="warning" label={tr("Review due")} sx={{ ml: 0.5 }} />}</TableCell>
                     <TableCell>{r.ownerName ?? '—'}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                       <Can permission="risk:update">
                         <IconButton size="small" aria-label={`Edit ${r.title}`} onClick={() => setEditing(r)}><Edit fontSize="small" /></IconButton>
                         <IconButton size="small" aria-label={`Remove ${r.title}`} onClick={async () => {
-                          if (await confirm({ title: 'Remove this risk?', item: r.title, destructive: true, confirmLabel: 'Remove',
-                            message: 'Use this for a risk recorded by mistake; close a risk that no longer applies instead.' })) {
+                          if (await confirm({ title: tr("Remove this risk?"), item: r.title, destructive: true, confirmLabel: tr("Remove"),
+                            message: tr("Use this for a risk recorded by mistake; close a risk that no longer applies instead.") })) {
                             try { await remove({ id: r.id, version: r.version }).unwrap(); } catch (err) { setFailure(problemText(err)); }
                           }
                         }}><Delete fontSize="small" /></IconButton>

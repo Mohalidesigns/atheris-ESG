@@ -94,8 +94,8 @@ public class MaturityService {
         Date end = Date.valueOf(LocalDate.of(year, 12, 31));
         Timestamp yearEnd = Timestamp.valueOf(LocalDate.of(year + 1, 1, 1).atStartOfDay());
         Set<String> catalogue = support.metrics().keySet();
-        Set<String> evidenced = new HashSet<>(jdbc.queryForList("select distinct metric_key from data_hub.data_points where deleted_at is null "
-                + "and validation_status = 'approved' and reporting_period_end between ? and ?", String.class, start, end));
+        Set<String> evidenced = new HashSet<>(jdbc.queryForList("select m.metric_key from reference.metrics m where exists (select 1 from data_hub.data_points d where d.metric_key = m.metric_key "
+                + "and d.deleted_at is null and d.validation_status = 'approved' and d.reporting_period_end between ? and ?)", String.class, start, end));
         Set<String> scopes = new HashSet<>(jdbc.queryForList("select distinct scope from carbon.emission_records where deleted_at is null "
                 + "and reporting_period_end between ? and ?", String.class, start, end));
         scopes.forEach(s -> {

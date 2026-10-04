@@ -4,6 +4,7 @@ import {
 import { Check, Remove } from '@mui/icons-material';
 import { useGetSubscriptionQuery } from '../adminApi';
 import { ErrorState, LoadingState } from '../../../components/states/States';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — display labels for entitlement sources returned by the API
 const SOURCE_LABEL = { platform: 'Always included', plan: 'In your plan', add_on: 'Add-on' };
@@ -15,7 +16,7 @@ const SOURCE_LABEL = { platform: 'Always included', plan: 'In your plan', add_on
  */
 export default function SubscriptionTab() {
   const { data, isLoading, isError, error, refetch } = useGetSubscriptionQuery();
-  if (isLoading) return <LoadingState label="Loading subscription" />;
+  if (isLoading) return <LoadingState label={tr("Loading subscription")} />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
   const enabled = new Map(data.modules.map((m) => [m.moduleCode, m.source]));
@@ -27,39 +28,38 @@ export default function SubscriptionTab() {
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card><CardContent>
-            <Typography variant="overline" color="text.secondary">Plan</Typography>
+            <Typography variant="overline" color="text.secondary">{tr("Plan")}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>{plan?.name ?? data.plan}</Typography>
-            <Typography variant="body2" color="text.secondary">{plan?.description}</Typography>
+            <Typography variant="body2" color="text.secondary">{tr(plan?.description)}</Typography>
           </CardContent></Card>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card><CardContent>
-            <Typography variant="overline" color="text.secondary">Users</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>{data.activeUsers} of {data.maxUsers}</Typography>
-            <Typography variant="body2" color="text.secondary">active users in your plan&apos;s limit</Typography>
+            <Typography variant="overline" color="text.secondary">{tr("Users")}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>{data.activeUsers} {tr("of")} {data.maxUsers}</Typography>
+            <Typography variant="body2" color="text.secondary">{tr("active users in your plan's limit")}</Typography>
           </CardContent></Card>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card><CardContent>
-            <Typography variant="overline" color="text.secondary">Billing currency</Typography>
+            <Typography variant="overline" color="text.secondary">{tr("Billing currency")}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>{data.billingCurrency}</Typography>
-            <Typography variant="body2" color="text.secondary">Invoicing arrives in a later release</Typography>
+            <Typography variant="body2" color="text.secondary">{tr("Invoicing arrives in a later release")}</Typography>
           </CardContent></Card>
         </Grid>
       </Grid>
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        To change your plan or add a module, contact the Atheris platform team. Modules outside your plan are hidden from
-        the menu and their pages and API answer &quot;not permitted&quot;.
+        {tr("To change your plan or add a module, contact the Atheris platform team. Modules outside your plan are hidden from the menu and their pages and API answer \"not permitted\".")}
       </Alert>
 
       <Card>
         <TableContainer>
-          <Table size="small" aria-label="Modules by plan">
+          <Table size="small" aria-label={tr("Modules by plan")}>
             <TableHead>
               <TableRow>
-                <TableCell>Module</TableCell>
-                <TableCell>Your access</TableCell>
+                <TableCell>{tr("Module")}</TableCell>
+                <TableCell>{tr("Your access")}</TableCell>
                 {data.plans.map((p) => (
                   <TableCell key={p.code} align="center" sx={{ fontWeight: p.code === data.plan ? 700 : 400 }}>{p.name}</TableCell>
                 ))}
@@ -72,12 +72,12 @@ export default function SubscriptionTab() {
                   <TableRow key={m.code}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>{m.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">{m.description}</Typography>
+                      <Typography variant="caption" color="text.secondary">{tr(m.description)}</Typography>
                     </TableCell>
                     <TableCell>
                       {source
-                        ? <Chip size="small" color="success" variant="outlined" label={SOURCE_LABEL[source] ?? source} />
-                        : <Chip size="small" label="Not included" />}
+                        ? <Chip size="small" color="success" variant="outlined" label={tr(SOURCE_LABEL[source]) ?? source} />
+                        : <Chip size="small" label={tr("Not included")} />}
                     </TableCell>
                     {data.plans.map((p) => (
                       <TableCell key={p.code} align="center">
@@ -97,7 +97,7 @@ export default function SubscriptionTab() {
       {data.overrides.length > 0 && (
         <Card sx={{ mt: 2 }}>
           <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Changes to your plan</Typography>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Changes to your plan")}</Typography>
             {data.overrides.map((o) => (
               <Typography key={o.moduleCode} variant="body2">
                 {data.catalogue.find((m) => m.code === o.moduleCode)?.name ?? o.moduleCode}:{' '}

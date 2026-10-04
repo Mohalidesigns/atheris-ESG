@@ -68,5 +68,12 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || 'An approved value for {{metric}} at {{site}} ({{period}}) was flagged: {{detail}}. Sign in to Atheris ESG to explain it.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('ANOMALY_EXPLAINED', 'in_app', 'en', 'Explanation to review: {{metric}} at {{site}}', 'The flag for {{period}} was explained. Open Analytics → Anomalies.'),
   ('ANOMALY_EXPLAINED', 'email', 'en', 'Explanation to review: {{metric}} at {{site}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'The unusual value for {{metric}} at {{site}} ({{period}}) has been explained. Sign in to Atheris ESG to accept it or send it back.' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'The unusual value for {{metric}} at {{site}} ({{period}}) has been explained. Sign in to Atheris ESG to accept it or send it back.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- WP-42: training.
+  ('TRAINING_ASSIGNED', 'in_app', 'en', 'Course assigned: {{course}}', '{{course}} ({{hours}} h){{due}}. Open Training → My learning.'),
+  ('TRAINING_ASSIGNED', 'email', 'en', 'Course assigned: {{course}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been enrolled in "{{course}}" ({{hours}} hours){{due}}. Sign in to Atheris ESG and open Training → My learning.' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('TRAINING_CERTIFICATE', 'in_app', 'en', 'Certificate: {{course}}', 'You passed {{course}}. Your certificate code is {{code}}.'),
+  ('TRAINING_CERTIFICATE', 'email', 'en', 'Certificate: {{course}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Congratulations: you passed "{{course}}". Your certificate (code {{code}}) is in Training → My learning; anyone can check it at {{link}}.' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;

@@ -20,7 +20,7 @@ describe('Journey 20: policy published and acknowledged', () => {
       // The submitter can't approve their own policy.
       cy.get('[aria-label^="Approve: You submitted this policy"]').should('exist');
     });
-    cy.get('body').type('{esc}'); // close the policy drawer
+    cy.closeDrawer();
     cy.logout();
 
     cy.login(roles.BOARD_MEMBER.email);
@@ -28,7 +28,7 @@ describe('Journey 20: policy published and acknowledged', () => {
     cy.contains('tr', name).contains('button', 'Open').click();
     cy.get('[aria-label="Policy details"]').contains('button', 'Approve').click();
     cy.get('[aria-label="Policy status"]').should('contain', 'Approved');
-    cy.get('body').type('{esc}'); // close the policy drawer
+    cy.closeDrawer();
     cy.logout();
 
     cy.login(roles.ESG_DIRECTOR.email);
@@ -37,7 +37,7 @@ describe('Journey 20: policy published and acknowledged', () => {
     cy.get('[aria-label="Policy details"]').contains('button', 'Publish').click();
     cy.get('[aria-label="Policy status"]').should('contain', 'Published');
     cy.get('[aria-label="Acknowledgements"]').should('contain', 'Acknowledged by 0 of');
-    cy.get('body').type('{esc}'); // close the policy drawer
+    cy.closeDrawer();
     cy.logout();
 
     // A data collector (no Governance menu) acknowledges it from the user menu.
@@ -47,7 +47,6 @@ describe('Journey 20: policy published and acknowledged', () => {
     cy.contains(`[aria-label="Policy ${name}"]`, name).contains('button', 'Read and acknowledge').click();
     cy.contains('button', 'I have read and acknowledge it').click();
     cy.get(`[aria-label="Policy ${name}"]`).should('contain', 'Acknowledged');
-    cy.get('body').type('{esc}'); // close the policy drawer
     cy.logout();
 
     cy.login(roles.ESG_DIRECTOR.email);
