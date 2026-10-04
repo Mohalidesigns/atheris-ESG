@@ -71,6 +71,10 @@ const lightTheme = createTheme({
         { props: { variant: 'outlined', color: 'info' }, style: { color: '#237574' } },
       ],
     },
+    // White on the info teal is 3.5:1; filled info alerts (toasts) use the darker shade (5.4:1, WCAG AA). Found by journey 28.
+    MuiAlert: {
+      styleOverrides: { filledInfo: { backgroundColor: '#237574' } },
+    },
     MuiButton: {
       variants: [
         { props: { variant: 'text', color: 'warning' }, style: { color: '#7A5B00' } },

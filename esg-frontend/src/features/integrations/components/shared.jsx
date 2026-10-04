@@ -4,6 +4,7 @@ import {
   Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormGroup, FormHelperText,
   FormLabel, Typography,
 } from '@mui/material';
+import { tr } from '../../../i18n';
 
 /** A required set of checkboxes bound to an array field (data kinds, scopes, events). */
 export function CheckboxGroup({ control, name, label, options, columns = 1 }) {
@@ -16,11 +17,11 @@ export function CheckboxGroup({ control, name, label, options, columns = 1 }) {
             <FormControlLabel key={o.value} disabled={o.disabled}
               control={<Checkbox size="small" checked={field.value.includes(o.value)}
                 onChange={(e) => field.onChange(e.target.checked ? [...field.value, o.value] : field.value.filter((v) => v !== o.value))} />}
-              label={<Box><Typography variant="body2">{o.label}</Typography>
-                {o.hint && <Typography variant="caption" color="text.secondary">{o.hint}</Typography>}</Box>} />
+              label={<Box><Typography variant="body2">{tr(o.label)}</Typography>
+                {tr(o.hint) && <Typography variant="caption" color="text.secondary">{tr(o.hint)}</Typography>}</Box>} />
           ))}
         </FormGroup>
-        {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
+        {fieldState.error && <FormHelperText>{tr(fieldState.error.message)}</FormHelperText>}
       </FormControl>
     )} />
   );
@@ -41,15 +42,15 @@ export function SecretDialog({ title, label, secret, children, onClose }) {
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        <Alert severity="warning" sx={{ mb: 2 }}>Copy it now. It won't be shown again — if it's lost, create a new one.</Alert>
+        <Alert severity="warning" sx={{ mb: 2 }}>{tr("Copy it now. It won't be shown again — if it's lost, create a new one.")}</Alert>
         <Typography variant="caption" color="text.secondary">{label}</Typography>
         <Box component="code" aria-label={label} sx={{ display: 'block', p: 1.5, mt: 0.5, bgcolor: '#F7FAFC', border: '1px solid #E2E8F0',
           borderRadius: 1, fontFamily: '"Roboto Mono", monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>{secret}</Box>
         {children}
       </DialogContent>
       <DialogActions>
-        <Button onClick={copy}>{copied ? 'Copied' : 'Copy'}</Button>
-        <Button variant="contained" onClick={onClose}>Done</Button>
+        <Button onClick={copy}>{copied ? tr("Copied") : tr("Copy")}</Button>
+        <Button variant="contained" onClick={onClose}>{tr("Done")}</Button>
       </DialogActions>
     </Dialog>
   );

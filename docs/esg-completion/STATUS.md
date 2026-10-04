@@ -2,10 +2,10 @@
 
 | Item | Value |
 |---|---|
-| Phase | **P5 AI, Hardening & Release** — release candidate 1 for pilots (WP-50–54 done); Phase 4 completion: **WP-43 offline capture and WP-46 integrations done**; WP-44 deferred (D44), WP-45 not built |
+| Phase | **P5 AI, Hardening & Release** — release candidate 1 for pilots (WP-50–54 done); Phase 4 completion: **WP-43 offline capture, WP-46 integrations and WP-45 languages done**; WP-44 deferred (D44) |
 | Updated | 3 October 2026 |
 | WPs done | P0: WP-00 – WP-04. P1: **WP-10** (PR #2), **WP-11** (PR #3), **WP-12 + WP-13** (PR #4), **WP-14 + WP-15** (PR #5), **WP-16 + WP-17** (PR #6), **WP-18 + WP-19** (PR #7). P2: **WP-20** (PR #8, stacked on #7), **WP-21** (PR #9, stacked on #8), **WP-22** (PR #10, stacked on #9), **WP-23** (PR #11, stacked on #10). Hardening: **WP-52a** Phase 0 security and integrity (PR #12, stacked on #11), **WP-52b** Phase 1 functional fixes (PR #13, stacked on #12), **WP-52c** Phase 2 UX and consistency (PR #14, stacked on #13), **WP-52d** Phase 3 missing capability (PR #15, stacked on #14). Phase 4: **WP-24** Executive dashboard (PR #16, stacked on #15), **WP-34** Governance & Ethics (PR #17, stacked on #16), **WP-33** Social Impact (PR #18, stacked on #17), **WP-32** Risk & Materiality (PR #19, stacked on #18), **WP-31** Supply Chain ESG (PR #20, stacked on #19), **WP-35** Analytics (PR #21, stacked on #20), **WP-40** Investor Portal (PR #22, stacked on #21), **WP-41** Carbon Market (PR #23, stacked on #22), **WP-42** Training (PR #24, stacked on #23). Phase 5: **WP-50** Grounded AI (PR #25, stacked on #24), **WP-51** Performance (PR #26, stacked on #25), **WP-52** Security & NDPA (PR #27, stacked on #26), **WP-53** Accessibility (PR #28, stacked on #27), **WP-54** UAT & release (branch `feature/wp-54-release`, stacked on #28) |
-| Next | **Pilot UAT** with `docs/release/uat/`, then decide Q54-1; build WP-45 for 1.0 final (WP-43 and WP-46 done; WP-44 deferred by the product owner; connectors activated on request, D44; Q43-1 open). WP-53 accessibility, WP-54 UAT/release; Phase 4's WP-43 offline PWA, WP-44 SMS/USSD, WP-45 i18n and WP-46 integrations are still to build. **Product owner:** production AI model and hardware, OCR for scanned reports (D38). **Product owner / ESG SME:** ICAN/CIBN/FRCN accreditation, course content, video hosting, webinars (D37). **Product owner:** ACMI / registry and exchange access for the carbon market adapters, Article 6 (D36). **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
+| Next | **Pilot UAT** with `docs/release/uat/`, then decide Q54-1; professional review of the six draft translations (D45) before 1.0 final (WP-43, WP-45 and WP-46 done; WP-44 deferred by the product owner; connectors activated on request, D44; Q43-1 open). **Product owner:** production AI model and hardware, OCR for scanned reports (D38). **Product owner / ESG SME:** ICAN/CIBN/FRCN accreditation, course content, video hosting, webinars (D37). **Product owner:** ACMI / registry and exchange access for the carbon market adapters, Article 6 (D36). **Product owner:** cross-tenant investor portfolio view and DFI formats beyond IFC/AfDB (D35). **ESG SME:** scorecard components and grade bands, IFC/AfDB template structure (D35). **Product owner:** cross-tenant peer benchmark pool — consent and a sector code on tenants (D34 (5)). **ESG SME:** maturity thresholds, metric directions and comparability, SDG score weights (D34). **Product owner:** ETHICS_OFFICER role, CAPTCHA provider, per-tenant whistleblower key (D30). **ESG SME:** governance code rules (D30). **ESG SME:** metric → SDG links (D29). **ESG SME:** verify the six bundled framework packs, confirm SEC NG's instrument and NAICOM's (D28 (5)). **ESG SME:** EEIO proxies, activity scopes, sector mapping (D26). **Product owner:** Playwright vs Cypress, ClamAV hosting (D25 (9)). **Gate G1 review**. **Product owner:** report approval chain and SLA (D24 (4)). **Product owner:** SEC Nigeria journey and priority weights (D23 (4), (7)). **ESG SME:** carbon methods, constants and factors (D22). **Product owner:** confirm plan contents (D20). **ESG SME:** quality sub-scores and rule thresholds (D21). **ESG SME** needed to verify factors and framework content and to supply SEC NG / NGX / NAICOM / PenCom requirements |
 | Blockers | B1 Docker not installed locally: integration tests run against `./scripts/dev.sh testdb` instead (CI uses Testcontainers) |
 | Team & plan | 3 engineers + Claude Code; D1–D15 decided (hosting location open); release ≈ late May 2027; **Gate G2 projected ~15 Jan 2027** (`GAP_BACKLOG.md` §3–4) |
 
@@ -14,10 +14,10 @@
 | KPI | Value | Source |
 |---|---|---|
 | Fields at L4+ / total fields | **520 / 520** active fields WORK end to end with tests; every WORKS field is covered by the round-trip generators (`FieldRoundTripTest` + `roundTripReload.test.jsx`, 49 specs) or named API tests (`covered-elsewhere.json`); 10 inventoried legacy fields REMOVED | `FIELD_INVENTORY.csv` |
-| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (63 at L4 meet every automated L5 item; L5 after human review), 30 at L3, 52 MISSING (WP-44 deferred, WP-45, partner/content/hosting dependencies). RTM overall (273 rows): **5 at L5, 133 at L4**, 48 at L3, 66 MISSING | `RTM.csv` |
+| BRD requirements at L5 / in scope | **0 / 159** BRD rows at L5 (64 at L4 meet every automated L5 item; L5 after human review), 32 at L3, 49 MISSING (WP-44 deferred, partner/content/hosting dependencies). RTM overall (273 rows): **5 at L5, 134 at L4**, 50 at L3, 63 MISSING | `RTM.csv` |
 | Pages with zero mock data / total pages | **19 / 19**: no page shows hard-coded data and no module is a placeholder any more (Training was the last, WP-42). 18 pages at L4, 1 at L3. **No-mock gate: ENFORCE in CI, 0 findings** | `NO_MOCK_REPORT.md` |
 | Endpoints implemented + tested / catalogue | TRD catalogue: **57 / 58** implemented (56 at L4), 1 missing. Code endpoint rows (149 listed through WP-24): 137 at L4, 12 at L3; later module endpoints are traced through their TRD rows, API tests and `docs/modules/*.md` | type=trd_endpoint, type=endpoint |
-| E2E journeys passing / 30 | **27 / 30**: journeys 1–26 and 29 (still to build: 27 USSD — WP-44, deferred (D44); 28 French and Arabic RTL; 30 cross-tenant attacks, covered today at API level by `RlsIsolationTest` and the tenancy tests but not yet as a browser journey); plus the hardening Phase 0–2 specs and `wp-35-analytics`. **92 Cypress tests** in 37 specs on a fresh seeded DB, retries off | `esg-frontend/cypress/` |
+| E2E journeys passing / 30 | **28 / 30**: journeys 1–26, 28 and 29 (still to build: 27 USSD — WP-44, deferred (D44); 30 cross-tenant attacks, covered today at API level by `RlsIsolationTest` and the tenancy tests but not yet as a browser journey); plus the hardening Phase 0–2 specs and `wp-35-analytics`. **93 Cypress tests** in 38 specs on a fresh seeded DB, retries off | `esg-frontend/cypress/` |
 | Test coverage | **Backend 89.0% lines** (677 tests incl. the generated round-trip tests; 1 S3 test skipped locally without Docker, runs in CI); CI floor **70%**. **Frontend 357 tests** (Vitest + RTL) + **40 Cypress** | JaCoCo, Vitest |
 | Benchmark (evidence-based) | **115 / 265** (43%) vs 211 claimed — re-scored for release 1.0-rc1 (`release_score_2026_10_03`); was 0 / 265 at WP-03 | `BENCHMARK_REALITY.csv` |
 | Open critical/high security findings | **0** of the 11 found in WP-00. WP-12/13 closed S1 (`@PreAuthorize` everywhere + ArchUnit), S2 (opaque refresh tokens), S3 (demo login removed), S11 (sessions, rotation, MFA), S12 (multi-role, org scope, expiry) and mediums S13, S16. S15 (RFC 7807) closed in WP-15. Nothing critical/high/medium open | `AS_IS_ARCHITECTURE.md` §7 |
@@ -303,6 +303,26 @@ Design choices for review: D18 in `DECISIONS.md`.
 
 ---
 
+## WP-45 — Interface languages (D45)
+
+Branch `feature/wp-45-i18n` (stacked on WP-46, PR #31). Design: D45. Module doc: `docs/modules/i18n.md`.
+
+| Deliverable | Where |
+|---|---|
+| `tr()` with English text as the key, on-demand bundles for fr, pt, ar, sw, ha, yo (2,850 interface texts, 100% drafted), draft status in each bundle's meta | `esg-frontend/src/i18n/` |
+| Arabic right to left: `<html dir>`, MUI direction, RTL emotion cache | `LanguageRoot.jsx` |
+| Locale formats for numbers, money (₦, KSh, R, GH₵), percentages and dates across 34 components | `src/i18n/format.js`, `formattingLocale()` |
+| Language picker on the sign-in page and account menu; choice saved on the account and applied on every device | `LanguagePicker.jsx`, `useAccountLanguage.js`, `PUT /api/v1/auth/me/language` |
+| Tooling: codemod (JSX text, text props, label fields and label-map lookups), extractor with CI check, ESLint no-literal-string | `scripts/i18n-codemod.mjs`, `scripts/i18n-extract.mjs`, `npm run i18n:check` in CI |
+
+Results: backend `mvn verify` 1,244 tests, 0 failures (1 skip: S3 test without Docker locally), 0 Checkstyle; frontend 489 tests, lint (incl. no-literal-string), no-mock gate 0 findings, `i18n:check` 100% for all six languages, bundle budget (entry 90.2 KB gz, sign-in JS 182.2 KB gz; each language a separate 150–170 KB chunk); Cypress full run 38 specs / 93 tests on a fresh database, all on the first attempt, including **journey 28** (French from the sign-in page, saved on the account, applied on a fresh device; Arabic RTL dashboard passes axe WCAG 2.1 AA; back to English).
+
+Found and fixed: filled information toasts were white on teal at 3.5:1 (WCAG AA needs 4.5:1) — now 5.4:1 (found by journey 28's Arabic axe check); choosing a language could be undone by the account-language hook while the save was in flight (the account state is now updated first); navigation, table headers, action buttons and option lists built from label maps weren't reaching `tr()` — the codemod and extractor now cover label maps.
+
+Open (D45): professional review of each translation; server messages, catalogue names, template-string text and reports stay English.
+
+---
+
 ## WP-46 — Integrations (the integration line, D44)
 
 Branch `feature/wp-46-integrations` (stacked on WP-43, PR #30). Design: D44. WP-44 (SMS/USSD) skipped by the product owner (D44 (0)).
@@ -358,7 +378,7 @@ Branch `feature/wp-54-release` (stacked on WP-53, PR #28). Design: D42. Release 
 
 Results: backend `mvn verify` 1,216 tests, 0 failures (1 skip: S3 test without Docker locally), 88.8% lines, 0 Checkstyle; frontend 460 tests; Cypress 35 specs / 90 tests on a fresh database, all on the first attempt. Images not built locally (Docker Desktop down after the disk filled); CI builds them.
 
-Found: a fresh production database had no way to create the first administrator (fixed, D42); analysts can only read analytics (Q54-1, OPEN); the app still shows the name "ESG Pro" in the title, sign-in page and sidebar (product owner: rename to Atheris ESG?).
+Found: a fresh production database had no way to create the first administrator (fixed, D42); analysts can only read analytics (Q54-1, OPEN); the app showed the name "ESG Pro" in the title, sign-in page and sidebar (renamed to Atheris ESG by the product owner on 4 Oct 2026, D46).
 
 ---
 

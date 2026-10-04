@@ -8,6 +8,7 @@ import { roleLabel } from '../../../services/labels';
 import { StepDialog } from '../../social/components/shared';
 import { useCertificatesQuery, useRevokeCertificateMutation, useTeamQuery } from '../trainingApi';
 import { CERT_STATUS, GAP_STATE, fmt } from '../schemas';
+import { tr } from '../../../i18n';
 
 /** Team progress (TRD §8.12 CompetencyTracker): per person, required courses from role paths, passes, overdue work and gaps. */
 export function TeamProgress() {
@@ -16,11 +17,11 @@ export function TeamProgress() {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   return (
     <Card>
-      {data.length === 0 ? <CardContent><EmptyState title="Nobody to show" /></CardContent> : (
+      {data.length === 0 ? <CardContent><EmptyState title={tr("Nobody to show")} /></CardContent> : (
         <TableContainer>
-          <Table size="small" aria-label="Team progress">
-            <TableHead><TableRow><TableCell>Person</TableCell><TableCell>Roles</TableCell><TableCell align="right">Required</TableCell><TableCell align="right">Passed</TableCell>
-              <TableCell align="right">Overdue</TableCell><TableCell align="right">Hours this year</TableCell><TableCell>Gaps</TableCell></TableRow></TableHead>
+          <Table size="small" aria-label={tr("Team progress")}>
+            <TableHead><TableRow><TableCell>{tr("Person")}</TableCell><TableCell>{tr("Roles")}</TableCell><TableCell align="right">{tr("Required")}</TableCell><TableCell align="right">{tr("Passed")}</TableCell>
+              <TableCell align="right">{tr("Overdue")}</TableCell><TableCell align="right">{tr("Hours this year")}</TableCell><TableCell>{tr("Gaps")}</TableCell></TableRow></TableHead>
             <TableBody>
               {data.map((r) => (
                 <TableRow key={r.userId}>
@@ -30,8 +31,8 @@ export function TeamProgress() {
                   <TableCell align="right">{r.passed}</TableCell>
                   <TableCell align="right">{r.overdue ? <Chip size="small" color="error" label={r.overdue} /> : 0}</TableCell>
                   <TableCell align="right">{fmt(r.hoursThisYear)}</TableCell>
-                  <TableCell>{r.gaps.length === 0 ? <Chip size="small" color="success" label="None" />
-                    : r.gaps.map((g) => <Typography key={g.courseId} variant="caption" display="block">{g.courseTitle}: {GAP_STATE[g.state]}</Typography>)}</TableCell>
+                  <TableCell>{r.gaps.length === 0 ? <Chip size="small" color="success" label={tr("None")} />
+                    : r.gaps.map((g) => <Typography key={g.courseId} variant="caption" display="block">{g.courseTitle}: {tr(GAP_STATE[g.state])}</Typography>)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -52,11 +53,11 @@ export function Certificates() {
   return (
     <>
       <Card>
-        {data.length === 0 ? <CardContent><EmptyState title="No certificates yet">They are issued when someone passes a course.</EmptyState></CardContent> : (
+        {data.length === 0 ? <CardContent><EmptyState title={tr("No certificates yet")}>{tr("They are issued when someone passes a course.")}</EmptyState></CardContent> : (
           <TableContainer>
-            <Table size="small" aria-label="Certificates">
-              <TableHead><TableRow><TableCell>Code</TableCell><TableCell>Holder</TableCell><TableCell>Course</TableCell><TableCell>Issued</TableCell><TableCell>Expires</TableCell>
-                <TableCell>Status</TableCell><TableCell /></TableRow></TableHead>
+            <Table size="small" aria-label={tr("Certificates")}>
+              <TableHead><TableRow><TableCell>{tr("Code")}</TableCell><TableCell>{tr("Holder")}</TableCell><TableCell>{tr("Course")}</TableCell><TableCell>{tr("Issued")}</TableCell><TableCell>{tr("Expires")}</TableCell>
+                <TableCell>{tr("Status")}</TableCell><TableCell /></TableRow></TableHead>
               <TableBody>
                 {data.map((c) => (
                   <TableRow key={c.id}>
@@ -65,10 +66,10 @@ export function Certificates() {
                     <TableCell>{c.courseTitle}</TableCell>
                     <TableCell>{c.issuedOn}</TableCell>
                     <TableCell>{c.expiresOn ?? '—'}</TableCell>
-                    <TableCell><Chip size="small" color={CERT_STATUS[c.status].color} label={CERT_STATUS[c.status].label} />
+                    <TableCell><Chip size="small" color={CERT_STATUS[c.status].color} label={tr(CERT_STATUS[c.status].label)} />
                       {c.revokeReason && <Typography variant="caption" display="block" color="text.secondary">{c.revokeReason}</Typography>}</TableCell>
                     <TableCell align="right">
-                      {c.status !== 'revoked' && <Can permission="training:configure"><Button size="small" color="error" aria-label={`Revoke ${c.code}`} onClick={() => setRevoking(c)}>Revoke</Button></Can>}
+                      {c.status !== 'revoked' && <Can permission="training:configure"><Button size="small" color="error" aria-label={`Revoke ${c.code}`} onClick={() => setRevoking(c)}>{tr("Revoke")}</Button></Can>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -78,9 +79,9 @@ export function Certificates() {
         )}
       </Card>
       {revoking && (
-        <StepDialog title={`Revoke certificate ${revoking.code}`} confirmLabel="Revoke" fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
+        <StepDialog title={`Revoke certificate ${revoking.code}`} confirmLabel={tr("Revoke")} fields={[{ name: 'note', label: 'Reason', required: true, max: 1000 }]}
           onCancel={() => setRevoking(null)} onConfirm={async (v) => { await revoke({ id: revoking.id, note: v.note }).unwrap(); setRevoking(null); }}>
-          <Alert severity="warning">Anyone checking the code will see that it has been revoked.</Alert>
+          <Alert severity="warning">{tr("Anyone checking the code will see that it has been revoked.")}</Alert>
         </StepDialog>
       )}
     </>

@@ -7,6 +7,7 @@ import ApiKeysPanel from './ApiKeysPanel';
 import ConnectorsPanel from './ConnectorsPanel';
 import DeveloperPanel, { TemplatesPanel } from './DeveloperPanel';
 import WebhooksPanel from './WebhooksPanel';
+import { tr } from '../../../i18n';
 
 // no-mock-gate: config — labels for IntegrationStatusService statuses
 const STATUS = {
@@ -21,17 +22,17 @@ function ServicesPanel() {
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   return (
-    <Grid container spacing={2} aria-label="Integrations">
+    <Grid container spacing={2} aria-label={tr("Integrations")}>
       {data.map((i) => {
-        const s = STATUS[i.status] ?? STATUS.not_configured;
+        const s = tr(STATUS[i.status]) ?? STATUS.not_configured;
         return (
           <Grid key={i.key} size={{ xs: 12, md: 6 }}>
             <Card sx={{ height: '100%' }} aria-label={i.name}>
               <CardContent>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {i.name} <Chip size="small" color={s.color} variant={i.status === 'connected' ? 'filled' : 'outlined'} label={s.label} />
+                  {i.name} <Chip size="small" color={s.color} variant={i.status === 'connected' ? 'filled' : 'outlined'} label={tr(s.label)} />
                 </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>{i.detail}</Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>{tr(i.detail)}</Typography>
                 <Typography variant="caption" color="text.secondary">{i.usedFor}</Typography>
               </CardContent>
             </Card>
@@ -64,8 +65,8 @@ export default function IntegrationsTab() {
   const current = panels.some((p) => p.value === tab) ? tab : panels[0]?.value;
   return (
     <Box>
-      <Tabs value={current} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile aria-label="Integrations sections">
-        {panels.map((p) => <Tab key={p.value} value={p.value} label={p.label} />)}
+      <Tabs value={current} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile aria-label={tr("Integrations sections")}>
+        {panels.map((p) => <Tab key={p.value} value={p.value} label={tr(p.label)} />)}
       </Tabs>
       {current === 'connectors' ? <ConnectorsPanel onGoTo={setTab} /> : panels.find((p) => p.value === current)?.render()}
     </Box>

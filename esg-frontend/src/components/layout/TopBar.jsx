@@ -12,7 +12,9 @@ import { roleLabel } from '../../services/labels';
 import { useMyDataMutation } from '../../features/privacy/privacyApi';
 import { saveBlob } from '../../services/download';
 import OfflineStatus from '../../features/offline/components/OfflineStatus';
+import LanguagePicker from '../i18n/LanguagePicker';
 import { canCapture } from '../../features/offline/hooks';
+import { tr } from '../../i18n';
 
 export default function TopBar({ onMenu = () => {} }) {
   const { user, logout } = useAuth();
@@ -31,7 +33,7 @@ export default function TopBar({ onMenu = () => {} }) {
       }}
     >
       <Toolbar sx={{ minHeight: '56px !important', px: { xs: 1.5, sm: 3 } }}>
-        <IconButton aria-label="Open menu" onClick={onMenu} sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}>
+        <IconButton aria-label={tr("Open menu")} onClick={onMenu} sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}>
           <MenuIcon />
         </IconButton>
         {/* Global search isn't built yet (FIELD_INVENTORY "Global search" row); no non-working search box until it is. */}
@@ -47,7 +49,7 @@ export default function TopBar({ onMenu = () => {} }) {
 
         {/* User */}
         <Box
-          role="button" tabIndex={0} aria-label="Account menu" aria-haspopup="menu"
+          role="button" tabIndex={0} aria-label={tr("Account menu")} aria-haspopup="menu"
           onClick={(e) => setAnchorEl(e.currentTarget)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAnchorEl(e.currentTarget); } }}
           sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1 }}
@@ -69,12 +71,15 @@ export default function TopBar({ onMenu = () => {} }) {
           <MenuItem disabled sx={{ fontSize: '0.75rem' }}>{user?.tenantName}</MenuItem>
           <Divider />
           {/* WP-34: every user acknowledges published policies there. */}
-          <MenuItem component={RouterLink} to="/my-policies" onClick={() => setAnchorEl(null)}>My policies</MenuItem>
+          <MenuItem component={RouterLink} to="/my-policies" onClick={() => setAnchorEl(null)}>{tr("My policies")}</MenuItem>
           {/* WP-52 (NDPA 2023 ss. 34, 38): anyone can take a copy of their own data. */}
           <MenuItem onClick={async () => { setAnchorEl(null); try { saveBlob(await myData().unwrap(), 'my-data.json'); } catch { /* the download shows nothing on failure */ } }}>
-            Download my data
+            {tr("Download my data")}
           </MenuItem>
-          <MenuItem onClick={() => { setAnchorEl(null); logout(); }}>Sign Out</MenuItem>
+          {/* WP-45: the interface language (kept on the account). */}
+          <LanguagePicker variant="menu" onChosen={() => setAnchorEl(null)} />
+          <Divider />
+          <MenuItem onClick={() => { setAnchorEl(null); logout(); }}>{tr("Sign Out")}</MenuItem>
         </Menu>
       </Toolbar>
     </AppBar>

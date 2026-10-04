@@ -3,6 +3,15 @@
 One line per fix or feature, newest first. Codes: [docs/api/ERROR_CODES.md](docs/api/ERROR_CODES.md). Decisions: D-numbers in
 [DECISIONS.md](docs/esg-completion/DECISIONS.md).
 
+## Unreleased — WP-45 Languages (D45)
+
+- The interface is available in English, French, Portuguese, Arabic, Swahili, Hausa and Yoruba: choose it on the sign-in page or in the account menu. Signed in, the choice is kept on your account for every device.
+- Arabic is shown right to left.
+- Numbers, amounts (₦, KSh, R, GH₵, $, €), percentages and dates follow the chosen language.
+- The six translations are drafts that have not yet been reviewed by a professional translator; the language list says so. Messages from the server, catalogue names and generated reports stay in English for now.
+- The product is now called **Atheris ESG** everywhere in the app (browser title, sign-in page, menu); it was "ESG Pro". The demo tenant keeps its name.
+- Filled information messages (toasts) are darker so their text meets WCAG AA contrast.
+
 ## Unreleased — WP-46 Integrations (D44)
 
 - Administration › Integrations now has Connectors, API keys, Webhooks, File templates and a Developer guide.

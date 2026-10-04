@@ -14,17 +14,18 @@ import { useCoursesQuery, useCreateCourseMutation, useUpdateCourseMutation } fro
 import {
   CATEGORIES, DELIVERY, MODULE_KINDS, courseSchema, emptyCourse, emptyModule, emptyQuestion, optionList, toCourseBody, toCourseForm,
 } from '../schemas';
+import { tr } from '../../../i18n';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
 const cellSelect = (field, fs, label, entries) => (
-  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={fs.error?.message}
+  <TextField select size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={tr(fs.error?.message)}
     SelectProps={{ SelectDisplayProps: { 'aria-label': label } }}>
-    {entries.map(([k, l]) => <MenuItem key={k} value={k}>{l}</MenuItem>)}
+    {entries.map(([k, l]) => <MenuItem key={k} value={k}>{tr(l)}</MenuItem>)}
   </TextField>
 );
 const cellText = (field, fs, label, props = {}) => (
-  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={fs.error?.message}
+  <TextField size="small" fullWidth {...field} value={field.value ?? ''} error={!!fs.error} helperText={tr(fs.error?.message)}
     slotProps={{ htmlInput: { 'aria-label': label } }} {...props} />
 );
 
@@ -50,10 +51,10 @@ function PdfCell({ field, fieldState, name, label, setName }) {
   return (
     <Box>
       <Button size="small" component="label" startIcon={<AttachFile />} disabled={isLoading} aria-label={label}>
-        {name || 'Attach PDF'}
+        {name || tr("Attach PDF")}
         <input hidden type="file" accept="application/pdf" onChange={pick} />
       </Button>
-      {(problem || fieldState.error) && <Typography variant="caption" color="error" display="block">{problem || fieldState.error.message}</Typography>}
+      {(problem || fieldState.error) && <Typography variant="caption" color="error" display="block">{problem || tr(fieldState.error.message)}</Typography>}
     </Box>
   );
 }
@@ -126,39 +127,39 @@ export function CourseDialog({ course, onClose }) {
   return (
     <Dialog open onClose={() => onClose()} maxWidth="lg" fullWidth>
       <form onSubmit={submit} noValidate>
-        <DialogTitle>{editing ? `Edit ${course.title}` : 'New course'}</DialogTitle>
+        <DialogTitle>{editing ? `Edit ${course.title}` : tr("New course")}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, sm: 3 }}><FormTextField control={control} name="code" label="Course code" helperText="e.g. ESG-101" /></Grid>
-            <Grid size={{ xs: 12, sm: 9 }}><FormTextField control={control} name="title" label="Title" /></Grid>
-            <Grid size={12}><FormTextField control={control} name="description" label="Description (optional)" multiline minRows={2} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="category" label="Category" options={options(CATEGORIES)} /></Grid>
-            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="delivery" label="Delivery" options={options(DELIVERY)} /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="durationHours" label="Duration (hours)" inputMode="decimal" helperText="Credited as training hours on completion" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="passingScore" label="Pass mark (%)" inputMode="numeric" /></Grid>
-            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="certificateValidityMonths" label="Certificate valid for (months, optional)" inputMode="numeric" helperText="Blank: doesn't expire" /></Grid>
+            <Grid size={{ xs: 12, sm: 3 }}><FormTextField control={control} name="code" label={tr("Course code")} helperText={tr("e.g. ESG-101")} /></Grid>
+            <Grid size={{ xs: 12, sm: 9 }}><FormTextField control={control} name="title" label={tr("Title")} /></Grid>
+            <Grid size={12}><FormTextField control={control} name="description" label={tr("Description (optional)")} multiline minRows={2} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="category" label={tr("Category")} options={options(CATEGORIES)} /></Grid>
+            <Grid size={{ xs: 12, sm: 4 }}><FormSelect control={control} name="delivery" label={tr("Delivery")} options={options(DELIVERY)} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="durationHours" label={tr("Duration (hours)")} inputMode="decimal" helperText={tr("Credited as training hours on completion")} /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="passingScore" label={tr("Pass mark (%)")} inputMode="numeric" /></Grid>
+            <Grid size={{ xs: 6, sm: 4 }}><FormTextField control={control} name="certificateValidityMonths" label={tr("Certificate valid for (months, optional)")} inputMode="numeric" helperText={tr("Blank: doesn't expire")} /></Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <Controller name="prerequisiteIds" control={control} render={({ field, fieldState }) => (
-                <TextField select fullWidth size="small" label="Prerequisites (optional)" value={field.value} inputRef={field.ref} onBlur={field.onBlur}
-                  onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={fieldState.error?.message ?? 'Courses to pass first'}
+                <TextField select fullWidth size="small" label={tr("Prerequisites (optional)")} value={field.value} inputRef={field.ref} onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)} error={!!fieldState.error} helperText={tr(fieldState.error?.message) ?? tr("Courses to pass first")}
                   SelectProps={{ multiple: true, displayEmpty: true, renderValue: (sel) => (sel.length ? sel.map((id) => titles[id] ?? 'Course').join(', ') : 'None') }}
                   slotProps={{ inputLabel: { shrink: true } }}>
-                  {others.map((x) => <MenuItem key={x.id} value={x.id}>{x.code} · {x.title}</MenuItem>)}
+                  {others.map((x) => <MenuItem key={x.id} value={x.id}>{x.code} · {tr(x.title)}</MenuItem>)}
                 </TextField>
               )} />
             </Grid>
           </Grid>
 
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 3, mb: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>Modules</Typography>
-            <Button size="small" startIcon={<Add />} onClick={() => modules.append({ ...emptyModule })}>Add module</Button>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>{tr("Modules")}</Typography>
+            <Button size="small" startIcon={<Add />} onClick={() => modules.append({ ...emptyModule })}>{tr("Add module")}</Button>
           </Box>
-          {errors.modules?.message && <Alert severity="error" sx={{ mb: 1 }}>{errors.modules.message}</Alert>}
-          {modules.fields.length === 0 ? <Typography variant="body2" color="text.secondary">A course needs at least one module before it can be published.</Typography> : (
+          {tr(errors.modules?.message) && <Alert severity="error" sx={{ mb: 1 }}>{tr(errors.modules.message)}</Alert>}
+          {modules.fields.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("A course needs at least one module before it can be published.")}</Typography> : (
             <TableContainer>
-              <Table size="small" aria-label="Modules">
-                <TableHead><TableRow><TableCell>Title</TableCell><TableCell>Kind</TableCell><TableCell>Content</TableCell><TableCell>Minutes</TableCell><TableCell /></TableRow></TableHead>
+              <Table size="small" aria-label={tr("Modules")}>
+                <TableHead><TableRow><TableCell>{tr("Title")}</TableCell><TableCell>{tr("Kind")}</TableCell><TableCell>{tr("Content")}</TableCell><TableCell>{tr("Minutes")}</TableCell><TableCell /></TableRow></TableHead>
                 <TableBody>
                   {modules.fields.map((f, i) => <ModuleRow key={f.id} control={control} index={i} setValue={setValue} onRemove={() => modules.remove(i)} />)}
                 </TableBody>
@@ -167,14 +168,14 @@ export function CourseDialog({ course, onClose }) {
           )}
 
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 3, mb: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>Quiz {delivery === 'classroom' && '(not used for classroom courses)'}</Typography>
-            <Button size="small" startIcon={<Add />} onClick={() => questions.append({ ...emptyQuestion })}>Add question</Button>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>{tr("Quiz")} {delivery === 'classroom' && tr("(not used for classroom courses)")}</Typography>
+            <Button size="small" startIcon={<Add />} onClick={() => questions.append({ ...emptyQuestion })}>{tr("Add question")}</Button>
           </Box>
-          {errors.questions?.message && <Alert severity="error" sx={{ mb: 1 }}>{errors.questions.message}</Alert>}
-          {questions.fields.length === 0 ? <Typography variant="body2" color="text.secondary">No quiz: an online course is completed when every module is done.</Typography> : (
+          {tr(errors.questions?.message) && <Alert severity="error" sx={{ mb: 1 }}>{tr(errors.questions.message)}</Alert>}
+          {questions.fields.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("No quiz: an online course is completed when every module is done.")}</Typography> : (
             <TableContainer>
-              <Table size="small" aria-label="Quiz questions">
-                <TableHead><TableRow><TableCell>Question</TableCell><TableCell>Options (one per line)</TableCell><TableCell>Correct answer</TableCell><TableCell /></TableRow></TableHead>
+              <Table size="small" aria-label={tr("Quiz questions")}>
+                <TableHead><TableRow><TableCell>{tr("Question")}</TableCell><TableCell>{tr("Options (one per line)")}</TableCell><TableCell>{tr("Correct answer")}</TableCell><TableCell /></TableRow></TableHead>
                 <TableBody>
                   {questions.fields.map((f, i) => <QuestionRow key={f.id} control={control} index={i} onRemove={() => questions.remove(i)} />)}
                 </TableBody>
@@ -183,8 +184,8 @@ export function CourseDialog({ course, onClose }) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose()}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? 'Save changes' : 'Create course'}</Button>
+          <Button onClick={() => onClose()}>{tr("Cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={c.isLoading || u.isLoading}>{editing ? tr("Save changes") : tr("Create course")}</Button>
         </DialogActions>
       </form>
     </Dialog>

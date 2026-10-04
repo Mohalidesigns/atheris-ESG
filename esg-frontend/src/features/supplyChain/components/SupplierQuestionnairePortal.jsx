@@ -7,6 +7,7 @@ import { AttachFile, Lock } from '@mui/icons-material';
 import { checkFile } from '../../../components/files/fileRules';
 import { usePublicQuestionnaireQuery, useSavePublicAnswersMutation, useSubmitPublicQuestionnaireMutation, useUploadPublicEvidenceMutation } from '../supplyApi';
 import { PILLARS, problemText } from '../schemas';
+import { tr } from '../../../i18n';
 
 const toState = (answers) => Object.fromEntries((answers ?? []).map((a) => [a.questionId, {
   choice: a.choice ?? '', number: a.number == null ? '' : String(a.number), text: a.text ?? '', comment: a.comment ?? '', fileId: a.fileId ?? null,
@@ -19,11 +20,11 @@ const toState = (answers) => Object.fromEntries((answers ?? []).map((a) => [a.qu
 export default function SupplierQuestionnairePortal() {
   const { token } = useParams();
   const { data: q, isLoading, error, refetch } = usePublicQuestionnaireQuery(token);
-  if (isLoading) return <Container sx={{ py: 6 }}><Typography>Loading…</Typography></Container>;
+  if (isLoading) return <Container sx={{ py: 6 }}><Typography>{tr("Loading…")}</Typography></Container>;
   if (error || !q) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Alert severity="error">This questionnaire link isn't valid any more. It may have been replaced, completed or closed — ask your customer for a new one.</Alert>
+        <Alert severity="error">{tr("This questionnaire link isn't valid any more. It may have been replaced, completed or closed — ask your customer for a new one.")}</Alert>
       </Container>
     );
   }
@@ -90,35 +91,35 @@ function Questionnaire({ token, q, refetch }) {
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <Lock fontSize="small" color="action" />
-        <Typography variant="caption" color="text.secondary">Private link for {q.supplierName}. No account needed.</Typography>
+        <Typography variant="caption" color="text.secondary">{tr("Private link for")} {q.supplierName}{tr(". No account needed.")}</Typography>
       </Box>
-      <Typography variant="h5" sx={{ fontWeight: 700 }}>{q.title}</Typography>
-      <Typography variant="body2" color="text.secondary">From {q.buyer} · please complete by {q.dueDate}</Typography>
-      {q.reviewNote && open && <Alert severity="info" sx={{ mt: 2 }}>{q.buyer} asked for changes: {q.reviewNote}</Alert>}
-      {!open && <Alert severity="success" sx={{ mt: 2 }} aria-label="Submitted">Your answers have been sent for review. Thank you.</Alert>}
-      {message && open && <Alert severity={message.severity} sx={{ mt: 2 }}>{message.text}</Alert>}
+      <Typography variant="h5" sx={{ fontWeight: 700 }}>{tr(q.title)}</Typography>
+      <Typography variant="body2" color="text.secondary">{tr("From")} {q.buyer} {tr("· please complete by")} {q.dueDate}</Typography>
+      {q.reviewNote && open && <Alert severity="info" sx={{ mt: 2 }}>{q.buyer} {tr("asked for changes:")} {q.reviewNote}</Alert>}
+      {!open && <Alert severity="success" sx={{ mt: 2 }} aria-label={tr("Submitted")}>{tr("Your answers have been sent for review. Thank you.")}</Alert>}
+      {message && open && <Alert severity={message.severity} sx={{ mt: 2 }}>{tr(message.text)}</Alert>}
       {q.questions.map((question, i) => {
         const a = answers[question.id] ?? {};
         return (
           <Card key={question.id} sx={{ mt: 2 }} aria-label={`Question ${i + 1}`}>
             <CardContent>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
-                <Chip size="small" label={PILLARS[question.pillar]} />
-                {question.evidenceRequired && <Chip size="small" color="warning" label="Evidence needed" />}
+                <Chip size="small" label={tr(PILLARS[question.pillar])} />
+                {question.evidenceRequired && <Chip size="small" color="warning" label={tr("Evidence needed")} />}
               </Box>
               <Typography sx={{ fontWeight: 600 }}>{i + 1}. {question.question}</Typography>
               {question.helpText && <Typography variant="body2" color="text.secondary">{question.helpText}</Typography>}
               <Box sx={{ mt: 1 }}>
                 {question.answerType === 'yes_no' && (
                   <RadioGroup row value={a.choice ?? ''} onChange={(e) => set(question.id, 'choice', e.target.value)} aria-label={`Answer ${i + 1}`}>
-                    <FormControlLabel value="yes" control={<Radio disabled={!open} />} label="Yes" />
-                    <FormControlLabel value="no" control={<Radio disabled={!open} />} label="No" />
+                    <FormControlLabel value="yes" control={<Radio disabled={!open} />} label={tr("Yes")} />
+                    <FormControlLabel value="no" control={<Radio disabled={!open} />} label={tr("No")} />
                   </RadioGroup>
                 )}
                 {question.answerType === 'scale' && (
                   <TextField select size="small" sx={{ minWidth: 220 }} label={`Answer ${i + 1}`} value={a.choice ?? ''} disabled={!open}
                     onChange={(e) => set(question.id, 'choice', e.target.value)}>
-                    {['1', '2', '3', '4', '5'].map((v) => <MenuItem key={v} value={v}>{v} {v === '1' ? '(not at all)' : v === '5' ? '(fully)' : ''}</MenuItem>)}
+                    {['1', '2', '3', '4', '5'].map((v) => <MenuItem key={v} value={v}>{v} {v === '1' ? tr("(not at all)") : v === '5' ? tr("(fully)") : ''}</MenuItem>)}
                   </TextField>
                 )}
                 {question.answerType === 'number' && (
@@ -135,7 +136,7 @@ function Questionnaire({ token, q, refetch }) {
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1, flexWrap: 'wrap' }}>
                 {open && (
                   <Button size="small" component="label" startIcon={<AttachFile />} disabled={up.isLoading}>
-                    {a.fileId ? 'Replace evidence' : 'Attach evidence'}
+                    {a.fileId ? tr("Replace evidence") : tr("Attach evidence")}
                     <input type="file" hidden aria-label={`Evidence ${i + 1}`} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) attach(question.id, f); }} />
                   </Button>
                 )}
@@ -149,8 +150,8 @@ function Questionnaire({ token, q, refetch }) {
       })}
       {open && (
         <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}>
-          <Button onClick={doSave} disabled={s.isLoading}>Save and finish later</Button>
-          <Button variant="contained" onClick={doSubmit} disabled={s.isLoading || sub.isLoading}>Submit answers</Button>
+          <Button onClick={doSave} disabled={s.isLoading}>{tr("Save and finish later")}</Button>
+          <Button variant="contained" onClick={doSubmit} disabled={s.isLoading || sub.isLoading}>{tr("Submit answers")}</Button>
         </Box>
       )}
     </Container>
