@@ -111,7 +111,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
           <Stack spacing={2}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
               <StatusChip status={dp.validationStatus} />
-              <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace' }}>{dp.metricKey}</Typography>
+              <Typography variant="caption" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{dp.metricKey}</Typography>
             </Box>
             {dp.statusReason && (
               <Alert severity={dp.validationStatus === 'rejected' ? 'warning' : 'info'}>

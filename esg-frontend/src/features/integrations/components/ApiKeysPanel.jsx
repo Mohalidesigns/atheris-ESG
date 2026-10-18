@@ -92,7 +92,7 @@ export default function ApiKeysPanel() {
               {data.map((k) => (
                 <TableRow key={k.id}>
                   <TableCell>{k.name}<Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{tr("by")} {k.createdByName}</Typography></TableCell>
-                  <TableCell sx={{ fontFamily: '"Roboto Mono", monospace' }}>{`atk_${k.prefix}_…`}</TableCell>
+                  <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{`atk_${k.prefix}_…`}</TableCell>
                   <TableCell>{k.scopes.join(', ')}</TableCell>
                   <TableCell><Chip size="small" variant="outlined" color={STATUS[k.status].color} label={tr(STATUS[k.status].label)} /></TableCell>
                   <TableCell>{k.lastUsedAt ? when(k.lastUsedAt) : tr("Never")}</TableCell>

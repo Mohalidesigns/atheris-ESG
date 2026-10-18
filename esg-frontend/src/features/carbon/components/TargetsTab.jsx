@@ -16,6 +16,7 @@ import { useCreateTargetMutation, useDeleteTargetMutation, useTargetsQuery, useU
 import { DENOMINATORS, TARGET_SCOPES, emptyTarget, targetSchema, toTargetBody, toTargetForm } from '../schemas';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { tr, formattingLocale } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 // no-mock-gate: config — labels for TargetMath.status values
 const STATUS = {
@@ -130,14 +131,14 @@ function TargetCard({ target, onEdit, onDelete }) {
         <Box sx={{ height: 220 }}>
           <ResponsiveContainer>
             <LineChart data={target.pathwayPoints.map((p) => ({ year: p.year, expected: Number(p.expected), actual: p.actual == null ? null : Number(p.actual) }))}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid vertical={false} />
               <XAxis dataKey="year" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="expected" name="Pathway" stroke="#2D7D46" strokeDasharray="5 5" dot={false} />
+              <Line type="monotone" dataKey="expected" name="Pathway" stroke={chart.series[1]} strokeDasharray="5 5" dot={false} />
               {/* F6: dots, so a single year of actuals (e.g. the base year) is visible. */}
-              <Line type="monotone" dataKey="actual" name="Actual" stroke="#1A365D" connectNulls={false} dot={{ r: 4 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="actual" name="Actual" stroke={chart.series[0]} connectNulls={false} dot={{ r: 4 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </Box>

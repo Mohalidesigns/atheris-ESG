@@ -161,7 +161,7 @@ function UsersTab() {
                       }} />
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.75rem' }}>{u.mfaEnabled ? tr("On") : tr("Off")}</TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>
+                    <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.7rem' }}>
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(formattingLocale()) : tr("Never")}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

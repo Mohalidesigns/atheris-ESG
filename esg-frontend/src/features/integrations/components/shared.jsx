@@ -45,7 +45,7 @@ export function SecretDialog({ title, label, secret, children, onClose }) {
         <Alert severity="warning" sx={{ mb: 2 }}>{tr("Copy it now. It won't be shown again — if it's lost, create a new one.")}</Alert>
         <Typography variant="caption" color="text.secondary">{label}</Typography>
         <Box component="code" aria-label={label} sx={{ display: 'block', p: 1.5, mt: 0.5, bgcolor: '#F7FAFC', border: '1px solid #E2E8F0',
-          borderRadius: 1, fontFamily: '"Roboto Mono", monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>{secret}</Box>
+          borderRadius: 1, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>{secret}</Box>
         {children}
       </DialogContent>
       <DialogActions>

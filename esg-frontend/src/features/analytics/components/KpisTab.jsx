@@ -20,6 +20,7 @@ import {
   DIRECTIONS, KPI_STATUS, OPERATORS, PILLARS, SDG_GOALS, emptyKpi, fmt, kpiSchema, problemText, toKpiBody, toKpiForm,
 } from '../schemas';
 import { tr } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 const options = (o) => Object.entries(o).map(([value, label]) => ({ value, label }));
 
@@ -137,12 +138,12 @@ function KpiCard({ kpi: k, onEdit, onDelete }) {
         <Box sx={{ height: 140, mt: 1 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid vertical={false} />
               <XAxis dataKey="year" fontSize={11} />
               <YAxis fontSize={11} width={48} />
               <Tooltip formatter={(v) => `${fmt(v, k.decimals)} ${k.unit}`} />
-              {k.targetValue != null && <ReferenceLine y={Number(k.targetValue)} stroke="#2e7d32" strokeDasharray="4 4" label={{ value: 'target', fontSize: 10 }} />}
-              <Line type="monotone" dataKey="value" stroke="#1565c0" connectNulls={false} dot />
+              {k.targetValue != null && <ReferenceLine y={Number(k.targetValue)} stroke={chart.series[1]} strokeDasharray="4 4" label={{ value: 'target', fontSize: 10 }} />}
+              <Line type="monotone" dataKey="value" stroke={chart.series[0]} connectNulls={false} dot />
             </LineChart>
           </ResponsiveContainer>
         </Box>

@@ -39,7 +39,7 @@ function Requirements({ framework }) {
       {data.map((r) => (
         <ListItem key={r.id} sx={{ pl: 2 + depthOf(r, byCode) * 3, alignItems: 'flex-start' }} divider>
           <ListItemText
-            primary={<><Typography component="span" variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>{tr(r.title)}</>}
+            primary={<><Typography component="span" variant="body2" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>{tr(r.title)}</>}
             secondary={(r.metricKeys.length > 0 || r.mappedTo.length > 0) && (
               <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                 {r.metricKeys.map((m) => <Chip key={m} component="span" size="small" label={m} sx={{ height: 20, fontSize: '0.65rem' }} />)}

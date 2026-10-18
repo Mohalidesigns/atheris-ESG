@@ -43,7 +43,7 @@ function Results({ result, rows, onClose }) {
                     <TableRow key={r.id}>
                       <TableCell>{rows.get(r.id) ? label(rows.get(r.id)) : r.id}</TableCell>
                       <TableCell>{tr(r.message)}</TableCell>
-                      <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>{r.errorCode}</TableCell>
+                      <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.7rem' }}>{r.errorCode}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

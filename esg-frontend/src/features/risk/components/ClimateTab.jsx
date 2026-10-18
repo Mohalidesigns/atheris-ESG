@@ -114,7 +114,7 @@ function Scenarios() {
               <Box sx={{ height: 240, mt: 1 }} aria-label={tr("Transition cost by scenario")}>
                 <ResponsiveContainer>
                   <BarChart data={chart}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid vertical={false} />
                     <XAxis dataKey="year" />
                     <YAxis tickFormatter={(v) => fmt(v, 0)} />
                     <Tooltip formatter={(v) => `USD ${fmt(v, 0)}`} />
