@@ -87,7 +87,7 @@ export default function GapAnalysisTab({ year, initialFramework }) {
                       {rows.map((r) => (
                         <TableRow key={r.id} sx={r.leaf ? undefined : { bgcolor: 'action.hover' }}>
                           <TableCell sx={{ pl: 2 + depth(r) * 3, maxWidth: 420 }}>
-                            <Typography component="span" variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>
+                            <Typography component="span" variant="body2" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontWeight: 700, mr: 1 }}>{r.code}</Typography>
                             <Typography component="span" variant="body2" sx={{ fontWeight: r.leaf ? 400 : 600 }}>{tr(r.title)}</Typography>
                             {r.metricKeys.length > 0 && (
                               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>

@@ -3,8 +3,9 @@ import { useState } from 'react';
 import {
   AppBar, Toolbar, Box, Avatar, Menu, MenuItem, Typography, Divider, IconButton,
 } from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, KeyboardArrowDown } from '@mui/icons-material';
 import { DRAWER_WIDTH } from './Sidebar';
+import { brand, gray, layout } from '../../theme/tokens';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Can from '../rbac/Can';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
@@ -29,10 +30,12 @@ export default function TopBar({ onMenu = () => {} }) {
         left: { xs: 0, md: DRAWER_WIDTH },
         width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
         bgcolor: '#FFFFFF',
-        borderBottom: '1px solid #E2E8F0',
+        borderBottom: `1px solid ${gray[200]}`,
+        color: brand.textPrimary,
       }}
     >
-      <Toolbar sx={{ minHeight: '56px !important', px: { xs: 1.5, sm: 3 } }}>
+      {/* D47: Thirdline's top bar — 64 px, white, gray-200 rule; bell, then avatar with name, role and a chevron. */}
+      <Toolbar sx={{ minHeight: `${layout.topBarHeight - 1}px !important`, px: { xs: 1.5, sm: 3 }, gap: 1 }}>
         <IconButton aria-label={tr("Open menu")} onClick={onMenu} sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}>
           <MenuIcon />
         </IconButton>
@@ -45,26 +48,26 @@ export default function TopBar({ onMenu = () => {} }) {
           <NotificationBell />
         </Can>
 
-        <Divider orientation="vertical" flexItem sx={{ mx: 1.5 }} />
-
         {/* User */}
         <Box
           role="button" tabIndex={0} aria-label={tr("Account menu")} aria-haspopup="menu"
           onClick={(e) => setAnchorEl(e.currentTarget)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAnchorEl(e.currentTarget); } }}
-          sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1 }}
+          sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1.5, ml: 1, px: 1, py: 0.5, borderRadius: 2,
+            '&:hover': { bgcolor: gray[50] } }}
         >
-          <Avatar sx={{ width: 32, height: 32, bgcolor: '#1A365D', fontSize: '0.75rem' }}>
+          <Avatar sx={{ width: 32, height: 32, bgcolor: brand.primary, fontSize: '0.875rem', fontWeight: 600 }}>
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </Avatar>
-          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: '0.78rem' }}>
+          <Box sx={{ display: { xs: 'none', md: 'block' }, minWidth: 0 }}>
+            <Typography sx={{ fontWeight: 500, fontSize: '0.875rem', lineHeight: '1.25rem', color: gray[700] }} noWrap>
               {user?.firstName} {user?.lastName}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#5F6B7A', fontSize: '0.65rem' }}>
+            <Typography sx={{ color: gray[500], fontSize: '0.75rem', lineHeight: '1rem' }} noWrap>
               {(user?.roles ?? []).map(roleLabel).join(', ')}
             </Typography>
           </Box>
+          <KeyboardArrowDown sx={{ fontSize: 18, color: gray[400], display: { xs: 'none', md: 'block' } }} />
         </Box>
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>

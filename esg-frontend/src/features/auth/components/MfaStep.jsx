@@ -49,7 +49,7 @@ export default function MfaStep({ mfa }) {
           {setup.data && (
             <Box sx={{ p: 1.5, bgcolor: '#F7FAFC', border: '1px solid #E2E8F0', borderRadius: 1 }}>
               <Typography variant="caption" color="text.secondary">{tr("Setup key")}</Typography>
-              <Typography data-testid="mfa-secret" sx={{ fontFamily: 'Roboto Mono, monospace', wordBreak: 'break-all', fontWeight: 600 }}>
+              <Typography data-testid="mfa-secret" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', wordBreak: 'break-all', fontWeight: 600 }}>
                 {setup.data.secret}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, wordBreak: 'break-all' }}>

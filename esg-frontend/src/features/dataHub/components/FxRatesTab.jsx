@@ -108,7 +108,7 @@ export default function FxRatesTab() {
                 {rates.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell sx={{ fontWeight: 600 }}>{r.fromCurrency} → {r.toCurrency}</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Roboto Mono, monospace' }}>{Number(r.rate)}</TableCell>
+                    <TableCell align="right" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{Number(r.rate)}</TableCell>
                     <TableCell>{r.rateDate}</TableCell>
                     <TableCell>{r.source}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

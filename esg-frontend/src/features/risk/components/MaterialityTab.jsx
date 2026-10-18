@@ -22,6 +22,7 @@ import {
   toAssessmentBody, toAssessmentForm, toTopicBody, toTopicForm, topicSchema,
 } from '../schemas';
 import { tr } from '../../../i18n';
+import { chart, gray } from '../../../theme/tokens';
 
 const opts = (map) => Object.entries(map).map(([value, label]) => ({ value: String(value), label }));
 const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
@@ -177,7 +178,7 @@ function TopicDialog({ assessment, topic, onClose }) {
   );
 }
 
-const COLORS = { double: '#c62828', impact: '#ef6c00', financial: '#1565c0', not_material: '#9e9e9e' };
+const COLORS = { double: chart.severity.critical, impact: chart.severity.high, financial: chart.series[0], not_material: gray[400] };
 
 /** The double materiality matrix: x = financial materiality, y = impact position, thresholds as reference lines. */
 export function MaterialityMatrix({ assessment }) {
@@ -187,12 +188,12 @@ export function MaterialityMatrix({ assessment }) {
     <Box sx={{ height: 360 }} role="img" aria-label={tr("Materiality matrix")}>
       <ResponsiveContainer>
         <ScatterChart margin={{ top: 10, right: 30, bottom: 30, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid />
           <XAxis type="number" dataKey="x" domain={[0, 5]} name="Financial materiality" label={{ value: 'Financial materiality', position: 'bottom' }} />
           <YAxis type="number" dataKey="y" domain={[0, 5]} name="Impact materiality" label={{ value: 'Impact', angle: -90, position: 'insideLeft' }} />
           <ZAxis range={[90, 90]} />
-          <ReferenceLine x={Number(assessment.financialThreshold)} stroke="#555" strokeDasharray="4 4" />
-          <ReferenceLine y={Number(assessment.impactThreshold)} stroke="#555" strokeDasharray="4 4" />
+          <ReferenceLine x={Number(assessment.financialThreshold)} stroke={gray[500]} strokeDasharray="4 4" />
+          <ReferenceLine y={Number(assessment.impactThreshold)} stroke={gray[500]} strokeDasharray="4 4" />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(v) => Number(v).toFixed(2)} />
           {Object.keys(COLORS).map((q) => (
             <Scatter key={q} data={points.filter((p) => p.quadrant === q)} fill={COLORS[q]} name={QUADRANTS[q].label} isAnimationActive={false}>

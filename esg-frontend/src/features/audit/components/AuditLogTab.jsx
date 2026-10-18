@@ -9,6 +9,7 @@ import {
 } from '../auditApi';
 import { toFormError } from '../../../services/apiSlice';
 import { tr, formattingLocale } from '../../../i18n';
+import { badge } from '../../../theme/tokens';
 
 // Audit actions: audit.log_change() (insert/update/delete), refused requests (denied, S3), failed virus scans (quarantined, S6).
 // no-mock-gate: config — audit action names written by the backend
@@ -17,7 +18,8 @@ const ACTIONS = [
   { value: 'delete', label: 'Deleted' }, { value: 'denied', label: 'Refused' }, { value: 'quarantined', label: 'Quarantined' },
 ];
 const ACTION_LABELS = Object.fromEntries(ACTIONS.filter((a) => a.value).map((a) => [a.value, a.label]));
-const ACTION_COLOURS = { insert: '#2D7D46', update: '#B7791F', delete: '#C53030', denied: '#9B2C2C', quarantined: '#6B46C1' };
+// D47: Thirdline's soft badges — [background, text].
+const ACTION_COLOURS = { insert: badge.success, update: badge.caution, delete: badge.error, denied: badge.error, quarantined: badge.completed };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** datetime-local value → ISO instant (or '' when empty). */
@@ -28,7 +30,7 @@ const rank = (k) => (/(^|_)status$/.test(k) ? 0 : 1);
 const fieldsOf = (entry) => [...new Set([...Object.keys(entry.oldValue ?? {}), ...Object.keys(entry.newValue ?? {})])]
   .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 const show = (v) => (v === undefined ? '—' : v === null ? 'empty' : typeof v === 'string' ? v : JSON.stringify(v));
-const mono = { fontFamily: 'Roboto Mono', fontSize: '0.7rem', wordBreak: 'break-all' };
+const mono = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.7rem', wordBreak: 'break-all' };
 
 /** One-line summary in the row (Phase 3): which fields changed, e.g. "validation_status: draft → submitted". */
 function summary(entry) {
@@ -154,23 +156,23 @@ export default function AuditLogTab() {
                           {expanded === e.id ? <KeyboardArrowDown fontSize="small" /> : <KeyboardArrowRight fontSize="small" />}
                         </IconButton>
                       </TableCell>
-                      <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                      <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                         {new Date(e.createdAt).toLocaleString(formattingLocale())}
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.8rem' }}>{e.userName ?? (e.userId ? e.userId : tr("System"))}</TableCell>
                       <TableCell>
-                        <Chip size="small" label={tr(ACTION_LABELS[e.action]) ?? e.action} sx={{ color: ACTION_COLOURS[e.action] ?? 'inherit', fontWeight: 700, fontSize: '0.65rem' }} />
+                        <Chip size="small" label={tr(ACTION_LABELS[e.action]) ?? e.action} sx={{ bgcolor: ACTION_COLOURS[e.action]?.[0], color: ACTION_COLOURS[e.action]?.[1] }} />
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.75rem' }}>
                         {what(e)}
                         {e.action === 'denied' && e.newValue?.errorCode && (
-                          <Typography component="span" sx={{ display: 'block', fontFamily: 'Roboto Mono', fontSize: '0.65rem', color: 'text.secondary' }}>
+                          <Typography component="span" sx={{ display: 'block', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.65rem', color: 'text.secondary' }}>
                             {e.newValue.errorCode}
                           </Typography>
                         )}
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.7rem', maxWidth: 320 }}>{summary(e) || '—'}</TableCell>
-                      <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.65rem' }}>{e.resourceId ?? '—'}</TableCell>
+                      <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.65rem' }}>{e.resourceId ?? '—'}</TableCell>
                       <TableCell sx={{ fontSize: '0.7rem' }}>{e.ipAddress ?? '—'}</TableCell>
                     </TableRow>
                     <TableRow>

@@ -28,6 +28,7 @@ import { requestSync, useOnline } from '../../offline/hooks';
 import { enqueue } from '../../offline/outbox';
 import { QUEUED_MESSAGE, saveOrQueue } from '../../offline/saveOrQueue';
 import { tr } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 const opts = (map, empty) => [...(empty ? [{ value: '', label: empty }] : []), ...Object.entries(map).map(([value, label]) => ({ value, label }))];
 const rate = (v) => (v == null ? '—' : Number(v).toFixed(2));
@@ -244,13 +245,13 @@ export default function SafetyTab({ initialIncident }) {
               <Box sx={{ height: 220, mt: 1 }} aria-label={tr("LTIFR and TRIR trend")}>
                 <ResponsiveContainer>
                   <LineChart data={s.trend}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid vertical={false} />
                     <XAxis dataKey="year" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="ltifr" name="LTIFR" stroke="#c62828" connectNulls />
-                    <Line type="monotone" dataKey="trir" name="TRIR" stroke="#1565c0" connectNulls />
+                    <Line type="monotone" dataKey="ltifr" name="LTIFR" stroke={chart.series[5]} connectNulls />
+                    <Line type="monotone" dataKey="trir" name="TRIR" stroke={chart.series[0]} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>

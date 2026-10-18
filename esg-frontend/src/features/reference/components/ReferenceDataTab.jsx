@@ -58,7 +58,7 @@ function Metrics() {
                   <TableRow key={m.metricKey}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>{m.name}</Typography>
-                      <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace' }} color="text.secondary">{m.metricKey}</Typography>
+                      <Typography variant="caption" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }} color="text.secondary">{m.metricKey}</Typography>
                     </TableCell>
                     <TableCell>{m.pillar} · {m.category}</TableCell>
                     <TableCell>{m.unit}</TableCell>

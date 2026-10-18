@@ -22,8 +22,10 @@ import ImportWizard from './ImportWizard';
 import StatusChip from './StatusChip';
 import BulkActions from './BulkActions';
 import { tr, formattingLocale } from '../../../i18n';
+import { badge } from '../../../theme/tokens';
 
-const CATEGORY_COLOURS = { E: '#2D7D46', S: '#1A365D', G: '#B7791F' };
+// D47: Thirdline's soft badges — [background, text].
+const CATEGORY_COLOURS = { E: badge.success, S: badge.info, G: badge.caution };
 const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
 
 function Count({ label, status }) {
@@ -53,13 +55,13 @@ function PointsList({ fixed = {}, filters = {}, onOpen, ariaLabel, emptyTitle, e
       render: (dp) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{dp.metricName ?? dp.metricKey}</Typography>
-          <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace', color: 'text.secondary' }}>{dp.metricKey}</Typography>
+          <Typography variant="caption" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', color: 'text.secondary' }}>{dp.metricKey}</Typography>
         </Box>
       ),
     },
     {
       field: 'category', header: 'Pillar', sortable: true,
-      render: (dp) => <Chip label={dp.category} size="small" sx={{ bgcolor: CATEGORY_COLOURS[dp.category], color: '#fff', fontWeight: 700, minWidth: 28 }} />,
+      render: (dp) => <Chip label={dp.category} size="small" sx={{ bgcolor: CATEGORY_COLOURS[dp.category]?.[0], color: CATEGORY_COLOURS[dp.category]?.[1], minWidth: 28 }} />,
     },
     {
       field: 'numericValue', header: 'Value', align: 'right', sortable: true,

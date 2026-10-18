@@ -54,7 +54,7 @@ export default function FactorLibrary() {
                 {rows.map((f) => (
                   <TableRow key={f.id} hover>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem' }}>{f.category}</Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.75rem' }}>{f.category}</Typography>
                       {f.subCategory && <Typography variant="caption" color="text.secondary">{f.subCategory}</Typography>}
                       {f.factorMethod === 'spend' && <Chip size="small" variant="outlined" label={`Spend · ${f.spendCurrency}`} sx={{ ml: 0.5 }} />}
                     </TableCell>

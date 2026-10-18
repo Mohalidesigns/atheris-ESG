@@ -11,19 +11,21 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useDataPointsQuery } from '../../dataHub/dataHubApi';
 import { useExecutiveDashboardQuery } from '../dashboardApi';
 import { tr, formattingLocale } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 // no-mock-gate: config — chart colours per scope
-const SCOPE_COLOURS = { scope1: '#1A365D', scope2Location: '#2D7D46', scope3: '#B7791F' };
+const SCOPE_COLOURS = { scope1: chart.series[0], scope2Location: chart.series[1], scope3: chart.series[2] };
 const fmt = (v, digits = 1) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: digits });
 const day = (iso) => new Date(iso).toLocaleDateString(formattingLocale(), { day: 'numeric', month: 'short' });
 
 function Kpi({ title, value, caption, loading, colour }) {
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Typography variant="caption" color="text.secondary">{title}</Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: colour }}>{loading ? '…' : value}</Typography>
-        {caption && <Typography variant="caption" color="text.secondary">{caption}</Typography>}
+      {/* D47: Thirdline's .stat-card — 14/500 gray label, 24/700 value, 12 px note. */}
+      <CardContent>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{title}</Typography>
+        <Typography variant="h4" sx={{ mt: 0.5, color: colour }}>{loading ? '…' : value}</Typography>
+        {caption && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>{caption}</Typography>}
       </CardContent>
     </Card>
   );
@@ -63,15 +65,15 @@ function EmissionsTrend({ emissions, granularity, onGranularity }) {
         {empty ? <EmptyState title={tr("No emissions recorded in these periods")} /> : (
           <Box sx={{ height: 260, mt: 1 }} aria-label={tr("Emissions trend chart")}>
             <ResponsiveContainer>
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <BarChart data={data} maxBarSize={48}>
+                <CartesianGrid vertical={false} />
                 <XAxis dataKey="period" fontSize={11} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(v) => `${fmt(v, 2)} tCO2e`} />
                 <Legend />
                 <Bar dataKey="scope1" name="Scope 1" stackId="s" fill={SCOPE_COLOURS.scope1} />
                 <Bar dataKey="scope2Location" name="Scope 2" stackId="s" fill={SCOPE_COLOURS.scope2Location} />
-                <Bar dataKey="scope3" name="Scope 3" stackId="s" fill={SCOPE_COLOURS.scope3} />
+                <Bar dataKey="scope3" name="Scope 3" stackId="s" fill={SCOPE_COLOURS.scope3} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Box>

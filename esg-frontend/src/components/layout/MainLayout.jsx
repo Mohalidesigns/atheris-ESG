@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar, { DRAWER_WIDTH } from './Sidebar';
 import TopBar from './TopBar';
+import { brand, layout } from '../../theme/tokens';
 import PrivacyNoticeGate from '../../features/privacy/components/PrivacyNoticeGate';
 import OfflineAgent from '../../features/offline/components/OfflineAgent';
 import useAccountLanguage from '../i18n/useAccountLanguage';
@@ -19,12 +20,12 @@ export default function MainLayout() {
   const mobileOpen = openOn === pathname;
   const setMobileOpen = (open) => setOpenOn(open ? pathname : null);
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#F7FAFC' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: brand.background }}>
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       {/* minWidth 0 lets wide tables scroll inside their container instead of widening the page. */}
       <Box sx={{ flex: 1, ml: 0, minWidth: 0, width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` } }}>
         <TopBar onMenu={() => setMobileOpen(true)} />
-        <Box component="main" sx={{ mt: '56px', p: { xs: 2, sm: 3 }, minHeight: 'calc(100vh - 56px)' }}>
+        <Box component="main" sx={{ mt: `${layout.topBarHeight}px`, p: { xs: 2, sm: 3 }, minHeight: `calc(100vh - ${layout.topBarHeight}px)` }}>
           <Outlet />
         </Box>
         <PrivacyNoticeGate />

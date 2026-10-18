@@ -8,6 +8,7 @@ import { ErrorState, LoadingState } from '../../../components/states/States';
 import { StepDialog } from '../../social/components/shared';
 import { useAssessMaturityMutation, useMaturityHistoryQuery, useMaturityQuery } from '../analyticsApi';
 import { tr } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 /** ESG maturity index (TRD ESGMaturityScorer; D34 (6)): six dimensions scored from what the platform holds. */
 export default function MaturityTab({ year }) {
@@ -35,7 +36,7 @@ export default function MaturityTab({ year }) {
                   <PolarGrid />
                   <PolarAngleAxis dataKey="dimension" fontSize={11} />
                   <PolarRadiusAxis domain={[0, 5]} tickCount={6} fontSize={10} />
-                  <Radar dataKey="score" stroke="#1565c0" fill="#1565c0" fillOpacity={0.3} />
+                  <Radar dataKey="score" stroke={chart.series[0]} fill={chart.series[0]} fillOpacity={0.2} />
                 </RadarChart>
               </ResponsiveContainer>
             </Box>
