@@ -1,8 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, Typography, useMediaQuery, useTheme,
+  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme,
 } from '@mui/material';
 import { ChevronDoubleLeft, ChevronDoubleRight } from '../icons';
+import BrandLogo from './BrandLogo';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { visibleSections } from '../../routes/navigation';
 import { brand, layout } from '../../theme/tokens';
@@ -49,26 +50,12 @@ function NavItem({ item, active, collapsed, onClick }) {
   );
 }
 
-/** The Atheris mark: Thirdline's ring logo with the ESG wordmark ("Atheris" light, "ESG" bold, small caps edition). */
+/** The Meridian logo in Thirdline's 64 px logo band: the white wordmark (44 px, like Thirdline's), or the mark alone on the rail. */
 function Logo({ collapsed }) {
   return (
     <Box sx={{ height: layout.topBarHeight, px: 2, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-      gap: 1.25, borderBottom: RULE, flexShrink: 0 }}>
-      <Box aria-hidden sx={{ width: 34, height: 34, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.85)', display: 'grid',
-        placeItems: 'center', flexShrink: 0 }}>
-        <Box sx={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${brand.accent}` }} />
-      </Box>
-      {!collapsed && (
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ color: '#FFFFFF', fontSize: '1.25rem', lineHeight: 1.1, letterSpacing: '-0.01em', fontWeight: 300 }} noWrap>
-            {/* The brand (D46) is not translated; its text still reads "Atheris ESG". */}
-            {'Atheris '}<Box component="span" sx={{ fontWeight: 700 }}>{'ESG'}</Box>
-          </Typography>
-          <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', lineHeight: 1.4 }} noWrap>
-            {tr("Africa Edition")}
-          </Typography>
-        </Box>
-      )}
+      borderBottom: RULE, flexShrink: 0 }}>
+      {collapsed ? <BrandLogo variant="mark" height={34} /> : <BrandLogo variant="white" height={44} />}
     </Box>
   );
 }

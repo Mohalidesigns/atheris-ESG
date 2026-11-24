@@ -60,7 +60,7 @@ Status badges (`.badge-*`, pale background + dark text) → filled `Chip` colour
 | Card header | `.card-header` 16 × 24 px, gray-100 bottom rule | `MuiCardHeader` |
 | Shadows | Tailwind sm / base / md / lg / xl / 2xl | `theme.shadows` (1 = sm, 8 = lg for menus, 24 = 2xl for dialogs) |
 | Top bar | 64 px, white, gray-200 bottom rule | `TopBar` (was 56 px) |
-| Sidebar | 260 px, `#1A365D`, 64 px logo band, white/10 rules | `Sidebar` |
+| Sidebar | 260 px, `#1A365D`, 64 px logo band (44 px white logo), white/10 rules | `Sidebar`, Meridian white wordmark 44 px (`BrandLogo`; the mark alone when collapsed) |
 | Page | header band white (`px-6 py-4`), content `p-6` on `#F7FAFC` | `PageHeader` band + `main` padding 24 px |
 
 ## Components
