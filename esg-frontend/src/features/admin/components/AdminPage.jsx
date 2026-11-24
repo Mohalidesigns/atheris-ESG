@@ -3,7 +3,7 @@ import {
   Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, MenuItem, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '@mui/icons-material';
+import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery, useResetUserMfaMutation } from '../adminApi';
 import { useAuth } from '../../auth/hooks/useAuth';

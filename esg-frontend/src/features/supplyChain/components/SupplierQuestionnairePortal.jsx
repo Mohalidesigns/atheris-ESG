@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Container, FormControlLabel, MenuItem, Radio, RadioGroup, TextField, Typography,
 } from '@mui/material';
-import { AttachFile, Lock } from '@mui/icons-material';
+import { AttachFile, Lock } from '../../../components/icons';
 import { checkFile } from '../../../components/files/fileRules';
 import { usePublicQuestionnaireQuery, useSavePublicAnswersMutation, useSubmitPublicQuestionnaireMutation, useUploadPublicEvidenceMutation } from '../supplyApi';
 import { PILLARS, problemText } from '../schemas';

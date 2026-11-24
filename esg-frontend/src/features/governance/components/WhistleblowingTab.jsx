@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, Drawer, Grid, IconButton, Link, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Close, Lock } from '@mui/icons-material';
+import { Close, Lock } from '../../../components/icons';
 import { useSelector } from 'react-redux';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';

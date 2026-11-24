@@ -1,4 +1,6 @@
+import { createElement as h } from 'react';
 import { createTheme } from '@mui/material/styles';
+import { CheckCircle, ChevronDown, ErrorOutline, InfoOutlined, WarningAmber, XMark } from '../components/icons';
 import { badge, brand, chart, font, gray, layout, radius, shadow } from './tokens';
 
 // D47: the theme carries Thirdline's design system (tokens.js); pages should not restate these values.
@@ -131,8 +133,22 @@ const lightTheme = createTheme({
         },
       },
     },
+    // A card's title (an h6 opening its content, with an optional caption under it) is drawn as Thirdline's .card-header:
+    // a 16 × 24 band across the card under a gray-100 rule, so pages get the header without restructuring.
     MuiCardContent: {
-      styleOverrides: { root: { padding: 20, '&:last-child': { paddingBottom: 20 } } },
+      styleOverrides: {
+        root: {
+          // (No server rendering here, so Emotion's :first-child warning doesn't apply; the flag silences it.)
+          padding: 20, '&:last-child': { paddingBottom: 20 },
+          '& > .MuiTypography-h6:first-child /* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */': {
+            margin: '-20px -20px 16px', padding: '16px 24px', borderBottom: `1px solid ${gray[100]}`,
+          },
+          '& > .MuiTypography-h6:first-child:has(+ .MuiTypography-caption) /* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */': { marginBottom: 0, paddingBottom: 2, borderBottom: 'none' },
+          '& > .MuiTypography-h6:first-child + .MuiTypography-caption /* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */': {
+            display: 'block', margin: '0 -20px 16px', padding: '0 24px 14px', borderBottom: `1px solid ${gray[100]}`,
+          },
+        },
+      },
     },
     // .card-header: 16 × 24 padding under a gray-100 rule, 14/600 title.
     MuiCardHeader: {
@@ -184,7 +200,7 @@ const lightTheme = createTheme({
           color: brand.textPrimary,
           '@media (max-width: 1280px)': { paddingLeft: 8, paddingRight: 8 },
         },
-        sizeSmall: { padding: '10px 16px' },
+        sizeSmall: { padding: '12px 16px' }, // Thirdline uses one cell padding (px-4 py-3) for every table
         head: {
           backgroundColor: gray[50], color: gray[500], fontSize: '0.75rem', lineHeight: '1rem', fontWeight: 600,
           letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: `1px solid ${gray[200]}`,
@@ -258,10 +274,16 @@ const lightTheme = createTheme({
         adornedEnd: { paddingRight: 12 },
       },
     },
+    // Heroicons for MUI's own glyphs too (D47): chevron-down on selects (Tailwind forms' arrow), x-mark to clear.
     MuiSelect: {
-      styleOverrides: { select: { minHeight: '1.25rem' } },
+      defaultProps: { IconComponent: ChevronDown },
+      styleOverrides: { select: { minHeight: '1.25rem' }, icon: { fontSize: 20, right: 10, color: gray[500] } },
+    },
+    MuiNativeSelect: {
+      defaultProps: { IconComponent: ChevronDown },
     },
     MuiAutocomplete: {
+      defaultProps: { popupIcon: h(ChevronDown, { sx: { fontSize: 20 } }), clearIcon: h(XMark, { sx: { fontSize: 18 } }) },
       styleOverrides: {
         inputRoot: { padding: '4px 9px !important' },
         input: { padding: '5px 4px !important' },
@@ -273,6 +295,7 @@ const lightTheme = createTheme({
     },
     // .badge: pill, 2 × 10 padding, 12/600; filled chips use the soft status colours.
     MuiChip: {
+      defaultProps: { deleteIcon: h(XMark) },
       styleOverrides: {
         root: { fontWeight: 600, fontSize: '0.75rem', borderRadius: radius.pill, height: 24 },
         label: { paddingLeft: 10, paddingRight: 10 },
@@ -322,6 +345,12 @@ const lightTheme = createTheme({
     },
     // White on the info teal is 3.5:1; filled info alerts (toasts) use the darker shade (5.4:1, WCAG AA). Found by journey 28.
     MuiAlert: {
+      defaultProps: {
+        iconMapping: {
+          success: h(CheckCircle, { fontSize: 'inherit' }), error: h(ErrorOutline, { fontSize: 'inherit' }),
+          warning: h(WarningAmber, { fontSize: 'inherit' }), info: h(InfoOutlined, { fontSize: 'inherit' }),
+        },
+      },
       styleOverrides: {
         root: { borderRadius: radius.md, fontSize: '0.875rem', alignItems: 'center' },
         standardSuccess: { backgroundColor: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0' },

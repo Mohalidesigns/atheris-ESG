@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, IconButton, LinearProgress,
   List, ListItem, ListItemText, Stack, Typography,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close } from '../../../components/icons';
 import FileUpload from '../../../components/files/FileUpload';
 import { FormTextField } from '../../../components/form/FormFields';
 import { ErrorState, LoadingState } from '../../../components/states/States';

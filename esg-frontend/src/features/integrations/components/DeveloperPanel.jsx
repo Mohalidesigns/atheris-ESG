@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Card, CardContent, Grid, Typography } from '@mui/material';
-import { Download } from '@mui/icons-material';
+import { Download } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { problemText, saveBlob } from '../../../services/download';
 import { useImportTemplateMutation } from '../../dataHub/dataHubApi';

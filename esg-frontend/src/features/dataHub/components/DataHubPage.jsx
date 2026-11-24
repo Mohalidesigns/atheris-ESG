@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Box, Button, Card, CardContent, Chip, Grid, MenuItem, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
-import { Add, Warning as WarningIcon } from '@mui/icons-material';
+import { Add, Warning as WarningIcon } from '../../../components/icons';
 import { useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import Can from '../../../components/rbac/Can';

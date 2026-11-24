@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Card, Chip, CircularProgress, Collapse, IconButton, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TablePagination, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Download, KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
+import { Download, KeyboardArrowDown, KeyboardArrowRight } from '../../../components/icons';
 import {
   useAuditResourcesQuery, useAuditUsersQuery, useExportAuditLogsMutation, useListAuditLogsQuery,
 } from '../auditApi';

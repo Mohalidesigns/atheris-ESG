@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Box, Card, CardActionArea, CardContent, Chip, Grid, LinearProgress, Link, List, ListItem, ListItemText, Table, TableBody,
+  Box, Card, CardActionArea, CardContent, CardHeader, Chip, Grid, LinearProgress, Link, List, ListItem, ListItemText, Table, TableBody,
   TableCell, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Tooltip as MuiTooltip, Typography,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
@@ -12,23 +12,17 @@ import { useDataPointsQuery } from '../../dataHub/dataHubApi';
 import { useExecutiveDashboardQuery } from '../dashboardApi';
 import { tr, formattingLocale } from '../../../i18n';
 import { chart } from '../../../theme/tokens';
+import StatCard from '../../../components/cards/StatCard';
+import { ClipboardDocumentList, Clock, FactoryOutlined, ShieldOutlined } from '../../../components/icons';
 
 // no-mock-gate: config — chart colours per scope
 const SCOPE_COLOURS = { scope1: chart.series[0], scope2Location: chart.series[1], scope3: chart.series[2] };
 const fmt = (v, digits = 1) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: digits });
 const day = (iso) => new Date(iso).toLocaleDateString(formattingLocale(), { day: 'numeric', month: 'short' });
 
-function Kpi({ title, value, caption, loading, colour }) {
-  return (
-    <Card sx={{ height: '100%' }}>
-      {/* D47: Thirdline's .stat-card — 14/500 gray label, 24/700 value, 12 px note. */}
-      <CardContent>
-        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{title}</Typography>
-        <Typography variant="h4" sx={{ mt: 0.5, color: colour }}>{loading ? '…' : value}</Typography>
-        {caption && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>{caption}</Typography>}
-      </CardContent>
-    </Card>
-  );
+// D47: Thirdline's dashboard stat cards, each with its tinted icon tile.
+function Kpi({ title, value, caption, loading, colour, icon, tone }) {
+  return <StatCard label={title} value={value} caption={caption} loading={loading} valueColour={colour} icon={icon} tone={tone} />;
 }
 
 /** F14: both review queues (validation and approval), linking to the Data Hub's Review tab. */
@@ -41,7 +35,7 @@ function PendingReviewKpi() {
       aria-label={tr("Data points awaiting review: open the review queue")}>
       <Kpi title={tr("Data points awaiting review")} value={fmt(count(toValidate) + count(toApprove), 0)}
         caption={`${fmt(count(toValidate), 0)} to validate · ${fmt(count(toApprove), 0)} to approve`}
-        loading={toValidate.isLoading || toApprove.isLoading} />
+        loading={toValidate.isLoading || toApprove.isLoading} icon={<ClipboardDocumentList />} tone="purple" />
     </CardActionArea>
   );
 }
@@ -53,15 +47,18 @@ function EmissionsTrend({ emissions, granularity, onGranularity }) {
   const empty = data.every((p) => p.scope1 + p.scope2Location + p.scope3 === 0);
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>{tr("Emissions trend")}</Typography>
+      <CardHeader
+        title={tr("Emissions trend")}
+        subheader={tr("tCO2e, location-based Scope 2; records spanning periods are split by days")}
+        slotProps={{ title: { component: 'h2' } }}
+        action={(
           <ToggleButtonGroup size="small" exclusive value={granularity} onChange={(_, v) => v && onGranularity(v)} aria-label={tr("Trend period")}>
             <ToggleButton value="year">{tr("Years")}</ToggleButton>
             <ToggleButton value="quarter">{tr("Quarters")}</ToggleButton>
           </ToggleButtonGroup>
-        </Box>
-        <Typography variant="caption" color="text.secondary">{tr("tCO2e, location-based Scope 2; records spanning periods are split by days")}</Typography>
+        )}
+      />
+      <CardContent>
         {empty ? <EmptyState title={tr("No emissions recorded in these periods")} /> : (
           <Box sx={{ height: 260, mt: 1 }} aria-label={tr("Emissions trend chart")}>
             <ResponsiveContainer>
@@ -407,10 +404,10 @@ export default function DashboardPage() {
       {isLoading && <LoadingState />}
       {data && (
         <>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
             {e && (
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Kpi title={`Emissions ${data.year} so far`} value={fmt(e.currentYear)}
+                <Kpi title={`Emissions ${data.year} so far`} value={fmt(e.currentYear)} icon={<FactoryOutlined />} tone="blue"
                   caption={e.changePct == null ? tr("tCO2e · no previous-year data to compare")
                     : `tCO2e · ${Number(e.changePct) > 0 ? '+' : ''}${fmt(e.changePct)}% on ${data.year - 1} (${fmt(e.previousYear)})`} />
               </Grid>
@@ -418,18 +415,18 @@ export default function DashboardPage() {
             <Can permission="data_points:read"><Grid size={{ xs: 12, sm: 6, md: 3 }}><PendingReviewKpi /></Grid></Can>
             {data.compliance && (
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Kpi title={tr("Compliance (active frameworks)")} value={activeAverage == null ? '—' : `${fmt(activeAverage)}%`}
+                <Kpi title={tr("Compliance (active frameworks)")} value={activeAverage == null ? '—' : `${fmt(activeAverage)}%`} icon={<ShieldOutlined />} tone="green"
                   caption={activeAverage == null ? tr("Choose your frameworks under Compliance") : `average of ${data.compliance.frameworks.filter((f) => f.active).length} frameworks, ${data.compliance.year}`} />
               </Grid>
             )}
             {data.filings && (
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Kpi title={tr("Filings due within 30 days")} value={fmt(due, 0)} colour={due ? '#C05621' : undefined}
+                <Kpi title={tr("Filings due within 30 days")} value={fmt(due, 0)} colour={due ? '#C05621' : undefined} icon={<Clock />} tone={due ? 'red' : 'amber'}
                   caption={`${data.filings.length} overdue or due in 90 days`} />
               </Grid>
             )}
           </Grid>
-          <Grid container spacing={2}>
+          <Grid container spacing={2.5}>
             {e && <Grid size={{ xs: 12, lg: 7 }}><EmissionsTrend emissions={e} granularity={granularity} onGranularity={setGranularity} /></Grid>}
             {data.compliance && <Grid size={{ xs: 12, lg: 5 }}><ComplianceScores compliance={data.compliance} /></Grid>}
             {data.sdg && <Grid size={12}><SdgAlignment sdg={data.sdg} /></Grid>}

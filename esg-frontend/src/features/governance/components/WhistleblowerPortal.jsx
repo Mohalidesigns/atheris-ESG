@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Chip, Container, Tab, Tabs, Typography } from '@mui/material';
-import { Lock } from '@mui/icons-material';
+import { Lock } from '../../../components/icons';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
 import { useSubmitWhistleblowerReportMutation, useWhistleblowerStatusMutation } from '../governanceApi';

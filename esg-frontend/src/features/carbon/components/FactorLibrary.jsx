@@ -3,7 +3,7 @@ import {
   Box, Button, Card, Chip, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField,
   Tooltip, Typography,
 } from '@mui/material';
-import { Add, Calculate, Edit, InfoOutlined } from '@mui/icons-material';
+import { Add, Calculate, Edit, InfoOutlined } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { useFactorsQuery } from '../carbonApi';

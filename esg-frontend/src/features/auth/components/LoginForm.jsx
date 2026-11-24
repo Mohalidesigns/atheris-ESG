@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   Box, Card, CardContent, TextField, Button, Typography, Alert, InputAdornment, IconButton, Link,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Shield, Email, Lock } from '@mui/icons-material';
+import { Visibility, VisibilityOff, Shield, Email, Lock } from '../../../components/icons';
 import { useLoginMutation } from '../authApi';
 import { mfaCancelled } from '../slices/authSlice';
 import { toFormError } from '../../../services/apiSlice';

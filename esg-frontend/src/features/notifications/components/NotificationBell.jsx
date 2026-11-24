@@ -3,7 +3,7 @@ import {
   Alert, Badge, Box, Button, CircularProgress, IconButton, List, ListItemButton, ListItemText, Popover, Tooltip,
   Typography,
 } from '@mui/material';
-import { NotificationsOutlined, Tune } from '@mui/icons-material';
+import { NotificationsOutlined, Tune } from '../../../components/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   useListNotificationsQuery, useMarkAllNotificationsReadMutation, useMarkNotificationReadMutation, useUnreadCountQuery,

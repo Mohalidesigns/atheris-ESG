@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Typography,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { FormDateField, FormTextField } from '../../../components/form/FormFields';

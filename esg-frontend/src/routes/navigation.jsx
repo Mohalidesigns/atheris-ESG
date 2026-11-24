@@ -1,9 +1,9 @@
-// D47: outlined icons, the closest MUI match to Thirdline's outline (Heroicons) set.
+// D47: Heroicons outline, as Thirdline's sidebar (Dashboard uses its squares-2x2 glyph, Administration its cog).
 import {
-  GridViewOutlined, StorageOutlined, FactoryOutlined, GavelOutlined, DescriptionOutlined, WarningAmberOutlined,
+  Squares2X2, StorageOutlined, FactoryOutlined, GavelOutlined, DescriptionOutlined, WarningAmberOutlined,
   LocalShippingOutlined, PeopleOutline, AccountBalanceOutlined, BarChartOutlined, TrendingUpOutlined, StorefrontOutlined,
-  SchoolOutlined, AdminPanelSettingsOutlined,
-} from '@mui/icons-material';
+  SchoolOutlined, Cog6Tooth,
+} from '../components/icons';
 
 /**
  * Navigation and route permissions (TRD §7.4). One source for the sidebar and the route guards, so a menu item
@@ -14,7 +14,7 @@ import {
 // no-mock-gate: config — navigation menu definition, not data
 export const navSections = [
   { label: 'MAIN', items: [
-    { text: 'Dashboard', icon: <GridViewOutlined />, path: '/dashboard', module: 'platform', anyOf: ['dashboard:read'] },
+    { text: 'Dashboard', icon: <Squares2X2 />, path: '/dashboard', module: 'platform', anyOf: ['dashboard:read'] },
   ]},
   { label: 'ESG MODULES', items: [
     { text: 'Data Hub', icon: <StorageOutlined />, path: '/data-hub', module: 'data_hub', anyOf: ['data_points:read'] },
@@ -31,9 +31,10 @@ export const navSections = [
     { text: 'Investor Portal', icon: <TrendingUpOutlined />, path: '/investor', module: 'investor', anyOf: ['investor:read'] },
     { text: 'Carbon Market', icon: <StorefrontOutlined />, path: '/carbon-market', module: 'carbon_market', anyOf: ['carbon_market:read'] },
   ]},
-  { label: 'PLATFORM', items: [
+  // Thirdline keeps its settings-type pages in a ruled block at the foot of the sidebar; ESG's platform pages sit there.
+  { label: 'PLATFORM', footer: true, items: [
     { text: 'Training', icon: <SchoolOutlined />, path: '/training', module: 'training', anyOf: ['training:read'] },
-    { text: 'Administration', icon: <AdminPanelSettingsOutlined />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read', 'privacy:read', 'integrations:read'] },
+    { text: 'Administration', icon: <Cog6Tooth />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read', 'privacy:read', 'integrations:read'] },
   ]},
 ];
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Alert, AppBar, Box, Button, Chip, Container, Toolbar, Typography } from '@mui/material';
-import { Add, CloudOff, Refresh } from '@mui/icons-material';
+import { Add, CloudOff, Refresh } from '../../../components/icons';
 import { useRestoreSessionMutation } from '../../auth/authApi';
 import DataPointDialog from '../../dataHub/components/DataPointDialog';
 import { IncidentDialog } from '../../social/components/SafetyTab';

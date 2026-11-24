@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, MenuItem, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Close, Delete, Edit } from '@mui/icons-material';
+import { Add, Close, Delete, Edit } from '../../../components/icons';
 import { CartesianGrid, LabelList, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import Can from '../../../components/rbac/Can';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';

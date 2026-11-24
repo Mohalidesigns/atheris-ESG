@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Grid, IconButton, Menu, MenuItem, Tab, Table, TableBody, TableCell, TableHead, TableRow,
   Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, ArrowDownward, ArrowUpward, DataObject, DeleteOutline, Download, FormatListBulleted } from '@mui/icons-material';
+import { Add, ArrowBack, ArrowDownward, ArrowUpward, DataObject, DeleteOutline, Download, FormatListBulleted } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useDownloadUrlMutation, useFileContentMutation } from '../../../components/files/filesApi';
 import { ErrorState, LoadingState } from '../../../components/states/States';

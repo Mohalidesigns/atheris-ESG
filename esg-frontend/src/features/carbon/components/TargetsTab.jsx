@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
   IconButton, LinearProgress, Typography,
 } from '@mui/material';
-import { Add, DeleteOutline, Edit } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit } from '../../../components/icons';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Can from '../../../components/rbac/Can';
 import { FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';

@@ -6,7 +6,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Close } from '@mui/icons-material';
+import { Add, Close } from '../../../components/icons';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Can from '../../../components/rbac/Can';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';

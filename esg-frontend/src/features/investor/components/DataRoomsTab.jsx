@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControlLabel, Grid, IconButton, List,
   ListItem, ListItemText, MenuItem, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Close, Delete, Download, Edit, UploadFile } from '@mui/icons-material';
+import { Add, Close, Delete, Download, Edit, UploadFile } from '../../../components/icons';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { checkFile } from '../../../components/files/fileRules';
 import { useUploadFileMutation } from '../../../components/files/filesApi';

@@ -6,7 +6,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, Link, MenuItem, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { AutoAwesome, Close, ManageSearch, Tune } from '@mui/icons-material';
+import { AutoAwesome, Close, ManageSearch, Tune } from '../../../components/icons';
 import AiChip from '../../../components/feedback/AiChip';
 import Can from '../../../components/rbac/Can';
 import FileUpload from '../../../components/files/FileUpload';

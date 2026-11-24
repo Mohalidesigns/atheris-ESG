@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, MenuItem, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, AttachFile, Delete } from '@mui/icons-material';
+import { Add, AttachFile, Delete } from '../../../components/icons';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { checkFile } from '../../../components/files/fileRules';
 import { useUploadFileMutation } from '../../../components/files/filesApi';

@@ -47,6 +47,16 @@ export const badge = {
   teal: ['#CCFBF1', '#115E59'],
 };
 
+/** Stat-card icon tiles: Tailwind 50 background, 600 icon ([background, icon]), as on Thirdline's dashboard. */
+export const tile = {
+  blue: ['#EFF6FF', '#2563EB'],
+  red: ['#FEF2F2', '#DC2626'],
+  amber: ['#FFFBEB', '#D97706'],
+  purple: ['#FAF5FF', '#9333EA'],
+  green: ['#F0FDF4', '#16A34A'],
+  gray: ['#F9FAFB', '#4B5563'],
+};
+
 /** Tailwind shadow scale (Thirdline cards use sm, hover md, menus lg, modals 2xl). */
 export const shadow = {
   sm: '0 1px 2px 0 rgba(0,0,0,0.05)',

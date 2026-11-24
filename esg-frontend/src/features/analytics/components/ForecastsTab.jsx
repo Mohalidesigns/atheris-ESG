@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { AutoGraph } from '@mui/icons-material';
+import { AutoGraph } from '../../../components/icons';
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import AiChip from '../../../components/feedback/AiChip';
 import Can from '../../../components/rbac/Can';

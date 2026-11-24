@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, DeleteOutline, Edit, SatelliteAlt } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit, SatelliteAlt } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { FormDateField, FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
