@@ -68,16 +68,19 @@ Status badges (`.badge-*`, pale background + dark text) → filled `Chip` colour
 | Pattern | Thirdline | ESG |
 |---|---|---|
 | Nav item | `.sidebar-nav-item`: 40 px, 10 × 16 padding, 12 px gap, 20 px outline icon, 14/500, white/70; hover white/5; active white/10 + 3 px gold left border | `Sidebar` `navItemSx` |
-| Nav groups | collapsible groups (chevrons) | ESG keeps its four labelled sections (10 px uppercase white/50) — the permission model already groups pages |
-| Top bar | search (left), bell with red `9+` badge, 32 px navy avatar + name (14/500 gray-700) + role (12 gray-500) + chevron | same, without search (not built — FIELD_INVENTORY "Global search") |
+| Nav groups | flat list, collapsible groups (chevrons), settings-type pages in a footer block under a white/10 rule, **Collapse** to a 72 px icon rail | flat list without section captions; platform pages (Training, Administration) in the footer block; Collapse/Expand with hover titles, remembered per browser. ESG pages use tabs, so there are no sub-menus |
+| Top bar | search (left: 320 × 38, gray-50, gray-200 border, 16 px gray-400 magnifier), bell with red `9+` badge, 32 px navy avatar + name (14/500 gray-700) + role (12 gray-500) + chevron; sign-out in the account menu | same; the search field finds and opens **pages** the user may open (global record search isn't built — FIELD_INVENTORY "Global search") |
 | Notifications | bell links to a notifications page | ESG keeps its popover; styled as a Thirdline card (header rule, blue-50 unread rows, `9+` badge) |
 | Button primary | navy, white 14/600, 8 × 16, hover primary-light | `MuiButton` contained |
 | Button secondary | white, gray-300 border, navy text, hover gray-50 | `MuiButton` outlined |
 | Input / select | 38 px, 8 × 12 padding, gray-300 border, `shadow-sm`, focus primary border + ring | `MuiOutlinedInput` (no floating label, no notch) |
-| Table | head gray-50, 12/600 uppercase gray-500; cells 12 × 16, gray-100 rules; row hover gray-50 | `MuiTableCell`, `MuiTableRow` |
+| Table | head gray-50, 12/600 uppercase gray-500; cells 12 × 16, gray-100 rules; row hover gray-50 | `MuiTableCell` (12 × 16 for every size), `MuiTableRow` |
 | Modal | slate-900/70 backdrop with blur, white 16 px radius, `shadow-2xl` | `MuiDialog` + title/actions rules |
 | Charts | hand-built SVG: grid `#E2E8F0` (horizontal only), axis text `#94A3B8` 10 px, series error/success/gold; donut red/orange/amber/green-600 | Recharts styled once in `MuiCssBaseline` (grid, ticks, legend, tooltip) + `tokens.chart.series` / `.severity`; column charts horizontal grid only, 4 px rounded bar tops |
-| Icons | Heroicons v2 outline, 1.5 stroke, 20 px | MUI `*Outlined` icons (closest outline set in `@mui/icons-material`; no second icon library under D2) |
+| Icons | Heroicons v2 outline, 1.5 stroke, 20 px | Heroicons v2 outline (`@heroicons/react`) as MUI `SvgIcon`s in `src/components/icons`; also the select chevron, autocomplete, alert and chip-delete glyphs (theme). `@mui/icons-material` removed; ESLint forbids it |
+| Stat card | `.stat-card` + 40 px `rounded-lg` icon tile, Tailwind 50 background / 600 icon (blue, red, amber, purple) | `components/cards/StatCard` (`tokens.tile`; also green, gray) |
+| Card title | `.card-header` 16 × 24, gray-100 rule, 14/600 gray-800 | `CardHeader`, or any `h6` opening `CardContent` (theme draws the band; a caption right under it joins the band) |
+| Connection pill | fixed bottom-right, rounded-full, shadow-lg, 14/500 white on green-500, white dot | `features/offline/components/OfflineStatus` (gray offline, orange to check, teal waiting to sync; links to On this device for capturers) |
 | Progress bar | rounded, gray-200 track | `MuiLinearProgress` 8 px |
 | Links | navy, underline on hover | `a` and `MuiLink` |
 
@@ -86,8 +89,7 @@ Status badges (`.badge-*`, pale background + dark text) → filled `Chip` colour
 - Thirdline's app is light only: its stylesheet has one `prefers-color-scheme: dark` block with a handful of `dark:` utilities
   (Laravel starter pages), but the shell, cards and tables use fixed light colours and there is no theme switch. ESG
   stays light only.
-- Thirdline's "Online" status pill and collapsible sidebar are app features, not tokens; ESG's offline status and fixed
-  sidebar are unchanged.
+- Thirdline's sidebar sub-menus: ESG pages are tabbed, so the sidebar has no sub-menus.
 
 ## Comparison screenshots
 
