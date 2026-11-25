@@ -33,3 +33,8 @@ esg-ai/.venv/
 esg-ai/**/__pycache__/
 esg-ai/.pytest_cache/
 perf/results/*/backend.log
+
+# VPS deployment (deploy/vps): built web app next to the checkout
+/web/
+/web.new/
+/web.old/

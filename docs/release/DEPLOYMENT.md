@@ -17,6 +17,11 @@ browser ──TLS──▶ load balancer / reverse proxy ──▶ frontend (ngi
 
 One origin serves the app and the API, so the Content-Security-Policy keeps `connect-src 'self'`.
 
+## Shared GRC VPS
+
+The VPS that also hosts the other GRC modules already has nginx, PostgreSQL 17 and Ollama, so it uses
+`deploy/vps/` instead: see `deploy/vps/README.md`.
+
 ## Pilot on one host
 
 1. `cp deploy/.env.example deploy/.env` and fill every `CHANGE_ME` from your secrets manager. Generate secrets with
