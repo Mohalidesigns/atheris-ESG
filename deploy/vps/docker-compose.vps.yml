@@ -1,0 +1,111 @@
+# Atheris ESG on the shared GRC VPS (Ubuntu 24.04, host nginx + host PostgreSQL 17 + host Ollama).
+# Differs from deploy/docker-compose.prod.yml: the host already runs nginx (TLS for every GRC module), PostgreSQL 17
+# and Ollama, so this file only adds what the host lacks. See deploy/vps/README.md.
+#
+#   cd /var/www/esg && docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env up -d --build
+#
+# Ports (all on 127.0.0.1; only the host nginx is public):
+#   backend 8085 · ai 8090 · clamav 3310 · minio api 9010 · minio console 9011 (SSH tunnel only)
+name: atheris-esg
+
+services:
+  # Host network: reaches host PostgreSQL (127.0.0.1:5432), ClamAV and MinIO on 127.0.0.1, and the public URL for
+  # pre-signed downloads, without opening PostgreSQL to the Docker bridge.
+  backend:
+    build: { context: ../.., dockerfile: deploy/backend.Dockerfile }
+    network_mode: host
+    # S3 calls from the backend go to the host nginx on loopback (allowed to write there; the public may only read).
+    extra_hosts: ["${PUBLIC_HOST}:127.0.0.1"]
+    mem_limit: 2g                      # MaxRAMPercentage=75 in the image → about 1.5 GB heap
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: 8085
+      DB_URL: jdbc:postgresql://127.0.0.1:5432/esg
+      DB_USERNAME: esg_app
+      DB_PASSWORD: ${ESG_APP_PASSWORD}
+      DB_OWNER_USERNAME: esg_owner
+      DB_OWNER_PASSWORD: ${ESG_OWNER_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY}
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_URL}
+      ESG_PUBLIC_URL: ${PUBLIC_URL}
+      FILES_STORAGE: s3
+      # Pre-signed download links go straight to the browser, so the endpoint is the public origin; the host nginx
+      # passes /${S3_BUCKET}/ to MinIO with the Host header intact (the signature covers it).
+      S3_ENDPOINT: ${PUBLIC_URL}
+      S3_REGION: ${S3_REGION:-af-south-1}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_SSE: "true"                   # MinIO encrypts at rest with MINIO_KMS_SECRET_KEY
+      FILES_SCANNER: clamav
+      CLAMAV_HOST: 127.0.0.1
+      CLAMAV_PORT: 3310
+      SPRING_MAIL_HOST: ${SMTP_HOST:-}
+      SPRING_MAIL_PORT: ${SMTP_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SMTP_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMTP_SSL: ${SMTP_SSL:-false}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+      MAIL_ALWAYS_TO: ${MAIL_ALWAYS_TO:-}
+      ESG_INTEGRATION_REQUESTS_EMAIL: ${ESG_INTEGRATION_REQUESTS_EMAIL:-}
+      AT_USERNAME: ${AT_USERNAME:-sandbox}
+      AT_API_KEY: ${AT_API_KEY:-}
+      AT_URL: ${AT_URL:-https://api.sandbox.africastalking.com/version1/messaging}
+      ESG_AI_URL: ${ESG_AI_URL:-http://127.0.0.1:8090}
+      ESG_AI_TOKEN: ${ESG_AI_TOKEN}
+      # First start only (D42); remove both after the administrator has signed in and set up two-factor sign-in.
+      ESG_BOOTSTRAP_ADMIN_EMAIL: ${ESG_BOOTSTRAP_ADMIN_EMAIL:-}
+      ESG_BOOTSTRAP_ADMIN_PASSWORD: ${ESG_BOOTSTRAP_ADMIN_PASSWORD:-}
+      ESG_BOOTSTRAP_ORGANISATION: ${ESG_BOOTSTRAP_ORGANISATION:-Platform operator}
+    depends_on:
+      clamav: { condition: service_started }
+      minio: { condition: service_healthy }
+    restart: unless-stopped
+    logging: { driver: json-file, options: { max-size: 20m, max-file: "5" } }
+
+  # Host network: the host Ollama listens on 127.0.0.1:11434 only.
+  ai:
+    build: { context: ../.., dockerfile: deploy/ai.Dockerfile }
+    network_mode: host
+    command: ["uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8090", "--proxy-headers"]
+    mem_limit: 512m
+    environment:
+      ESG_AI_TOKEN: ${ESG_AI_TOKEN}
+      OLLAMA_URL: http://127.0.0.1:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-granite4:micro}
+    restart: unless-stopped
+    logging: { driver: json-file, options: { max-size: 20m, max-file: "3" } }
+
+  clamav:
+    image: clamav/clamav:stable
+    ports: ["127.0.0.1:3310:3310"]
+    mem_limit: 1800m                   # signature database needs about 1.3 GB while reloading
+    volumes: [clamav:/var/lib/clamav]
+    restart: unless-stopped
+    logging: { driver: json-file, options: { max-size: 20m, max-file: "3" } }
+
+  minio:
+    image: minio/minio:latest           # pin a tested digest once the pilot is stable
+    command: server /data --console-address ":9001"
+    ports: ["127.0.0.1:9010:9000", "127.0.0.1:9011:9001"]
+    mem_limit: 512m
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # SSE-S3 (AES-256) at rest; format <key-name>:<base64 32 bytes>. Losing it loses every stored file: back it up.
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY}
+      MINIO_BROWSER_REDIRECT_URL: http://127.0.0.1:9011
+    volumes: [minio:/data]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    logging: { driver: json-file, options: { max-size: 20m, max-file: "3" } }
+
+volumes:
+  clamav:
+  minio:
