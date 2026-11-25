@@ -1,0 +1,9 @@
+# Reviewed exceptions for the CI Trivy scan (.github/workflows/ci.yml, job "security"). Each entry gives the reason,
+# the decision (docs/esg-completion/DECISIONS.md) and an expiry, after which the scan fails again.
+#
+# D47 (25 Nov 2026): Spring Framework 6.2.19 (Spring Boot 3.5.16, the last open-source 3.5.x) — fixed only in
+# Spring Framework 7.0.9 / Spring Boot 4. Neither flaw is reachable here: the application registers no XsltView and
+# streams no Server-Sent Events (SseEmitter / ResponseBodyEmitter / ServerSentEvent). UnreachableSpringCveArchTest
+# fails the build if either appears. The Spring Boot 4 migration (WP-55) removes these entries.
+CVE-2026-47884 exp:2027-02-23
+CVE-2026-47890 exp:2027-02-23
