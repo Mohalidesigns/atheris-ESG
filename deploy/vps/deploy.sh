@@ -25,7 +25,7 @@ docker cp "$cid:/usr/share/nginx/html" "$ROOT/web.new"
 docker rm "$cid" >/dev/null
 chmod -R a+rX "$ROOT/web.new"
 
-# 2. Backend, AI, ClamAV, MinIO. Flyway migrates on backend start.
+# 2. Backend, AI, ClamAV, S3 storage. Flyway migrates on backend start.
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
 echo -n "Waiting for the backend"

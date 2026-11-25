@@ -5,11 +5,11 @@
 #   cd /var/www/esg && docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env up -d --build
 #
 # Ports (all on 127.0.0.1; only the host nginx is public):
-#   backend 8085 · ai 8090 · clamav 3310 · minio api 9010 · minio console 9011 (SSH tunnel only)
+#   backend 8085 · ai 8090 · clamav 3310 · S3 (SeaweedFS) 9010
 name: atheris-esg
 
 services:
-  # Host network: reaches host PostgreSQL (127.0.0.1:5432), ClamAV and MinIO on 127.0.0.1, and the public URL for
+  # Host network: reaches host PostgreSQL (127.0.0.1:5432), ClamAV and S3 storage on 127.0.0.1, and the public URL for
   # pre-signed downloads, without opening PostgreSQL to the Docker bridge.
   backend:
     build: { context: ../.., dockerfile: deploy/backend.Dockerfile }
@@ -31,13 +31,13 @@ services:
       ESG_PUBLIC_URL: ${PUBLIC_URL}
       FILES_STORAGE: s3
       # Pre-signed download links go straight to the browser, so the endpoint is the public origin; the host nginx
-      # passes /${S3_BUCKET}/ to MinIO with the Host header intact (the signature covers it).
+      # passes /${S3_BUCKET}/ to the S3 store with the Host header intact (the signature covers it).
       S3_ENDPOINT: ${PUBLIC_URL}
       S3_REGION: ${S3_REGION:-af-south-1}
       S3_BUCKET: ${S3_BUCKET}
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_SSE: "true"                   # MinIO encrypts at rest with MINIO_KMS_SECRET_KEY
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_SSE: "true"                   # SeaweedFS encrypts at rest with S3_SSE_KEK
       FILES_SCANNER: clamav
       CLAMAV_HOST: 127.0.0.1
       CLAMAV_PORT: 3310
@@ -61,7 +61,7 @@ services:
       ESG_BOOTSTRAP_ORGANISATION: ${ESG_BOOTSTRAP_ORGANISATION:-Platform operator}
     depends_on:
       clamav: { condition: service_started }
-      minio: { condition: service_healthy }
+      s3: { condition: service_started }
     restart: unless-stopped
     logging: { driver: json-file, options: { max-size: 20m, max-file: "5" } }
 
@@ -86,26 +86,24 @@ services:
     restart: unless-stopped
     logging: { driver: json-file, options: { max-size: 20m, max-file: "3" } }
 
-  minio:
-    image: minio/minio:latest           # pin a tested digest once the pilot is stable
-    command: server /data --console-address ":9001"
-    ports: ["127.0.0.1:9010:9000", "127.0.0.1:9011:9001"]
+  # S3-compatible storage for evidence files. MinIO no longer publishes community images (D48), so SeaweedFS
+  # (`weed mini`: master, volume, filer and S3 in one container). Only the S3 port is published, on loopback.
+  s3:
+    image: chrislusf/seaweedfs:4.55
+    ports: ["127.0.0.1:9010:8333"]
     mem_limit: 512m
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      # SSE-S3 (AES-256) at rest; format <key-name>:<base64 32 bytes>. Losing it loses every stored file: back it up.
-      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY}
-      MINIO_BROWSER_REDIRECT_URL: http://127.0.0.1:9011
-    volumes: [minio:/data]
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      # SSE-S3 (AES-256) at rest: 64 hex characters. Losing it loses every stored file: back it up.
+      WEED_S3_SSE_KEK: ${S3_SSE_KEK}
+      # Pre-signed links are signed for the public origin; nginx passes them through (nginx-esg.conf).
+      WEED_S3_EXTERNAL_URL: ${PUBLIC_URL}
+    volumes: [s3data:/data]
     restart: unless-stopped
     logging: { driver: json-file, options: { max-size: 20m, max-file: "3" } }
 
 volumes:
   clamav:
-  minio:
+  s3data:
