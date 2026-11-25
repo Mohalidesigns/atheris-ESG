@@ -8,7 +8,7 @@ ROOT="$(pwd)"
 COMPOSE=(docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env)
 
 [ -f deploy/vps/.env ] || { echo "deploy/vps/.env is missing (copy deploy/vps/.env.example)"; exit 1; }
-if grep -q CHANGE_ME deploy/vps/.env; then echo "deploy/vps/.env still has CHANGE_ME values"; exit 1; fi
+if grep -qE "^[A-Z_]+=CHANGE_ME" deploy/vps/.env; then echo "deploy/vps/.env still has CHANGE_ME values:"; grep -E "^[A-Z_]+=CHANGE_ME" deploy/vps/.env | cut -d= -f1; exit 1; fi
 
 if [ "${1:-}" != "" ]; then
   git fetch --tags origin
