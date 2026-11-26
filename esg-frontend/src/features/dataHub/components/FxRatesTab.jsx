@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
 } from '@mui/material';
-import { Add, DeleteOutline, Edit } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { FormDateField, FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
@@ -108,7 +108,7 @@ export default function FxRatesTab() {
                 {rates.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell sx={{ fontWeight: 600 }}>{r.fromCurrency} → {r.toCurrency}</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'Roboto Mono, monospace' }}>{Number(r.rate)}</TableCell>
+                    <TableCell align="right" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{Number(r.rate)}</TableCell>
                     <TableCell>{r.rateDate}</TableCell>
                     <TableCell>{r.source}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

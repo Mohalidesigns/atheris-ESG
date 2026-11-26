@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Chip, IconButton, MenuItem, TextField, Tooltip } from '@mui/material';
-import { Add, DeleteOutline, Edit, VerifiedOutlined } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit, VerifiedOutlined } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import DataTable from '../../../components/data/DataTable';
 import { useServerTable } from '../../../components/data/useServerTable';

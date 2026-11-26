@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton,
   List, ListItem, ListItemText, MenuItem, TextField, Typography,
 } from '@mui/material';
-import { Add, DeleteOutline, Edit } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { flattenTree, ORG_TYPES, subtreeIds } from '../../../components/org/orgTree';

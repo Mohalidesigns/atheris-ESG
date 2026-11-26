@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography,
 } from '@mui/material';
-import { Add, DeleteOutline } from '@mui/icons-material';
+import { Add, DeleteOutline } from '../../../components/icons';
 import { useListOrganisationsQuery, useListRolesQuery, useReplaceUserRolesMutation } from '../adminApi';
 import { roleAssignmentsSchema, toAssignmentsBody, toLocalInput } from '../schemas';
 import { toFormError } from '../../../services/apiSlice';

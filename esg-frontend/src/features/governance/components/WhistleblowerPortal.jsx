@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Chip, Container, Tab, Tabs, Typography } from '@mui/material';
-import { Lock } from '@mui/icons-material';
+import { Lock } from '../../../components/icons';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
 import { useSubmitWhistleblowerReportMutation, useWhistleblowerStatusMutation } from '../governanceApi';
@@ -30,8 +30,8 @@ function Report({ tenant }) {
       <Alert severity="success" aria-label={tr("Report received")}>
         <Typography sx={{ fontWeight: 700 }}>{tr("Your report has been received.")}</Typography>
         <Typography variant="body2" sx={{ mt: 1 }}>{tr("Write these down now — they are shown only once and are the only way to follow your case:")}</Typography>
-        <Typography sx={{ fontFamily: 'Roboto Mono', mt: 1 }}>{tr("Case reference:")} <strong aria-label={tr("Case reference")}>{receipt.caseReference}</strong></Typography>
-        <Typography sx={{ fontFamily: 'Roboto Mono' }}>{tr("Secret:")} <strong aria-label={tr("Secret")}>{receipt.secret}</strong></Typography>
+        <Typography sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', mt: 1 }}>{tr("Case reference:")} <strong aria-label={tr("Case reference")}>{receipt.caseReference}</strong></Typography>
+        <Typography sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{tr("Secret:")} <strong aria-label={tr("Secret")}>{receipt.secret}</strong></Typography>
         <Button size="small" sx={{ mt: 1 }} onClick={() => setReceipt(null)}>{tr("Make another report")}</Button>
       </Alert>
     );

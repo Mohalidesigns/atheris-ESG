@@ -12,7 +12,8 @@ describe('Journey 2: every role signs in and sees only its menus', () => {
     it(`${role} (${email})`, () => {
       cy.login(email);
       cy.menu().should('deep.equal', menu);
-      cy.get('nav[aria-label="Main"]').parent().contains(role.replace(/_/g, ' '));
+      // D49: the signed-in role shows under the name in the top bar's account button.
+      cy.get('[aria-label="Account menu"]').contains(role.replace(/_/g, ' '), { matchCase: false });
 
       // A page outside the role's menu is refused, not just hidden.
       const hidden = Object.entries(ALL_PAGES).find(([label]) => !menu.includes(label));

@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, FormControlLabel, FormHelperText, Grid, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Download, UploadFile } from '@mui/icons-material';
+import { Download, UploadFile } from '../../../components/icons';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
 import { useContentVersionsQuery, useFrameworksQuery, useImportFrameworkContentMutation } from '../../reference/referenceApi';

@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Grid, IconButton, Menu, MenuItem, Tab, Table, TableBody, TableCell, TableHead, TableRow,
   Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, ArrowDownward, ArrowUpward, DataObject, DeleteOutline, Download, FormatListBulleted } from '@mui/icons-material';
+import { Add, ArrowBack, ArrowDownward, ArrowUpward, DataObject, DeleteOutline, Download, FormatListBulleted } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useDownloadUrlMutation, useFileContentMutation } from '../../../components/files/filesApi';
 import { ErrorState, LoadingState } from '../../../components/states/States';
@@ -212,7 +212,7 @@ function DataTab({ report }) {
           <TableBody>
             {rows.map(([k, v]) => (
               <TableRow key={k}>
-                <TableCell sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem' }}>{k}</TableCell>
+                <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.75rem' }}>{k}</TableCell>
                 <TableCell>
                   {v.status === 'ok' ? <strong>{v.display}</strong> : <Chip size="small" color="warning" variant="outlined" label={tr("Not reported")} />}
                   {v.provisional && <Chip size="small" color="warning" variant="outlined" label={tr("Provisional")} sx={{ ml: 0.5, height: 18, fontSize: '0.6rem' }} />}
@@ -282,7 +282,7 @@ function VersionsTab({ report }) {
               <Box key={d.title} sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{tr(d.title)}</Typography>
                 {d.lines.filter((l) => l.type !== 'same').map((l, i) => (
-                  <Typography key={i} variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.8rem',
+                  <Typography key={i} variant="body2" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.8rem',
                     bgcolor: l.type === 'added' ? 'success.light' : 'error.light', px: 0.5 }}>
                     {l.type === 'added' ? '+ ' : '− '}{l.text}
                   </Typography>

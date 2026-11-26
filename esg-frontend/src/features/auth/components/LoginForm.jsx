@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   Box, Card, CardContent, TextField, Button, Typography, Alert, InputAdornment, IconButton, Link,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Shield, Email, Lock } from '@mui/icons-material';
+import { Visibility, VisibilityOff, Email, Lock } from '../../../components/icons/shell';
+import BrandLogo from '../../../components/layout/BrandLogo';
 import { useLoginMutation } from '../authApi';
 import { mfaCancelled } from '../slices/authSlice';
 import { toFormError } from '../../../services/apiSlice';
@@ -93,13 +94,7 @@ export default function LoginForm() {
           {/* WP-45: choose the language before signing in. */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -2, mb: 1 }}><LanguagePicker /></Box>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Box sx={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 60, height: 60, borderRadius: 3, bgcolor: '#1A365D', mb: 2,
-            }}>
-              <Shield sx={{ fontSize: 36, color: '#D4AF37' }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A365D' }}>{tr("Atheris ESG")}</Typography>
+            <BrandLogo variant="dark" height={56} sx={{ mx: 'auto', mb: 1.5 }} />
             <Typography variant="body2" sx={{ color: '#5F6B7A', mt: 0.5 }}>
               {tr("Africa's Premier ESG Management Platform")}
             </Typography>

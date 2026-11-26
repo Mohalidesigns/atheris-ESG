@@ -3,7 +3,7 @@ import {
   Alert, Avatar, Box, Button, Card, Chip, CircularProgress, IconButton, InputAdornment, MenuItem, Tab, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '@mui/icons-material';
+import { Block, Edit, Key, ManageAccounts, PersonAdd, PhonelinkErase, Search } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useDeactivateUserMutation, useListRolesQuery, useListUsersQuery, useResetUserMfaMutation } from '../adminApi';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -161,7 +161,7 @@ function UsersTab() {
                       }} />
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.75rem' }}>{u.mfaEnabled ? tr("On") : tr("Off")}</TableCell>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontSize: '0.7rem' }}>
+                    <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.7rem' }}>
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(formattingLocale()) : tr("Never")}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

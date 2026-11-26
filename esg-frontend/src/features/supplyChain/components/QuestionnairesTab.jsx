@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Close, ContentCopy, Send } from '@mui/icons-material';
+import { Close, ContentCopy, Send } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';

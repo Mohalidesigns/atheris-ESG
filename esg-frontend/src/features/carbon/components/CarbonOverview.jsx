@@ -7,19 +7,21 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { useEmissionsSummaryQuery } from '../carbonApi';
 import { tr, formattingLocale } from '../../../i18n';
+import { chart as chartTokens } from '../../../theme/tokens';
 
 // no-mock-gate: config — chart palette
-const PALETTE = ['#1A365D', '#2D7D46', '#B7791F', '#9B2C2C', '#553C9A', '#2C7A7B', '#C05621', '#4A5568'];
+const PALETTE = chartTokens.series;
 const t = (v) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: 2 });
 const chart = (buckets) => buckets.map((b) => ({ name: b.label, value: Number(b.co2eTonnes) }));
 
 function Kpi({ label, value, caption, colour }) {
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Typography variant="caption" color="text.secondary">{label}</Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: colour }} aria-label={`${label} tonnes CO2e`}>{t(value)}</Typography>
-        <Typography variant="caption" color="text.secondary">{caption}</Typography>
+      {/* D49: Thirdline's stat card — 14/500 label, 24/700 value, 12 px note. */}
+      <CardContent>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{label}</Typography>
+        <Typography variant="h4" sx={{ mt: 0.5, color: colour }} aria-label={`${label} tonnes CO2e`}>{t(value)}</Typography>
+        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>{caption}</Typography>
       </CardContent>
     </Card>
   );
@@ -97,11 +99,11 @@ export default function CarbonOverview({ year }) {
             note="Records covering several months (e.g. a quarter) are split across them in proportion to their days.">
             <ResponsiveContainer>
               <BarChart data={months}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip formatter={(v) => [`${t(v)} tCO2e`, 'Emissions (multi-month records split by days)']} />
-                <Bar dataKey="value" name="tCO2e" fill="#1A365D" />
+                <Bar dataKey="value" name="tCO2e" fill={chartTokens.series[0]} radius={[4, 4, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -110,7 +112,7 @@ export default function CarbonOverview({ year }) {
           <ChartCard title={tr("By source")} empty={data.bySource.length === 0}>
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={chart(data.bySource)} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90}>
+                <Pie data={chart(data.bySource)} dataKey="value" nameKey="name" innerRadius={58} outerRadius={90} stroke="#FFFFFF">
                   {data.bySource.map((b, i) => <Cell key={b.key} fill={PALETTE[i % PALETTE.length]} />)}
                 </Pie>
                 <Tooltip formatter={(v) => `${t(v)} tCO2e`} />
@@ -122,11 +124,11 @@ export default function CarbonOverview({ year }) {
           <ChartCard title={tr("By organisation")} empty={data.byOrganisation.length === 0}>
             <ResponsiveContainer>
               <BarChart data={chart(data.byOrganisation)} layout="vertical" margin={{ left: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid horizontal={false} />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={120} />
                 <Tooltip formatter={(v) => `${t(v)} tCO2e`} />
-                <Bar dataKey="value" name="tCO2e" fill="#2D7D46" />
+                <Bar dataKey="value" name="tCO2e" fill={chartTokens.series[1]} radius={[0, 4, 4, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>

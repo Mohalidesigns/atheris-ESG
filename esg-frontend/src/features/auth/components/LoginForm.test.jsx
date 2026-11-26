@@ -13,6 +13,11 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText(/^password/i)).toHaveValue('');
   });
 
+  it('shows the Meridian logo (dark wordmark on the light card)', () => {
+    renderWithStore(<LoginForm />, { preloadedState: anonymous });
+    expect(screen.getByRole('img', { name: 'Meridian' })).toHaveAttribute('src', '/Meridian/Meridian-dark.svg');
+  });
+
   it('says why the user was signed out (MFA now required, S1)', () => {
     renderWithStore(<LoginForm />, {
       preloadedState: { auth: { ...anonymous.auth, notice: 'Your role requires two-factor authentication. Sign in again to set it up.' } },

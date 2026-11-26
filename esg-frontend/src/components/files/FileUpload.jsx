@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, IconButton, List, ListItem, ListItemText, Tooltip, Typography,
 } from '@mui/material';
-import { CloudUpload, Delete, Download, UploadFile } from '@mui/icons-material';
+import { CloudUpload, Delete, Download, UploadFile } from '../icons';
 import Can from '../rbac/Can';
 import { toFormError } from '../../services/apiSlice';
 import { checkFile, formatBytes } from './fileRules';

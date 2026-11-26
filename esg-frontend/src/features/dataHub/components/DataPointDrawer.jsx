@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, IconButton, LinearProgress,
   List, ListItem, ListItemText, Stack, Typography,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close } from '../../../components/icons';
 import FileUpload from '../../../components/files/FileUpload';
 import { FormTextField } from '../../../components/form/FormFields';
 import { ErrorState, LoadingState } from '../../../components/states/States';
@@ -111,7 +111,7 @@ export default function DataPointDrawer({ id, onClose, onEdit }) {
           <Stack spacing={2}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
               <StatusChip status={dp.validationStatus} />
-              <Typography variant="caption" sx={{ fontFamily: 'Roboto Mono, monospace' }}>{dp.metricKey}</Typography>
+              <Typography variant="caption" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{dp.metricKey}</Typography>
             </Box>
             {dp.statusReason && (
               <Alert severity={dp.validationStatus === 'rejected' ? 'warning' : 'info'}>

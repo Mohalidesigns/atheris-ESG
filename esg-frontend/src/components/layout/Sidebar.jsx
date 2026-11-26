@@ -1,24 +1,82 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Divider, Avatar, useMediaQuery, useTheme,
+  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme,
 } from '@mui/material';
-import { Shield, Logout } from '@mui/icons-material';
+import { ChevronDoubleLeft, ChevronDoubleRight } from '../icons';
+import BrandLogo from './BrandLogo';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { visibleSections } from '../../routes/navigation';
-import { roleLabel } from '../../services/labels';
+import { brand, layout } from '../../theme/tokens';
 import { tr } from '../../i18n';
 
-export const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH = 260; // tokens.layout.sidebarWidth (a literal keeps fast refresh working)
+export const COLLAPSED_WIDTH = 72; // Thirdline's collapsed rail
 
-/** Permanent from 900 px; below that a temporary drawer that closes when a page is chosen (Phase 2, item 9). */
-export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
+const RULE = '1px solid rgba(255,255,255,0.1)';
+
+// D49: Thirdline's .sidebar-nav-item — 8 px radius, 10 × 16 padding, 12 px icon gap, 20 px icon, 14/500; white/70 at
+// rest, white on a white/5 hover; the current page on white/10 with a 3 px gold bar. Collapsed: icon only.
+const navItemSx = (active, collapsed) => ({
+  borderRadius: 1,
+  px: 2,
+  py: 1.25,
+  gap: 1.5,
+  minHeight: 40,
+  justifyContent: collapsed ? 'center' : 'flex-start',
+  color: active ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+  bgcolor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+  borderLeft: active ? `3px solid ${brand.accent}` : '3px solid transparent',
+  transition: 'all 0.2s',
+  '&:hover': { bgcolor: active ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)', color: '#FFFFFF' },
+  '& .MuiListItemIcon-root': { color: 'inherit', minWidth: 0 },
+  '& .MuiSvgIcon-root': { fontSize: 20 },
+  '& .MuiListItemText-root': { my: 0, display: collapsed ? 'none' : 'block' },
+  '& .MuiListItemText-primary': { color: 'inherit', fontSize: '0.875rem', lineHeight: '1.25rem', fontWeight: 500 },
+});
+
+function NavItem({ item, active, collapsed, onClick }) {
+  const label = tr(item.text);
+  const button = (
+    <ListItemButton onClick={onClick} aria-current={active ? 'page' : undefined} aria-label={collapsed ? label : undefined}
+      sx={navItemSx(active, collapsed)}>
+      <ListItemIcon>{item.icon}</ListItemIcon>
+      <ListItemText primary={label} slotProps={{ primary: { noWrap: true } }} />
+    </ListItemButton>
+  );
+  return (
+    <ListItem disablePadding>
+      {collapsed ? <Tooltip title={label} placement="right">{button}</Tooltip> : button}
+    </ListItem>
+  );
+}
+
+/** The Meridian logo in Thirdline's 64 px logo band: the white wordmark (44 px, like Thirdline's), or the mark alone on the rail. */
+function Logo({ collapsed }) {
+  return (
+    <Box sx={{ height: layout.topBarHeight, px: 2, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+      borderBottom: RULE, flexShrink: 0 }}>
+      {collapsed ? <BrandLogo variant="mark" height={34} /> : <BrandLogo variant="white" height={44} />}
+    </Box>
+  );
+}
+
+/**
+ * Permanent from 900 px, where it can be collapsed to a 72 px icon rail (Thirdline's "Collapse"); below that a temporary
+ * drawer that closes when a page is chosen (Phase 2, item 9). Sign-out lives in the top bar's account menu, as in Thirdline.
+ */
+export default function Sidebar({ mobileOpen = false, onClose = () => {}, collapsed = false, onToggleCollapsed = () => {} }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const sections = visibleSections(user?.permissions ?? [], user?.modules);
   const theme = useTheme();
   const narrow = useMediaQuery(theme.breakpoints.down('md'));
+  const rail = collapsed && !narrow;
+  const width = rail ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const main = sections.filter((s) => !s.footer).flatMap((s) => s.items);
+  const footer = sections.filter((s) => s.footer).flatMap((s) => s.items);
+  const listSx = { display: 'flex', flexDirection: 'column', gap: 0.5 };
 
   return (
     <Drawer
@@ -27,102 +85,48 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
       onClose={onClose}
       ModalProps={{ keepMounted: true }}
       sx={{
-        width: narrow ? 0 : DRAWER_WIDTH,
+        width: narrow ? 0 : width,
         flexShrink: 0,
+        transition: 'width 0.3s',
         '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          bgcolor: '#1A365D',
-          color: '#FFFFFF',
-          borderRight: 'none',
-          overflowX: 'hidden',
+          width, bgcolor: brand.primary, color: '#FFFFFF', borderRight: 'none', overflowX: 'hidden', transition: 'width 0.3s',
         },
       }}
     >
-      {/* Logo */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Shield sx={{ fontSize: 32, color: '#D4AF37' }} />
-        <Box>
-          <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem' }}>
-            {tr("Atheris ESG")}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }}>
-            {tr("Africa Edition")}
-          </Typography>
+      <Logo collapsed={rail} />
+
+      {/* One "Main" navigation landmark holds every page link, including the platform pages in the footer block, so
+          assistive technology (and the E2E menu checks) see the whole menu; the collapse control is not navigation. */}
+      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 2, px: 1.5,
+          '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.2)', borderRadius: 2 } }}>
+          <List disablePadding sx={listSx}>
+            {main.map((item) => (
+              <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
+            ))}
+          </List>
         </Box>
-      </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-
-      {/* Navigation */}
-      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-        {sections.map((section) => (
-          <Box key={section.label}>
-            <Typography
-              variant="caption"
-              sx={{ px: 2.5, py: 1, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 600, fontSize: '0.65rem', letterSpacing: '0.08em' }}
-            >
-              {tr(section.label)}
-            </Typography>
-            <List disablePadding>
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-                return (
-                  <ListItem key={item.text} disablePadding>
-                    <ListItemButton
-                      onClick={() => navigate(item.path)}
-                      sx={{
-                        mx: 1,
-                        borderRadius: 1.5,
-                        mb: 0.3,
-                        px: 2,
-                        py: 0.8,
-                        bgcolor: isActive ? 'rgba(212,175,55,0.15)' : 'transparent',
-                        borderLeft: isActive ? '3px solid #D4AF37' : '3px solid transparent',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-                        '& .MuiListItemIcon-root': {
-                          color: isActive ? '#D4AF37' : 'rgba(255,255,255,0.6)',
-                          minWidth: 36,
-                        },
-                        '& .MuiListItemText-primary': {
-                          color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.75)',
-                          fontSize: '0.8125rem',
-                          fontWeight: isActive ? 600 : 400,
-                        },
-                      }}
-                    >
-                      <ListItemIcon>{item.icon}</ListItemIcon>
-                      <ListItemText primary={tr(item.text)} />
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
+        {/* Footer: platform pages under a white/10 rule (Thirdline's settings block). */}
+        {footer.length > 0 && (
+          <Box sx={{ borderTop: RULE, pt: 2, pb: narrow ? 2 : 0.5, px: 1.5, flexShrink: 0 }}>
+            <List disablePadding sx={listSx}>
+              {footer.map((item) => (
+                <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
+              ))}
             </List>
           </Box>
-        ))}
+        )}
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-
-      {/* User Profile */}
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ width: 36, height: 36, bgcolor: '#D4AF37', color: '#1A365D', fontSize: '0.8rem', fontWeight: 700 }}>
-          {user?.firstName?.[0]}{user?.lastName?.[0]}
-        </Avatar>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600, fontSize: '0.78rem', lineHeight: 1.3 }} noWrap>
-            {user?.firstName} {user?.lastName}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.65rem' }} noWrap>
-            {(user?.roles ?? []).map(roleLabel).join(', ')}
-          </Typography>
+      {!narrow && (
+        <Box sx={{ borderTop: footer.length > 0 ? 'none' : RULE, pt: footer.length > 0 ? 0 : 2, pb: 2, px: 1.5, flexShrink: 0 }}>
+          <List disablePadding sx={listSx}>
+            <NavItem item={{ text: rail ? 'Expand' : 'Collapse', icon: rail ? <ChevronDoubleRight /> : <ChevronDoubleLeft /> }}
+              active={false} collapsed={rail} onClick={onToggleCollapsed} />
+          </List>
         </Box>
-        <Logout
-          role="button"
-          aria-label={tr("Sign out")}
-          onClick={logout}
-          sx={{ color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontSize: 20, '&:hover': { color: '#C53030' } }}
-        />
-      </Box>
+      )}
     </Drawer>
   );
 }

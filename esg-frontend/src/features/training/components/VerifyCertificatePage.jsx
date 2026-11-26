@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Container, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@mui/material';
-import { Verified } from '@mui/icons-material';
+import { Verified } from '../../../components/icons';
 import { useVerifyCertificateQuery } from '../trainingApi';
 import { tr } from '../../../i18n';
 

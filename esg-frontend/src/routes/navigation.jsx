@@ -1,7 +1,9 @@
+// D49: Heroicons outline, as Thirdline's sidebar (Dashboard uses its squares-2x2 glyph, Administration its cog).
 import {
-  Dashboard, CloudQueue, Factory, Gavel, Description, Warning, LocalShipping, People, AccountBalance,
-  Analytics, TrendingUp, Storefront, School, AdminPanelSettings,
-} from '@mui/icons-material';
+  Squares2X2, StorageOutlined, FactoryOutlined, GavelOutlined, DescriptionOutlined, WarningAmberOutlined,
+  LocalShippingOutlined, PeopleOutline, AccountBalanceOutlined, BarChartOutlined, TrendingUpOutlined, StorefrontOutlined,
+  SchoolOutlined, Cog6Tooth,
+} from '../components/icons/shell';
 
 /**
  * Navigation and route permissions (TRD §7.4). One source for the sidebar and the route guards, so a menu item
@@ -12,26 +14,27 @@ import {
 // no-mock-gate: config — navigation menu definition, not data
 export const navSections = [
   { label: 'MAIN', items: [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', module: 'platform', anyOf: ['dashboard:read'] },
+    { text: 'Dashboard', icon: <Squares2X2 />, path: '/dashboard', module: 'platform', anyOf: ['dashboard:read'] },
   ]},
   { label: 'ESG MODULES', items: [
-    { text: 'Data Hub', icon: <CloudQueue />, path: '/data-hub', module: 'data_hub', anyOf: ['data_points:read'] },
-    { text: 'Carbon Accounting', icon: <Factory />, path: '/carbon', module: 'carbon', anyOf: ['carbon_data:read'] },
-    { text: 'Compliance', icon: <Gavel />, path: '/compliance', module: 'compliance', anyOf: ['compliance:read'] },
-    { text: 'Reporting', icon: <Description />, path: '/reporting', module: 'reporting', anyOf: ['reports:read'] },
-    { text: 'Risk & Materiality', icon: <Warning />, path: '/risk', module: 'risk', anyOf: ['risk:read'] },
-    { text: 'Supply Chain', icon: <LocalShipping />, path: '/supply-chain', module: 'supply_chain', anyOf: ['supply_chain:read'] },
-    { text: 'Social Impact', icon: <People />, path: '/social', module: 'social', anyOf: ['social:read'] },
-    { text: 'Governance', icon: <AccountBalance />, path: '/governance', module: 'governance', anyOf: ['governance:read'] },
+    { text: 'Data Hub', icon: <StorageOutlined />, path: '/data-hub', module: 'data_hub', anyOf: ['data_points:read'] },
+    { text: 'Carbon Accounting', icon: <FactoryOutlined />, path: '/carbon', module: 'carbon', anyOf: ['carbon_data:read'] },
+    { text: 'Compliance', icon: <GavelOutlined />, path: '/compliance', module: 'compliance', anyOf: ['compliance:read'] },
+    { text: 'Reporting', icon: <DescriptionOutlined />, path: '/reporting', module: 'reporting', anyOf: ['reports:read'] },
+    { text: 'Risk & Materiality', icon: <WarningAmberOutlined />, path: '/risk', module: 'risk', anyOf: ['risk:read'] },
+    { text: 'Supply Chain', icon: <LocalShippingOutlined />, path: '/supply-chain', module: 'supply_chain', anyOf: ['supply_chain:read'] },
+    { text: 'Social Impact', icon: <PeopleOutline />, path: '/social', module: 'social', anyOf: ['social:read'] },
+    { text: 'Governance', icon: <AccountBalanceOutlined />, path: '/governance', module: 'governance', anyOf: ['governance:read'] },
   ]},
   { label: 'INSIGHTS', items: [
-    { text: 'Analytics & AI', icon: <Analytics />, path: '/analytics', module: 'analytics', anyOf: ['analytics:read'] },
-    { text: 'Investor Portal', icon: <TrendingUp />, path: '/investor', module: 'investor', anyOf: ['investor:read'] },
-    { text: 'Carbon Market', icon: <Storefront />, path: '/carbon-market', module: 'carbon_market', anyOf: ['carbon_market:read'] },
+    { text: 'Analytics & AI', icon: <BarChartOutlined />, path: '/analytics', module: 'analytics', anyOf: ['analytics:read'] },
+    { text: 'Investor Portal', icon: <TrendingUpOutlined />, path: '/investor', module: 'investor', anyOf: ['investor:read'] },
+    { text: 'Carbon Market', icon: <StorefrontOutlined />, path: '/carbon-market', module: 'carbon_market', anyOf: ['carbon_market:read'] },
   ]},
-  { label: 'PLATFORM', items: [
-    { text: 'Training', icon: <School />, path: '/training', module: 'training', anyOf: ['training:read'] },
-    { text: 'Administration', icon: <AdminPanelSettings />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read', 'privacy:read', 'integrations:read'] },
+  // Thirdline keeps its settings-type pages in a ruled block at the foot of the sidebar; ESG's platform pages sit there.
+  { label: 'PLATFORM', footer: true, items: [
+    { text: 'Training', icon: <SchoolOutlined />, path: '/training', module: 'training', anyOf: ['training:read'] },
+    { text: 'Administration', icon: <Cog6Tooth />, path: '/admin', module: 'platform', anyOf: ['users:read', 'roles:read', 'tenant_settings:read', 'subscription:read', 'tenants:read', 'audit_logs:read', 'privacy:read', 'integrations:read'] },
   ]},
 ];
 

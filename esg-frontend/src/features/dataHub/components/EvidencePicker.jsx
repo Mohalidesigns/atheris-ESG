@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Box, Button, Chip, CircularProgress, Typography } from '@mui/material';
-import { AttachFile } from '@mui/icons-material';
+import { AttachFile } from '../../../components/icons';
 import { toFormError } from '../../../services/apiSlice';
 import { checkFile, formatBytes } from '../../../components/files/fileRules';
 import { useListFilesQuery, useStorageInfoQuery, useUploadFileMutation } from '../../../components/files/filesApi';

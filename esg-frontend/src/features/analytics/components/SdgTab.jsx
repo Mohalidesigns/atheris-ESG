@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, Table, TableBody, TableCell, TableRow, Typography,
 } from '@mui/material';
-import { Star, StarBorder } from '@mui/icons-material';
+import { Star, StarBorder } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { ErrorState, LoadingState } from '../../../components/states/States';
 import { StepDialog } from '../../social/components/shared';

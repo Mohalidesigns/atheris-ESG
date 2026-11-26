@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, LinearProgress, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { UploadFile } from '@mui/icons-material';
+import { UploadFile } from '../../../components/icons';
 import AiChip from '../../../components/feedback/AiChip';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';

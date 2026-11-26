@@ -6,7 +6,7 @@ import {
   LinearProgress, Link, List, ListItem, ListItemText, MenuItem, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField,
   Typography,
 } from '@mui/material';
-import { Add, Close, Delete, MyLocation, PhotoCamera } from '@mui/icons-material';
+import { Add, Close, Delete, MyLocation, PhotoCamera } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';

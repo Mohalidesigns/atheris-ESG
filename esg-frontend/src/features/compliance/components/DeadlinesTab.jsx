@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup,
   FormHelperText, Grid, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography,
 } from '@mui/material';
-import { Add, ChevronLeft, ChevronRight, DeleteOutline, Edit, NotificationsActive } from '@mui/icons-material';
+import { Add, ChevronLeft, ChevronRight, DeleteOutline, Edit, NotificationsActive } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
