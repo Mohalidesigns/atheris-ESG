@@ -947,6 +947,43 @@ and Testcontainers upgrades follow Boot 4)
 
 #### Acceptance criteria
 - [ ] All backend tests, E2E journeys and the security job green with an empty Spring entry in `.trivyignore`
+
+### WP-61 — Data Hub workflow notifications
+
+**Objective:** The people who must validate, approve or correct data are told in-app and by email (D51).
+
+**Status:** Done in this PR — `DataPointNotifier`, three templates, `DataPointNotificationTest` (7 tests).
+
+### WP-62 — Configurable approval workflows (workflow page)
+
+**Objective:** Administrators define approval chains instead of the hard-coded ones: reports (ESG Director → Compliance →
+Board, `ReportService.CHAIN`, D24 open) and data points (validate → approve).
+
+**Size:** M–L — needs product-owner decisions first
+
+**Dependencies:** decisions on which processes, steps by role or named person, per-organisation chains, SLA per step
+
+#### Tasks
+- [ ] Decide scope with the product owner; log in DECISIONS.md
+- [ ] Workflow definition tables (tenant_id, RLS, audit), API under `/api/v1/workflows`, permission `workflows:configure`
+- [ ] Reports and data points read their chain from the definition; existing in-flight workflows keep their steps
+- [ ] Administration → Workflows page; notifications follow the configured approvers
+
+#### Acceptance criteria
+- [ ] A changed chain is used by the next submission, with API and E2E tests
+
+### WP-63 — Announcements to all users
+
+**Objective:** Administrators send a notice to every user (or a role or organisation) in-app and by email.
+
+**Size:** S–M
+
+#### Tasks
+- [ ] Notification type `ANNOUNCEMENT`, endpoint with `notifications:broadcast`, batching through the delivery log
+- [ ] Administration page to write, preview and send; audit entry per send
+
+#### Acceptance criteria
+- [ ] Every active user in scope receives it once, tested
 ---
 
 ## 3. Re-baselined timeline (3 engineers + Claude Code)

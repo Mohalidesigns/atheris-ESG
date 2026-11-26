@@ -47,9 +47,11 @@ public class DataPointBulkService {
     private final OrgScopeService orgScope;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate perRow;
+    private final DataPointNotifier notifier;
 
     public DataPointBulkService(DataPointService points, DeniedActionAuditor denied, OrgScopeService orgScope, JdbcTemplate jdbc,
-                                PlatformTransactionManager txManager) {
+                                PlatformTransactionManager txManager, DataPointNotifier notifier) {
+        this.notifier = notifier;
         this.points = points;
         this.denied = denied;
         this.orgScope = orgScope;
@@ -69,10 +71,14 @@ public class DataPointBulkService {
         }
         List<BulkItem> items = byItems ? r.items().stream().distinct().toList() : fromImport(r.importJobId(), r.action());
 
-        List<BulkResult> results = new ArrayList<>(items.size());
-        for (BulkItem item : items) {
-            results.add(one(r.action(), item, r.reason()));
-        }
+        // D51: one notice per reviewer for the whole action, not one per point.
+        List<BulkResult> results = notifier.batched(() -> {
+            List<BulkResult> out = new ArrayList<>(items.size());
+            for (BulkItem item : items) {
+                out.add(one(r.action(), item, r.reason()));
+            }
+            return out;
+        });
         int ok = (int) results.stream().filter(BulkResult::ok).count();
         return new BulkActionResponse(r.action(), results.size(), ok, results.size() - ok, results);
     }

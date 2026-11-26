@@ -66,12 +66,14 @@ public class DataPointService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final DataPointNotifier notifier;
 
     public DataPointService(DataPointRepository repository, OrgScopeService orgScope, ReportingPeriodService periods,
                             ReferenceService reference, DataValidationService validation, FxRateService fx,
                             DataSourceService sources, JdbcTemplate jdbc, ObjectMapper json,
-                            org.springframework.context.ApplicationEventPublisher events) {
+                            org.springframework.context.ApplicationEventPublisher events, DataPointNotifier notifier) {
         this.events = events;
+        this.notifier = notifier;
         this.repository = repository;
         this.orgScope = orgScope;
         this.periods = periods;
@@ -185,6 +187,7 @@ public class DataPointService {
         dp.setValidatedAt(null);
         repository.saveAndFlush(dp);
         startWorkflow(dp, user);
+        notifier.submitted(dp, user);
     }
 
     @Transactional
@@ -206,6 +209,7 @@ public class DataPointService {
         dp.setValidatedAt(Instant.now());
         repository.saveAndFlush(dp);
         recordStep(dp, 1, user, "approved", null);
+        notifier.validated(dp, user);
     }
 
     @Transactional
@@ -258,6 +262,7 @@ public class DataPointService {
         dp.setStatusReason(why);
         repository.saveAndFlush(dp);
         recordStep(dp, step, user, "rejected", why);
+        notifier.rejected(dp, user, why);
     }
 
     /** Unlocks an approved point for correction (back to draft); the reason is kept and audited. */
