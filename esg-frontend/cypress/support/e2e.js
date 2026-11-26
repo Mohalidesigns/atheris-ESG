@@ -68,6 +68,8 @@ Cypress.Commands.add('login', (email, password) => {
 });
 
 Cypress.Commands.add('logout', () => {
+  // D49: sign-out is in the top bar's account menu, as in Thirdline.
+  cy.get('[aria-label="Account menu"]').click();
   cy.get('[aria-label="Sign out"]').click();
   cy.contains('button', 'Sign In').should('be.visible');
 });
@@ -135,7 +137,16 @@ Cypress.Commands.add('carbonTab', (tab, year) => {
  * violation, its impact and the first elements affected. `exclude`: selectors outside our control.
  */
 Cypress.Commands.add('a11y', (label, { exclude = [] } = {}) => {
-  cy.wait(400, { log: false }); // let MUI transitions finish: colours measured mid-animation are meaningless
+  // Colours measured mid-animation are meaningless (a button just enabled is still fading from the disabled grey, a
+  // dialog's backdrop still fading in): end every transition and animation at its final state, then measure.
+  cy.document({ log: false }).then((doc) => {
+    if (doc.getElementById('a11y-no-motion')) return;
+    const style = doc.createElement('style');
+    style.id = 'a11y-no-motion';
+    style.textContent = '*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; }';
+    doc.head.appendChild(style);
+  });
+  cy.wait(400, { log: false }); // and let anything React re-renders after that settle
   cy.readFile('node_modules/axe-core/axe.min.js', { log: false }).then((src) => cy.window({ log: false }).then((win) => {
     if (!win.axe) win.eval(src);
   }));

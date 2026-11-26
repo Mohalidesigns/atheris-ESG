@@ -33,10 +33,10 @@ export const securityHeaders = {
 const pwa = VitePWA({
   injectRegister: false, // registered after load in main.jsx (keeps the sign-in page's first load unchanged)
   registerType: 'autoUpdate',
-  includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+  includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'],
   manifest: {
-    name: 'Atheris ESG',
-    short_name: 'Atheris ESG',
+    name: 'Meridian ESG',
+    short_name: 'Meridian ESG',
     description: 'ESG data collection, carbon accounting and reporting',
     start_url: '/',
     scope: '/',
@@ -46,7 +46,7 @@ const pwa = VitePWA({
     icons: [
       { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
       { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-      { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: 'pwa-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
     ],
   },
   workbox: {

@@ -1,5 +1,5 @@
 import { Chip, Tooltip } from '@mui/material';
-import { AutoAwesome } from '@mui/icons-material';
+import { AutoAwesome } from '../icons';
 import { tr } from '../../i18n';
 
 /** The label every AI output carries (CLAUDE.md rule 10, D38 (5)): what produced it, and that a person decides. */

@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
   IconButton, MenuItem, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete, Edit } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';
@@ -18,6 +18,7 @@ import {
   AGE_BANDS, BOARD_ROLES, COMMITTEES, GENDERS, boardMemberSchema, emptyBoardMember, toBoardMemberBody, toBoardMemberForm,
 } from '../schemas';
 import { tr, formattingLocale } from '../../../i18n';
+import StatCard from '../../../components/cards/StatCard';
 
 const opts = (map, empty) => [...(empty ? [{ value: '', label: empty }] : []), ...Object.entries(map).map(([value, label]) => ({ value, label }))];
 
@@ -92,15 +93,8 @@ export function BoardMemberDialog({ member, onClose }) {
 }
 
 function Stat({ label, value, caption }) {
-  return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Typography variant="caption" color="text.secondary">{label}</Typography>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>{value}</Typography>
-        {caption && <Typography variant="caption" color="text.secondary">{caption}</Typography>}
-      </CardContent>
-    </Card>
-  );
+  // D49: Thirdline's stat card (components/cards/StatCard).
+  return <StatCard label={label} value={value} caption={caption} />;
 }
 
 /** Board register and composition (TRD §8.8 BoardCompositionTracker): independence, diversity, tenure, committees, skills. */

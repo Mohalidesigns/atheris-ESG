@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, DeleteOutline, Edit } from '@mui/icons-material';
+import { Add, DeleteOutline, Edit } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { FormAutocomplete, FormNumberField, FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { useSectorsQuery } from '../../reference/referenceApi';

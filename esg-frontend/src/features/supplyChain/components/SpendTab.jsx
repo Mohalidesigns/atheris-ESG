@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, List, ListItem, ListItemText, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, Delete, Edit, UploadFile } from '@mui/icons-material';
+import { Add, Delete, Edit, UploadFile } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';

@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton, LinearProgress, Switch,
   Table, TableBody, TableCell, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete, Edit } from '../../../components/icons';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';

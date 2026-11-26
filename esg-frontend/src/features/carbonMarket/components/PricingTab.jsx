@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, MenuItem, Table, TableBody, TableCell,
   TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Delete, Edit, Tune } from '@mui/icons-material';
+import { Add, Delete, Edit, Tune } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { FormDateField, FormSelect, FormTextField } from '../../../components/form/FormFields';

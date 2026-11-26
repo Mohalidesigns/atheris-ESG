@@ -4,7 +4,8 @@ import roles from '../fixtures/roles.json';
 // no-mock-gate: config — pages to check, the role that sees each, and what shows when it has loaded
 const PAGES = [
   ['/dashboard', 'ESG_MANAGER', 'h1'],
-  ['/data-hub', 'ESG_MANAGER', 'h1'],
+  // "Add data point" is disabled until the metrics load, then fades to the primary colour: wait until it has settled.
+  ['/data-hub', 'ESG_MANAGER', 'button:contains("Add data point"):enabled'],
   ['/carbon', 'ESG_MANAGER', 'h1'],
   ['/compliance', 'ESG_MANAGER', 'h1'],
   ['/reporting', 'ESG_MANAGER', 'h1'],

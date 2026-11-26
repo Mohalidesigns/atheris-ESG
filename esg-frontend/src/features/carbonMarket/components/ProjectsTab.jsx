@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Link, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, Delete, Edit, Search } from '@mui/icons-material';
+import { Add, Delete, Edit, Search } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import SandboxChip from '../../../components/feedback/SandboxChip';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';

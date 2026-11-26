@@ -3,7 +3,7 @@ import {
   Box, Button, Card, Chip, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField,
   Tooltip, Typography,
 } from '@mui/material';
-import { Add, Calculate, Edit, InfoOutlined } from '@mui/icons-material';
+import { Add, Calculate, Edit, InfoOutlined } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { useFactorsQuery } from '../carbonApi';
@@ -54,7 +54,7 @@ export default function FactorLibrary() {
                 {rows.map((f) => (
                   <TableRow key={f.id} hover>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'Roboto Mono, monospace', fontSize: '0.75rem' }}>{f.category}</Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.75rem' }}>{f.category}</Typography>
                       {f.subCategory && <Typography variant="caption" color="text.secondary">{f.subCategory}</Typography>}
                       {f.factorMethod === 'spend' && <Chip size="small" variant="outlined" label={`Spend · ${f.spendCurrency}`} sx={{ ml: 0.5 }} />}
                     </TableCell>

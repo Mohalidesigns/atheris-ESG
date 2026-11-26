@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Alert, AppBar, Box, Button, Chip, Container, Toolbar, Typography } from '@mui/material';
-import { Add, CloudOff, Refresh } from '@mui/icons-material';
+import { Add, CloudOff, Refresh } from '../../../components/icons';
 import { useRestoreSessionMutation } from '../../auth/authApi';
 import DataPointDialog from '../../dataHub/components/DataPointDialog';
 import { IncidentDialog } from '../../social/components/SafetyTab';
 import { cachedList } from '../outbox';
 import OfflineTab from './OfflineTab';
 import { tr } from '../../../i18n';
+import BrandLogo from '../../../components/layout/BrandLogo';
 
 /**
  * WP-43 (D43): what the app shows when it opens without a connection for someone who signed in on this device before.
@@ -44,7 +45,7 @@ export default function OfflineCapturePage() {
     <Box sx={{ minHeight: '100vh', bgcolor: '#F7FAFC' }}>
       <AppBar position="static" elevation={0} sx={{ bgcolor: '#1A365D' }}>
         <Toolbar sx={{ gap: 1 }}>
-          <Typography variant="h6" component="p" sx={{ flex: 1, color: '#FFFFFF', fontWeight: 700 }}>{tr("Atheris ESG")}</Typography>
+          <Box sx={{ flex: 1 }}><BrandLogo variant="white" height={32} /></Box>
           <Chip icon={<CloudOff />} label={tr("Offline")} size="small" sx={{ bgcolor: '#FFFFFF', color: '#1A365D' }} />
         </Toolbar>
       </AppBar>

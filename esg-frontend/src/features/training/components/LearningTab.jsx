@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Card, CardActions, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel, Grid,
   LinearProgress, Link, List, ListItem, ListItemIcon, ListItemText, Radio, RadioGroup, Typography,
 } from '@mui/material';
-import { CheckCircle, Download, RadioButtonUnchecked } from '@mui/icons-material';
+import { CheckCircle, Download, RadioButtonUnchecked } from '../../../components/icons';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { useFileContentMutation } from '../../../components/files/filesApi';
 import { Stat } from '../../social/components/shared';

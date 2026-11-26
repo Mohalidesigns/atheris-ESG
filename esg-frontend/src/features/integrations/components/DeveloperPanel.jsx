@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Card, CardContent, Grid, Typography } from '@mui/material';
-import { Download } from '@mui/icons-material';
+import { Download } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { problemText, saveBlob } from '../../../services/download';
 import { useImportTemplateMutation } from '../../dataHub/dataHubApi';
@@ -18,7 +18,7 @@ const TEMPLATES = [
 
 const Code = ({ children }) => (
   <Box component="pre" sx={{ p: 1.5, bgcolor: '#F7FAFC', border: '1px solid #E2E8F0', borderRadius: 1, fontSize: '0.75rem', overflowX: 'auto',
-    fontFamily: '"Roboto Mono", monospace', whiteSpace: 'pre' }}>{children}</Box>
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', whiteSpace: 'pre' }}>{children}</Box>
 );
 
 /** WP-46 (D44): file templates per source system, and the developer guide (API keys, envelope, errors, webhook signatures). */

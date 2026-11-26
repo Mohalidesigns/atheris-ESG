@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Grid, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography,
 } from '@mui/material';
-import { CloudOff, Sync } from '@mui/icons-material';
+import { CloudOff, Sync } from '../../../components/icons';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
 import { problemText } from '../../../services/download';

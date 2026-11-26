@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid,
   IconButton, MenuItem, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Edit, ViewModule } from '@mui/icons-material';
+import { Add, Edit, ViewModule } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useCreateTenantMutation, useListTenantsQuery, useUpdateTenantMutation } from '../adminApi';
 import { createTenantSchema, CURRENCIES, TENANT_SERVER_FIELDS, TIERS, toCreateTenantBody, updateTenantSchema } from '../schemas';

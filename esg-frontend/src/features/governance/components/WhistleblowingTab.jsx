@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, Drawer, Grid, IconButton, Link, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Close, Lock } from '@mui/icons-material';
+import { Close, Lock } from '../../../components/icons';
 import { useSelector } from 'react-redux';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/states/States';
@@ -158,7 +158,7 @@ function Cases() {
               <TableBody>
                 {data.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell sx={{ fontFamily: 'Roboto Mono', fontWeight: 600 }}>{c.caseReference}</TableCell>
+                    <TableCell sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontWeight: 600 }}>{c.caseReference}</TableCell>
                     <TableCell>{tr(CASE_CATEGORIES[c.category]) ?? c.category}</TableCell>
                     <TableCell><Chip size="small" color={CASE_STATUS[c.status].color} label={tr(CASE_STATUS[c.status].label)} /></TableCell>
                     <TableCell>{c.assignedName ?? '—'}</TableCell>

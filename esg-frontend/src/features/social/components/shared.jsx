@@ -3,21 +3,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import StatCard from '../../../components/cards/StatCard';
 import BlockedAction from '../../../components/feedback/BlockedAction';
 import { FormTextField } from '../../../components/form/FormFields';
 import { applyProblem } from '../../../services/formErrors';
 import { tr } from '../../../i18n';
 
 export function Stat({ label, value, caption, ariaLabel }) {
-  return (
-    <Card sx={{ height: '100%' }} aria-label={ariaLabel ?? label}>
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Typography variant="caption" color="text.secondary">{label}</Typography>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>{value}</Typography>
-        {caption && <Typography variant="caption" color="text.secondary">{caption}</Typography>}
-      </CardContent>
-    </Card>
-  );
+  // D49: Thirdline's stat card (components/cards/StatCard).
+  return <StatCard label={label} value={value} caption={caption} ariaLabel={ariaLabel ?? label} />;
 }
 
 /**

@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, Grid, IconButton, MenuItem, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Close } from '@mui/icons-material';
+import { Add, Close } from '../../../components/icons';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Can from '../../../components/rbac/Can';
 import { FormSelect, FormTextField } from '../../../components/form/FormFields';
@@ -15,6 +15,7 @@ import { useCountriesQuery, useSectorsQuery } from '../../reference/referenceApi
 import { useCreateSupplierMutation, useSupplierQuery, useSuppliersQuery, useSupplyPeopleQuery, useUpdateSupplierMutation } from '../supplyApi';
 import { ONBOARDING, RISK, SUPPLIER_STATUS, TIERS, emptySupplier, fmt, supplierSchema, toSupplierBody, toSupplierForm } from '../schemas';
 import { tr } from '../../../i18n';
+import { chart } from '../../../theme/tokens';
 
 const opts = (map) => Object.entries(map).map(([value, label]) => ({ value, label: typeof label === 'string' ? label : label.label }));
 
@@ -117,11 +118,11 @@ function SupplierDrawer({ id, onClose, onEdit }) {
               <Box sx={{ height: 180 }} aria-label={tr("Score trend")}>
                 <ResponsiveContainer>
                   <LineChart data={s.history.map((h) => ({ ...h, score: Number(h.score) }))}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid vertical={false} />
                     <XAxis dataKey="reviewedOn" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip />
-                    <Line dataKey="score" name="ESG score" stroke="#2e7d32" />
+                    <Line dataKey="score" name="ESG score" stroke={chart.series[1]} />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>

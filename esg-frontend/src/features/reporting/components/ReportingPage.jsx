@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Button, Card, Chip, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { EmptyState, ErrorState, LoadingState, PageHeader } from '../../../components/states/States';
 import { useReportsQuery } from '../reportingApi';

@@ -1,7 +1,7 @@
 import {
   Alert, Box, Card, CardContent, Chip, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Check, Remove } from '@mui/icons-material';
+import { Check, Remove } from '../../../components/icons';
 import { useGetSubscriptionQuery } from '../adminApi';
 import { ErrorState, LoadingState } from '../../../components/states/States';
 import { tr } from '../../../i18n';

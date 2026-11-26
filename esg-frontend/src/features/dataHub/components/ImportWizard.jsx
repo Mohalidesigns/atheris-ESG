@@ -6,7 +6,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, MenuItem, Step, StepLabel, Stepper, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Download, UploadFile } from '@mui/icons-material';
+import { Download, UploadFile } from '../../../components/icons';
 import OrgTreeSelect from '../../../components/org/OrgTreeSelect';
 import { FormDateField, FormSelect } from '../../../components/form/FormFields';
 import { toFormError } from '../../../services/apiSlice';

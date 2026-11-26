@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { AutoGraph } from '@mui/icons-material';
+import { AutoGraph } from '../../../components/icons';
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import AiChip from '../../../components/feedback/AiChip';
 import Can from '../../../components/rbac/Can';
@@ -48,7 +48,7 @@ function ForecastChart({ run }) {
         <Box sx={{ height: 300 }}>
           <ResponsiveContainer>
             <ComposedChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid vertical={false} />
               <XAxis dataKey="period" />
               <YAxis />
               <Tooltip formatter={(v) => (Array.isArray(v) ? `${fmt(v[0])} – ${fmt(v[1])}` : fmt(v))} />

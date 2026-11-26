@@ -5,7 +5,7 @@ import {
   Alert, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton,
   MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Edit, Lock, LockOpen } from '@mui/icons-material';
+import { Add, Edit, Lock, LockOpen } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useCreatePeriodMutation, useListPeriodsQuery, useSetPeriodLockMutation, useUpdatePeriodMutation } from '../adminApi';
 import { periodSchema } from '../schemas';

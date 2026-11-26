@@ -4,7 +4,7 @@ import {
   Alert, Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Link, MenuItem, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
-import { Add, Description, Download } from '@mui/icons-material';
+import { Add, Description, Download } from '../../../components/icons';
 import Can from '../../../components/rbac/Can';
 import { useConfirm } from '../../../components/feedback/ConfirmProvider';
 import { EmptyState } from '../../../components/states/States';
