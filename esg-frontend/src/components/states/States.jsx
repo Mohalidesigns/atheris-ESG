@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Typography } from '@mui/material';
-import { Construction } from '../icons';
+import { Construction } from '../icons/shell';
 import { toFormError } from '../../services/apiSlice';
 import { tr } from '../../i18n';
 

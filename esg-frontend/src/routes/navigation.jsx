@@ -3,7 +3,7 @@ import {
   Squares2X2, StorageOutlined, FactoryOutlined, GavelOutlined, DescriptionOutlined, WarningAmberOutlined,
   LocalShippingOutlined, PeopleOutline, AccountBalanceOutlined, BarChartOutlined, TrendingUpOutlined, StorefrontOutlined,
   SchoolOutlined, Cog6Tooth,
-} from '../components/icons';
+} from '../components/icons/shell';
 
 /**
  * Navigation and route permissions (TRD §7.4). One source for the sidebar and the route guards, so a menu item

@@ -4,7 +4,8 @@ import roles from '../fixtures/roles.json';
 // no-mock-gate: config — pages to check, the role that sees each, and what shows when it has loaded
 const PAGES = [
   ['/dashboard', 'ESG_MANAGER', 'h1'],
-  ['/data-hub', 'ESG_MANAGER', 'h1'],
+  // "Add data point" is disabled until the metrics load, then fades to the primary colour: wait until it has settled.
+  ['/data-hub', 'ESG_MANAGER', 'button:contains("Add data point"):enabled'],
   ['/carbon', 'ESG_MANAGER', 'h1'],
   ['/compliance', 'ESG_MANAGER', 'h1'],
   ['/reporting', 'ESG_MANAGER', 'h1'],
@@ -45,6 +46,8 @@ describe('WP-53: WCAG 2.1 AA', () => {
       cy.visit(path);
       cy.get(ready).should('be.visible');
       cy.get('.MuiCircularProgress-root').should('not.exist'); // loading spinners (bars showing data stay)
+      // A contained button that has just been enabled is still fading from the disabled grey (MUI's 250 ms transition).
+      cy.get('.MuiButton-contained:not(.Mui-disabled)').each(($b) => cy.wrap($b).should('not.have.css', 'background-color', 'rgb(224, 224, 224)'));
       cy.a11y(path);
     });
   });

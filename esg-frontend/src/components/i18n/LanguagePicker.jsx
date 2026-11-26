@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Button, ListItemText, Menu, MenuItem } from '@mui/material';
-import { Translate } from '../icons';
+import { Translate } from '../icons/shell';
 import { LANGUAGES, currentLanguage, setLanguage, tr } from '../../i18n';
 import STATUS from '../../i18n/locales/status.json';
 import { useSetMyLanguageMutation } from '../../features/auth/authApi';

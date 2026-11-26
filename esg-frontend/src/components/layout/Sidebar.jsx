@@ -95,27 +95,38 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {}, collap
     >
       <Logo collapsed={rail} />
 
-      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 2, px: 1.5,
-        '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.2)', borderRadius: 2 } }}>
-        <List disablePadding sx={listSx}>
-          {main.map((item) => (
-            <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
-          ))}
-        </List>
+      {/* One "Main" navigation landmark holds every page link, including the platform pages in the footer block, so
+          assistive technology (and the E2E menu checks) see the whole menu; the collapse control is not navigation. */}
+      <Box component="nav" aria-label={tr("Main")} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 2, px: 1.5,
+          '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.2)', borderRadius: 2 } }}>
+          <List disablePadding sx={listSx}>
+            {main.map((item) => (
+              <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
+            ))}
+          </List>
+        </Box>
+
+        {/* Footer: platform pages under a white/10 rule (Thirdline's settings block). */}
+        {footer.length > 0 && (
+          <Box sx={{ borderTop: RULE, pt: 2, pb: narrow ? 2 : 0.5, px: 1.5, flexShrink: 0 }}>
+            <List disablePadding sx={listSx}>
+              {footer.map((item) => (
+                <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
+              ))}
+            </List>
+          </Box>
+        )}
       </Box>
 
-      {/* Footer: platform pages and the collapse control, under a white/10 rule (Thirdline's settings block). */}
-      <Box sx={{ borderTop: RULE, py: 2, px: 1.5, flexShrink: 0 }}>
-        <List disablePadding sx={listSx}>
-          {footer.map((item) => (
-            <NavItem key={item.text} item={item} active={isActive(item.path)} collapsed={rail} onClick={() => navigate(item.path)} />
-          ))}
-          {!narrow && (
+      {!narrow && (
+        <Box sx={{ borderTop: footer.length > 0 ? 'none' : RULE, pt: footer.length > 0 ? 0 : 2, pb: 2, px: 1.5, flexShrink: 0 }}>
+          <List disablePadding sx={listSx}>
             <NavItem item={{ text: rail ? 'Expand' : 'Collapse', icon: rail ? <ChevronDoubleRight /> : <ChevronDoubleLeft /> }}
               active={false} collapsed={rail} onClick={onToggleCollapsed} />
-          )}
-        </List>
-      </Box>
+          </List>
+        </Box>
+      )}
     </Drawer>
   );
 }

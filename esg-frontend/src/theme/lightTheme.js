@@ -1,6 +1,6 @@
 import { createElement as h } from 'react';
 import { createTheme } from '@mui/material/styles';
-import { CheckCircle, ChevronDown, ErrorOutline, InfoOutlined, WarningAmber, XMark } from '../components/icons';
+import { CheckCircle, ChevronDown, ErrorOutline, InfoOutlined, WarningAmber, XMark } from '../components/icons/shell';
 import { badge, brand, chart, font, gray, layout, radius, shadow } from './tokens';
 
 // D49: the theme carries Thirdline's design system (tokens.js); pages should not restate these values.

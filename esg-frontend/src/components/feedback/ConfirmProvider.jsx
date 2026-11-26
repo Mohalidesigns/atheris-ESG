@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
-import { WarningAmber } from '../icons';
+import { WarningAmber } from '../icons/shell';
 import { tr } from '../../i18n';
 
 const ConfirmContext = createContext(null);

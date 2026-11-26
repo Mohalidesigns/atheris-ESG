@@ -7,7 +7,8 @@ import { tr } from '../../../i18n';
 // D49: Thirdline's connection pill (fixed bottom right, rounded-full, shadow-lg, 14/500, white dot): green online,
 // gray offline; ESG adds orange when saved records need checking and teal while records wait to sync.
 const TONES = {
-  online: '#22C55E', // green-500
+  // Thirdline uses green-500, but white on it is 2.3:1 (WCAG 2.1 AA needs 4.5:1); green-700 keeps the look at 5.0:1.
+  online: '#15803D', // green-700
   offline: '#6B7280', // gray-500
   attention: '#C05621', // warning dark (white text ≥ 4.5:1)
   syncing: '#237574', // info dark
