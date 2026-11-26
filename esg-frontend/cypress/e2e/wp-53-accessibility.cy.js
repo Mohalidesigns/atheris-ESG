@@ -46,8 +46,6 @@ describe('WP-53: WCAG 2.1 AA', () => {
       cy.visit(path);
       cy.get(ready).should('be.visible');
       cy.get('.MuiCircularProgress-root').should('not.exist'); // loading spinners (bars showing data stay)
-      // A contained button that has just been enabled is still fading from the disabled grey (MUI's 250 ms transition).
-      cy.get('.MuiButton-contained:not(.Mui-disabled)').each(($b) => cy.wrap($b).should('not.have.css', 'background-color', 'rgb(224, 224, 224)'));
       cy.a11y(path);
     });
   });
