@@ -188,6 +188,11 @@ management:
   endpoint:
     health:
       show-details: never
+  # Email is optional (in-app notifications work without it): a missing or wrong SMTP login must not report the whole
+  # backend as down, which would stop deploy.sh switching versions (D50). Mail failures are logged by EmailSender.
+  health:
+    mail:
+      enabled: false
 
 logging:
   level:
