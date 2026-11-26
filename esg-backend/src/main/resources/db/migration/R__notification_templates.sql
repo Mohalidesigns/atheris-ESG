@@ -75,5 +75,15 @@ INSERT INTO notifications.notification_templates (notification_type, channel, lo
    'Hello {{firstName}},' || chr(10) || chr(10) || 'You have been enrolled in "{{course}}" ({{hours}} hours){{due}}. Sign in to Atheris ESG and open Training → My learning.' || chr(10) || chr(10) || 'Atheris ESG'),
   ('TRAINING_CERTIFICATE', 'in_app', 'en', 'Certificate: {{course}}', 'You passed {{course}}. Your certificate code is {{code}}.'),
   ('TRAINING_CERTIFICATE', 'email', 'en', 'Certificate: {{course}}',
-   'Hello {{firstName}},' || chr(10) || chr(10) || 'Congratulations: you passed "{{course}}". Your certificate (code {{code}}) is in Training → My learning; anyone can check it at {{link}}.' || chr(10) || chr(10) || 'Atheris ESG')
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Congratulations: you passed "{{course}}". Your certificate (code {{code}}) is in Training → My learning; anyone can check it at {{link}}.' || chr(10) || chr(10) || 'Atheris ESG'),
+  -- D51: Data Hub workflow. {{count}} is the number of points (a bulk action sends one notice).
+  ('DATA_VALIDATION_REQUESTED', 'in_app', 'en', 'Data to validate: {{count}}', 'Data points waiting for your validation: {{count}}. Open Data Hub → Awaiting validation.'),
+  ('DATA_VALIDATION_REQUESTED', 'email', 'en', 'Data to validate: {{count}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Data points waiting for your validation in {{tenantName}}: {{count}}.' || chr(10) || chr(10) || 'Review them in Data Hub: {{link}}' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('DATA_APPROVAL_REQUESTED', 'in_app', 'en', 'Data to approve: {{count}}', 'Validated data points waiting for your approval: {{count}}. Open Data Hub → Awaiting approval.'),
+  ('DATA_APPROVAL_REQUESTED', 'email', 'en', 'Data to approve: {{count}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Validated data points waiting for your approval in {{tenantName}}: {{count}}.' || chr(10) || chr(10) || 'Review them in Data Hub: {{link}}' || chr(10) || chr(10) || 'Atheris ESG'),
+  ('DATA_POINTS_REJECTED', 'in_app', 'en', 'Data returned to you: {{count}}', 'Reason: {{reason}}. Correct the points in Data Hub and submit them again.'),
+  ('DATA_POINTS_REJECTED', 'email', 'en', 'Data returned to you: {{count}}',
+   'Hello {{firstName}},' || chr(10) || chr(10) || 'Data points you submitted in {{tenantName}} were returned to you: {{count}}.' || chr(10) || 'Reason: {{reason}}' || chr(10) || chr(10) || 'Correct them and submit them again in Data Hub: {{link}}' || chr(10) || chr(10) || 'Atheris ESG')
 ON CONFLICT (notification_type, channel, locale) DO UPDATE SET subject = EXCLUDED.subject, body = EXCLUDED.body;
