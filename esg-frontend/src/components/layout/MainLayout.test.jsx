@@ -48,7 +48,7 @@ describe('MainLayout (Phase 2: responsive shell)', () => {
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
   });
 
-  it('D47: the sidebar collapses to an icon rail and the browser remembers it', async () => {
+  it('D49: the sidebar collapses to an icon rail and the browser remembers it', async () => {
     api();
     window.localStorage.removeItem('atheris.sidebarCollapsed');
     renderWithStore(app, { preloadedState: authenticated(PERMS, { modules: ['platform', 'data_hub'] }), route: '/dashboard' });
@@ -61,7 +61,7 @@ describe('MainLayout (Phase 2: responsive shell)', () => {
     expect(window.localStorage.getItem('atheris.sidebarCollapsed')).toBe('0');
   });
 
-  it('D47: the top-bar search finds and opens a page the user may open (pages only, not records)', async () => {
+  it('D49: the top-bar search finds and opens a page the user may open (pages only, not records)', async () => {
     api();
     renderWithStore(app, { preloadedState: authenticated(PERMS, { modules: ['platform', 'data_hub'] }), route: '/dashboard' });
     await userEvent.type(screen.getByRole('combobox', { name: 'Search pages' }), 'data');
@@ -69,7 +69,7 @@ describe('MainLayout (Phase 2: responsive shell)', () => {
     expect(await screen.findByText('data hub page')).toBeInTheDocument();
   });
 
-  it("D47: Thirdline's connection pill says the app is online; sign-out is in the account menu", async () => {
+  it("D49: Thirdline's connection pill says the app is online; sign-out is in the account menu", async () => {
     api();
     renderWithStore(app, { preloadedState: authenticated(PERMS), route: '/dashboard' });
     expect(screen.getByLabelText('Connection: Online')).toBeInTheDocument();

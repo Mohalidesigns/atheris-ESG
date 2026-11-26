@@ -2,7 +2,7 @@ import { Box, Card, CardContent, Typography } from '@mui/material';
 import { tile } from '../../theme/tokens';
 
 /**
- * D47: Thirdline's .stat-card — 14/500 gray label, 24/700 value, 12 px note, and on the right a 40 px rounded tile in a
+ * D49: Thirdline's .stat-card — 14/500 gray label, 24/700 value, 12 px note, and on the right a 40 px rounded tile in a
  * pale tone holding a 20 px outline icon. `tone`: blue, red, amber, purple, green or gray (tokens.tile).
  */
 export default function StatCard({ label, value, caption, icon, tone = 'blue', loading = false, valueColour, ariaLabel }) {

@@ -1,5 +1,5 @@
 /**
- * D47 (amended 24 Nov 2026): the app's one icon set is Heroicons v2 outline (24 px grid, 1.5 stroke), as in Thirdline.
+ * D49 (amended 24 Nov 2026): the app's one icon set is Heroicons v2 outline (24 px grid, 1.5 stroke), as in Thirdline.
  * Each icon is a MUI SvgIcon drawing a Heroicons glyph, so `fontSize`, `color`, `sx` and `titleAccess` work as they did
  * with @mui/icons-material, and MUI slots (Chip icon, InputAdornment, IconButton) treat them as icons.
  *

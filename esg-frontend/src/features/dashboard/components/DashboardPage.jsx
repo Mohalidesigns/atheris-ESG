@@ -20,7 +20,7 @@ const SCOPE_COLOURS = { scope1: chart.series[0], scope2Location: chart.series[1]
 const fmt = (v, digits = 1) => Number(v ?? 0).toLocaleString(formattingLocale(), { maximumFractionDigits: digits });
 const day = (iso) => new Date(iso).toLocaleDateString(formattingLocale(), { day: 'numeric', month: 'short' });
 
-// D47: Thirdline's dashboard stat cards, each with its tinted icon tile.
+// D49: Thirdline's dashboard stat cards, each with its tinted icon tile.
 function Kpi({ title, value, caption, loading, colour, icon, tone }) {
   return <StatCard label={title} value={value} caption={caption} loading={loading} valueColour={colour} icon={icon} tone={tone} />;
 }

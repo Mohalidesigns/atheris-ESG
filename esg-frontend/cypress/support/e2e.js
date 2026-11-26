@@ -68,7 +68,7 @@ Cypress.Commands.add('login', (email, password) => {
 });
 
 Cypress.Commands.add('logout', () => {
-  // D47: sign-out is in the top bar's account menu, as in Thirdline.
+  // D49: sign-out is in the top bar's account menu, as in Thirdline.
   cy.get('[aria-label="Account menu"]').click();
   cy.get('[aria-label="Sign out"]').click();
   cy.contains('button', 'Sign In').should('be.visible');

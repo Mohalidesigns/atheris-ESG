@@ -51,7 +51,7 @@ export default function NotificationBell() {
       <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{ paper: { sx: { width: 380, maxHeight: 480 } } }}>
-        {/* D47: a Thirdline card — header row on a gray-100 rule, unread rows on blue-50. */}
+        {/* D49: a Thirdline card — header row on a gray-100 rule, unread rows on blue-50. */}
         <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1.5, borderBottom: `1px solid ${gray[100]}` }}>
           <Typography variant="h6" component="h2" sx={{ flex: 1 }}>{tr("Notifications")}</Typography>
           <Button size="small" disabled={!unread || markingAll} onClick={() => markAll()}>{tr("Mark all read")}</Button>

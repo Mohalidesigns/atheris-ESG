@@ -74,7 +74,7 @@ export default function TopBar({ onMenu = () => {}, sidebarWidth = DRAWER_WIDTH 
         color: brand.textPrimary,
       }}
     >
-      {/* D47: Thirdline's top bar — 64 px, white, gray-200 rule; search on the left; bell, then avatar with name, role and a chevron. */}
+      {/* D49: Thirdline's top bar — 64 px, white, gray-200 rule; search on the left; bell, then avatar with name, role and a chevron. */}
       <Toolbar sx={{ minHeight: `${layout.topBarHeight - 1}px !important`, px: { xs: 1.5, sm: 3 }, gap: 1 }}>
         <IconButton aria-label={tr("Open menu")} onClick={onMenu} sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}>
           <MenuIcon />

@@ -25,9 +25,9 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-      // D47: one icon set (Heroicons outline) through src/components/icons.
-      'no-restricted-imports': ['error', { paths: [{ name: '@mui/icons-material', message: 'Import icons from src/components/icons (Heroicons, D47).' }],
-        patterns: [{ group: ['@mui/icons-material/*'], message: 'Import icons from src/components/icons (Heroicons, D47).' }] }],
+      // D49: one icon set (Heroicons outline) through src/components/icons.
+      'no-restricted-imports': ['error', { paths: [{ name: '@mui/icons-material', message: 'Import icons from src/components/icons (Heroicons, D49).' }],
+        patterns: [{ group: ['@mui/icons-material/*'], message: 'Import icons from src/components/icons (Heroicons, D49).' }] }],
     },
   },
   {

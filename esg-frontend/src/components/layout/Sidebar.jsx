@@ -14,7 +14,7 @@ export const COLLAPSED_WIDTH = 72; // Thirdline's collapsed rail
 
 const RULE = '1px solid rgba(255,255,255,0.1)';
 
-// D47: Thirdline's .sidebar-nav-item — 8 px radius, 10 × 16 padding, 12 px icon gap, 20 px icon, 14/500; white/70 at
+// D49: Thirdline's .sidebar-nav-item — 8 px radius, 10 × 16 padding, 12 px icon gap, 20 px icon, 14/500; white/70 at
 // rest, white on a white/5 hover; the current page on white/10 with a 3 px gold bar. Collapsed: icon only.
 const navItemSx = (active, collapsed) => ({
   borderRadius: 1,

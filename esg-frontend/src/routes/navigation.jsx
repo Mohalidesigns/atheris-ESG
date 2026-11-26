@@ -1,4 +1,4 @@
-// D47: Heroicons outline, as Thirdline's sidebar (Dashboard uses its squares-2x2 glyph, Administration its cog).
+// D49: Heroicons outline, as Thirdline's sidebar (Dashboard uses its squares-2x2 glyph, Administration its cog).
 import {
   Squares2X2, StorageOutlined, FactoryOutlined, GavelOutlined, DescriptionOutlined, WarningAmberOutlined,
   LocalShippingOutlined, PeopleOutline, AccountBalanceOutlined, BarChartOutlined, TrendingUpOutlined, StorefrontOutlined,

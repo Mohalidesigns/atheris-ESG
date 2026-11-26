@@ -4,7 +4,7 @@ import { useOnline, useOutbox } from '../hooks';
 import { shadow } from '../../../theme/tokens';
 import { tr } from '../../../i18n';
 
-// D47: Thirdline's connection pill (fixed bottom right, rounded-full, shadow-lg, 14/500, white dot): green online,
+// D49: Thirdline's connection pill (fixed bottom right, rounded-full, shadow-lg, 14/500, white dot): green online,
 // gray offline; ESG adds orange when saved records need checking and teal while records wait to sync.
 const TONES = {
   online: '#22C55E', // green-500

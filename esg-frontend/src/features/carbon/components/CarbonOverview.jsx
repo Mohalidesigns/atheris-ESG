@@ -17,7 +17,7 @@ const chart = (buckets) => buckets.map((b) => ({ name: b.label, value: Number(b.
 function Kpi({ label, value, caption, colour }) {
   return (
     <Card sx={{ height: '100%' }}>
-      {/* D47: Thirdline's stat card — 14/500 label, 24/700 value, 12 px note. */}
+      {/* D49: Thirdline's stat card — 14/500 label, 24/700 value, 12 px note. */}
       <CardContent>
         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{label}</Typography>
         <Typography variant="h4" sx={{ mt: 0.5, color: colour }} aria-label={`${label} tonnes CO2e`}>{t(value)}</Typography>

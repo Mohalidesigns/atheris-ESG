@@ -57,7 +57,7 @@ export function NotYetAvailable({ title, plannedIn, children, compact = false })
 }
 
 /**
- * Page header shared by the module pages. D47: as Thirdline's, a white band across the top of the page (it cancels the
+ * Page header shared by the module pages. D49: as Thirdline's, a white band across the top of the page (it cancels the
  * main area's padding) with the 24/700 title, a 14 px gray subtitle and the page actions on the right.
  */
 export function PageHeader({ title, subtitle, actions }) {

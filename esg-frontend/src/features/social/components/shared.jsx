@@ -10,7 +10,7 @@ import { applyProblem } from '../../../services/formErrors';
 import { tr } from '../../../i18n';
 
 export function Stat({ label, value, caption, ariaLabel }) {
-  // D47: Thirdline's stat card (components/cards/StatCard).
+  // D49: Thirdline's stat card (components/cards/StatCard).
   return <StatCard label={label} value={value} caption={caption} ariaLabel={ariaLabel ?? label} />;
 }
 

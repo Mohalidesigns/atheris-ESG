@@ -3,7 +3,7 @@ import { createTheme } from '@mui/material/styles';
 import { CheckCircle, ChevronDown, ErrorOutline, InfoOutlined, WarningAmber, XMark } from '../components/icons';
 import { badge, brand, chart, font, gray, layout, radius, shadow } from './tokens';
 
-// D47: the theme carries Thirdline's design system (tokens.js); pages should not restate these values.
+// D49: the theme carries Thirdline's design system (tokens.js); pages should not restate these values.
 
 // MUI's 25 elevations mapped onto Tailwind's six shadows (cards 1, menus 8, drawers 16, dialogs 24).
 const shadows = [
@@ -274,7 +274,7 @@ const lightTheme = createTheme({
         adornedEnd: { paddingRight: 12 },
       },
     },
-    // Heroicons for MUI's own glyphs too (D47): chevron-down on selects (Tailwind forms' arrow), x-mark to clear.
+    // Heroicons for MUI's own glyphs too (D49): chevron-down on selects (Tailwind forms' arrow), x-mark to clear.
     MuiSelect: {
       defaultProps: { IconComponent: ChevronDown },
       styleOverrides: { select: { minHeight: '1.25rem' }, icon: { fontSize: 20, right: 10, color: gray[500] } },

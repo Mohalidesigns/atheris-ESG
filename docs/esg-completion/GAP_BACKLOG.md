@@ -930,6 +930,23 @@ Sizes in ideal engineer-days: S ≤ 2, M 3–5, L 6–10, XL > 10 (XL items are 
 
 #### Acceptance criteria
 - [ ] UAT sign-off per persona
+
+### WP-55 — Spring Boot 4 / Spring Framework 7 migration
+
+**Objective:** Get back onto supported, patched Spring and lift the D47 suppressions before they expire on 23 Feb 2027.
+
+**Size:** L — estimate after a spike (Jackson 3, Hibernate 7, Spring Security 7, springdoc, Spring Modulith, Thymeleaf
+and Testcontainers upgrades follow Boot 4)
+
+**Dependencies:** none; must land before 23 Feb 2027 (`.trivyignore` expiry)
+
+#### Tasks
+- [ ] Spike: build on Spring Boot 4.0.x, list breaking changes per module
+- [ ] Upgrade and fix; remove the Tomcat/Netty/Jackson/HttpCore5/pgjdbc overrides Boot 4 makes unnecessary
+- [ ] Remove CVE-2026-47884 and CVE-2026-47890 from `.trivyignore`; update D6, D47 and SECURITY.md
+
+#### Acceptance criteria
+- [ ] All backend tests, E2E journeys and the security job green with an empty Spring entry in `.trivyignore`
 ---
 
 ## 3. Re-baselined timeline (3 engineers + Claude Code)

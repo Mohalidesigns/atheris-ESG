@@ -24,7 +24,7 @@ import BulkActions from './BulkActions';
 import { tr, formattingLocale } from '../../../i18n';
 import { badge } from '../../../theme/tokens';
 
-// D47: Thirdline's soft badges — [background, text].
+// D49: Thirdline's soft badges — [background, text].
 const CATEGORY_COLOURS = { E: badge.success, S: badge.info, G: badge.caution };
 const emptyFilters = { category: '', status: '', metricKey: '', orgId: '', from: '', to: '', importJobId: '' };
 

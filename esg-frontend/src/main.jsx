@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 // WP-52: fonts are served with the app (no request to Google: visitors' IP addresses stay in the platform; CSP 'self').
-// D47: Figtree, as Thirdline; code and identifiers use the system monospace stack.
+// D49: Figtree, as Thirdline; code and identifiers use the system monospace stack.
 import '@fontsource/figtree/400.css'
 import '@fontsource/figtree/500.css'
 import '@fontsource/figtree/600.css'

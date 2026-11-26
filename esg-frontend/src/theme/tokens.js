@@ -1,5 +1,5 @@
 /**
- * D47: design tokens shared with Thirdline (Atheris internal audit), measured from its live app on 18 Oct 2026 — see
+ * D49: design tokens shared with Thirdline (Atheris internal audit), measured from its live app on 18 Oct 2026 — see
  * docs/esg-completion/UI_THIRDLINE_TOKENS.md for where each value comes from. Thirdline is Tailwind-based, so the
  * neutrals are Tailwind's gray scale; brand colours are its CSS variables (--color-*). Change them here, not in pages.
  */

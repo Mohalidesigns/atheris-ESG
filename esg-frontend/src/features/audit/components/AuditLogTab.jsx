@@ -18,7 +18,7 @@ const ACTIONS = [
   { value: 'delete', label: 'Deleted' }, { value: 'denied', label: 'Refused' }, { value: 'quarantined', label: 'Quarantined' },
 ];
 const ACTION_LABELS = Object.fromEntries(ACTIONS.filter((a) => a.value).map((a) => [a.value, a.label]));
-// D47: Thirdline's soft badges — [background, text].
+// D49: Thirdline's soft badges — [background, text].
 const ACTION_COLOURS = { insert: badge.success, update: badge.caution, delete: badge.error, denied: badge.error, quarantined: badge.completed };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
