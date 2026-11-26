@@ -8,16 +8,16 @@ what the server lacks. `deploy/docker-compose.prod.yml` is for a server of its o
 browser ─TLS─▶ host nginx (esg.atherislimited.com)
                  ├─ /                    → /var/www/esg/web            (built web app)
                  ├─ /api/                → 127.0.0.1:8085 backend      (Docker, host network)
-                 └─ /atheris-esg-files/  → 127.0.0.1:9010 MinIO        (pre-signed downloads, GET only)
+                 └─ /atheris-esg-files/  → 127.0.0.1:9010 SeaweedFS    (pre-signed downloads, GET only)
 backend ─▶ host PostgreSQL 17 :5432 (db esg, roles esg_owner / esg_app, RLS)
-        ─▶ ClamAV 127.0.0.1:3310 (Docker)   ─▶ MinIO (Docker, SSE at rest)
+        ─▶ ClamAV 127.0.0.1:3310 (Docker)   ─▶ SeaweedFS S3 (Docker, SSE at rest)
         ─▶ esg-ai 127.0.0.1:8090 (Docker, host network) ─▶ host Ollama 127.0.0.1:11434
 ```
 
 Server at the time of writing: Ubuntu 24.04, 4 vCPU, 7.8 GB RAM (about 4.9 GB free), no swap, Docker 29, nginx 1.24,
 PostgreSQL 17.12, Ollama running. Ports 8080 and 8088 are not used by ESG; 8088 belongs to another container.
 
-ESG adds about 4 GB under load (backend up to 2 GB, ClamAV about 1.3–1.8 GB, MinIO and AI about 0.5 GB). Step 1 adds
+ESG adds about 4 GB under load (backend up to 2 GB, ClamAV about 1.3–1.8 GB, SeaweedFS and AI about 0.5 GB). Step 1 adds
 swap so a ClamAV signature reload can't get the other modules killed for lack of memory.
 
 ## First install
@@ -71,26 +71,31 @@ cp deploy/vps/.env.example deploy/vps/.env && chmod 600 deploy/vps/.env
 openssl rand -base64 48                  # JWT_SECRET
 openssl rand -base64 32                  # DATA_ENCRYPTION_KEY
 openssl rand -hex 24                     # ESG_AI_TOKEN
-openssl rand -base64 32 | tr -d '/+='    # MINIO_ROOT_PASSWORD
-echo "esg-key:$(openssl rand -base64 32)"  # MINIO_KMS_SECRET_KEY
+openssl rand -hex 24                     # S3_SECRET_KEY
+openssl rand -hex 32                     # S3_SSE_KEK
 nano deploy/vps/.env
 ```
 
 Also set `ESG_BOOTSTRAP_ADMIN_EMAIL` and `ESG_BOOTSTRAP_ADMIN_PASSWORD` (12+ characters) for the first start.
-Keep a copy of `DATA_ENCRYPTION_KEY` and `MINIO_KMS_SECRET_KEY` outside the server. Without them, two-factor seeds
+Keep a copy of `DATA_ENCRYPTION_KEY` and `S3_SSE_KEK` outside the server. Without them, two-factor seeds
 and stored files can't be decrypted after a restore.
 
-### 5. MinIO bucket (once)
+### 5. File storage (once)
+
+MinIO no longer publishes community container images (D48), so the S3-compatible store is SeaweedFS. It creates
+the bucket named in `S3_BUCKET` on first start. Start it, then check that it accepts an encrypted upload:
 
 ```bash
-docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env up -d minio
-set -a; . deploy/vps/.env; set +a
-docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env exec minio sh -c "
-  mc alias set local http://127.0.0.1:9000 '$MINIO_ROOT_USER' '$MINIO_ROOT_PASSWORD' &&
-  mc mb --ignore-existing local/$S3_BUCKET &&
-  mc encrypt set sse-s3 local/$S3_BUCKET"
+docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env up -d s3
+K=$(grep ^S3_ACCESS_KEY= deploy/vps/.env | cut -d= -f2); S=$(grep ^S3_SECRET_KEY= deploy/vps/.env | cut -d= -f2)
+B=$(grep ^S3_BUCKET= deploy/vps/.env | cut -d= -f2)
+echo probe | docker run --rm -i --network host -e AWS_ACCESS_KEY_ID=$K -e AWS_SECRET_ACCESS_KEY=$S -e AWS_DEFAULT_REGION=af-south-1 \
+  amazon/aws-cli:2.31.0 --endpoint-url http://127.0.0.1:9010 s3 cp - s3://$B/_probe.txt --sse AES256
+docker run --rm --network host -e AWS_ACCESS_KEY_ID=$K -e AWS_SECRET_ACCESS_KEY=$S -e AWS_DEFAULT_REGION=af-south-1 \
+  amazon/aws-cli:2.31.0 --endpoint-url http://127.0.0.1:9010 s3api head-object --bucket $B --key _probe.txt
 ```
 
+`head-object` must show `"ServerSideEncryption": "AES256"`. Delete the probe afterwards with `s3 rm s3://$B/_probe.txt`.
 The backend does not create the bucket itself (`esg.files.s3.create-bucket: false`).
 
 ### 6. nginx site and certificate
@@ -147,7 +152,7 @@ stays in place and the backend log is printed. The previous web app is kept in `
 
 ```bash
 cat > /etc/cron.d/esg-backup <<'CRON'
-0 */6 * * * root d=/var/backups/esg; mkdir -p $d; sudo -u postgres pg_dump -Fc esg > $d/esg-$(date +\%F-\%H).dump; docker run --rm -v atheris-esg_minio:/data:ro -v $d:/out alpine tar czf /out/files-$(date +\%F-\%H).tgz -C /data .; find $d -mtime +90 -delete
+0 */6 * * * root d=/var/backups/esg; mkdir -p $d; sudo -u postgres pg_dump -Fc esg > $d/esg-$(date +\%F-\%H).dump; docker run --rm -v atheris-esg_s3data:/data:ro -v $d:/out alpine tar czf /out/files-$(date +\%F-\%H).tgz -C /data .; find $d -mtime +90 -delete
 CRON
 ```
 
@@ -160,7 +165,6 @@ That gives the BRD §7.4 schedule: every 6 hours, kept for 90 days. Also copy `/
 | Status | `docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env ps` |
 | Backend log | `docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env logs -f backend` |
 | Health | `curl -s http://127.0.0.1:8085/api/actuator/health` |
-| MinIO console | `ssh -L 9011:127.0.0.1:9011 root@<vps>` then http://localhost:9011 |
 | Memory | `docker stats --no-stream` |
 | Roll back web app | `mv web web.bad && mv web.old web` (the backend: `./deploy/vps/deploy.sh <previous tag>`) |
 

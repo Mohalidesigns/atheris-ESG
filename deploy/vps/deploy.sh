@@ -8,7 +8,7 @@ ROOT="$(pwd)"
 COMPOSE=(docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env)
 
 [ -f deploy/vps/.env ] || { echo "deploy/vps/.env is missing (copy deploy/vps/.env.example)"; exit 1; }
-if grep -q CHANGE_ME deploy/vps/.env; then echo "deploy/vps/.env still has CHANGE_ME values"; exit 1; fi
+if grep -qE "^[A-Z_]+=CHANGE_ME" deploy/vps/.env; then echo "deploy/vps/.env still has CHANGE_ME values:"; grep -E "^[A-Z_]+=CHANGE_ME" deploy/vps/.env | cut -d= -f1; exit 1; fi
 
 if [ "${1:-}" != "" ]; then
   git fetch --tags origin
@@ -25,7 +25,7 @@ docker cp "$cid:/usr/share/nginx/html" "$ROOT/web.new"
 docker rm "$cid" >/dev/null
 chmod -R a+rX "$ROOT/web.new"
 
-# 2. Backend, AI, ClamAV, MinIO. Flyway migrates on backend start.
+# 2. Backend, AI, ClamAV, S3 storage. Flyway migrates on backend start.
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
 echo -n "Waiting for the backend"
